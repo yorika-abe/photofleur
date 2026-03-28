@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
-export default function CompletePage() {
+function CompleteContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -37,10 +37,11 @@ export default function CompletePage() {
 
       setSlot(slotData);
 
-      const { data: reservationRows, error: reservationError } = await supabase
-        .from("reservations")
-        .select("*")
-        .eq("booking_slot_id", slotId);
+      const { data: reservationRows, error: reservationError } =
+        await supabase
+          .from("reservations")
+          .select("*")
+          .eq("booking_slot_id", slotId);
 
       if (reservationError) {
         alert("予約情報の取得に失敗しました");
@@ -119,122 +120,30 @@ ${reservation?.qr_token || "未取得"}`;
             background: "#fafafa",
           }}
         >
-          <p style={{ marginBottom: "10px" }}>
-            <strong>予約時間：</strong>
-            {slot?.slot_label || "未取得"}
-          </p>
-
-          <p style={{ marginBottom: "10px" }}>
-            <strong>料金：</strong>
-            ¥{slot?.price ?? "-"}
-          </p>
-
-          <p style={{ marginBottom: "10px" }}>
-            <strong>お名前：</strong>
-            {reservation?.customer_name || "未取得"}
-          </p>
-
-          <p style={{ marginBottom: "10px" }}>
-            <strong>メールアドレス：</strong>
-            {reservation?.email || "未取得"}
-          </p>
-
-          <p style={{ marginBottom: "10px" }}>
-            <strong>SNS：</strong>
-            {reservation?.sns_account ? (
-              <a
-                href={reservation.sns_account}
-                target="_blank"
-                rel="noreferrer"
-                style={{ color: "#2f2244", textDecoration: "underline" }}
-              >
-                {reservation.sns_account}
-              </a>
-            ) : (
-              "未取得"
-            )}
-          </p>
-
-          <p style={{ marginBottom: "10px" }}>
-            <strong>お支払い方法：</strong>
-            {paymentLabel}
-          </p>
-
-          <p style={{ marginBottom: "0" }}>
-            <strong>予約番号：</strong>
-            {reservation?.qr_token || "未取得"}
-          </p>
+          <p><strong>予約時間：</strong>{slot?.slot_label || "未取得"}</p>
+          <p><strong>料金：</strong>¥{slot?.price ?? "-"}</p>
+          <p><strong>お名前：</strong>{reservation?.customer_name || "未取得"}</p>
+          <p><strong>メール：</strong>{reservation?.email || "未取得"}</p>
+          <p><strong>SNS：</strong>{reservation?.sns_account || "未取得"}</p>
+          <p><strong>支払い：</strong>{paymentLabel}</p>
+          <p><strong>予約番号：</strong>{reservation?.qr_token || "未取得"}</p>
         </div>
 
-        <div
-          style={{
-            fontSize: "14px",
-            color: "#555",
-            lineHeight: 1.8,
-            marginBottom: "24px",
-          }}
-        >
-          <p>※集合場所などの詳細は、開催日前日までにご案内いたします。</p>
-          <p>※ご不明点がある場合は、運営までご連絡ください。</p>
-        </div>
+        <pre style={{ whiteSpace: "pre-wrap" }}>{lineMessage}</pre>
 
-        <div
-          style={{
-            marginBottom: "24px",
-            padding: "16px",
-            background: "#fafafa",
-            border: "1px solid #e5e5e5",
-            borderRadius: "12px",
-          }}
-        >
-          <p style={{ fontWeight: "700", marginBottom: "8px" }}>
-            LINE送信用メッセージ
-          </p>
-          <pre
-            style={{
-              whiteSpace: "pre-wrap",
-              fontFamily: "inherit",
-              fontSize: "14px",
-              lineHeight: 1.7,
-              margin: 0,
-            }}
-          >
-            {lineMessage}
-          </pre>
-        </div>
-
-        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-          <Link
-            href="/models"
-            style={{
-              display: "inline-block",
-              padding: "12px 20px",
-              borderRadius: "10px",
-              textDecoration: "none",
-              background: "#2f2244",
-              color: "#fff",
-              fontWeight: "700",
-            }}
-          >
-            モデル一覧へ戻る
-          </Link>
-
-          <button
-            onClick={() => router.push("/")}
-            style={{
-              padding: "12px 20px",
-              borderRadius: "10px",
-              border: "1px solid #2f2244",
-              background: "#fff",
-              color: "#2f2244",
-              fontWeight: "700",
-              cursor: "pointer",
-            }}
-          >
-            トップへ戻る
-          </button>
+        <div style={{ marginTop: "20px" }}>
+          <Link href="/models">モデル一覧へ</Link>
+          <button onClick={() => router.push("/")}>トップへ</button>
         </div>
       </div>
     </main>
+  );
+}
+
+export default function CompletePage() {
+  return (
+    <Suspense fallback={<div>読み込み中...</div>}>
+      <CompleteContent />
+    </Suspense>
   );
 }
