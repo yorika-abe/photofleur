@@ -8,7 +8,7 @@ function CompleteContent() {
 
   return (
     <div style={{ padding: "40px" }}>
-      完了ページ（仮2）
+      完了ページ（仮）
     </div>
   );
 }
