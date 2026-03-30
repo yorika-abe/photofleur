@@ -29,6 +29,7 @@ export default function ConfirmPage() {
 
       setLoading(true);
 
+      // ① DB保存
       const bookingRes = await fetch("/api/booking", {
         method: "POST",
         headers: {
@@ -46,6 +47,7 @@ export default function ConfirmPage() {
         throw new Error(`予約保存に失敗しました: ${text}`);
       }
 
+      // ② 予約完了メール送信
       const mailRes = await fetch("/api/send-booking-mail", {
         method: "POST",
         headers: {
@@ -63,6 +65,7 @@ export default function ConfirmPage() {
         throw new Error(`メール送信に失敗しました: ${text}`);
       }
 
+      // ③ 完了ページへ
       window.location.href = `/complete?slot_id=${slotId}&email=${encodeURIComponent(email)}`;
     } catch (e) {
       alert("エラー：" + e.message);

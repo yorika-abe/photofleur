@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 
 function formatDate(dateString) {
   if (!dateString) return "未取得";
+
   const d = new Date(dateString);
   if (Number.isNaN(d.getTime())) return dateString;
 
@@ -11,6 +12,7 @@ function formatDate(dateString) {
   const m = d.getMonth() + 1;
   const day = d.getDate();
   const w = weekdays[d.getDay()];
+
   return `${y}年${m}月${day}日（${w}）`;
 }
 
@@ -28,7 +30,7 @@ export async function POST(req) {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    // ① 予約枠取得
+    // ① booking_slots取得
     const { data: slot, error: slotError } = await supabase
       .from("booking_slots")
       .select("*")
@@ -37,12 +39,15 @@ export async function POST(req) {
 
     if (slotError || !slot) {
       return new Response(
-        JSON.stringify({ error: "予約枠の取得に失敗しました", detail: slotError }),
+        JSON.stringify({
+          error: "booking_slots の取得に失敗しました",
+          detail: slotError,
+        }),
         { status: 500 }
       );
     }
 
-    // ② event_entries 取得
+    // ② event_entries取得
     const { data: entry, error: entryError } = await supabase
       .from("event_entries")
       .select("*")
@@ -51,12 +56,15 @@ export async function POST(req) {
 
     if (entryError || !entry) {
       return new Response(
-        JSON.stringify({ error: "イベント情報の取得に失敗しました", detail: entryError }),
+        JSON.stringify({
+          error: "event_entries の取得に失敗しました",
+          detail: entryError,
+        }),
         { status: 500 }
       );
     }
 
-    // ③ model 取得
+    // ③ models取得
     const { data: model, error: modelError } = await supabase
       .from("models")
       .select("*")
@@ -65,26 +73,105 @@ export async function POST(req) {
 
     if (modelError || !model) {
       return new Response(
-        JSON.stringify({ error: "モデル情報の取得に失敗しました", detail: modelError }),
+        JSON.stringify({
+          error: "models の取得に失敗しました",
+          detail: modelError,
+        }),
+        { status: 500 }
+      );
+    }
+
+    // ④ events取得
+    const { data: event, error: eventError } = await supabase
+      .from("events")
+      .select("*")
+      .eq("id", entry.event_id)
+      .single();
+
+    if (eventError || !event) {
+      return new Response(
+        JSON.stringify({
+          error: "events の取得に失敗しました",
+          detail: eventError,
+        }),
         { status: 500 }
       );
     }
 
     const modelName = model?.name || "未取得";
-    const eventDate = formatDate(entry?.event_date);
+    const modelImage = model?.image || "";
+    const eventDate = formatDate(event?.event_date);
     const slotLabel = slot?.slot_label || "未取得";
     const price = slot?.price ?? "未取得";
+
+    const locationBlock =
+      event?.event_type === "street"
+        ? `
+          <div style="border:1px solid #e5e5e5; border-radius:16px; padding:20px; margin-bottom:24px; background:#fafafa;">
+            <p style="margin:0 0 12px; font-size:16px; line-height:1.8;">
+              <strong>開催形式：</strong>ストリート撮影
+            </p>
+            <p style="margin:0 0 12px; font-size:16px; line-height:1.8;">
+              <strong>開催エリア：</strong>${event?.location_name || "未取得"}
+            </p>
+            <p style="margin:0; font-size:14px; line-height:1.9; color:#555;">
+              集合場所の詳細は開催日の3日前にメールにてご案内いたします。
+            </p>
+          </div>
+        `
+        : `
+          <div style="border:1px solid #e5e5e5; border-radius:16px; padding:20px; margin-bottom:24px; background:#fafafa;">
+            <p style="margin:0 0 12px; font-size:16px; line-height:1.8;">
+              <strong>開催形式：</strong>スタジオ撮影
+            </p>
+            <p style="margin:0 0 12px; font-size:16px; line-height:1.8;">
+              <strong>開催場所：</strong>${event?.location_name || "未取得"}
+            </p>
+            <p style="margin:0 0 12px; font-size:16px; line-height:1.8;">
+              <strong>住所：</strong>${event?.address || "未取得"}
+            </p>
+            ${
+              event?.map_address
+                ? `
+              <p style="margin:0; font-size:16px; line-height:1.8; word-break:break-all;">
+                <strong>MAP：</strong>
+                <a href="${event.map_address}" style="color:#2563eb; text-decoration:underline;">
+                  ${event.map_address}
+                </a>
+              </p>
+            `
+                : ""
+            }
+          </div>
+        `;
 
     const html = `
       <div style="margin:0; padding:0; background:#f5f5f7; font-family:Arial, sans-serif; color:#2f2244;">
         <div style="max-width:640px; margin:0 auto; padding:32px 16px;">
           <div style="background:#ffffff; border-radius:24px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.08);">
+
+            ${
+              modelImage
+                ? `
+              <img
+                src="${modelImage}"
+                alt="${modelName}"
+                style="display:block; width:100%; height:320px; object-fit:cover;"
+              />
+            `
+                : ""
+            }
+
             <div style="padding:32px;">
               <p style="text-align:center; font-size:14px; color:#777; margin:0;">
-                Photo Fleur
+                Model
               </p>
 
-              <h1 style="margin:16px 0 24px; font-size:32px; line-height:1.4;">
+              <h2 style="text-align:center; margin:0 0 24px;">
+                ${modelName}
+              </h2>
+
+              <h1 style="margin:0 0 24px; font-size:32px; line-height:1.4;">
                 ご予約ありがとうございます
               </h1>
 
@@ -108,6 +195,8 @@ export async function POST(req) {
                   <strong>料金：</strong>¥${price}
                 </p>
               </div>
+
+              ${locationBlock}
 
               <div style="font-size:14px; color:#555; line-height:2;">
                 <p style="margin:0 0 12px;">
