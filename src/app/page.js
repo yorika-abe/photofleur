@@ -5,8 +5,9 @@ import { useState } from "react";
 export default function Home() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [slotId, setSlotId] = useState("");
+  const [email, setEmail] = useState("");
 
-  // テストメール
   const handleSendTestMail = async () => {
     try {
       setLoading(true);
@@ -19,7 +20,7 @@ export default function Home() {
       const text = await res.text();
 
       if (!res.ok) {
-        setMessage(`送信失敗: ${text}`);
+        setMessage(`テストメール送信失敗: ${text}`);
         return;
       }
 
@@ -31,9 +32,13 @@ export default function Home() {
     }
   };
 
-  // 前日メール
   const handleSendDayBeforeMail = async () => {
     try {
+      if (!slotId || !email) {
+        setMessage("slot_id と email を入力してください");
+        return;
+      }
+
       setLoading(true);
       setMessage("");
 
@@ -43,15 +48,15 @@ export default function Home() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          slot_id: "ここにslot_id",
-          email: "ここに送信先メール",
+          slot_id: slotId,
+          email,
         }),
       });
 
       const text = await res.text();
 
       if (!res.ok) {
-        setMessage(`送信失敗: ${text}`);
+        setMessage(`前日メール送信失敗: ${text}`);
         return;
       }
 
@@ -64,44 +69,114 @@ export default function Home() {
   };
 
   return (
-    <main style={{ padding: "40px" }}>
-      <h1>テストページ</h1>
+    <main style={{ padding: "40px", maxWidth: "640px", margin: "0 auto" }}>
+      <h1 style={{ marginBottom: "24px" }}>テストページ</h1>
 
-      {/* テストメール */}
-      <button
-        onClick={handleSendTestMail}
-        disabled={loading}
+      <div style={{ marginBottom: "32px" }}>
+        <button
+          onClick={handleSendTestMail}
+          disabled={loading}
+          style={{
+            padding: "12px 20px",
+            background: "#000",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontWeight: "700",
+          }}
+        >
+          {loading ? "送信中..." : "テストメール送信"}
+        </button>
+      </div>
+
+      <div
         style={{
-          marginTop: "20px",
-          padding: "12px",
-          background: "#000",
-          color: "#fff",
-          borderRadius: "8px",
-          width: "240px",
+          border: "1px solid #ddd",
+          borderRadius: "12px",
+          padding: "20px",
+          background: "#fafafa",
         }}
       >
-        テストメール送信
-      </button>
+        <h2 style={{ marginTop: 0, marginBottom: "16px", fontSize: "20px" }}>
+          前日メール送信テスト
+        </h2>
 
-      {/* 前日メール */}
-      <button
-        onClick={handleSendDayBeforeMail}
-        disabled={loading}
-        style={{
-          marginTop: "20px",
-          padding: "12px",
-          background: "#2f2244",
-          color: "#fff",
-          borderRadius: "8px",
-          width: "240px",
-          display: "block",
-        }}
-      >
-        前日メール送信
-      </button>
+        <div style={{ marginBottom: "16px" }}>
+          <label
+            style={{
+              display: "block",
+              marginBottom: "8px",
+              fontWeight: "700",
+            }}
+          >
+            slot_id
+          </label>
+          <input
+            type="text"
+            value={slotId}
+            onChange={(e) => setSlotId(e.target.value)}
+            placeholder="例: 予約枠のID"
+            style={{
+              width: "100%",
+              padding: "12px",
+              border: "1px solid #ccc",
+              borderRadius: "8px",
+              fontSize: "16px",
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: "16px" }}>
+          <label
+            style={{
+              display: "block",
+              marginBottom: "8px",
+              fontWeight: "700",
+            }}
+          >
+            送信先メールアドレス
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="例: example@mail.com"
+            style={{
+              width: "100%",
+              padding: "12px",
+              border: "1px solid #ccc",
+              borderRadius: "8px",
+              fontSize: "16px",
+            }}
+          />
+        </div>
+
+        <button
+          onClick={handleSendDayBeforeMail}
+          disabled={loading}
+          style={{
+            padding: "12px 20px",
+            background: "#2f2244",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontWeight: "700",
+          }}
+        >
+          {loading ? "送信中..." : "前日メール送信"}
+        </button>
+      </div>
 
       {message && (
-        <p style={{ marginTop: "16px", whiteSpace: "pre-wrap" }}>
+        <p
+          style={{
+            marginTop: "24px",
+            whiteSpace: "pre-wrap",
+            lineHeight: 1.8,
+          }}
+        >
           {message}
         </p>
       )}
