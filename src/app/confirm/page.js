@@ -63,7 +63,7 @@ export default function ConfirmPage() {
         throw new Error(`メール送信に失敗しました: ${text}`);
       }
 
-      window.location.href = "/complete";
+      window.location.href = `/complete?slot_id=${slotId}&email=${encodeURIComponent(email)}`;
     } catch (e) {
       alert("エラー：" + e.message);
     } finally {
