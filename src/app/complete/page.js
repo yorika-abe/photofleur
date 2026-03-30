@@ -4,10 +4,28 @@ import { Suspense, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
+function formatDate(dateString) {
+  if (!dateString) return "未取得";
+
+  const d = new Date(dateString);
+  if (Number.isNaN(d.getTime())) return dateString;
+
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const w = weekdays[d.getDay()];
+
+  return `${y}年${m}月${day}日（${w}）`;
+}
+
 function CompleteContent() {
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(null);
   const [slot, setSlot] = useState(null);
+  const [entry, setEntry] = useState(null);
+  const [model, setModel] = useState(null);
+  const [event, setEvent] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,8 +66,51 @@ function CompleteContent() {
 
         if (slotError) {
           console.error("slot取得エラー:", slotError);
+          setLoading(false);
+          return;
+        }
+
+        setSlot(slotData);
+
+        // ③ event_entry取得
+        const { data: entryData, error: entryError } = await supabase
+          .from("event_entries")
+          .select("*")
+          .eq("id", slotData.event_entry_id)
+          .single();
+
+        if (entryError) {
+          console.error("entry取得エラー:", entryError);
+          setLoading(false);
+          return;
+        }
+
+        setEntry(entryData);
+
+        // ④ model取得
+        const { data: modelData, error: modelError } = await supabase
+          .from("models")
+          .select("*")
+          .eq("id", entryData.model_id)
+          .single();
+
+        if (modelError) {
+          console.error("model取得エラー:", modelError);
         } else {
-          setSlot(slotData);
+          setModel(modelData);
+        }
+
+        // ⑤ event取得
+        const { data: eventData, error: eventError } = await supabase
+          .from("events")
+          .select("*")
+          .eq("id", entryData.event_id)
+          .single();
+
+        if (eventError) {
+          console.error("event取得エラー:", eventError);
+        } else {
+          setEvent(eventData);
         }
       } catch (error) {
         console.error("complete取得エラー:", error);
@@ -115,6 +176,16 @@ function CompleteContent() {
           <p style={{ marginBottom: "12px" }}>
             <strong>メールアドレス：</strong>
             {booking?.email || "未取得"}
+          </p>
+
+          <p style={{ marginBottom: "12px" }}>
+            <strong>モデル名：</strong>
+            {model?.name || "未取得"}
+          </p>
+
+          <p style={{ marginBottom: "12px" }}>
+            <strong>開催日：</strong>
+            {formatDate(event?.event_date)}
           </p>
 
           <p style={{ marginBottom: "12px" }}>
