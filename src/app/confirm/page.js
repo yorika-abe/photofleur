@@ -31,8 +31,16 @@ export default function ConfirmPage({ searchParams }) {
 
       // ② メール送信
       await fetch("/api/send-test-mail", {
-        method: "POST",
-      });
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    slot_id: searchParams?.slot_id,
+    name,
+    email,
+  }),
+});
 
       // ③ 完了ページへ
       window.location.href = "/complete";
