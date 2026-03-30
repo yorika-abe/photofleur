@@ -1,10 +1,22 @@
 import { Resend } from "resend";
 import { supabase } from "@/lib/supabase";
 
+function formatDate(dateString) {
+  if (!dateString) return "未取得";
+  const d = new Date(dateString);
+  if (Number.isNaN(d.getTime())) return dateString;
+
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const w = weekdays[d.getDay()];
+  return `${y}年${m}月${day}日（${w}）`;
+}
+
 export async function POST(req) {
   try {
     const body = await req.json();
-
     const { slot_id, customerName, email } = body;
 
     if (!slot_id || !customerName || !email) {
@@ -16,17 +28,50 @@ export async function POST(req) {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    // 予約枠情報を取得
+    // ① 予約枠取得
     const { data: slot, error: slotError } = await supabase
       .from("booking_slots")
       .select("*")
       .eq("id", slot_id)
       .single();
 
-    if (slotError) {
-      return new Response(JSON.stringify(slotError), { status: 500 });
+    if (slotError || !slot) {
+      return new Response(
+        JSON.stringify({ error: "予約枠の取得に失敗しました", detail: slotError }),
+        { status: 500 }
+      );
     }
 
+    // ② event_entries 取得
+    const { data: entry, error: entryError } = await supabase
+      .from("event_entries")
+      .select("*")
+      .eq("id", slot.event_entry_id)
+      .single();
+
+    if (entryError || !entry) {
+      return new Response(
+        JSON.stringify({ error: "イベント情報の取得に失敗しました", detail: entryError }),
+        { status: 500 }
+      );
+    }
+
+    // ③ model 取得
+    const { data: model, error: modelError } = await supabase
+      .from("models")
+      .select("*")
+      .eq("id", entry.model_id)
+      .single();
+
+    if (modelError || !model) {
+      return new Response(
+        JSON.stringify({ error: "モデル情報の取得に失敗しました", detail: modelError }),
+        { status: 500 }
+      );
+    }
+
+    const modelName = model?.name || "未取得";
+    const eventDate = formatDate(entry?.event_date);
     const slotLabel = slot?.slot_label || "未取得";
     const price = slot?.price ?? "未取得";
 
@@ -35,7 +80,11 @@ export async function POST(req) {
         <div style="max-width:640px; margin:0 auto; padding:32px 16px;">
           <div style="background:#ffffff; border-radius:24px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.08);">
             <div style="padding:32px;">
-              <h1 style="margin:0 0 24px; font-size:32px; line-height:1.4;">
+              <p style="text-align:center; font-size:14px; color:#777; margin:0;">
+                Photo Fleur
+              </p>
+
+              <h1 style="margin:16px 0 24px; font-size:32px; line-height:1.4;">
                 ご予約ありがとうございます
               </h1>
 
@@ -47,7 +96,13 @@ export async function POST(req) {
 
               <div style="border:1px solid #e5e5e5; border-radius:16px; padding:20px; margin-bottom:24px; background:#fafafa;">
                 <p style="margin:0 0 14px; font-size:16px; line-height:1.8;">
-                  <strong>予約枠：</strong>${slotLabel}
+                  <strong>モデル名：</strong>${modelName}
+                </p>
+                <p style="margin:0 0 14px; font-size:16px; line-height:1.8;">
+                  <strong>開催日：</strong>${eventDate}
+                </p>
+                <p style="margin:0 0 14px; font-size:16px; line-height:1.8;">
+                  <strong>予約時間：</strong>${slotLabel}
                 </p>
                 <p style="margin:0; font-size:16px; line-height:1.8;">
                   <strong>料金：</strong>¥${price}
