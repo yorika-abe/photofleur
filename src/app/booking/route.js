@@ -12,7 +12,6 @@ export async function POST(req) {
       );
     }
 
-    // すでに予約済みか確認
     const { data: existingSlot, error: existingSlotError } = await supabase
       .from("booking_slots")
       .select("id, is_reserved")
@@ -30,7 +29,6 @@ export async function POST(req) {
       );
     }
 
-    // 予約保存
     const { error: bookingError } = await supabase.from("bookings").insert([
       {
         slot_id,
@@ -43,7 +41,6 @@ export async function POST(req) {
       return new Response(JSON.stringify(bookingError), { status: 500 });
     }
 
-    // 枠を予約済みにする
     const { error: updateError } = await supabase
       .from("booking_slots")
       .update({ is_reserved: true })
