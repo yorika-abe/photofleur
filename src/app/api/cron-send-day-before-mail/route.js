@@ -2,13 +2,17 @@ import { supabase } from "@/lib/supabase";
 
 export async function GET(req) {
   try {
-    const authHeader = req.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
 
-    if (cronSecret) {
-      if (authHeader !== `Bearer ${cronSecret}`) {
-        return Response.json({ error: "Unauthorized" }, { status: 401 });
-      }
+    const authHeader = req.headers.get("authorization");
+    const { searchParams } = new URL(req.url);
+    const secretFromQuery = searchParams.get("secret");
+
+    const isAuthorized =
+      authHeader === `Bearer ${cronSecret}` || secretFromQuery === cronSecret;
+
+    if (cronSecret && !isAuthorized) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const now = new Date();
