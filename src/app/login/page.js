@@ -11,6 +11,7 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [errorType, setErrorType] = useState(null)
   const searchParams = useSearchParams()
   const router = useRouter()
   const redirect = searchParams.get('redirect') || '/'
@@ -24,9 +25,20 @@ function LoginForm() {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setErrorType(null)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      setError('メールアドレスまたはパスワードが正しくありません。')
+      const msg = error.message || ''
+      if (msg.includes('Email not confirmed')) {
+        setErrorType('unconfirmed')
+        setError('メールアドレスの確認が完了していません。登録時に届いたメールのリンクをクリックしてください。')
+      } else if (msg.includes('Invalid login credentials') || msg.includes('invalid_credentials')) {
+        setErrorType('invalid')
+        setError('メールアドレスまたはパスワードが正しくありません。アカウントをお持ちでない場合は新規登録してください。')
+      } else {
+        setErrorType('invalid')
+        setError('ログインに失敗しました: ' + msg)
+      }
       setLoading(false)
     } else {
       router.push(redirect)
@@ -83,6 +95,25 @@ function LoginForm() {
           <Link href="/register" style={{ color: '#2f2244', fontWeight: 600 }}>新規登録</Link>
         </div>
       </form>
+
+      {errorType === 'invalid' && (
+        <div style={{ background: '#f3f0ff', border: '2px solid #2f2244', borderRadius: 14, padding: '20px 24px', marginTop: 20, textAlign: 'center' }}>
+          <div style={{ fontSize: 22, marginBottom: 8 }}>👤</div>
+          <div style={{ fontWeight: 700, color: '#2f2244', marginBottom: 6, fontSize: 15 }}>アカウントをお持ちでないですか？</div>
+          <div style={{ color: '#666', fontSize: 13, marginBottom: 14 }}>初めての方は無料で新規登録できます</div>
+          <Link href="/register" style={{ display: 'inline-block', background: '#2f2244', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '12px 28px', fontWeight: 700, fontSize: 15 }}>
+            新規登録はこちら →
+          </Link>
+        </div>
+      )}
+
+      {errorType === 'unconfirmed' && (
+        <div style={{ background: '#fff8e1', border: '2px solid #f0c040', borderRadius: 14, padding: '20px 24px', marginTop: 20, textAlign: 'center' }}>
+          <div style={{ fontSize: 22, marginBottom: 8 }}>📧</div>
+          <div style={{ fontWeight: 700, color: '#795548', marginBottom: 6, fontSize: 15 }}>メール確認が必要です</div>
+          <div style={{ color: '#666', fontSize: 13 }}>登録時に送信されたメールを開き、確認リンクをクリックしてからログインしてください。</div>
+        </div>
+      )}
     </div>
   )
 }
