@@ -1,0 +1,105 @@
+import Link from 'next/link'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+)
+
+function formatDateFull(dateStr) {
+  const d = new Date(dateStr)
+  const days = ['日', '月', '火', '水', '木', '金', '土']
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`
+}
+
+export const metadata = { title: 'スケジュール一覧 | PhotoFleur' }
+
+export default async function SchedulePage({ searchParams }) {
+  const filter = (await searchParams)?.type || 'all'
+  const today = new Date().toISOString().split('T')[0]
+
+  let query = supabase
+    .from('events')
+    .select(`*, event_entries(id, model_id, models(id, name, name_en, image))`)
+    .gte('event_date', today)
+    .order('event_date', { ascending: true })
+
+  if (filter !== 'all') {
+    query = query.eq('event_type', filter)
+  }
+
+  const { data: events, error } = await query
+
+  return (
+    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 20px' }}>
+      <h1 style={{ fontSize: 32, fontWeight: 700, color: '#2f2244', marginBottom: 8 }}>スケジュール一覧</h1>
+      <p style={{ color: '#666', marginBottom: 32, fontSize: 15 }}>開催予定の撮影会イベントをご確認いただけます。</p>
+
+      {/* Filter tabs */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 32 }}>
+        {[{ key: 'all', label: 'すべて' }, { key: 'street', label: 'ストリート' }, { key: 'studio', label: 'スタジオ' }].map(tab => (
+          <Link
+            key={tab.key}
+            href={`/schedule${tab.key === 'all' ? '' : `?type=${tab.key}`}`}
+            style={{
+              padding: '8px 20px',
+              borderRadius: 20,
+              fontSize: 14,
+              fontWeight: 600,
+              textDecoration: 'none',
+              background: filter === tab.key ? '#2f2244' : '#f0f0f0',
+              color: filter === tab.key ? '#fff' : '#555',
+            }}
+          >
+            {tab.label}
+          </Link>
+        ))}
+      </div>
+
+      {error && <p style={{ color: 'red' }}>データの取得に失敗しました。</p>}
+
+      {!events || events.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#999' }}>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>📅</div>
+          <p>現在、予定されているイベントはありません。</p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {events.map(ev => (
+            <Link key={ev.id} href={`/events/${ev.id}`} style={{ textDecoration: 'none' }}>
+              <div style={{ background: '#fff', borderRadius: 16, padding: '24px', border: '1px solid #e5e5e5', display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                <div style={{ minWidth: 160 }}>
+                  <div style={{ display: 'inline-block', background: ev.event_type === 'street' ? '#e8f5e9' : '#e8eaf6', color: ev.event_type === 'street' ? '#388e3c' : '#3949ab', borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 600, marginBottom: 10 }}>
+                    {ev.event_type === 'street' ? 'ストリート' : ev.event_type === 'studio' ? 'スタジオ' : 'イベント'}
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: 20, color: '#2f2244', marginBottom: 4 }}>{formatDateFull(ev.event_date)}</div>
+                  <div style={{ fontSize: 14, color: '#666' }}>{ev.location_name}</div>
+                </div>
+
+                {ev.event_entries && ev.event_entries.length > 0 && (
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, color: '#999', marginBottom: 10 }}>出演モデル</div>
+                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                      {ev.event_entries.map(entry => entry.models && (
+                        <div key={entry.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#e0d8f0', overflow: 'hidden', flexShrink: 0 }}>
+                            {entry.models.image && <img src={entry.models.image} alt={entry.models.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                          </div>
+                          <span style={{ fontSize: 13, color: '#444', fontWeight: 600 }}>{entry.models.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', alignItems: 'center', color: '#2f2244', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  詳細・予約 →
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}

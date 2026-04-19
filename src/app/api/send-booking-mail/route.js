@@ -19,7 +19,7 @@ function formatDate(dateString) {
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { slot_id, customerName, email } = body;
+    const { slot_id, customerName, email, qr_token, final_price, is_outdoor } = body;
 
     if (!slot_id || !customerName || !email) {
       return new Response(
@@ -102,7 +102,10 @@ export async function POST(req) {
     const modelImage = model?.image || "";
     const eventDate = formatDate(event?.event_date);
     const slotLabel = slot?.slot_label || "未取得";
-    const price = slot?.price ?? "未取得";
+    const displayPrice = final_price ?? slot?.price ?? 0;
+    const qrImageUrl = qr_token
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qr_token)}`
+      : null;
 
     const locationBlock =
       event?.event_type === "street"
@@ -191,10 +194,18 @@ export async function POST(req) {
                 <p style="margin:0 0 14px; font-size:16px; line-height:1.8;">
                   <strong>予約時間：</strong>${slotLabel}
                 </p>
-                <p style="margin:0; font-size:16px; line-height:1.8;">
-                  <strong>料金：</strong>¥${price}
+                <p style="margin:0 0 14px; font-size:16px; line-height:1.8;">
+                  <strong>料金：</strong>¥${Number(displayPrice).toLocaleString()}
                 </p>
+                ${is_outdoor ? `<p style="margin:0; font-size:14px; color:#e65100; line-height:1.8;">※屋外撮影となります（スタジオ料金割引適用済み）</p>` : ''}
               </div>
+
+              ${qrImageUrl ? `
+              <div style="text-align:center; margin-bottom:24px;">
+                <p style="font-size:14px; color:#555; margin:0 0 12px;">当日受付時にこのQRコードをご提示ください</p>
+                <img src="${qrImageUrl}" alt="受付QRコード" style="width:160px; height:160px; border:1px solid #e5e5e5; border-radius:8px;" />
+              </div>
+              ` : ''}
 
               ${locationBlock}
 

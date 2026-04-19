@@ -1,151 +1,391 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+import { createBrowserClient } from '@supabase/ssr'
 
-export default function ConfirmPage() {
-  const [loading, setLoading] = useState(false);
-  const [slotId, setSlotId] = useState("");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+const SQUARE_APP_ID = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID
+const SQUARE_LOCATION_ID = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || ''
+
+function ConfirmForm() {
+  const searchParams = useSearchParams()
+  const slotId = searchParams.get('slot_id') || ''
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  )
+
+  const [slotInfo, setSlotInfo] = useState(null)
+  const [eventInfo, setEventInfo] = useState(null)
+  const [modelInfo, setModelInfo] = useState(null)
+  const [indoorCount, setIndoorCount] = useState(0)
+  const [isOutdoor, setIsOutdoor] = useState(false)
+  const [finalPrice, setFinalPrice] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const [form, setForm] = useState({
+    last_name: '', first_name: '',
+    last_name_kana: '', first_name_kana: '',
+    email: '', phone: '', sns_url: '',
+    marketing_consent: false,
+  })
+
+  const [couponCode, setCouponCode] = useState('')
+  const [coupon, setCoupon] = useState(null)
+  const [couponError, setCouponError] = useState('')
+  const [couponLoading, setCouponLoading] = useState(false)
+
+  const [paymentMethod, setPaymentMethod] = useState('cash')
+  const [squareReady, setSquareReady] = useState(false)
+  const cardRef = useRef(null)
+  const paymentsRef = useRef(null)
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      setSlotId(params.get("slot_id") || "");
-    }
-  }, []);
+    if (!slotId) { setLoading(false); return }
+    loadSlotInfo()
+  }, [slotId])
 
-  const handleConfirm = async () => {
+  useEffect(() => {
+    if (paymentMethod === 'card' && !squareReady) {
+      loadSquareSDK()
+    }
+  }, [paymentMethod])
+
+  async function loadSlotInfo() {
+    const { data: slot } = await supabase
+      .from('booking_slots')
+      .select('id, slot_label, price, is_reserved, max_reservations, event_entry_id')
+      .eq('id', slotId)
+      .single()
+
+    if (!slot) { setLoading(false); return }
+    setSlotInfo(slot)
+
+    const { data: entry } = await supabase
+      .from('event_entries')
+      .select('id, event_id, model_id')
+      .eq('id', slot.event_entry_id)
+      .single()
+
+    if (!entry) { setLoading(false); return }
+
+    const [{ data: event }, { data: model }, { count: bookedCount }] = await Promise.all([
+      supabase.from('events').select('*').eq('id', entry.event_id).single(),
+      supabase.from('models').select('id, name, image').eq('id', entry.model_id).single(),
+      supabase.from('bookings').select('*', { count: 'exact', head: true })
+        .eq('slot_id', slotId).eq('is_outdoor', false),
+    ])
+
+    setEventInfo(event)
+    setModelInfo(model)
+
+    const maxIndoor = slot.max_reservations || 1
+    const currentIndoor = bookedCount || 0
+    setIndoorCount(currentIndoor)
+
+    const outdoor = currentIndoor >= maxIndoor
+    setIsOutdoor(outdoor)
+
+    const basePrice = slot.price || 0
+    const studioFee = (event?.studio_fee) || 0
+    setFinalPrice(outdoor ? Math.max(0, basePrice - studioFee) : basePrice)
+
+    setLoading(false)
+  }
+
+  async function loadSquareSDK() {
+    if (window.Square) { await initCard(); return }
+    const script = document.createElement('script')
+    script.src = 'https://web.squarecdn.com/v1/square.js'
+    script.onload = initCard
+    document.head.appendChild(script)
+  }
+
+  async function initCard() {
     try {
-      if (!slotId) {
-        alert("予約枠情報が取得できていません。もう一度お試しください。");
-        return;
-      }
-
-      if (!name || !email) {
-        alert("お名前とメールアドレスを入力してください。");
-        return;
-      }
-
-      setLoading(true);
-
-      // ① DB保存
-      const bookingRes = await fetch("/api/booking", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          slot_id: slotId,
-          name,
-          email,
-        }),
-      });
-
-      if (!bookingRes.ok) {
-        const text = await bookingRes.text();
-        throw new Error(`予約保存に失敗しました: ${text}`);
-      }
-
-      // ② 予約完了メール送信
-      const mailRes = await fetch("/api/send-booking-mail", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          slot_id: slotId,
-          customerName: name,
-          email,
-        }),
-      });
-
-      if (!mailRes.ok) {
-        const text = await mailRes.text();
-        throw new Error(`メール送信に失敗しました: ${text}`);
-      }
-
-      // ③ 完了ページへ
-      window.location.href = `/complete?slot_id=${slotId}&email=${encodeURIComponent(email)}`;
+      const payments = window.Square.payments(SQUARE_APP_ID, SQUARE_LOCATION_ID)
+      paymentsRef.current = payments
+      const card = await payments.card()
+      await card.attach('#card-container')
+      cardRef.current = card
+      setSquareReady(true)
     } catch (e) {
-      alert("エラー：" + e.message);
-    } finally {
-      setLoading(false);
+      setError('カード入力フォームの初期化に失敗しました。')
     }
-  };
+  }
+
+  async function validateCoupon() {
+    if (!couponCode.trim()) return
+    setCouponLoading(true)
+    setCouponError('')
+    setCoupon(null)
+
+    const res = await fetch('/api/coupon/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: couponCode.trim() }),
+    })
+    const data = await res.json()
+
+    if (!res.ok || !data.valid) {
+      setCouponError(data.error || '無効なクーポンコードです。')
+    } else {
+      setCoupon(data)
+      const base = isOutdoor ? Math.max(0, (slotInfo?.price || 0) - (eventInfo?.studio_fee || 0)) : (slotInfo?.price || 0)
+      if (data.discount_type === 'fixed') {
+        setFinalPrice(Math.max(0, base - data.discount_value))
+      } else {
+        setFinalPrice(Math.max(0, Math.round(base * (1 - data.discount_value / 100))))
+      }
+    }
+    setCouponLoading(false)
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    const { last_name, first_name, last_name_kana, first_name_kana, email, phone } = form
+    if (!last_name || !first_name || !last_name_kana || !first_name_kana || !email || !phone) {
+      setError('必須項目を全て入力してください。'); return
+    }
+
+    setSaving(true)
+    setError('')
+
+    let squarePaymentId = null
+
+    if (paymentMethod === 'card') {
+      if (!cardRef.current) { setError('カード情報を入力してください。'); setSaving(false); return }
+      const result = await cardRef.current.tokenize()
+      if (result.status !== 'OK') {
+        setError('カード情報の処理に失敗しました。入力内容をご確認ください。')
+        setSaving(false); return
+      }
+
+      const chargeRes = await fetch('/api/square/charge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceId: result.token, amount: finalPrice }),
+      })
+      const chargeData = await chargeRes.json()
+      if (!chargeRes.ok) {
+        setError(chargeData.error || 'カード決済に失敗しました。')
+        setSaving(false); return
+      }
+      squarePaymentId = chargeData.payment_id
+    }
+
+    const bookingRes = await fetch('/api/booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        slot_id: slotId,
+        name: `${last_name} ${first_name}`,
+        last_name, first_name, last_name_kana, first_name_kana,
+        email, phone,
+        sns_url: form.sns_url || null,
+        is_outdoor: isOutdoor,
+        discount_amount: (slotInfo?.price || 0) - finalPrice,
+        final_price: finalPrice,
+        coupon_id: coupon?.id || null,
+        marketing_consent: form.marketing_consent,
+        payment_method: paymentMethod,
+        square_payment_id: squarePaymentId,
+      }),
+    })
+
+    const bookingData = await bookingRes.json()
+    if (!bookingRes.ok) {
+      setError(bookingData.error || '予約の保存に失敗しました。')
+      setSaving(false); return
+    }
+
+    await fetch('/api/send-booking-mail', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        slot_id: slotId,
+        customerName: `${last_name} ${first_name}`,
+        email,
+        qr_token: bookingData.qr_token,
+        final_price: finalPrice,
+        is_outdoor: isOutdoor,
+      }),
+    }).catch(() => {})
+
+    window.location.href = `/complete?slot_id=${slotId}&email=${encodeURIComponent(email)}&qr=${bookingData.qr_token}`
+  }
+
+  function formatDate(d) {
+    if (!d) return ''
+    const date = new Date(d + 'T00:00:00')
+    const days = ['日', '月', '火', '水', '木', '金', '土']
+    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日（${days[date.getDay()]}）`
+  }
+
+  const inp = { width: '100%', padding: '11px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 15, boxSizing: 'border-box' }
+
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>読み込み中...</div>
+  if (!slotInfo) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>予約枠が見つかりません。</div>
+
+  const fullIndoor = indoorCount >= (slotInfo.max_reservations || 1)
 
   return (
-    <div style={{ padding: "40px", maxWidth: "560px", margin: "0 auto" }}>
-      <h1 style={{ marginBottom: "24px", fontSize: "32px" }}>予約確認</h1>
+    <div style={{ maxWidth: 600, margin: '0 auto', padding: '32px 16px' }}>
+      <Link href="/schedule" style={{ color: '#2f2244', textDecoration: 'none', fontSize: 14 }}>← スケジュールに戻る</Link>
+      <h1 style={{ fontSize: 26, fontWeight: 700, color: '#2f2244', margin: '16px 0 24px' }}>予約情報入力</h1>
 
-      <div style={{ marginBottom: "16px" }}>
-        <label
-          style={{
-            display: "block",
-            marginBottom: "8px",
-            fontWeight: "700",
-          }}
-        >
-          お名前
-        </label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="例：阿部依花"
-          style={{
-            width: "100%",
-            padding: "12px",
-            borderRadius: "8px",
-            border: "1px solid #ccc",
-            fontSize: "16px",
-          }}
-        />
+      {/* Booking summary */}
+      <div style={{ background: '#f8f5ff', borderRadius: 12, padding: '20px', marginBottom: 24, border: '1px solid #e0d5f5' }}>
+        <div style={{ fontSize: 12, color: '#888', marginBottom: 10 }}>予約内容</div>
+        {modelInfo && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            {modelInfo.image && <img src={modelInfo.image} alt={modelInfo.name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />}
+            <span style={{ fontWeight: 700, fontSize: 16, color: '#2f2244' }}>{modelInfo.name}</span>
+          </div>
+        )}
+        {eventInfo && (
+          <div style={{ fontSize: 14, color: '#555', lineHeight: 2 }}>
+            <div>📅 {formatDate(eventInfo.event_date)}</div>
+            <div>🕐 {slotInfo.slot_label}</div>
+            <div>📍 {eventInfo.location_name}</div>
+          </div>
+        )}
+        {isOutdoor && (
+          <div style={{ background: '#fff3e0', border: '1px solid #ffe082', borderRadius: 8, padding: '10px 12px', marginTop: 12, fontSize: 13, color: '#e65100' }}>
+            スタジオが満員のため<strong>屋外撮影</strong>となります（スタジオ料金割引適用）
+          </div>
+        )}
+        <div style={{ fontWeight: 700, fontSize: 18, color: '#2f2244', marginTop: 12 }}>
+          ¥{finalPrice.toLocaleString()}
+          {coupon && <span style={{ fontSize: 12, color: '#388e3c', marginLeft: 8 }}>クーポン適用済み</span>}
+        </div>
       </div>
 
-      <div style={{ marginBottom: "24px" }}>
-        <label
-          style={{
-            display: "block",
-            marginBottom: "8px",
-            fontWeight: "700",
-          }}
-        >
-          メールアドレス
-        </label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="例：example@mail.com"
-          style={{
-            width: "100%",
-            padding: "12px",
-            borderRadius: "8px",
-            border: "1px solid #ccc",
-            fontSize: "16px",
-          }}
-        />
-      </div>
+      <form onSubmit={handleSubmit}>
 
-      <button
-        onClick={handleConfirm}
-        disabled={loading}
-        style={{
-          width: "100%",
-          marginTop: "8px",
-          padding: "14px",
-          background: "#000",
-          color: "#fff",
-          borderRadius: "8px",
-          border: "none",
-          cursor: "pointer",
-          fontWeight: "700",
-          fontSize: "16px",
-        }}
-      >
-        {loading ? "処理中..." : "予約を確定する"}
-      </button>
+        {/* Customer info */}
+        <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #e5e5e5', marginBottom: 16 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginBottom: 18, marginTop: 0 }}>お客様情報</h2>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+            <div>
+              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>姓 <span style={{ color: 'red' }}>*</span></label>
+              <input style={inp} value={form.last_name} onChange={e => setForm(f => ({ ...f, last_name: e.target.value }))} placeholder="山田" required />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>名 <span style={{ color: 'red' }}>*</span></label>
+              <input style={inp} value={form.first_name} onChange={e => setForm(f => ({ ...f, first_name: e.target.value }))} placeholder="太郎" required />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+            <div>
+              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>姓（ふりがな） <span style={{ color: 'red' }}>*</span></label>
+              <input style={inp} value={form.last_name_kana} onChange={e => setForm(f => ({ ...f, last_name_kana: e.target.value }))} placeholder="やまだ" required />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>名（ふりがな） <span style={{ color: 'red' }}>*</span></label>
+              <input style={inp} value={form.first_name_kana} onChange={e => setForm(f => ({ ...f, first_name_kana: e.target.value }))} placeholder="たろう" required />
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>メールアドレス <span style={{ color: 'red' }}>*</span></label>
+            <input type="email" style={inp} value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="example@email.com" required />
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>電話番号 <span style={{ color: 'red' }}>*</span></label>
+            <input type="tel" style={inp} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="090-0000-0000" required />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>SNS URL（任意）</label>
+            <input style={inp} value={form.sns_url} onChange={e => setForm(f => ({ ...f, sns_url: e.target.value }))} placeholder="https://twitter.com/..." />
+          </div>
+        </div>
+
+        {/* Coupon */}
+        <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #e5e5e5', marginBottom: 16 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginBottom: 14, marginTop: 0 }}>クーポン（任意）</h2>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input style={{ ...inp, flex: 1 }} value={couponCode} onChange={e => setCouponCode(e.target.value)}
+              placeholder="クーポンコードを入力" disabled={!!coupon} />
+            <button type="button" onClick={validateCoupon} disabled={couponLoading || !!coupon}
+              style={{ padding: '11px 16px', background: coupon ? '#e8f5e9' : '#2f2244', color: coupon ? '#388e3c' : '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>
+              {coupon ? '適用済み' : couponLoading ? '確認中' : '適用'}
+            </button>
+          </div>
+          {couponError && <p style={{ color: '#c62828', fontSize: 13, marginTop: 6, marginBottom: 0 }}>{couponError}</p>}
+          {coupon && (
+            <p style={{ color: '#388e3c', fontSize: 13, marginTop: 6, marginBottom: 0 }}>
+              {coupon.discount_type === 'fixed' ? `¥${coupon.discount_value.toLocaleString()}割引` : `${coupon.discount_value}%割引`}が適用されました
+            </p>
+          )}
+        </div>
+
+        {/* Payment method */}
+        <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #e5e5e5', marginBottom: 16 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginBottom: 14, marginTop: 0 }}>お支払い方法</h2>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+            {[['cash', '当日現金'], ['card', 'クレジットカード']].map(([val, label]) => (
+              <button key={val} type="button" onClick={() => setPaymentMethod(val)}
+                style={{ flex: 1, padding: '12px', borderRadius: 8, border: `2px solid ${paymentMethod === val ? '#2f2244' : '#ddd'}`, background: paymentMethod === val ? '#2f2244' : '#fff', color: paymentMethod === val ? '#fff' : '#555', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {paymentMethod === 'cash' && (
+            <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 8, padding: '12px', fontSize: 13, color: '#795548' }}>
+              💴 当日受付にてお支払いください。予約確定メールが届いた時点で予約完了です。
+            </div>
+          )}
+
+          {paymentMethod === 'card' && (
+            <div>
+              <div id="card-container" style={{ minHeight: 90 }}></div>
+              {!squareReady && <p style={{ color: '#999', fontSize: 13, marginTop: 8 }}>カード入力フォームを読み込み中...</p>}
+            </div>
+          )}
+        </div>
+
+        {/* Marketing consent */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontSize: 13, color: '#555', lineHeight: 1.6 }}>
+            <input type="checkbox" checked={form.marketing_consent} onChange={e => setForm(f => ({ ...f, marketing_consent: e.target.checked }))}
+              style={{ marginTop: 2, flexShrink: 0 }} />
+            メールマガジン・お知らせの受け取りに同意する
+          </label>
+        </div>
+
+        <p style={{ fontSize: 12, color: '#999', marginBottom: 20, lineHeight: 1.7 }}>
+          予約することで<Link href="/terms" style={{ color: '#666' }}>利用規約</Link>に同意したことになります。
+        </p>
+
+        {error && (
+          <div style={{ background: '#ffeef0', border: '1px solid #f5c0c5', borderRadius: 8, padding: '12px', marginBottom: 16, color: '#c0392b', fontSize: 14 }}>
+            {error}
+          </div>
+        )}
+
+        <button type="submit" disabled={saving || (fullIndoor && !isOutdoor)}
+          style={{ width: '100%', background: '#2f2244', color: '#fff', border: 'none', borderRadius: 10, padding: '16px', fontSize: 16, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
+          {saving ? '処理中...' : `予約を確定する（¥${finalPrice.toLocaleString()}）`}
+        </button>
+      </form>
     </div>
-  );
+  )
+}
+
+export default function ConfirmPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: '#999' }}>読み込み中...</div>}>
+      <ConfirmForm />
+    </Suspense>
+  )
 }

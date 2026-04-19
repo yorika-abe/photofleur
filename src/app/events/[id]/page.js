@@ -1,0 +1,238 @@
+import Link from 'next/link'
+import { createClient } from '@supabase/supabase-js'
+import { notFound } from 'next/navigation'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+)
+
+function formatDateFull(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00')
+  const days = ['日', '月', '火', '水', '木', '金', '土']
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`
+}
+
+export async function generateMetadata({ params }) {
+  const { id } = await params
+  const { data: event } = await supabase.from('events').select('event_date, title, location_name').eq('id', id).single()
+  if (!event) return {}
+  return { title: `${formatDateFull(event.event_date)} ${event.title || event.location_name} | PhotoFleur` }
+}
+
+export default async function EventDetailPage({ params }) {
+  const { id } = await params
+
+  const { data: event } = await supabase
+    .from('events')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (!event || event.status !== 'active') notFound()
+
+  const { data: entries } = await supabase
+    .from('event_entries')
+    .select('id, model_id, models(id, name, name_en, image, bio, street_price, studio_price)')
+    .eq('event_id', id)
+
+  const entryIds = entries?.map(e => e.id) || []
+
+  const [{ data: allSlots }, { data: bookingCounts }] = await Promise.all([
+    entryIds.length
+      ? supabase.from('booking_slots').select('id, slot_label, start_time, price, is_reserved, max_reservations, slot_order, event_entry_id').in('event_entry_id', entryIds).order('slot_order', { ascending: true })
+      : Promise.resolve({ data: [] }),
+    entryIds.length
+      ? supabase.from('bookings').select('slot_id, is_outdoor').in('slot_id',
+          (await supabase.from('booking_slots').select('id').in('event_entry_id', entryIds)).data?.map(s => s.id) || []
+        )
+      : Promise.resolve({ data: [] }),
+  ])
+
+  const slotsByEntry = {}
+  for (const slot of allSlots || []) {
+    if (!slotsByEntry[slot.event_entry_id]) slotsByEntry[slot.event_entry_id] = []
+    slotsByEntry[slot.event_entry_id].push(slot)
+  }
+
+  const indoorCountBySlot = {}
+  for (const b of bookingCounts || []) {
+    if (!b.is_outdoor) {
+      indoorCountBySlot[b.slot_id] = (indoorCountBySlot[b.slot_id] || 0) + 1
+    }
+  }
+
+  const typeLabel = event.event_type === 'street' ? 'ストリート撮影' : event.event_type === 'studio' ? 'スタジオ撮影' : '撮影会'
+  const typeColor = event.event_type === 'street' ? { bg: '#e8f5e9', color: '#388e3c' } : event.event_type === 'studio' ? { bg: '#e8eaf6', color: '#3949ab' } : { bg: '#fff3e0', color: '#e65100' }
+
+  return (
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 16px' }}>
+      <Link href="/schedule" style={{ color: '#2f2244', textDecoration: 'none', fontSize: 14 }}>← スケジュール一覧</Link>
+
+      {/* Hero image */}
+      {event.main_image && (
+        <div style={{ marginTop: 20, borderRadius: 16, overflow: 'hidden', maxHeight: 400 }}>
+          <img src={event.main_image} alt={event.title || ''} style={{ width: '100%', height: 400, objectFit: 'cover' }} />
+        </div>
+      )}
+
+      {/* Event header */}
+      <div style={{ background: '#fff', borderRadius: 16, padding: '28px', border: '1px solid #e5e5e5', marginTop: 20, marginBottom: 24 }}>
+        <span style={{ background: typeColor.bg, color: typeColor.color, borderRadius: 6, padding: '4px 12px', fontSize: 13, fontWeight: 600 }}>{typeLabel}</span>
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#2f2244', margin: '14px 0 8px' }}>
+          {event.title && <span>{event.title}<br /></span>}
+          {formatDateFull(event.event_date)}
+        </h1>
+        {event.subtitle && <p style={{ fontSize: 15, color: '#666', margin: '0 0 16px' }}>{event.subtitle}</p>}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginTop: 16 }}>
+          {event.location_name && (
+            <div>
+              <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>場所</div>
+              <div style={{ fontWeight: 600, color: '#333', fontSize: 14 }}>{event.location_name}</div>
+            </div>
+          )}
+          {event.meeting_place && (
+            <div>
+              <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>集合場所</div>
+              <div style={{ fontWeight: 600, color: '#333', fontSize: 14 }}>
+                {event.event_type === 'street' ? '撮影3日前にメールでご案内' : event.meeting_place}
+              </div>
+            </div>
+          )}
+          {event.meeting_address && event.event_type !== 'street' && (
+            <div>
+              <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>住所</div>
+              <div style={{ fontWeight: 600, color: '#333', fontSize: 14 }}>{event.meeting_address}</div>
+            </div>
+          )}
+          {event.meeting_map_url && event.event_type !== 'street' && (
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <a href={event.meeting_map_url} target="_blank" rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#2f2244', fontWeight: 600, fontSize: 14, textDecoration: 'none', background: '#f8f5ff', padding: '8px 14px', borderRadius: 8 }}>
+                📍 Google Mapsで見る
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* Studio info */}
+        {event.event_type === 'studio' && event.studio_url && (
+          <div style={{ marginTop: 12 }}>
+            <a href={event.studio_url} target="_blank" rel="noopener noreferrer" style={{ color: '#3949ab', fontSize: 13, textDecoration: 'none' }}>
+              🏢 スタジオ詳細を見る →
+            </a>
+          </div>
+        )}
+
+        {/* Access / notes */}
+        {event.access_note && (
+          <div style={{ marginTop: 16, background: '#f8f5ff', borderRadius: 8, padding: '14px', fontSize: 13, color: '#555', lineHeight: 1.8 }}>
+            <strong>アクセス：</strong>{event.access_note}
+          </div>
+        )}
+      </div>
+
+      {/* Street notice */}
+      {event.event_type === 'street' && (
+        <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 12, padding: '18px 20px', marginBottom: 24 }}>
+          <div style={{ fontWeight: 700, color: '#f57f17', marginBottom: 6, fontSize: 14 }}>⚠️ ストリート撮影について</div>
+          <p style={{ color: '#795548', fontSize: 13, lineHeight: 1.8, margin: 0 }}>
+            集合場所の詳細は<strong>撮影3日前</strong>にメールでご案内します。ご予約後、確認メールが届いているかご確認ください。
+            {event.street_notes && <><br />{event.street_notes}</>}
+          </p>
+        </div>
+      )}
+
+      {/* Models & slots */}
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#2f2244', marginBottom: 16 }}>出演モデル・予約枠</h2>
+
+      {!entries || entries.length === 0 ? (
+        <p style={{ color: '#999' }}>出演モデルはまだ決まっていません。</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+          {entries.map(entry => {
+            if (!entry.models) return null
+            const model = entry.models
+            const slots = (slotsByEntry[entry.id] || []).filter(s => s.slot_order !== 0)
+
+            return (
+              <div key={entry.id} style={{ background: '#fff', borderRadius: 16, padding: '24px', border: '1px solid #e5e5e5' }}>
+                {/* Model header */}
+                <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap' }}>
+                  <Link href={`/models/${model.id}`}>
+                    <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#e0d8f0', overflow: 'hidden', flexShrink: 0 }}>
+                      {model.image && <img src={model.image} alt={model.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                    </div>
+                  </Link>
+                  <div style={{ flex: 1 }}>
+                    <Link href={`/models/${model.id}`} style={{ textDecoration: 'none' }}>
+                      <div style={{ fontWeight: 700, fontSize: 18, color: '#2f2244', marginBottom: 2 }}>{model.name}</div>
+                      {model.name_en && <div style={{ color: '#999', fontSize: 12, marginBottom: 6 }}>{model.name_en}</div>}
+                    </Link>
+                    {model.bio && <p style={{ color: '#666', fontSize: 13, lineHeight: 1.7, margin: 0 }}>{model.bio.slice(0, 100)}{model.bio.length > 100 ? '...' : ''}</p>}
+                  </div>
+                </div>
+
+                {/* Slots */}
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#888', marginBottom: 10 }}>予約可能な時間枠</div>
+                {slots.length === 0 ? (
+                  <p style={{ color: '#999', fontSize: 14 }}>予約枠がありません。</p>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
+                    {slots.map(slot => {
+                      const indoor = indoorCountBySlot[slot.id] || 0
+                      const maxIndoor = slot.max_reservations || 1
+                      const studioFee = event.studio_fee || 0
+                      const outdoorPrice = Math.max(0, slot.price - studioFee)
+                      const indoorFull = indoor >= maxIndoor
+                      const totalBookings = (bookingCounts || []).filter(b => b.slot_id === slot.id).length
+                      const fullyBooked = slot.is_reserved && indoorFull && totalBookings >= maxIndoor * 2
+
+                      return (
+                        <div key={slot.id} style={{
+                          borderRadius: 10,
+                          padding: '14px',
+                          border: `2px solid ${fullyBooked ? '#eee' : indoorFull ? '#ff9800' : '#2f2244'}`,
+                          background: fullyBooked ? '#fafafa' : indoorFull ? '#fff8e1' : '#f8f5ff',
+                        }}>
+                          <div style={{ fontWeight: 700, fontSize: 15, color: '#2f2244', marginBottom: 4 }}>{slot.slot_label}</div>
+                          {indoorFull && !fullyBooked ? (
+                            <>
+                              <div style={{ fontSize: 12, color: '#e65100', marginBottom: 6 }}>屋外撮影のみ</div>
+                              <div style={{ fontSize: 14, color: '#555', marginBottom: 8 }}>¥{outdoorPrice.toLocaleString()}</div>
+                              <Link href={`/confirm?slot_id=${slot.id}`} style={{ display: 'block', textAlign: 'center', background: '#ff9800', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '7px 0', fontSize: 12, fontWeight: 600 }}>
+                                屋外で予約
+                              </Link>
+                            </>
+                          ) : fullyBooked ? (
+                            <div style={{ fontSize: 13, color: '#999', fontWeight: 600, marginTop: 8 }}>満席</div>
+                          ) : (
+                            <>
+                              <div style={{ fontSize: 14, color: '#555', marginBottom: 8 }}>¥{(slot.price || 0).toLocaleString()}</div>
+                              <Link href={`/confirm?slot_id=${slot.id}`} style={{ display: 'block', textAlign: 'center', background: '#2f2244', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '7px 0', fontSize: 13, fontWeight: 600 }}>
+                                予約する
+                              </Link>
+                            </>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Studio rules */}
+      {event.studio_rules && (
+        <div style={{ marginTop: 32, background: '#fff', borderRadius: 12, padding: '20px', border: '1px solid #e5e5e5' }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2f2244', marginTop: 0, marginBottom: 10 }}>スタジオ利用規約</h3>
+          <p style={{ fontSize: 13, color: '#555', lineHeight: 1.8, margin: 0, whiteSpace: 'pre-line' }}>{event.studio_rules}</p>
+        </div>
+      )}
+    </div>
+  )
+}

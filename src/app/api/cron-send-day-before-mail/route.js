@@ -1,159 +1,87 @@
-import { supabase } from "@/lib/supabase";
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+)
 
 export async function GET(req) {
   try {
-    const { searchParams } = new URL(req.url);
-    const secret = searchParams.get("secret");
-
-    if (secret !== process.env.CRON_SECRET) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const { searchParams } = new URL(req.url)
+    if (searchParams.get('secret') !== process.env.CRON_SECRET) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(now.getDate() + 1);
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const tomorrowDate = tomorrow.toISOString().split('T')[0]
 
-    const yyyy = tomorrow.getFullYear();
-    const mm = String(tomorrow.getMonth() + 1).padStart(2, "0");
-    const dd = String(tomorrow.getDate()).padStart(2, "0");
-    const tomorrowDate = `${yyyy}-${mm}-${dd}`;
-
-    const { data: events, error: eventsError } = await supabase
-      .from("events")
-      .select("id")
-      .eq("event_date", tomorrowDate);
-
-    if (eventsError) {
-      return Response.json(
-        { error: "events取得失敗", detail: eventsError },
-        { status: 500 }
-      );
-    }
+    const { data: events } = await supabase
+      .from('events')
+      .select('id')
+      .eq('event_date', tomorrowDate)
+      .eq('status', 'active')
 
     if (!events || events.length === 0) {
-      return Response.json({
-        success: true,
-        message: "明日のイベントはありません",
-        sentCount: 0,
-      });
+      return Response.json({ success: true, message: '明日のイベントはありません', sentCount: 0 })
     }
 
-    const eventIds = events.map((e) => e.id);
+    const eventIds = events.map(e => e.id)
 
-    const { data: entries, error: entriesError } = await supabase
-      .from("event_entries")
-      .select("id")
-      .in("event_id", eventIds);
-
-    if (entriesError) {
-      return Response.json(
-        { error: "event_entries取得失敗", detail: entriesError },
-        { status: 500 }
-      );
-    }
+    const { data: entries } = await supabase
+      .from('event_entries')
+      .select('id')
+      .in('event_id', eventIds)
 
     if (!entries || entries.length === 0) {
-      return Response.json({
-        success: true,
-        message: "明日のevent_entriesはありません",
-        sentCount: 0,
-      });
+      return Response.json({ success: true, message: '明日のエントリーはありません', sentCount: 0 })
     }
 
-    const entryIds = entries.map((e) => e.id);
+    const entryIds = entries.map(e => e.id)
 
-    const { data: slots, error: slotsError } = await supabase
-      .from("booking_slots")
-      .select("id")
-      .in("event_entry_id", entryIds)
-      .eq("is_reserved", true);
-
-    if (slotsError) {
-      return Response.json(
-        { error: "booking_slots取得失敗", detail: slotsError },
-        { status: 500 }
-      );
-    }
+    const { data: slots } = await supabase
+      .from('booking_slots')
+      .select('id')
+      .in('event_entry_id', entryIds)
 
     if (!slots || slots.length === 0) {
-      return Response.json({
-        success: true,
-        message: "明日の予約済みslotはありません",
-        sentCount: 0,
-      });
+      return Response.json({ success: true, message: '明日の予約枠はありません', sentCount: 0 })
     }
 
-    const slotIds = slots.map((s) => s.id);
+    const slotIds = slots.map(s => s.id)
 
-    const { data: bookings, error: bookingsError } = await supabase
-      .from("bookings")
-      .select("slot_id, email")
-      .in("slot_id", slotIds);
-
-    if (bookingsError) {
-      return Response.json(
-        { error: "bookings取得失敗", detail: bookingsError },
-        { status: 500 }
-      );
-    }
+    const { data: bookings } = await supabase
+      .from('bookings')
+      .select('slot_id, email')
+      .in('slot_id', slotIds)
 
     if (!bookings || bookings.length === 0) {
-      return Response.json({
-        success: true,
-        message: "送信対象bookingがありません",
-        sentCount: 0,
-      });
+      return Response.json({ success: true, message: '送信対象の予約がありません', sentCount: 0 })
     }
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL || "https://photofleur.vercel.app";
-
-    const results = [];
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || ''
+    const results = []
 
     for (const booking of bookings) {
       try {
         const res = await fetch(`${baseUrl}/api/send-day-before-mail`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            slot_id: booking.slot_id,
-            email: booking.email,
-          }),
-        });
-
-        const text = await res.text();
-
-        results.push({
-          slot_id: booking.slot_id,
-          email: booking.email,
-          ok: res.ok,
-          response: text,
-        });
-      } catch (error) {
-        results.push({
-          slot_id: booking.slot_id,
-          email: booking.email,
-          ok: false,
-          response: String(error),
-        });
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slot_id: booking.slot_id, email: booking.email }),
+        })
+        results.push({ slot_id: booking.slot_id, email: booking.email, ok: res.ok })
+      } catch (e) {
+        results.push({ slot_id: booking.slot_id, email: booking.email, ok: false, error: String(e) })
       }
     }
 
-    const sentCount = results.filter((r) => r.ok).length;
-
     return Response.json({
       success: true,
-      message: "cron送信完了",
-      sentCount,
+      sentCount: results.filter(r => r.ok).length,
       totalCount: results.length,
       results,
-    });
-  } catch (error) {
-    return Response.json(
-      { error: "cron送信失敗", detail: String(error) },
-      { status: 500 }
-    );
+    })
+  } catch (e) {
+    return Response.json({ error: String(e) }, { status: 500 })
   }
 }

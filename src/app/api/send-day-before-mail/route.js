@@ -1,217 +1,138 @@
-import { Resend } from "resend";
-import { supabase } from "@/lib/supabase";
+import { Resend } from 'resend'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+)
 
 function formatDate(dateString) {
-  if (!dateString) return "未取得";
-
-  const d = new Date(dateString);
-  if (Number.isNaN(d.getTime())) return dateString;
-
-  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
-  const y = d.getFullYear();
-  const m = d.getMonth() + 1;
-  const day = d.getDate();
-  const w = weekdays[d.getDay()];
-
-  return `${y}年${m}月${day}日（${w}）`;
+  if (!dateString) return ''
+  const d = new Date(dateString + 'T00:00:00')
+  const days = ['日', '月', '火', '水', '木', '金', '土']
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`
 }
 
 export async function POST(req) {
   try {
-    const body = await req.json();
-    const { slot_id, email } = body;
+    const { slot_id, email } = await req.json()
+    if (!slot_id || !email) return Response.json({ error: 'slot_id, email は必須です' }, { status: 400 })
 
-    if (!slot_id || !email) {
-      return new Response(
-        JSON.stringify({ error: "slot_id, email is required" }),
-        { status: 400 }
-      );
-    }
+    const resend = new Resend(process.env.RESEND_API_KEY)
 
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    const [{ data: slot }, { data: booking }] = await Promise.all([
+      supabase.from('booking_slots').select('id, slot_label, price, event_entry_id').eq('id', slot_id).single(),
+      supabase.from('bookings').select('name, qr_token, final_price, is_outdoor').eq('slot_id', slot_id).eq('email', email).order('created_at', { ascending: false }).limit(1).single(),
+    ])
 
-    // ① booking_slots取得
-    const { data: slot, error: slotError } = await supabase
-      .from("booking_slots")
-      .select("*")
-      .eq("id", slot_id)
-      .single();
+    if (!slot) return Response.json({ error: 'booking_slots の取得に失敗しました' }, { status: 500 })
 
-    if (slotError || !slot) {
-      return new Response(
-        JSON.stringify({
-          error: "booking_slots の取得に失敗しました",
-          detail: slotError,
-        }),
-        { status: 500 }
-      );
-    }
+    const { data: entry } = await supabase.from('event_entries').select('model_id, event_id').eq('id', slot.event_entry_id).single()
+    if (!entry) return Response.json({ error: 'event_entries の取得に失敗しました' }, { status: 500 })
 
-    // ② event_entries取得
-    const { data: entry, error: entryError } = await supabase
-      .from("event_entries")
-      .select("*")
-      .eq("id", slot.event_entry_id)
-      .single();
+    const [{ data: model }, { data: event }] = await Promise.all([
+      supabase.from('models').select('name, image').eq('id', entry.model_id).single(),
+      supabase.from('events').select('*').eq('id', entry.event_id).single(),
+    ])
 
-    if (entryError || !entry) {
-      return new Response(
-        JSON.stringify({
-          error: "event_entries の取得に失敗しました",
-          detail: entryError,
-        }),
-        { status: 500 }
-      );
-    }
+    if (!event) return Response.json({ error: 'events の取得に失敗しました' }, { status: 500 })
 
-    // ③ models取得
-    const { data: model, error: modelError } = await supabase
-      .from("models")
-      .select("*")
-      .eq("id", entry.model_id)
-      .single();
+    const customerName = booking?.name || 'お客様'
+    const modelName = model?.name || ''
+    const eventDate = formatDate(event.event_date)
+    const slotLabel = slot.slot_label || ''
+    const displayPrice = booking?.final_price ?? slot.price ?? 0
+    const isOutdoor = booking?.is_outdoor || false
 
-    if (modelError || !model) {
-      return new Response(
-        JSON.stringify({
-          error: "models の取得に失敗しました",
-          detail: modelError,
-        }),
-        { status: 500 }
-      );
-    }
+    const qrToken = booking?.qr_token
+    const qrImageUrl = qrToken
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrToken)}`
+      : null
 
-    // ④ events取得
-    const { data: event, error: eventError } = await supabase
-      .from("events")
-      .select("*")
-      .eq("id", entry.event_id)
-      .single();
+    const isStreet = event.event_type === 'street'
 
-    if (eventError || !event) {
-      return new Response(
-        JSON.stringify({
-          error: "events の取得に失敗しました",
-          detail: eventError,
-        }),
-        { status: 500 }
-      );
-    }
-
-    const modelName = model?.name || "未取得";
-    const eventDate = formatDate(event?.event_date);
-    const slotLabel = slot?.slot_label || "未取得";
-    const locationName = event?.location_name || "未取得";
-    const address = event?.address || "未取得";
-    const mapAddress = event?.map_address || "";
-
-    const locationBlock =
-      event?.event_type === "street"
-        ? `
-          <div style="border:1px solid #e5e5e5; border-radius:16px; padding:20px; margin-bottom:24px; background:#fafafa;">
-            <p style="margin:0 0 12px; font-size:16px; line-height:1.8;">
-              <strong>開催形式：</strong>ストリート撮影
-            </p>
-            <p style="margin:0 0 12px; font-size:16px; line-height:1.8;">
-              <strong>開催エリア：</strong>${locationName}
-            </p>
-            <p style="margin:0; font-size:14px; line-height:1.9; color:#555;">
-              集合場所の詳細は、別途ご案内済みの内容をご確認ください。
-            </p>
-          </div>
-        `
-        : `
-          <div style="border:1px solid #e5e5e5; border-radius:16px; padding:20px; margin-bottom:24px; background:#fafafa;">
-            <p style="margin:0 0 12px; font-size:16px; line-height:1.8;">
-              <strong>開催形式：</strong>スタジオ撮影
-            </p>
-            <p style="margin:0 0 12px; font-size:16px; line-height:1.8;">
-              <strong>開催場所：</strong>${locationName}
-            </p>
-            <p style="margin:0 0 12px; font-size:16px; line-height:1.8;">
-              <strong>住所：</strong>${address}
-            </p>
-            ${
-              mapAddress
-                ? `
-              <p style="margin:0; font-size:16px; line-height:1.8; word-break:break-all;">
-                <strong>MAP：</strong>
-                <a href="${mapAddress}" style="color:#2563eb; text-decoration:underline;">
-                  ${mapAddress}
-                </a>
-              </p>
-            `
-                : ""
-            }
-          </div>
-        `;
+    const locationBlock = isStreet
+      ? `<div style="border:1px solid #ffe082; border-radius:14px; padding:20px; margin-bottom:20px; background:#fff8e1;">
+          <p style="margin:0 0 10px; font-size:15px; font-weight:700; color:#e65100;">📍 集合場所</p>
+          <p style="margin:0 0 8px; font-size:15px; line-height:1.8;">${event.meeting_place || event.location_name}</p>
+          ${event.meeting_address ? `<p style="margin:0 0 8px; font-size:14px; color:#555; line-height:1.8;">${event.meeting_address}</p>` : ''}
+          ${event.meeting_map_url ? `<a href="${event.meeting_map_url}" style="color:#2563eb; font-size:14px;">📍 Google Mapsで確認</a>` : ''}
+        </div>`
+      : `<div style="border:1px solid #e5e5e5; border-radius:14px; padding:20px; margin-bottom:20px; background:#fafafa;">
+          <p style="margin:0 0 10px; font-size:15px; font-weight:700; color:#2f2244;">📍 集合場所・アクセス</p>
+          <p style="margin:0 0 8px; font-size:15px; line-height:1.8;">${event.meeting_place || event.location_name}</p>
+          ${event.meeting_address ? `<p style="margin:0 0 8px; font-size:14px; color:#555;">${event.meeting_address}</p>` : ''}
+          ${event.meeting_map_url ? `<a href="${event.meeting_map_url}" style="color:#2563eb; font-size:14px;">📍 Google Mapsで確認</a>` : ''}
+          ${event.access_note ? `<p style="margin:10px 0 0; font-size:13px; color:#666; line-height:1.8;">${event.access_note}</p>` : ''}
+        </div>`
 
     const html = `
       <div style="margin:0; padding:0; background:#f5f5f7; font-family:Arial, sans-serif; color:#2f2244;">
-        <div style="max-width:640px; margin:0 auto; padding:32px 16px;">
-          <div style="background:#ffffff; border-radius:24px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.08);">
-            <div style="padding:32px;">
-              <h1 style="margin:0 0 24px; font-size:32px; line-height:1.4;">
-                明日のご案内
-              </h1>
+        <div style="max-width:600px; margin:0 auto; padding:32px 16px;">
+          <div style="background:#fff; border-radius:20px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.08);">
+            <div style="background:linear-gradient(135deg,#2f2244,#4a3570); padding:28px 32px; color:#fff;">
+              <p style="margin:0 0 4px; font-size:12px; opacity:0.7; letter-spacing:0.1em;">REMINDER</p>
+              <h1 style="margin:0; font-size:24px; font-weight:700;">明日の撮影会のご案内</h1>
+            </div>
 
-              <p style="margin:0 0 24px; font-size:16px; line-height:1.9;">
+            <div style="padding:28px 32px;">
+              <p style="font-size:15px; line-height:1.9; margin:0 0 24px;">
+                ${customerName} 様<br>
                 明日はご予約いただいている撮影日です。<br>
                 以下の内容をご確認のうえ、当日お気をつけてお越しください。
               </p>
 
-              <div style="border:1px solid #e5e5e5; border-radius:16px; padding:20px; margin-bottom:24px; background:#fafafa;">
-                <p style="margin:0 0 14px; font-size:16px; line-height:1.8;">
-                  <strong>モデル名：</strong>${modelName}
-                </p>
-                <p style="margin:0 0 14px; font-size:16px; line-height:1.8;">
-                  <strong>開催日：</strong>${eventDate}
-                </p>
-                <p style="margin:0; font-size:16px; line-height:1.8;">
-                  <strong>予約時間：</strong>${slotLabel}
+              <div style="background:#f8f5ff; border-radius:12px; padding:18px 20px; margin-bottom:20px;">
+                <p style="margin:0 0 8px; font-size:14px; line-height:2; color:#555;">
+                  <strong style="color:#2f2244;">モデル</strong>　${modelName}<br>
+                  <strong style="color:#2f2244;">開催日</strong>　${eventDate}<br>
+                  <strong style="color:#2f2244;">予約枠</strong>　${slotLabel}<br>
+                  <strong style="color:#2f2244;">料金</strong>　¥${Number(displayPrice).toLocaleString()}${isOutdoor ? '（屋外撮影）' : ''}
                 </p>
               </div>
 
               ${locationBlock}
 
-              <div style="font-size:14px; color:#555; line-height:2;">
-                <p style="margin:0 0 12px;">
-                  ご不明点がございましたら、公式LINEよりご連絡ください。<br>
-                  <a href="https://lin.ee/7XLB4St" style="color:#2563eb; text-decoration:underline;">
-                    https://lin.ee/7XLB4St
-                  </a>
-                </p>
+              ${qrImageUrl ? `
+              <div style="text-align:center; margin-bottom:24px; padding:20px; border:1px solid #e0d5f5; border-radius:12px;">
+                <p style="margin:0 0 12px; font-size:13px; color:#888;">受付時にこちらのQRコードをご提示ください</p>
+                <img src="${qrImageUrl}" alt="受付QRコード" style="width:150px; height:150px; border-radius:8px;" />
+              </div>
+              ` : ''}
 
-                <p style="margin:0 0 12px;">
-                  モデルの体調不良などにより、こちらからキャンセルさせていただく可能性がございます。ご了承ください。
-                </p>
+              ${event.baggage_storage ? `
+              <div style="background:#e8f5e9; border-radius:10px; padding:12px 16px; margin-bottom:16px; font-size:13px; color:#388e3c;">
+                🎒 荷物預かりをご利用いただけます
+              </div>
+              ` : ''}
 
-                <p style="margin:0;">
-                  どうぞよろしくお願いいたします。
+              ${event.reminder_extra_note ? `
+              <div style="background:#fff8e1; border-radius:10px; padding:14px 16px; margin-bottom:20px; font-size:13px; color:#795548; line-height:1.8; white-space:pre-line;">${event.reminder_extra_note}</div>
+              ` : ''}
+
+              <div style="font-size:13px; color:#777; line-height:2; border-top:1px solid #f0f0f0; padding-top:20px;">
+                <p style="margin:0 0 8px;">ご不明点は公式LINEよりご連絡ください：<br>
+                  <a href="https://lin.ee/7XLB4St" style="color:#2563eb;">https://lin.ee/7XLB4St</a>
                 </p>
+                <p style="margin:0;">モデルの体調不良等によりキャンセルとなる場合がございます。ご了承ください。</p>
               </div>
 
-              <p style="margin:32px 0 0; font-size:14px; color:#777;">
-                Photo Fleur運営
-              </p>
+              <p style="margin:24px 0 0; font-size:13px; color:#aaa;">Photo Fleur運営</p>
             </div>
           </div>
         </div>
       </div>
-    `;
+    `
 
     const data = await resend.emails.send({
-      from: "Photo Fleur運営 <onboarding@resend.dev>",
+      from: 'Photo Fleur運営 <onboarding@resend.dev>',
       to: email,
-      subject: "【Photo Fleur】明日のご案内",
+      subject: `【Photo Fleur】明日（${eventDate}）のご案内`,
       html,
-    });
+    })
 
-    return Response.json({ success: true, data });
-  } catch (error) {
-    return new Response(
-      JSON.stringify({ error: String(error) }),
-      { status: 500 }
-    );
+    return Response.json({ success: true, data })
+  } catch (e) {
+    return Response.json({ error: String(e) }, { status: 500 })
   }
 }
