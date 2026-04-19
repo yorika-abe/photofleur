@@ -1,8 +1,8 @@
 {
-  "cron": [
+  "crons": [
     {
       "path": "/api/cron-send-day-before-mail?secret=photofleur_super_secret_2026",
-      "schedule": "0 9 * * *"
+      "schedule": "0 13 * * *"
     }
   ]
 }
