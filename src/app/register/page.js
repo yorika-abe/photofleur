@@ -35,7 +35,11 @@ export default function RegisterPage() {
     })
 
     if (signUpError) {
-      setError(signUpError.message.includes('already') ? 'このメールアドレスは既に登録されています。' : `登録に失敗しました: ${signUpError.message}`)
+      if (signUpError.message.includes('already')) {
+        router.push(`/login?notice=already_registered&email=${encodeURIComponent(email)}`)
+        return
+      }
+      setError(`登録に失敗しました: ${signUpError.message}`)
       setLoading(false)
       return
     }

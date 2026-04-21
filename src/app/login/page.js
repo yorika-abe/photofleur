@@ -7,7 +7,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { Suspense } from 'react'
 
 function LoginForm() {
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(noticeEmail)
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -15,6 +15,8 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const redirect = searchParams.get('redirect') || '/'
+  const isAlreadyRegistered = searchParams.get('notice') === 'already_registered'
+  const noticeEmail = searchParams.get('email') || ''
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -64,6 +66,11 @@ function LoginForm() {
       <p style={{ color: '#666', textAlign: 'center', marginBottom: 32, fontSize: 14 }}>PhotoFleurアカウントでログイン</p>
 
       <form onSubmit={handleLogin} style={{ background: '#fff', borderRadius: 16, padding: '32px', border: '1px solid #e5e5e5' }}>
+        {isAlreadyRegistered && (
+          <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 8, padding: '12px 16px', marginBottom: 20, color: '#388e3c', fontSize: 14 }}>
+            このメールアドレスは既に登録されています。パスワードを入力してログインしてください。
+          </div>
+        )}
         {error && (
           <div style={{ background: '#ffeef0', border: '1px solid #f5c0c5', borderRadius: 8, padding: '12px 16px', marginBottom: 20, color: '#c0392b', fontSize: 14 }}>
             {error}
