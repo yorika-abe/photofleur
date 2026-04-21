@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 
 export default function AdminMediaPage() {
@@ -9,11 +8,6 @@ export default function AdminMediaPage() {
   const [uploading, setUploading] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  )
 
   useEffect(() => {
     fetch('/api/admin/site-settings')
@@ -25,10 +19,13 @@ export default function AdminMediaPage() {
     setUploading(key)
     const ext = file.name.split('.').pop()
     const path = `site/${key}-${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('images').upload(path, file, { upsert: true })
-    if (error) { alert('アップロードエラー: ' + error.message); setUploading(null); return }
-    const { data } = supabase.storage.from('images').getPublicUrl(path)
-    setSettings(s => ({ ...s, [key]: data.publicUrl }))
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('path', path)
+    const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+    const data = await res.json()
+    if (data.error) { alert('アップロードエラー: ' + data.error); setUploading(null); return }
+    setSettings(s => ({ ...s, [key]: data.url }))
     setUploading(null)
   }
 
