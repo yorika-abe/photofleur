@@ -10,11 +10,9 @@ export default function ModelProfilePage() {
   const [uploading, setUploading] = useState(false)
   const [form, setForm] = useState({
     name: '', name_en: '', bio: '', height: '', birthday: '', shoe_size: '',
-    street_price: '', studio_price: '', duration_street: '', duration_studio: '',
     image: '', twitter_url: '', instagram_url: '', favorite_things: '',
   })
   const [portfolioImages, setPortfolioImages] = useState([])
-  const [newPortfolioUrl, setNewPortfolioUrl] = useState('')
   const [message, setMessage] = useState('')
 
   const supabase = createBrowserClient(
@@ -37,10 +35,6 @@ export default function ModelProfilePage() {
           height: model.height || '',
           birthday: model.birthday || '',
           shoe_size: model.shoe_size || '',
-          street_price: model.street_price || '',
-          studio_price: model.studio_price || '',
-          duration_street: model.duration_street || '',
-          duration_studio: model.duration_studio || '',
           image: model.image || '',
           twitter_url: model.twitter_url || '',
           instagram_url: model.instagram_url || '',
@@ -53,18 +47,29 @@ export default function ModelProfilePage() {
     init()
   }, [])
 
-  async function uploadImage(file, field) {
+  async function uploadProfileImage(file) {
     setUploading(true)
     const ext = file.name.split('.').pop()
     const path = `models/profile-${Date.now()}.${ext}`
     const { error } = await supabase.storage.from('images').upload(path, file, { upsert: true })
     if (error) { alert('アップロードエラー: ' + error.message); setUploading(false); return }
     const { data } = supabase.storage.from('images').getPublicUrl(path)
-    if (field === 'portfolio') {
-      setPortfolioImages(prev => [...prev, data.publicUrl])
-    } else {
-      setForm(f => ({ ...f, [field]: data.publicUrl }))
+    setForm(f => ({ ...f, image: data.publicUrl }))
+    setUploading(false)
+  }
+
+  async function uploadPortfolioImages(files) {
+    setUploading(true)
+    const uploaded = []
+    for (const file of Array.from(files)) {
+      const ext = file.name.split('.').pop()
+      const path = `models/portfolio-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const { error } = await supabase.storage.from('images').upload(path, file, { upsert: true })
+      if (error) { alert('アップロードエラー: ' + error.message); continue }
+      const { data } = supabase.storage.from('images').getPublicUrl(path)
+      uploaded.push(data.publicUrl)
     }
+    setPortfolioImages(prev => [...prev, ...uploaded])
     setUploading(false)
   }
 
@@ -81,10 +86,6 @@ export default function ModelProfilePage() {
         height: form.height ? Number(form.height) : null,
         birthday: form.birthday || null,
         shoe_size: form.shoe_size || null,
-        street_price: form.street_price ? Number(form.street_price) : null,
-        studio_price: form.studio_price ? Number(form.studio_price) : null,
-        duration_street: form.duration_street || null,
-        duration_studio: form.duration_studio || null,
         image: form.image || null,
         twitter_url: form.twitter_url || null,
         instagram_url: form.instagram_url || null,
@@ -97,11 +98,7 @@ export default function ModelProfilePage() {
     if (data.error) {
       setMessage('エラー: ' + data.error)
     } else {
-      const isPending = data.status === 'pending'
-      setMessage(isPending
-        ? '保存しました。運営の確認後に公開されます。'
-        : '保存しました。'
-      )
+      setMessage(data.status === 'pending' ? '保存しました。運営の確認後に公開されます。' : '保存しました。')
     }
   }
 
@@ -118,11 +115,8 @@ export default function ModelProfilePage() {
     <div style={{ maxWidth: 600, margin: '60px auto', padding: '0 20px', textAlign: 'center' }}>
       <div style={{ background: '#fff', borderRadius: 16, padding: '48px 32px', border: '1px solid #e5e5e5' }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#2f2244', marginBottom: 12 }}>プロフィールが未設定です</h2>
-        <p style={{ color: '#666', lineHeight: 1.8, fontSize: 14 }}>
-          モデルプロフィールがまだ作成されていません。<br />
-          運営までご連絡ください。
-        </p>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a3560', marginBottom: 12 }}>プロフィールが未設定です</h2>
+        <p style={{ color: '#666', lineHeight: 1.8, fontSize: 14 }}>運営までご連絡ください。</p>
       </div>
     </div>
   )
@@ -134,7 +128,7 @@ export default function ModelProfilePage() {
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '24px 16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#2f2244', margin: 0 }}>マイプロフィール</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: 0 }}>マイプロフィール</h1>
         <span style={{ background: statusLabel.bg, color: statusLabel.color, borderRadius: 6, padding: '4px 14px', fontSize: 13, fontWeight: 600 }}>
           {statusLabel.text}
         </span>
@@ -156,7 +150,7 @@ export default function ModelProfilePage() {
 
         {/* Basic info */}
         <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginTop: 0, marginBottom: 18 }}>基本情報</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 18 }}>基本情報</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
             <div>{lbl('表示名', true)}<input style={inp} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
             <div>{lbl('英字名')}<input style={inp} value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} placeholder="Hanako Yamada" /></div>
@@ -178,45 +172,29 @@ export default function ModelProfilePage() {
 
         {/* Profile image */}
         <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginTop: 0, marginBottom: 18 }}>プロフィール画像</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 18 }}>プロフィール画像</h2>
           <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
             {form.image && (
-              <div style={{ width: 100, height: 133, borderRadius: 10, overflow: 'hidden', background: '#e0d8f0', flexShrink: 0 }}>
+              <div style={{ width: 100, height: 133, borderRadius: 10, overflow: 'hidden', background: '#d6ecf5', flexShrink: 0, position: 'relative' }}>
                 <img src={form.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <button onClick={() => setForm(f => ({ ...f, image: '' }))}
+                  style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: 13 }}>×</button>
               </div>
             )}
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8 }}>画像をアップロード</label>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#2f2244', color: '#fff', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+            <div>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a3560', color: '#fff', borderRadius: 8, padding: '12px 20px', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
                 📷 写真を選ぶ
                 <input type="file" accept="image/*" disabled={uploading} style={{ display: 'none' }}
-                  onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'image')} />
+                  onChange={e => e.target.files?.[0] && uploadProfileImage(e.target.files[0])} />
               </label>
               {uploading && <p style={{ color: '#888', fontSize: 12, marginTop: 8 }}>アップロード中...</p>}
-              <div style={{ marginTop: 12 }}>
-                <label style={{ display: 'block', fontSize: 12, color: '#aaa', marginBottom: 4 }}>またはURLで入力</label>
-                <input style={inp} value={form.image} onChange={e => setForm(f => ({ ...f, image: e.target.value }))} placeholder="https://..." />
-              </div>
             </div>
-          </div>
-        </section>
-
-        {/* Pricing */}
-        <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginTop: 0, marginBottom: 18 }}>料金（運営と要相談）</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-            <div>{lbl('ストリート料金（円）')}<input type="number" style={inp} value={form.street_price} onChange={e => setForm(f => ({ ...f, street_price: e.target.value }))} /></div>
-            <div>{lbl('ストリート撮影時間')}<input style={inp} value={form.duration_street} onChange={e => setForm(f => ({ ...f, duration_street: e.target.value }))} placeholder="30分" /></div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            <div>{lbl('スタジオ料金（円）')}<input type="number" style={inp} value={form.studio_price} onChange={e => setForm(f => ({ ...f, studio_price: e.target.value }))} /></div>
-            <div>{lbl('スタジオ撮影時間')}<input style={inp} value={form.duration_studio} onChange={e => setForm(f => ({ ...f, duration_studio: e.target.value }))} placeholder="30分" /></div>
           </div>
         </section>
 
         {/* SNS */}
         <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginTop: 0, marginBottom: 18 }}>SNS</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 18 }}>SNS</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div>{lbl('X / Twitter URL')}<input style={inp} value={form.twitter_url} onChange={e => setForm(f => ({ ...f, twitter_url: e.target.value }))} placeholder="https://x.com/..." /></div>
             <div>{lbl('Instagram URL')}<input style={inp} value={form.instagram_url} onChange={e => setForm(f => ({ ...f, instagram_url: e.target.value }))} placeholder="https://instagram.com/..." /></div>
@@ -225,11 +203,13 @@ export default function ModelProfilePage() {
 
         {/* Portfolio */}
         <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginTop: 0, marginBottom: 18 }}>ポートフォリオ画像</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 6 }}>ポートフォリオ画像</h2>
+          <p style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>複数枚まとめて選択できます</p>
+
           {portfolioImages.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 10, marginBottom: 20 }}>
               {portfolioImages.map((url, i) => (
-                <div key={i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', aspectRatio: '3/4', background: '#e0d8f0' }}>
+                <div key={i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', aspectRatio: '3/4', background: '#d6ecf5' }}>
                   <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   <button onClick={() => setPortfolioImages(prev => prev.filter((_, idx) => idx !== i))}
                     style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: 13 }}>
@@ -239,22 +219,17 @@ export default function ModelProfilePage() {
               ))}
             </div>
           )}
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#f0eefc', color: '#2f2244', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600, marginBottom: 12 }}>
-            📷 写真を追加
-            <input type="file" accept="image/*" disabled={uploading} style={{ display: 'none' }}
-              onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'portfolio')} />
+
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#f0f7fb', color: '#1a3560', borderRadius: 8, padding: '12px 20px', cursor: 'pointer', fontSize: 14, fontWeight: 600, border: '2px dashed #5bbfd6' }}>
+            📷 写真を追加（複数可）
+            <input type="file" accept="image/*" multiple disabled={uploading} style={{ display: 'none' }}
+              onChange={e => e.target.files?.length && uploadPortfolioImages(e.target.files)} />
           </label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input style={{ ...inp, flex: 1 }} value={newPortfolioUrl} onChange={e => setNewPortfolioUrl(e.target.value)} placeholder="またはURLで追加" />
-            <button onClick={() => { if (newPortfolioUrl.trim()) { setPortfolioImages(p => [...p, newPortfolioUrl.trim()]); setNewPortfolioUrl('') } }}
-              style={{ padding: '10px 16px', background: '#2f2244', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap' }}>
-              追加
-            </button>
-          </div>
+          {uploading && <p style={{ color: '#888', fontSize: 12, marginTop: 8 }}>アップロード中...</p>}
         </section>
 
         <button onClick={save} disabled={saving || uploading}
-          style={{ background: '#2f2244', color: '#fff', border: 'none', borderRadius: 10, padding: '16px 32px', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+          style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '16px 32px', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
           {saving ? '保存中...' : '保存して申請する'}
         </button>
       </div>

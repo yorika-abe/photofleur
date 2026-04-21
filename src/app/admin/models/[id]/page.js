@@ -22,7 +22,6 @@ export default function AdminModelEditPage() {
     is_staff: false,
   })
   const [portfolioImages, setPortfolioImages] = useState([])
-  const [newPortfolioUrl, setNewPortfolioUrl] = useState('')
 
   useEffect(() => {
     if (isNew) return
@@ -202,13 +201,12 @@ export default function AdminModelEditPage() {
               </div>
             )}
             <div style={{ flex: 1, minWidth: 200 }}>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#2f2244', color: '#fff', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a3560', color: '#fff', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
                 📷 写真を選ぶ
                 <input type="file" accept="image/*" disabled={uploading} style={{ display: 'none' }}
                   onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'image')} />
               </label>
-              {uploading && <p style={{ color: '#888', fontSize: 12 }}>アップロード中...</p>}
-              <input style={inp} value={form.image} onChange={e => setForm(f => ({ ...f, image: e.target.value }))} placeholder="またはURL https://..." />
+              {uploading && <p style={{ color: '#888', fontSize: 12, marginTop: 8 }}>アップロード中...</p>}
             </div>
           </div>
         </section>
@@ -252,18 +250,26 @@ export default function AdminModelEditPage() {
               ))}
             </div>
           )}
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#f0eefc', color: '#2f2244', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
-            📷 写真を追加
-            <input type="file" accept="image/*" disabled={uploading} style={{ display: 'none' }}
-              onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'portfolio')} />
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#f0f7fb', color: '#1a3560', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600, border: '2px dashed #5bbfd6' }}>
+            📷 写真を追加（複数可）
+            <input type="file" accept="image/*" multiple disabled={uploading} style={{ display: 'none' }}
+              onChange={async e => {
+                if (!e.target.files?.length) return
+                setUploading(true)
+                const { createBrowserClient: cbc } = await import('@supabase/ssr')
+                const sb = cbc(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+                for (const file of Array.from(e.target.files)) {
+                  const ext = file.name.split('.').pop()
+                  const path = `models/${isNew ? 'new' : id}/portfolio-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+                  const { error } = await sb.storage.from('images').upload(path, file, { upsert: true })
+                  if (error) { alert('アップロードエラー: ' + error.message); continue }
+                  const { data } = sb.storage.from('images').getPublicUrl(path)
+                  setPortfolioImages(prev => [...prev, data.publicUrl])
+                }
+                setUploading(false)
+              }} />
           </label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input style={{ ...inp, flex: 1 }} value={newPortfolioUrl} onChange={e => setNewPortfolioUrl(e.target.value)} placeholder="またはURLで追加" />
-            <button onClick={() => { if (newPortfolioUrl.trim()) { setPortfolioImages(p => [...p, newPortfolioUrl.trim()]); setNewPortfolioUrl('') } }}
-              style={{ padding: '10px 16px', background: '#2f2244', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap' }}>
-              追加
-            </button>
-          </div>
+          {uploading && <p style={{ color: '#888', fontSize: 12, marginTop: 8 }}>アップロード中...</p>}
         </section>
 
         {/* User account link */}

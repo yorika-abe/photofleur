@@ -26,7 +26,7 @@ function InstagramIcon() {
 
 export default function Footer() {
   return (
-    <footer style={{ background: '#1a1228', color: 'rgba(255,255,255,0.7)', padding: '48px 20px 32px', marginTop: 'auto' }}>
+    <footer style={{ background: '#0d1a2e', color: 'rgba(255,255,255,0.7)', padding: '48px 20px 32px', marginTop: 'auto' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 32, marginBottom: 40 }}>
           <div>

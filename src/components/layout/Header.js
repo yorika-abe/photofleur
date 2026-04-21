@@ -54,7 +54,7 @@ export default function Header() {
   }
 
   return (
-    <header style={{ background: '#2f2244', position: 'sticky', top: 0, zIndex: 100 }}>
+    <header style={{ background: '#1a3560', position: 'sticky', top: 0, zIndex: 100 }}>
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
         <Link href="/" style={{ color: '#fff', textDecoration: 'none', fontWeight: 700, fontSize: 22, letterSpacing: '0.05em' }}>
           PhotoFleur
@@ -123,7 +123,7 @@ export default function Header() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div style={{ background: '#3d2d5a', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 4 }} className="mobile-menu">
+        <div style={{ background: '#1e4070', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 4 }} className="mobile-menu">
           {navLinks.map(link => (
             <Link
               key={link.href}
