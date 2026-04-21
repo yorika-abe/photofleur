@@ -57,8 +57,33 @@ export default function AdminMediaPage() {
     setUploadProgress(0)
     const path = `site/video-${Date.now()}.${file.name.split('.').pop()}`
     try {
-      const url = await uploadWithProgress(file, path)
-      setHeroVideo(url)
+      // 署名付きURLを取得してVercelのボディ制限を回避
+      const res = await fetch('/api/admin/upload-signed-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path }),
+      })
+      const { signedUrl, error } = await res.json()
+      if (error) throw error
+
+      // 署名付きURLに直接アップロード（大容量OK・進捗あり）
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.upload.addEventListener('progress', e => {
+          if (e.lengthComputable) setUploadProgress(Math.round(e.loaded / e.total * 100))
+        })
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve()
+          else reject('アップロード失敗: ' + xhr.status)
+        })
+        xhr.addEventListener('error', () => reject('通信エラー'))
+        xhr.open('PUT', signedUrl)
+        xhr.setRequestHeader('Content-Type', file.type)
+        xhr.send(file)
+      })
+
+      const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${path}`
+      setHeroVideo(publicUrl)
     } catch (e) { alert('アップロードエラー: ' + e) }
     setUploading(null)
     setUploadProgress(0)

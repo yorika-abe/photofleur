@@ -10,6 +10,11 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
+const adminSupabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+)
+
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
 function formatDate(dateStr) {
@@ -51,7 +56,7 @@ export default async function Home() {
       .from('models')
       .select('id, name, name_en, image, is_staff')
       .eq('is_staff', false),
-    supabase.from('site_settings').select('key, value'),
+    adminSupabase.from('site_settings').select('key, value'),
   ])
 
   const siteSettings = Object.fromEntries((siteSettingsRows || []).map(r => [r.key, r.value]))
