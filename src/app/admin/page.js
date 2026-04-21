@@ -51,6 +51,7 @@ export default async function AdminPage() {
           { href: '/admin/shifts', label: 'シフト承認', icon: '🗓️' },
           { href: '/admin/coupons', label: 'クーポン管理', icon: '🎟️' },
           { href: '/admin/blog', label: 'ブログ管理', icon: '✍️' },
+          { href: '/admin/media', label: 'メディア管理', icon: '🖼️' },
           { href: '/model-portal', label: 'モデルポータル', icon: '🌸' },
         ].map(link => (
           <Link key={link.href} href={link.href} style={{ textDecoration: 'none' }}>

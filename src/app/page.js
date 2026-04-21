@@ -18,10 +18,24 @@ function formatDate(dateStr) {
   }
 }
 
+function toEmbedUrl(url) {
+  if (!url) return ''
+  if (url.includes('youtube.com/watch')) {
+    const id = new URL(url).searchParams.get('v')
+    return `https://www.youtube.com/embed/${id}?autoplay=0&rel=0`
+  }
+  if (url.includes('youtu.be/')) {
+    const id = url.split('youtu.be/')[1].split('?')[0]
+    return `https://www.youtube.com/embed/${id}?autoplay=0&rel=0`
+  }
+  if (url.includes('youtube.com/embed/')) return url
+  return url
+}
+
 export default async function Home() {
   const today = new Date().toISOString().split('T')[0]
 
-  const [{ data: events }, { data: models }] = await Promise.all([
+  const [{ data: events }, { data: models }, { data: siteSettingsRows }] = await Promise.all([
     supabase
       .from('events')
       .select('id, event_date, event_type, title, location_name, main_image, event_entries(id, models(id, name, image))')
@@ -33,17 +47,24 @@ export default async function Home() {
       .from('models')
       .select('id, name, name_en, image, is_staff')
       .eq('is_staff', false),
+    supabase.from('site_settings').select('key, value'),
   ])
+
+  const siteSettings = Object.fromEntries((siteSettingsRows || []).map(r => [r.key, r.value]))
+  const heroBg = siteSettings.hero_bg || ''
+  const heroVideo = siteSettings.hero_video || ''
+  const isYoutube = heroVideo.includes('youtube') || heroVideo.includes('youtu.be')
 
   return (
     <div style={{ background: '#fff' }}>
 
       {/* ─── HERO ─── */}
       <section style={{ position: 'relative', height: '100svh', minHeight: 600, overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 45%, #0d2030 100%)',
-        }} />
+        {heroBg ? (
+          <img src={heroBg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : (
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 45%, #0d2030 100%)' }} />
+        )}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,20,40,0.9) 0%, rgba(10,20,40,0.2) 50%, transparent 100%)' }} />
 
         <div style={{ position: 'absolute', top: 28, right: 28, textAlign: 'right' }}>
@@ -81,6 +102,21 @@ export default async function Home() {
           <div style={{ width: 1, height: 48, background: 'linear-gradient(to bottom, rgba(255,255,255,0.4), transparent)' }} />
         </div>
       </section>
+
+      {/* ─── HERO VIDEO ─── */}
+      {heroVideo && (
+        <section style={{ background: '#0d1f3a', padding: 'clamp(40px, 6vw, 80px) 20px' }}>
+          <div style={{ maxWidth: 960, margin: '0 auto' }}>
+            {isYoutube ? (
+              <div style={{ position: 'relative', paddingBottom: '56.25%', borderRadius: 12, overflow: 'hidden' }}>
+                <iframe src={toEmbedUrl(heroVideo)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen />
+              </div>
+            ) : (
+              <video src={heroVideo} controls playsInline style={{ width: '100%', borderRadius: 12, display: 'block' }} />
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ─── MISSION ─── */}
       <section style={{ background: '#fff', padding: 'clamp(80px, 12vw, 140px) 20px', textAlign: 'center' }}>
