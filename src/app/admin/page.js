@@ -33,9 +33,9 @@ export default async function AdminPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20, marginBottom: 48 }}>
         {stats.map(s => (
           <Link key={s.label} href={s.href} style={{ textDecoration: 'none' }}>
-            <div style={{ background: s.isLink ? s.color : '#fff', borderRadius: 16, padding: '24px', border: `2px solid ${s.color}${s.isLink ? '' : '20'}`, textAlign: 'center' }}>
-              <div style={{ fontSize: s.isLink ? 18 : 40, fontWeight: 700, color: s.isLink ? '#fff' : s.color, marginBottom: 8 }}>{s.isLink ? '📊 確認する' : s.value}</div>
-              <div style={{ fontSize: 14, color: s.isLink ? 'rgba(255,255,255,0.85)' : '#666', fontWeight: 600 }}>{s.label}</div>
+            <div style={{ background: '#fff', borderRadius: 16, padding: '24px', border: `2px solid ${s.color}20`, textAlign: 'center' }}>
+              <div style={{ fontSize: s.isLink ? 36 : 40, fontWeight: 700, color: s.color, marginBottom: 8 }}>{s.isLink ? '📊' : s.value}</div>
+              <div style={{ fontSize: 14, color: '#666', fontWeight: 600 }}>{s.label}</div>
             </div>
           </Link>
         ))}
