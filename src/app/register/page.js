@@ -71,8 +71,7 @@ export default function RegisterPage() {
 
   return (
     <div style={{ maxWidth: 440, margin: '60px auto', padding: '0 20px' }}>
-      <h1 style={{ fontSize: 28, fontWeight: 700, color: '#2f2244', marginBottom: 8, textAlign: 'center' }}>新規登録</h1>
-      <p style={{ color: '#666', textAlign: 'center', marginBottom: 32, fontSize: 14 }}>カメラマンとして登録</p>
+      <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1a3560', marginBottom: 32, textAlign: 'center' }}>新規登録</h1>
 
       <form onSubmit={handleRegister} style={{ background: '#fff', borderRadius: 16, padding: '32px', border: '1px solid #e5e5e5' }}>
         {error && (
