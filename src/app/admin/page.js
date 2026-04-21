@@ -10,28 +10,22 @@ export default async function AdminPage() {
 
   const [
     { count: totalBookings },
-    { count: pendingApplications },
     { count: upcomingEvents },
-    { count: pendingRequests },
     { data: recentBookings },
   ] = await Promise.all([
     supabase.from('bookings').select('*', { count: 'exact', head: true }),
-    supabase.from('model_applications').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-    supabase.from('events').select('*', { count: 'exact', head: true }).gte('event_date', today),
-    supabase.from('shoot_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('events').select('*', { count: 'exact', head: true }).gte('event_date', today).eq('status', 'active'),
     supabase.from('bookings').select('id, name, email, created_at, booking_slots(slot_label, price, event_entries(events(event_date, location_name), models(name)))').order('created_at', { ascending: false }).limit(5),
   ])
 
   const stats = [
-    { label: '総予約数', value: totalBookings ?? 0, href: '/admin/bookings', color: '#2f2244' },
-    { label: '未審査応募', value: pendingApplications ?? 0, href: '/admin/models', color: '#e57c00' },
+    { label: '総予約数', value: totalBookings ?? 0, href: '/admin/bookings', color: '#1a3560' },
     { label: '開催予定イベント', value: upcomingEvents ?? 0, href: '/admin/schedule', color: '#388e3c' },
-    { label: 'リクエスト未対応', value: pendingRequests ?? 0, href: '/admin/bookings?tab=requests', color: '#c62828' },
   ]
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 20px' }}>
-      <h1 style={{ fontSize: 28, fontWeight: 700, color: '#2f2244', marginBottom: 8 }}>管理ダッシュボード</h1>
+      <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1a3560', marginBottom: 8 }}>管理ダッシュボード</h1>
       <p style={{ color: '#666', marginBottom: 40, fontSize: 14 }}>PhotoFleur 運営管理パネル</p>
 
       {/* Stats */}
@@ -56,9 +50,10 @@ export default async function AdminPage() {
           { href: '/admin/shifts', label: 'シフト承認', icon: '🗓️' },
           { href: '/admin/coupons', label: 'クーポン管理', icon: '🎟️' },
           { href: '/admin/blog', label: 'ブログ管理', icon: '✍️' },
+          { href: '/model-portal', label: 'モデルポータル', icon: '🌸' },
         ].map(link => (
           <Link key={link.href} href={link.href} style={{ textDecoration: 'none' }}>
-            <div style={{ background: '#2f2244', color: '#fff', borderRadius: 12, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ background: '#1a3560', color: '#fff', borderRadius: 12, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 24 }}>{link.icon}</span>
               <span style={{ fontWeight: 600, fontSize: 16 }}>{link.label}</span>
             </div>
@@ -68,7 +63,7 @@ export default async function AdminPage() {
 
       {/* Recent bookings */}
       <div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#2f2244', marginBottom: 20 }}>最近の予約</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a3560', marginBottom: 20 }}>最近の予約</h2>
         {recentBookings && recentBookings.length > 0 ? (
           <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e5e5', overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>

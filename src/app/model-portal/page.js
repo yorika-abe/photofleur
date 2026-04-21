@@ -8,6 +8,7 @@ const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
 export default function ModelPortalHome() {
   const [model, setModel] = useState(null)
+  const [allModels, setAllModels] = useState(null) // null = not admin, [] = admin with no selection
   const [upcomingEvents, setUpcomingEvents] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -21,8 +22,20 @@ export default function ModelPortalHome() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.href = '/login?redirect=/model-portal'; return }
 
-      const res = await fetch('/api/model-portal/profile')
-      const { model } = await res.json()
+      const params = new URLSearchParams(window.location.search)
+      const modelId = params.get('model_id')
+      const url = modelId ? `/api/model-portal/profile?model_id=${modelId}` : '/api/model-portal/profile'
+      const res = await fetch(url)
+      if (!res.ok) { setLoading(false); return }
+      const data = await res.json()
+
+      if (data.allModels !== undefined) {
+        setAllModels(data.allModels)
+        setLoading(false)
+        return
+      }
+
+      const { model } = data
       if (!model) { setLoading(false); return }
       setModel(model)
 
@@ -53,6 +66,30 @@ export default function ModelPortalHome() {
 
   if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#aaa' }}>読み込み中...</div>
 
+  // Admin: show model list
+  if (allModels !== null) return (
+    <div style={{ maxWidth: 700, margin: '0 auto', padding: '40px 20px' }}>
+      <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: '16px 0 24px' }}>モデルポータル確認</h1>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {allModels.map(m => (
+          <a key={m.id} href={`/model-portal?model_id=${m.id}`} style={{ textDecoration: 'none' }}>
+            <div style={{ background: '#fff', border: '1px solid #d6ecf5', borderRadius: 12, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#e8f4fb', overflow: 'hidden', flexShrink: 0 }}>
+                {m.image ? <img src={m.image} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>👤</div>}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, color: '#0d1f3a' }}>{m.name}</div>
+                <div style={{ fontSize: 12, color: m.status === 'active' ? '#388e3c' : '#999', marginTop: 2 }}>{m.status === 'active' ? '公開中' : m.status === 'pending' ? '承認待ち' : '非公開'}</div>
+              </div>
+              <span style={{ fontSize: 13, color: '#5bbfd6', fontWeight: 600 }}>ポータルを見る →</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+
   if (!model) return (
     <div style={{ maxWidth: 500, margin: '80px auto', padding: '0 20px', textAlign: 'center' }}>
       <p style={{ color: '#666', marginBottom: 24 }}>モデルアカウントが見つかりません。</p>
@@ -66,8 +103,16 @@ export default function ModelPortalHome() {
   const statusColor = model.status === 'active' ? '#388e3c' : model.status === 'pending' ? '#e65100' : '#999'
   const statusLabel = model.status === 'active' ? '公開中' : model.status === 'pending' ? '承認待ち' : '非公開'
 
+  const isAdminView = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('model_id')
+
   return (
     <div style={{ background: '#fafcff', minHeight: '100vh' }}>
+
+      {isAdminView && (
+        <div style={{ background: '#1a3560', padding: '10px 20px' }}>
+          <a href="/model-portal" style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, textDecoration: 'none' }}>← モデル一覧に戻る</a>
+        </div>
+      )}
 
       {/* ヘッダー */}
       <div style={{ background: 'linear-gradient(135deg, #0d1f3a, #1a3a60)', color: '#fff', padding: 'clamp(32px, 5vw, 56px) 20px' }}>
