@@ -32,8 +32,7 @@ export default async function Home() {
     supabase
       .from('models')
       .select('id, name, name_en, image, is_staff')
-      .eq('is_staff', false)
-      .eq('status', 'active'),
+      .eq('is_staff', false),
   ])
 
   return (
