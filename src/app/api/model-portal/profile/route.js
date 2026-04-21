@@ -33,7 +33,7 @@ export async function GET(req) {
 }
 
 export async function PUT(req) {
-  const result = await getModelUser()
+  const result = await getAuthUser()
   if (result.error) return Response.json({ error: result.error }, { status: result.status })
   const { user, admin } = result
   const body = await req.json()
