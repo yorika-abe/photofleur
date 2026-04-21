@@ -2,12 +2,14 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [user, setUser] = useState(null)
   const [role, setRole] = useState(null)
+  const pathname = usePathname()
 
   useEffect(() => {
     const supabase = createBrowserClient(
@@ -37,6 +39,7 @@ export default function Header() {
   }
 
   const navLinks = [
+    { href: '/', label: 'Home' },
     { href: '/schedule', label: 'スケジュール' },
     { href: '/models', label: 'モデル一覧' },
     { href: '/blog', label: 'ブログ' },
@@ -44,6 +47,11 @@ export default function Header() {
     { href: '/model-recruit', label: 'モデル募集' },
     { href: '/faq', label: 'FAQ' },
   ]
+
+  function isActive(href) {
+    if (href === '/') return pathname === '/'
+    return pathname.startsWith(href)
+  }
 
   return (
     <header style={{ background: '#2f2244', position: 'sticky', top: 0, zIndex: 100 }}>
@@ -53,21 +61,39 @@ export default function Header() {
         </Link>
 
         {/* Desktop nav */}
-        <nav style={{ display: 'flex', gap: 24, alignItems: 'center' }} className="desktop-nav">
+        <nav style={{ display: 'flex', gap: 4, alignItems: 'center' }} className="desktop-nav">
           {navLinks.map(link => (
-            <Link key={link.href} href={link.href} style={{ color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: 14, fontWeight: 500 }}>
+            <Link
+              key={link.href}
+              href={link.href}
+              style={{
+                color: isActive(link.href) ? '#fff' : 'rgba(255,255,255,0.75)',
+                textDecoration: 'none',
+                fontSize: 13,
+                fontWeight: isActive(link.href) ? 700 : 500,
+                padding: '6px 10px',
+                borderRadius: 6,
+                background: isActive(link.href) ? 'rgba(255,255,255,0.15)' : 'transparent',
+                borderBottom: isActive(link.href) ? '2px solid rgba(255,255,255,0.8)' : '2px solid transparent',
+              }}
+            >
               {link.label}
             </Link>
           ))}
           {user ? (
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 8 }}>
               {role === 'admin' && (
-                <Link href="/admin" style={{ color: '#f0c040', textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>管理画面</Link>
+                <Link href="/admin" style={{
+                  color: isActive('/admin') ? '#f0c040' : '#f0c040',
+                  textDecoration: 'none', fontSize: 13, fontWeight: 600,
+                  padding: '6px 10px', borderRadius: 6,
+                  background: isActive('/admin') ? 'rgba(240,192,64,0.15)' : 'transparent',
+                }}>管理画面</Link>
               )}
               {role === 'model' && (
                 <>
-                  <Link href="/model-portal/shifts" style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>シフト提出</Link>
-                  <Link href="/model-portal/blog" style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>ブログ</Link>
+                  <Link href="/model-portal/shifts" style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 8px' }}>シフト提出</Link>
+                  <Link href="/model-portal/blog" style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 8px' }}>ブログ</Link>
                 </>
               )}
               <button onClick={handleLogout} style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontSize: 13 }}>
@@ -75,7 +101,7 @@ export default function Header() {
               </button>
             </div>
           ) : (
-            <Link href="/login" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 500 }}>
+            <Link href="/login" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 500, marginLeft: 8 }}>
               ログイン
             </Link>
           )}
@@ -96,21 +122,34 @@ export default function Header() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div style={{ background: '#3d2d5a', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }} className="mobile-menu">
+        <div style={{ background: '#3d2d5a', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 4 }} className="mobile-menu">
           {navLinks.map(link => (
-            <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none', fontSize: 16 }}>
-              {link.label}
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setMenuOpen(false)}
+              style={{
+                color: '#fff',
+                textDecoration: 'none',
+                fontSize: 16,
+                padding: '10px 12px',
+                borderRadius: 8,
+                background: isActive(link.href) ? 'rgba(255,255,255,0.15)' : 'transparent',
+                fontWeight: isActive(link.href) ? 700 : 400,
+              }}
+            >
+              {isActive(link.href) ? '▶ ' : ''}{link.label}
             </Link>
           ))}
           {user ? (
             <>
-              {role === 'admin' && <Link href="/admin" onClick={() => setMenuOpen(false)} style={{ color: '#f0c040', textDecoration: 'none', fontSize: 16 }}>管理画面</Link>}
-              {role === 'model' && <Link href="/model-portal/shifts" onClick={() => setMenuOpen(false)} style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 16 }}>シフト提出</Link>}
-              {role === 'model' && <Link href="/model-portal/blog" onClick={() => setMenuOpen(false)} style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 16 }}>ブログ</Link>}
-              <button onClick={handleLogout} style={{ background: 'none', color: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 16, padding: 0 }}>ログアウト</button>
+              {role === 'admin' && <Link href="/admin" onClick={() => setMenuOpen(false)} style={{ color: '#f0c040', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>管理画面</Link>}
+              {role === 'model' && <Link href="/model-portal/shifts" onClick={() => setMenuOpen(false)} style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>シフト提出</Link>}
+              {role === 'model' && <Link href="/model-portal/blog" onClick={() => setMenuOpen(false)} style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>ブログ</Link>}
+              <button onClick={handleLogout} style={{ background: 'none', color: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 16, padding: '10px 12px' }}>ログアウト</button>
             </>
           ) : (
-            <Link href="/login" onClick={() => setMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none', fontSize: 16 }}>ログイン</Link>
+            <Link href="/login" onClick={() => setMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>ログイン</Link>
           )}
         </div>
       )}

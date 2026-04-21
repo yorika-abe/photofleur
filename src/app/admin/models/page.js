@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { createBrowserClient } from '@supabase/ssr'
-
 
 export default function AdminModelsPage() {
   const [tab, setTab] = useState('applications')
@@ -11,26 +9,22 @@ export default function AdminModelsPage() {
   const [models, setModels] = useState([])
   const [loading, setLoading] = useState(true)
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  )
-
   useEffect(() => {
-    async function load() {
-      const [{ data: apps }, { data: mods }] = await Promise.all([
-        supabase.from('model_applications').select('*').order('created_at', { ascending: false }),
-        supabase.from('models').select('*').order('name'),
-      ])
-      setApplications(apps || [])
-      setModels(mods || [])
-      setLoading(false)
-    }
-    load()
+    fetch('/api/admin/models')
+      .then(r => r.json())
+      .then(({ applications, models }) => {
+        setApplications(applications || [])
+        setModels(models || [])
+        setLoading(false)
+      })
   }, [])
 
   async function updateApplicationStatus(id, status) {
-    await supabase.from('model_applications').update({ status }).eq('id', id)
+    await fetch('/api/admin/models', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table: 'model_applications', id, status }),
+    })
     setApplications(prev => prev.map(a => a.id === id ? { ...a, status } : a))
   }
 
@@ -41,7 +35,6 @@ export default function AdminModelsPage() {
       <Link href="/admin" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
       <h1 style={{ fontSize: 28, fontWeight: 700, color: '#2f2244', margin: '8px 0 32px' }}>モデル管理</h1>
 
-      {/* Tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 32 }}>
         {[{ key: 'applications', label: `応募審査 (${applications.filter(a => a.status === 'pending').length})` }, { key: 'models', label: `登録モデル (${models.length})` }].map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}

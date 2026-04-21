@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { createBrowserClient } from '@supabase/ssr'
 
 function formatDate(d) {
   if (!d) return ''
@@ -18,53 +17,52 @@ export default function AdminSchedulePage() {
   const [form, setForm] = useState({ event_date: '', event_type: 'street', title: '', location_name: '' })
   const [saving, setSaving] = useState(false)
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  )
-
   useEffect(() => { load() }, [])
 
   async function load() {
-    const { data } = await supabase
-      .from('events')
-      .select(`*, event_entries(id, models(name, image))`)
-      .order('event_date', { ascending: false })
-    setEvents(data || [])
+    const res = await fetch('/api/admin/events')
+    const data = await res.json()
+    setEvents(Array.isArray(data) ? data : [])
     setLoading(false)
   }
 
   async function createEvent(e) {
     e.preventDefault()
     setSaving(true)
-    const { data, error } = await supabase.from('events').insert({
-      event_date: form.event_date,
-      event_type: form.event_type,
-      title: form.title || null,
-      location_name: form.location_name,
-      status: 'draft',
-    }).select().single()
-
-    if (error) {
-      alert('エラー: ' + error.message)
-      setSaving(false)
-      return
-    }
-    if (data) {
-      window.location.href = `/admin/schedule/${data.id}`
-    }
+    const res = await fetch('/api/admin/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event_date: form.event_date,
+        event_type: form.event_type,
+        title: form.title || null,
+        location_name: form.location_name,
+        status: 'draft',
+      }),
+    })
+    const data = await res.json()
+    if (data.error) { alert('エラー: ' + data.error); setSaving(false); return }
+    window.location.href = `/admin/schedule/${data.id}`
     setSaving(false)
   }
 
   async function toggleStatus(ev) {
     const newStatus = ev.status === 'active' ? 'draft' : 'active'
-    await supabase.from('events').update({ status: newStatus }).eq('id', ev.id)
+    await fetch('/api/admin/events', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: ev.id, status: newStatus }),
+    })
     setEvents(prev => prev.map(e => e.id === ev.id ? { ...e, status: newStatus } : e))
   }
 
   async function deleteEvent(id) {
     if (!confirm('このイベントを削除しますか？関連する予約枠・予約も削除されます。')) return
-    await supabase.from('events').delete().eq('id', id)
+    await fetch('/api/admin/events', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
     setEvents(prev => prev.filter(e => e.id !== id))
   }
 
