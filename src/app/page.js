@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
+import HeroSlideshow from '@/components/HeroSlideshow'
+import ScrollReveal from '@/components/ScrollReveal'
 
 export const dynamic = 'force-dynamic'
 
@@ -53,20 +55,17 @@ export default async function Home() {
   ])
 
   const siteSettings = Object.fromEntries((siteSettingsRows || []).map(r => [r.key, r.value]))
-  const heroBg = siteSettings.hero_bg || ''
+  const heroImages = JSON.parse(siteSettings.hero_bg_images || '[]')
   const heroVideo = siteSettings.hero_video || ''
   const isYoutube = heroVideo.includes('youtube') || heroVideo.includes('youtu.be')
 
   return (
     <div style={{ background: '#fff' }}>
+      <ScrollReveal />
 
       {/* ─── HERO ─── */}
       <section style={{ position: 'relative', height: '100svh', minHeight: 600, overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
-        {heroBg ? (
-          <img src={heroBg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-        ) : (
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 45%, #0d2030 100%)' }} />
-        )}
+        <HeroSlideshow images={heroImages} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,20,40,0.9) 0%, rgba(10,20,40,0.2) 50%, transparent 100%)' }} />
 
         <div style={{ position: 'absolute', top: 28, right: 28, textAlign: 'right' }}>
@@ -123,12 +122,12 @@ export default async function Home() {
       {/* ─── MISSION ─── */}
       <section style={{ background: '#fff', padding: 'clamp(80px, 12vw, 140px) 20px', textAlign: 'center' }}>
         <div style={{ maxWidth: 760, margin: '0 auto' }}>
-          <p style={{ fontSize: 11, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 24, fontWeight: 600 }}>Mission Statement.</p>
-          <h2 style={{ ...serif, fontSize: 'clamp(22px, 4vw, 38px)', fontWeight: 400, fontStyle: 'italic', color: '#0d1f3a', margin: '0 0 48px', lineHeight: 1.4 }}>
+          <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 24, fontWeight: 600 }}>Mission Statement.</p>
+          <h2 className="reveal reveal-delay-1" style={{ ...serif, fontSize: 'clamp(22px, 4vw, 38px)', fontWeight: 400, fontStyle: 'italic', color: '#0d1f3a', margin: '0 0 48px', lineHeight: 1.4 }}>
             &ldquo;Every flower deserves to bloom.&rdquo;
           </h2>
-          <div style={{ width: 40, height: 1, background: '#c8e8f5', margin: '0 auto 48px' }} />
-          <p style={{ fontSize: 'clamp(15px, 2.2vw, 18px)', lineHeight: 2.4, color: '#3a3050', margin: 0 }}>
+          <div className="reveal reveal-delay-2" style={{ width: 40, height: 1, background: '#c8e8f5', margin: '0 auto 48px' }} />
+          <p className="reveal reveal-delay-3" style={{ fontSize: 'clamp(15px, 2.2vw, 18px)', lineHeight: 2.4, color: '#3a3050', margin: 0 }}>
             ここに集まる全ての人が一人の人間として、<br />
             モデル、カメラマン、クリエーターとして、<br />
             <br />
@@ -142,7 +141,7 @@ export default async function Home() {
       {events && events.length > 0 && (
         <section style={{ background: '#f0f7fb', padding: '80px 0' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48, borderBottom: '1px solid #c8e8f5', paddingBottom: 24 }}>
+            <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48, borderBottom: '1px solid #c8e8f5', paddingBottom: 24 }}>
               <div>
                 <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>Schedule</p>
                 <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>
@@ -202,7 +201,7 @@ export default async function Home() {
       {models && models.length > 0 && (
         <section style={{ background: '#0d1f3a', padding: '80px 0' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
-            <div style={{ textAlign: 'center', marginBottom: 56, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 32 }}>
+            <div className="reveal" style={{ textAlign: 'center', marginBottom: 56, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 32 }}>
               <h2 style={{ ...serif, fontSize: 'clamp(56px, 10vw, 100px)', fontWeight: 300, margin: 0, color: '#fff', letterSpacing: '0.15em' }}>
                 MODELS
               </h2>

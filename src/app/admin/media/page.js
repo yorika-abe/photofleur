@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 export default function AdminMediaPage() {
-  const [settings, setSettings] = useState({ hero_bg: '', hero_video: '' })
+  const [heroImages, setHeroImages] = useState([])
+  const [heroVideo, setHeroVideo] = useState('')
   const [uploading, setUploading] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -12,20 +13,37 @@ export default function AdminMediaPage() {
   useEffect(() => {
     fetch('/api/admin/site-settings')
       .then(r => r.json())
-      .then(data => setSettings(s => ({ ...s, ...data })))
+      .then(data => {
+        setHeroImages(JSON.parse(data.hero_bg_images || '[]'))
+        setHeroVideo(data.hero_video || '')
+      })
   }, [])
 
-  async function uploadFile(file, key) {
-    setUploading(key)
+  async function uploadHeroImage(file) {
+    setUploading('hero_bg')
     const ext = file.name.split('.').pop()
-    const path = `site/${key}-${Date.now()}.${ext}`
+    const path = `site/hero-${Date.now()}.${ext}`
     const formData = new FormData()
     formData.append('file', file)
     formData.append('path', path)
     const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
     const data = await res.json()
     if (data.error) { alert('アップロードエラー: ' + data.error); setUploading(null); return }
-    setSettings(s => ({ ...s, [key]: data.url }))
+    setHeroImages(imgs => [...imgs, data.url])
+    setUploading(null)
+  }
+
+  async function uploadVideo(file) {
+    setUploading('hero_video')
+    const ext = file.name.split('.').pop()
+    const path = `site/video-${Date.now()}.${ext}`
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('path', path)
+    const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+    const data = await res.json()
+    if (data.error) { alert('アップロードエラー: ' + data.error); setUploading(null); return }
+    setHeroVideo(data.url)
     setUploading(null)
   }
 
@@ -34,7 +52,10 @@ export default function AdminMediaPage() {
     await fetch('/api/admin/site-settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(settings),
+      body: JSON.stringify({
+        hero_bg_images: JSON.stringify(heroImages),
+        hero_video: heroVideo,
+      }),
     })
     setSaving(false)
     setSaved(true)
@@ -58,49 +79,53 @@ export default function AdminMediaPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-        {/* Hero background */}
+        {/* Hero background images */}
         <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #d6ecf5' }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 6 }}>ヒーロー背景画像</h2>
-          <p style={{ fontSize: 12, color: '#aaa', marginBottom: 16, marginTop: 0 }}>トップページの一番上の背景に使用されます</p>
+          <p style={{ fontSize: 12, color: '#aaa', marginBottom: 16, marginTop: 0 }}>複数枚登録するとフェードで自動切り替えされます（5秒間隔）</p>
 
-          {settings.hero_bg && (
-            <div style={{ marginBottom: 16, borderRadius: 10, overflow: 'hidden', maxHeight: 200, position: 'relative' }}>
-              <img src={settings.hero_bg} alt="" style={{ width: '100%', height: 200, objectFit: 'cover' }} />
-              <button onClick={() => setSettings(s => ({ ...s, hero_bg: '' }))}
-                style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 12 }}>
-                削除
-              </button>
+          {heroImages.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: 16 }}>
+              {heroImages.map((url, i) => (
+                <div key={i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', aspectRatio: '3/4' }}>
+                  <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div style={{ position: 'absolute', top: 4, left: 6, background: 'rgba(0,0,0,0.5)', color: '#fff', borderRadius: 4, padding: '2px 6px', fontSize: 11 }}>
+                    {i + 1}枚目
+                  </div>
+                  <button onClick={() => setHeroImages(imgs => imgs.filter((_, idx) => idx !== i))}
+                    style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    ×
+                  </button>
+                </div>
+              ))}
             </div>
           )}
 
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a3560', color: '#fff', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-              📷 画像をアップロード
-              <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploading === 'hero_bg'}
-                onChange={e => e.target.files?.[0] && uploadFile(e.target.files[0], 'hero_bg')} />
+              📷 画像を追加
+              <input type="file" accept="image/*" multiple style={{ display: 'none' }} disabled={!!uploading}
+                onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(f => uploadHeroImage(f)) }} />
             </label>
             {uploading === 'hero_bg' && <span style={{ fontSize: 13, color: '#888' }}>アップロード中...</span>}
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <input style={inp} value={settings.hero_bg} onChange={e => setSettings(s => ({ ...s, hero_bg: e.target.value }))} placeholder="またはURLを直接入力" />
           </div>
         </section>
 
         {/* Hero video */}
         <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #d6ecf5' }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 6 }}>ヒーロー下の動画</h2>
-          <p style={{ fontSize: 12, color: '#aaa', marginBottom: 16, marginTop: 0 }}>トップページのヒーローセクションの下に表示されます。動画ファイルまたはYouTube URLを使用できます。</p>
+          <p style={{ fontSize: 12, color: '#aaa', marginBottom: 16, marginTop: 0 }}>動画ファイルまたはYouTube URLを使用できます</p>
 
-          {settings.hero_video && (
+          {heroVideo && (
             <div style={{ marginBottom: 16 }}>
-              {settings.hero_video.includes('youtube') || settings.hero_video.includes('youtu.be') ? (
+              {heroVideo.includes('youtube') || heroVideo.includes('youtu.be') ? (
                 <div style={{ position: 'relative', paddingBottom: '56.25%', borderRadius: 10, overflow: 'hidden' }}>
-                  <iframe src={toEmbedUrl(settings.hero_video)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen />
+                  <iframe src={toEmbedUrl(heroVideo)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen />
                 </div>
               ) : (
-                <video src={settings.hero_video} controls style={{ width: '100%', borderRadius: 10, maxHeight: 200, objectFit: 'cover' }} />
+                <video src={heroVideo} controls style={{ width: '100%', borderRadius: 10, maxHeight: 200 }} />
               )}
-              <button onClick={() => setSettings(s => ({ ...s, hero_video: '' }))}
+              <button onClick={() => setHeroVideo('')}
                 style={{ marginTop: 8, background: 'none', border: '1px solid #ddd', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, color: '#888' }}>
                 削除
               </button>
@@ -110,13 +135,13 @@ export default function AdminMediaPage() {
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a3560', color: '#fff', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
               🎬 動画をアップロード
-              <input type="file" accept="video/*" style={{ display: 'none' }} disabled={uploading === 'hero_video'}
-                onChange={e => e.target.files?.[0] && uploadFile(e.target.files[0], 'hero_video')} />
+              <input type="file" accept="video/*" style={{ display: 'none' }} disabled={!!uploading}
+                onChange={e => e.target.files?.[0] && uploadVideo(e.target.files[0])} />
             </label>
             {uploading === 'hero_video' && <span style={{ fontSize: 13, color: '#888' }}>アップロード中...</span>}
           </div>
           <div style={{ marginTop: 12 }}>
-            <input style={inp} value={settings.hero_video} onChange={e => setSettings(s => ({ ...s, hero_video: e.target.value }))} placeholder="またはYouTube URLを入力（例：https://youtu.be/xxxxx）" />
+            <input style={inp} value={heroVideo} onChange={e => setHeroVideo(e.target.value)} placeholder="またはYouTube URLを入力（例：https://youtu.be/xxxxx）" />
           </div>
         </section>
 
@@ -139,6 +164,5 @@ function toEmbedUrl(url) {
     const id = url.split('youtu.be/')[1].split('?')[0]
     return `https://www.youtube.com/embed/${id}`
   }
-  if (url.includes('youtube.com/embed/')) return url
   return url
 }
