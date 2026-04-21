@@ -111,16 +111,14 @@ export default async function Home() {
 
       {/* ─── HERO VIDEO ─── */}
       {heroVideo && (
-        <section style={{ background: '#0d1f3a', padding: 'clamp(40px, 6vw, 80px) 20px' }}>
-          <div style={{ maxWidth: 960, margin: '0 auto' }}>
-            {isYoutube ? (
-              <div style={{ position: 'relative', paddingBottom: '56.25%', borderRadius: 12, overflow: 'hidden' }}>
-                <iframe src={toEmbedUrl(heroVideo)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen />
-              </div>
-            ) : (
-              <video src={heroVideo} controls playsInline style={{ width: '100%', borderRadius: 12, display: 'block' }} />
-            )}
-          </div>
+        <section style={{ background: '#0d1f3a', padding: 0, overflow: 'hidden' }}>
+          {isYoutube ? (
+            <div style={{ position: 'relative', paddingBottom: '56.25%' }}>
+              <iframe src={toEmbedUrl(heroVideo)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen />
+            </div>
+          ) : (
+            <video src={heroVideo} autoPlay loop muted playsInline style={{ width: '100%', display: 'block', verticalAlign: 'bottom' }} />
+          )}
         </section>
       )}
 
