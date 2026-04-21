@@ -38,3 +38,10 @@ body {
 .reveal-delay-2 { transition-delay: 0.2s; }
 .reveal-delay-3 { transition-delay: 0.3s; }
 .reveal-delay-4 { transition-delay: 0.4s; }
+
+.hero-desktop { display: contents; }
+.hero-mobile { display: none; }
+@media (max-width: 768px) {
+  .hero-desktop { display: none; }
+  .hero-mobile { display: contents; }
+}

@@ -61,8 +61,12 @@ export default async function Home() {
 
   const siteSettings = Object.fromEntries((siteSettingsRows || []).map(r => [r.key, r.value]))
   const heroImages = JSON.parse(siteSettings.hero_bg_images || '[]')
+  const heroImagesMobile = JSON.parse(siteSettings.hero_bg_images_mobile || '[]')
   const heroVideo = siteSettings.hero_video || ''
+  const heroVideo2 = siteSettings.hero_video_2 || ''
+  const missionBg = siteSettings.mission_bg || ''
   const isYoutube = heroVideo.includes('youtube') || heroVideo.includes('youtu.be')
+  const isYoutube2 = heroVideo2.includes('youtube') || heroVideo2.includes('youtu.be')
 
   return (
     <div style={{ background: '#fff' }}>
@@ -70,7 +74,8 @@ export default async function Home() {
 
       {/* ─── HERO ─── */}
       <section style={{ position: 'relative', height: '100svh', minHeight: 600, overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
-        <HeroSlideshow images={heroImages} />
+        <span className="hero-desktop"><HeroSlideshow images={heroImages} /></span>
+        <span className="hero-mobile"><HeroSlideshow images={heroImagesMobile.length > 0 ? heroImagesMobile : heroImages} /></span>
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,20,40,0.9) 0%, rgba(10,20,40,0.2) 50%, transparent 100%)' }} />
 
         <div style={{ position: 'absolute', top: 28, right: 28, textAlign: 'right' }}>
@@ -109,7 +114,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ─── HERO VIDEO ─── */}
+      {/* ─── HERO VIDEO 1 ─── */}
       {heroVideo && (
         <section style={{ background: '#0d1f3a', padding: 0, overflow: 'hidden' }}>
           {isYoutube ? (
@@ -122,9 +127,23 @@ export default async function Home() {
         </section>
       )}
 
+      {/* ─── HERO VIDEO 2 ─── */}
+      {heroVideo2 && (
+        <section style={{ background: '#0d1f3a', padding: 0, overflow: 'hidden' }}>
+          {isYoutube2 ? (
+            <div style={{ position: 'relative', paddingBottom: '56.25%' }}>
+              <iframe src={toEmbedUrl(heroVideo2)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen />
+            </div>
+          ) : (
+            <video src={heroVideo2} autoPlay loop muted playsInline style={{ width: '100%', display: 'block', verticalAlign: 'bottom' }} />
+          )}
+        </section>
+      )}
+
       {/* ─── MISSION ─── */}
-      <section style={{ background: '#fff', padding: 'clamp(80px, 12vw, 140px) 20px', textAlign: 'center' }}>
-        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+      <section style={{ position: 'relative', padding: 'clamp(80px, 12vw, 140px) 20px', textAlign: 'center', overflow: 'hidden', background: '#fff' }}>
+        {missionBg && <img src={missionBg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.15 }} />}
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 760, margin: '0 auto' }}>
           <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 24, fontWeight: 600 }}>Mission Statement.</p>
           <h2 className="reveal reveal-delay-1" style={{ ...serif, fontSize: 'clamp(22px, 4vw, 38px)', fontWeight: 400, fontStyle: 'italic', color: '#0d1f3a', margin: '0 0 48px', lineHeight: 1.4 }}>
             &ldquo;Every flower deserves to bloom.&rdquo;
