@@ -103,7 +103,8 @@ export default function ModelPortalHome() {
   const statusColor = model.status === 'active' ? '#388e3c' : model.status === 'pending' ? '#e65100' : '#999'
   const statusLabel = model.status === 'active' ? '公開中' : model.status === 'pending' ? '承認待ち' : '非公開'
 
-  const isAdminView = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('model_id')
+  const adminModelId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('model_id') : null
+  const isAdminView = !!adminModelId
 
   return (
     <div style={{ background: '#fafcff', minHeight: '100vh' }}>
@@ -146,11 +147,15 @@ export default function ModelPortalHome() {
 
         {/* メニュー */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 32 }}>
-          {[
+          {(isAdminView ? [
+            { href: `/admin/models/${adminModelId}`, icon: '✏️', label: 'プロフィール編集', desc: '管理者用モデル編集' },
+            { href: '/admin/shifts', icon: '📅', label: 'シフト管理', desc: 'シフト一覧・承認' },
+            { href: '/admin/blog', icon: '📝', label: 'ブログ管理', desc: '記事管理' },
+          ] : [
             { href: '/model-portal/profile', icon: '✏️', label: 'プロフィール編集', desc: '写真・プロフィールを更新' },
             { href: '/model-portal/shifts', icon: '📅', label: 'シフト提出', desc: '参加可能日程を登録' },
             { href: '/model-portal/blog', icon: '📝', label: 'ブログ', desc: '記事を書く' },
-          ].map(item => (
+          ]).map(item => (
             <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
               <div style={{ background: '#fff', borderRadius: 12, padding: '20px', border: '1px solid #d6ecf5', transition: 'box-shadow 0.2s' }}>
                 <div style={{ fontSize: 24, marginBottom: 8 }}>{item.icon}</div>
