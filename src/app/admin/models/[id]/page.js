@@ -4,6 +4,13 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
+const PRICE_TIERS = [
+  { key: 'staff',  label: '運営スタッフ', street: 12000, studio: 10000, is_staff: true,  color: '#1a3560', bg: '#e8f0fb' },
+  { key: '12000',  label: '12000モデル',  street: 12000, studio: 10000, is_staff: false, color: '#6a1b9a', bg: '#f3e5f5' },
+  { key: '9900',   label: '9900モデル',   street: 9900,  studio: 7900,  is_staff: false, color: '#00695c', bg: '#e0f2f1' },
+  { key: '8900',   label: '8900モデル',   street: 8900,  studio: 6900,  is_staff: false, color: '#e65100', bg: '#fff3e0' },
+]
+
 export default function AdminModelEditPage() {
   const { id } = useParams()
   const router = useRouter()
@@ -19,7 +26,7 @@ export default function AdminModelEditPage() {
     name: '', name_en: '', bio: '', height: '', birthday: '', shoe_size: '',
     street_price: '', studio_price: '', duration_street: '', duration_studio: '',
     image: '', twitter_url: '', instagram_url: '', line_id: '', favorite_things: '',
-    is_staff: false,
+    is_staff: false, price_tier: '',
   })
   const [portfolioImages, setPortfolioImages] = useState([])
 
@@ -48,6 +55,7 @@ export default function AdminModelEditPage() {
           line_id: model.line_id || '',
           favorite_things: model.favorite_things || '',
           is_staff: model.is_staff || false,
+          price_tier: model.price_tier || '',
         })
         setPortfolioImages(model.portfolio_images || [])
         setLoading(false)
@@ -86,7 +94,8 @@ export default function AdminModelEditPage() {
       instagram_url: form.instagram_url || null,
       line_id: form.line_id || null,
       favorite_things: form.favorite_things || null,
-      is_staff: form.is_staff,
+      price_tier: form.price_tier || null,
+      is_staff: form.price_tier === 'staff',
       portfolio_images: portfolioImages,
       status,
     }
@@ -139,8 +148,8 @@ export default function AdminModelEditPage() {
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '24px 16px' }}>
-      <Link href="/admin/models" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← モデル管理</Link>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#2f2244', margin: '8px 0 28px' }}>
+      <Link href="/admin/models" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← モデル管理</Link>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: '8px 0 28px' }}>
         {isNew ? '新規モデル登録' : 'モデル編集'}
       </h1>
 
@@ -149,7 +158,7 @@ export default function AdminModelEditPage() {
         {/* Status */}
         {!isNew && (
           <section style={{ background: '#fff', borderRadius: 14, padding: '20px 24px', border: '1px solid #e5e5e5' }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginTop: 0, marginBottom: 16 }}>公開ステータス</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 16 }}>公開ステータス</h2>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               {[
                 { val: 'active', label: '公開中', color: '#388e3c', bg: '#e8f5e9' },
@@ -167,7 +176,7 @@ export default function AdminModelEditPage() {
 
         {/* Basic info */}
         <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginTop: 0, marginBottom: 18 }}>基本情報</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 18 }}>基本情報</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
             <div>{lbl('表示名', true)}<input style={inp} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
             <div>{lbl('英字名')}<input style={inp} value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} placeholder="Hanako Yamada" /></div>
@@ -185,15 +194,11 @@ export default function AdminModelEditPage() {
             {lbl('好きなもの')}
             <input style={inp} value={form.favorite_things} onChange={e => setForm(f => ({ ...f, favorite_things: e.target.value }))} placeholder="カフェ巡り、読書、旅行..." />
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
-            <input type="checkbox" checked={form.is_staff} onChange={e => setForm(f => ({ ...f, is_staff: e.target.checked }))} />
-            スタッフとして登録
-          </label>
         </section>
 
         {/* Profile image */}
         <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginTop: 0, marginBottom: 18 }}>プロフィール画像</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 18 }}>プロフィール画像</h2>
           <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
             {form.image && (
               <div style={{ width: 100, height: 133, borderRadius: 10, overflow: 'hidden', background: '#e0d8f0', flexShrink: 0 }}>
@@ -211,9 +216,24 @@ export default function AdminModelEditPage() {
           </div>
         </section>
 
-        {/* Pricing */}
+        {/* Pricing tier */}
         <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginTop: 0, marginBottom: 18 }}>料金設定</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 6 }}>料金区分</h2>
+          <p style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>区分を選ぶと料金が自動入力されます。割引時は手動で変更できます。</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginBottom: 20 }}>
+            {PRICE_TIERS.map(tier => {
+              const selected = form.price_tier === tier.key
+              return (
+                <button key={tier.key} type="button"
+                  onClick={() => setForm(f => ({ ...f, price_tier: tier.key, street_price: tier.street, studio_price: tier.studio }))}
+                  style={{ padding: '14px 10px', borderRadius: 10, border: selected ? `2px solid ${tier.color}` : '2px solid #e5e5e5', cursor: 'pointer', background: selected ? tier.bg : '#fafafa', textAlign: 'center' }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: tier.color, marginBottom: 4 }}>{tier.label}</div>
+                  <div style={{ fontSize: 11, color: '#666' }}>ストリート ¥{tier.street.toLocaleString()}</div>
+                  <div style={{ fontSize: 11, color: '#666' }}>スタジオ ¥{tier.studio.toLocaleString()}</div>
+                </button>
+              )
+            })}
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
             <div>{lbl('ストリート料金（円）')}<input type="number" style={inp} value={form.street_price} onChange={e => setForm(f => ({ ...f, street_price: e.target.value }))} /></div>
             <div>{lbl('ストリート撮影時間')}<input style={inp} value={form.duration_street} onChange={e => setForm(f => ({ ...f, duration_street: e.target.value }))} placeholder="30分" /></div>
@@ -226,7 +246,7 @@ export default function AdminModelEditPage() {
 
         {/* SNS */}
         <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginTop: 0, marginBottom: 18 }}>SNS・連絡先</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 18 }}>SNS・連絡先</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div>{lbl('X / Twitter URL')}<input style={inp} value={form.twitter_url} onChange={e => setForm(f => ({ ...f, twitter_url: e.target.value }))} placeholder="https://x.com/..." /></div>
             <div>{lbl('Instagram URL')}<input style={inp} value={form.instagram_url} onChange={e => setForm(f => ({ ...f, instagram_url: e.target.value }))} placeholder="https://instagram.com/..." /></div>
@@ -236,7 +256,7 @@ export default function AdminModelEditPage() {
 
         {/* Portfolio */}
         <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginTop: 0, marginBottom: 18 }}>ポートフォリオ画像</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 18 }}>ポートフォリオ画像</h2>
           {portfolioImages.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 10, marginBottom: 16 }}>
               {portfolioImages.map((url, i) => (
@@ -275,7 +295,7 @@ export default function AdminModelEditPage() {
         {/* User account link */}
         {!isNew && (
           <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginTop: 0, marginBottom: 8 }}>モデルアカウント紐付け</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 8 }}>モデルアカウント紐付け</h2>
             <p style={{ fontSize: 13, color: '#666', marginBottom: 14 }}>
               モデルが自分でプロフィールを編集できるよう、ログインアカウントと紐付けます。
             </p>
@@ -287,7 +307,7 @@ export default function AdminModelEditPage() {
               <input style={{ ...inp, flex: 1 }} value={linkEmail} onChange={e => setLinkEmail(e.target.value)}
                 placeholder="モデルのログインメールアドレス" type="email" />
               <button onClick={linkUser} disabled={linkLoading || !linkEmail.trim()}
-                style={{ padding: '10px 16px', background: '#2f2244', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap', opacity: linkLoading ? 0.7 : 1 }}>
+                style={{ padding: '10px 16px', background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap', opacity: linkLoading ? 0.7 : 1 }}>
                 {linkLoading ? '検索中...' : '紐付ける'}
               </button>
             </div>
@@ -297,12 +317,12 @@ export default function AdminModelEditPage() {
         {/* Save */}
         <div style={{ display: 'flex', gap: 12 }}>
           <button onClick={save} disabled={saving || uploading}
-            style={{ background: '#2f2244', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 32px', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+            style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 32px', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
             {saving ? '保存中...' : '変更を保存'}
           </button>
           {!isNew && (
             <Link href={`/models/${id}`} target="_blank"
-              style={{ display: 'inline-flex', alignItems: 'center', padding: '14px 20px', border: '2px solid #2f2244', color: '#2f2244', textDecoration: 'none', borderRadius: 10, fontWeight: 600, fontSize: 14 }}>
+              style={{ display: 'inline-flex', alignItems: 'center', padding: '14px 20px', border: '2px solid #1a3560', color: '#1a3560', textDecoration: 'none', borderRadius: 10, fontWeight: 600, fontSize: 14 }}>
               公開ページを確認 →
             </Link>
           )}
