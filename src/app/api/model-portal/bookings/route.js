@@ -1,6 +1,6 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
 
-export async function GET() {
+export async function GET(req) {
   const server = await createSupabaseServerClient()
   const { data: { user } } = await server.auth.getUser()
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
@@ -11,7 +11,18 @@ export async function GET() {
     return Response.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { data: model } = await admin.from('models').select('id').eq('user_id', user.id).single()
+  let model
+  if (profile?.role === 'admin') {
+    const { searchParams } = new URL(req.url)
+    const modelId = searchParams.get('model_id')
+    if (!modelId) return Response.json({ events: [] })
+    const { data } = await admin.from('models').select('id').eq('id', modelId).single()
+    model = data
+  } else {
+    const { data } = await admin.from('models').select('id').eq('user_id', user.id).single()
+    model = data
+  }
+
   if (!model) return Response.json({ events: [] })
 
   const today = new Date().toISOString().split('T')[0]

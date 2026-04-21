@@ -18,7 +18,10 @@ export default function ModelBookingsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.href = '/login?redirect=/model-portal/bookings'; return }
 
-      const res = await fetch('/api/model-portal/bookings')
+      const params = new URLSearchParams(window.location.search)
+      const modelId = params.get('model_id')
+      const url = modelId ? `/api/model-portal/bookings?model_id=${modelId}` : '/api/model-portal/bookings'
+      const res = await fetch(url)
       if (!res.ok) { setLoading(false); return }
       const { events } = await res.json()
       setEvents(events || [])
