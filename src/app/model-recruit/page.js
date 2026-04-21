@@ -1,51 +1,226 @@
+const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
+
 export default function ModelRecruitPage() {
   return (
-    <div style={{ maxWidth: 680, margin: '0 auto', padding: '60px 20px' }}>
-      <h1 style={{ fontSize: 32, fontWeight: 700, color: '#2f2244', marginBottom: 8 }}>モデル募集</h1>
-      <p style={{ color: '#666', lineHeight: 1.8, marginBottom: 40, fontSize: 15 }}>
-        PhotoFleurではモデルを随時募集しています。経験不問、まずはお気軽にご連絡ください。
-      </p>
+    <div style={{ background: '#fff', color: '#1a1228' }}>
 
-      <div style={{ background: '#f8f5ff', borderRadius: 12, padding: '24px', marginBottom: 32, border: '1px solid #e0d5f5' }}>
-        <h3 style={{ fontWeight: 700, color: '#2f2244', marginBottom: 12 }}>応募の流れ</h3>
-        <ol style={{ margin: 0, paddingLeft: 20, color: '#555', lineHeight: 2, fontSize: 14 }}>
-          <li>公式LINEからメッセージ</li>
-          <li>運営が審査（3〜5営業日）</li>
-          <li>承認後、モデルポータルのアカウントを発行</li>
-          <li>シフト提出・撮影会への参加</li>
-        </ol>
-      </div>
+      {/* ─── HERO ─── */}
+      <section style={{ position: 'relative', background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 50%, #0d1f3a 100%)', color: '#fff', padding: 'clamp(80px, 12vw, 140px) 20px', textAlign: 'center', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 60%, rgba(91,191,214,0.12) 0%, transparent 60%)' }} />
+        {/* 画像エリア（後から入れる） */}
+        {/* <img src="..." style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.3 }} /> */}
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 700, margin: '0 auto' }}>
+          <p style={{ ...serif, fontSize: 11, letterSpacing: '0.4em', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginBottom: 20, fontStyle: 'italic' }}>Model Recruit</p>
+          <h1 style={{ ...serif, fontSize: 'clamp(36px, 7vw, 72px)', fontWeight: 400, lineHeight: 1.1, margin: '0 0 24px' }}>
+            モデル募集の<br /><em style={{ fontStyle: 'italic', fontWeight: 700, color: '#a8e2f4' }}>ご案内</em>
+          </h1>
+          <div style={{ width: 48, height: 1, background: 'rgba(168,226,244,0.5)', margin: '0 auto 28px' }} />
+          <p style={{ fontSize: 'clamp(14px, 2vw, 17px)', lineHeight: 2, color: 'rgba(255,255,255,0.8)', margin: 0 }}>
+            Photo Fleur（フォトフルール）は、<br />
+            <strong style={{ color: '#a8e2f4' }}>「はじめの一歩を応援し、安心して挑戦できる撮影会」</strong><br />
+            を目指しています。
+          </p>
+        </div>
+      </section>
 
-      <div style={{ background: '#fff8f0', borderRadius: 12, padding: '20px 24px', marginBottom: 32, border: '1px solid #ffe0b2' }}>
-        <h3 style={{ fontWeight: 700, color: '#e65100', marginBottom: 10, fontSize: 15 }}>応募時にお伝えください</h3>
-        <ul style={{ margin: 0, paddingLeft: 20, color: '#555', lineHeight: 2, fontSize: 14 }}>
-          <li>お名前・年齢</li>
-          <li>SNS（Instagram / X など）</li>
-          <li>自己紹介・モデル経験（任意）</li>
-        </ul>
-      </div>
+      {/* ─── INTRO ─── */}
+      <section style={{ background: '#fafcff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+        <div style={{ maxWidth: 760, margin: '0 auto', textAlign: 'center' }}>
+          <p style={{ fontSize: 'clamp(15px, 2.2vw, 18px)', lineHeight: 2.2, color: '#3a3050' }}>
+            未経験でも大丈夫。<br />
+            上手くポーズが取れなくても、モデル経験がなくても、<br />
+            <strong><em style={{ ...serif, fontSize: '1.2em', color: '#1a3560' }}>"やってみたい" という気持ち</em></strong>を大切にしています。
+          </p>
+          <div style={{ margin: '40px 0', padding: '28px 32px', background: '#f0f7fb', borderLeft: '3px solid #5bbfd6', borderRadius: '0 8px 8px 0', textAlign: 'left' }}>
+            <p style={{ fontSize: 15, lineHeight: 2, color: '#3a3050', margin: 0 }}>
+              撮影会の拡大に伴い新規所属モデルを募集しています。<br />
+              私たちと一緒に、<strong>あなただけの魅力を咲かせてみませんか？</strong>
+            </p>
+          </div>
+        </div>
+      </section>
 
-      <div style={{ background: '#fff', borderRadius: 16, padding: '40px 32px', border: '1px solid #e5e5e5', textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🌸</div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#2f2244', marginBottom: 12 }}>公式LINEから応募する</h2>
-        <p style={{ color: '#666', lineHeight: 1.8, fontSize: 14, marginBottom: 28 }}>
-          下のボタンから公式LINEを友だち追加して、<br />
-          「モデル応募」とメッセージを送ってください。
-        </p>
-        <a
-          href="https://lin.ee/VgTzmhe"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 10,
-            background: '#06C755', color: '#fff', textDecoration: 'none',
-            borderRadius: 10, padding: '14px 32px', fontWeight: 700, fontSize: 16,
-          }}
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.630 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
-          LINEで応募する
-        </a>
-      </div>
+      {/* ─── WHAT WE VALUE ─── */}
+      <section style={{ background: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>What We Value</p>
+            <h2 style={{ ...serif, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
+              大切にしていること
+            </h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+            {[
+              {
+                icon: '✿',
+                title: '安心して活動できる環境',
+                body: '所属モデルの多くが未経験からスタートしています。初めてのストリート撮影でも安心して臨めるよう、受付・撮影ルール・安全面のサポートを徹底しています。',
+              },
+              {
+                icon: '✿',
+                title: 'モデルとしての成長をサポート',
+                body: '撮影会は実践の場。ポージング、表情づくり、衣装選びなど、回数を重ねるごとに自然とスキルが身につきます。希望者には簡単なレクチャーも行っています。',
+              },
+              {
+                icon: '✿',
+                title: '女性が安心して働ける現場づくり',
+                body: '運営スタッフは女性が中心。不安なことや相談したいことがあれば、いつでも運営に話せる環境を整えています。',
+              },
+            ].map((item, i) => (
+              <div key={i} style={{ background: '#f8fbff', borderRadius: 12, padding: '32px 28px', border: '1px solid #d6ecf5' }}>
+                <div style={{ fontSize: 24, color: '#5bbfd6', marginBottom: 14 }}>{item.icon}</div>
+                <h3 style={{ ...serif, fontSize: 19, fontWeight: 600, color: '#0d1f3a', margin: '0 0 14px' }}>{item.title}</h3>
+                <p style={{ fontSize: 14, lineHeight: 2, color: '#556070', margin: 0 }}>{item.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 画像エリア（後から入れる） */}
+      {/* <section style={{ background: '#000' }}>
+        <img src="..." style={{ width: '100%', maxHeight: 500, objectFit: 'cover', opacity: 0.85 }} />
+      </section> */}
+
+      {/* ─── OUR ACTIVITIES ─── */}
+      <section style={{ background: '#0d1f3a', color: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Our Activities</p>
+            <h2 style={{ ...serif, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 400, margin: 0 }}>
+              活動内容
+            </h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+            {[
+              '土日祝を中心としたスタジオ撮影・野外撮影',
+              '1枠60〜90分の個撮形式',
+              '私服・ファッション撮影中心',
+              '都内・神奈川を中心に活動中',
+              '撮影会参加経験ゼロでもOK！',
+            ].map((item, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '16px 20px', background: 'rgba(255,255,255,0.05)', borderRadius: 8, border: '1px solid rgba(168,226,244,0.15)' }}>
+                <span style={{ color: '#5bbfd6', fontSize: 16, flexShrink: 0, marginTop: 1 }}>◇</span>
+                <span style={{ fontSize: 14, lineHeight: 1.8, color: 'rgba(255,255,255,0.85)' }}>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── CONDITIONS ─── */}
+      <section style={{ background: '#fafcff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Requirements</p>
+            <h2 style={{ ...serif, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
+              応募条件
+            </h2>
+          </div>
+
+          <div style={{ background: '#fff', borderRadius: 12, padding: '36px', border: '1px solid #d6ecf5', marginBottom: 28 }}>
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {[
+                '16歳以上の女性',
+                '健康状態に問題がなく、時間を守れる方',
+                'SNS（X / Instagram など）で告知協力ができる方',
+                'モデルとして前向きに取り組める方',
+                '未経験歓迎・学生さん歓迎',
+              ].map((item, i) => (
+                <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, fontSize: 14, color: '#3a3050', lineHeight: 1.8 }}>
+                  <span style={{ color: '#5bbfd6', fontWeight: 700, flexShrink: 0 }}>・</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <p style={{ fontSize: 12, color: '#aaa', marginTop: 20, marginBottom: 0, borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
+              ※事務所所属の方は必ず許可をお取りください。
+            </p>
+          </div>
+
+          {/* こんな人に */}
+          <div style={{ background: '#f0f7fb', borderRadius: 12, padding: '32px', border: '1px solid #c8e8f5' }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', marginBottom: 18, marginTop: 0 }}>こんな方にぴったりです</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+              {[
+                '写真を撮られるのが好き',
+                '自分を変えたい・挑戦したい',
+                '将来モデル・女優・アイドルを目指している',
+                'コミュニケーションを楽しめる',
+                'ファッション・美容が好き',
+                '可愛い同年代の友だちがほしい',
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#3a5070' }}>
+                  <span style={{ color: '#5bbfd6', fontSize: 12 }}>✓</span>
+                  {item}
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: 14, color: '#1a3560', fontWeight: 600, margin: '20px 0 0', paddingTop: 16, borderTop: '1px solid #d6ecf5' }}>
+              どれか1つでも当てはまったら、ぜひ一度ご連絡ください。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── HOW TO APPLY ─── */}
+      <section style={{ background: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+        <div style={{ maxWidth: 700, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>How to Apply</p>
+            <h2 style={{ ...serif, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
+              応募方法
+            </h2>
+          </div>
+
+          <div style={{ background: '#f8fbff', borderRadius: 12, padding: '36px', border: '1px solid #d6ecf5', marginBottom: 32 }}>
+            <p style={{ fontSize: 14, color: '#556070', marginTop: 0, marginBottom: 20 }}>公式LINEより以下をお送りください。</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {[
+                'お名前',
+                '生年月日',
+                '身長',
+                'お住まい（市区まで）',
+                'SNSアカウント',
+                '顔・全身写真（アプリ加工なし推奨）',
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#3a3050', padding: '10px 0', borderBottom: '1px solid #eef4f8' }}>
+                  <span style={{ ...serif, fontSize: 18, color: '#5bbfd6', fontStyle: 'italic', lineHeight: 1 }}>{i + 1}.</span>
+                  {item}
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: 13, color: '#aaa', margin: '20px 0 0' }}>確認後、運営よりご連絡いたします。</p>
+          </div>
+
+          <div style={{ textAlign: 'center' }}>
+            <a href="https://lin.ee/VgTzmhe" target="_blank" rel="noopener noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: '#06C755', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '16px 40px', fontWeight: 700, fontSize: 16 }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.630 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+              📩 LINEはこちら →
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── CLOSING ─── */}
+      <section style={{ background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 100%)', color: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px', textAlign: 'center' }}>
+        <div style={{ maxWidth: 640, margin: '0 auto' }}>
+          <div style={{ width: 40, height: 1, background: 'rgba(168,226,244,0.4)', margin: '0 auto 32px' }} />
+          <h2 style={{ ...serif, fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 400, lineHeight: 1.5, margin: '0 0 24px', color: '#fff' }}>
+            最後に
+          </h2>
+          <p style={{ fontSize: 15, lineHeight: 2.2, color: 'rgba(255,255,255,0.8)', margin: '0 0 16px' }}>
+            Photo Fleur は、<strong style={{ color: '#a8e2f4' }}>「モデルの一歩目を応援する撮影会」</strong>です。
+          </p>
+          <p style={{ fontSize: 15, lineHeight: 2.2, color: 'rgba(255,255,255,0.7)', margin: 0 }}>
+            まだ知られていない魅力を見つけて、<br />
+            花のようにふわっと開く瞬間を一緒に作れたら嬉しいです。
+          </p>
+          <div style={{ width: 40, height: 1, background: 'rgba(168,226,244,0.4)', margin: '32px auto 0' }} />
+        </div>
+      </section>
+
     </div>
   )
 }
