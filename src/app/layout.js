@@ -1,12 +1,12 @@
-import { Geist, Cormorant_Garant } from "next/font/google";
+import { Geist, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
-const cormorant = Cormorant_Garant({
+const cormorant = Playfair_Display({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
   variable: "--font-cormorant",
 });
