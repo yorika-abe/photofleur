@@ -32,7 +32,7 @@ export default function Footer() {
           <div>
             <div style={{ color: '#fff', fontWeight: 700, fontSize: 20, marginBottom: 12 }}>PhotoFleur</div>
             <p style={{ fontSize: 13, lineHeight: 1.7, margin: '0 0 20px' }}>
-              それぞれが自分らしい&ldquo;花&rdquo;となり、芽生え咲き、輝ける。<br />そんな場所を目指しています。
+              それぞれが自分らしい&ldquo;花&rdquo;となり、芽生え咲き、輝ける場所を。
             </p>
             <div style={{ display: 'flex', gap: 12 }}>
               <a href="https://lin.ee/VgTzmhe" target="_blank" rel="noopener noreferrer"
