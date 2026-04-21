@@ -248,13 +248,13 @@ export default async function Home() {
           <p style={{ fontSize: 14, color: '#667', lineHeight: 2, marginBottom: 40 }}>
             経験不問。公式LINEからお気軽にご連絡ください。
           </p>
-          <a href="https://lin.ee/VgTzmhe" target="_blank" rel="noopener noreferrer" style={{
+          <Link href="/model-recruit" style={{
             ...serif, display: 'inline-block', fontSize: 14, letterSpacing: '0.2em',
             textTransform: 'uppercase', color: '#fff', textDecoration: 'none',
             background: '#1a3560', padding: '16px 48px', borderRadius: 2,
           }}>
-            LINEで応募する
-          </a>
+            詳しく見る →
+          </Link>
         </div>
       </section>
 
