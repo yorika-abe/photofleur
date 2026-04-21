@@ -110,22 +110,22 @@ export default async function ModelDetailPage({ params }) {
           )}
 
           {/* Pricing */}
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 24 }}>
-            {model.street_price && (
-              <div style={{ background: '#e8f5e9', borderRadius: 10, padding: '12px 16px', flex: 1, minWidth: 120 }}>
-                <div style={{ fontSize: 11, color: '#388e3c', marginBottom: 4, fontWeight: 600 }}>ストリート</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#2e7d32' }}>¥{model.street_price.toLocaleString()}</div>
-                {model.duration_street && <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>{model.duration_street}</div>}
-              </div>
-            )}
-            {model.studio_price && (
-              <div style={{ background: '#e8eaf6', borderRadius: 10, padding: '12px 16px', flex: 1, minWidth: 120 }}>
-                <div style={{ fontSize: 11, color: '#3949ab', marginBottom: 4, fontWeight: 600 }}>スタジオ</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#283593' }}>¥{model.studio_price.toLocaleString()}</div>
-                {model.duration_studio && <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>{model.duration_studio}</div>}
-              </div>
-            )}
-          </div>
+          {(model.street_price || model.studio_price) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 24 }}>
+              {model.street_price && (
+                <div style={{ display: 'flex', gap: 12, fontSize: 13 }}>
+                  <span style={{ color: '#aaa', minWidth: 80 }}>ストリート</span>
+                  <span style={{ color: '#333' }}>¥{model.street_price.toLocaleString()}〜{model.duration_street && <span style={{ color: '#aaa', marginLeft: 4 }}>{model.duration_street}</span>}</span>
+                </div>
+              )}
+              {model.studio_price && (
+                <div style={{ display: 'flex', gap: 12, fontSize: 13 }}>
+                  <span style={{ color: '#aaa', minWidth: 80 }}>スタジオ</span>
+                  <span style={{ color: '#333' }}>¥{model.studio_price.toLocaleString()}〜{model.duration_studio && <span style={{ color: '#aaa', marginLeft: 4 }}>{model.duration_studio}</span>}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* SNS links */}
           <div style={{ display: 'flex', gap: 10, marginBottom: 24, flexWrap: 'wrap' }}>
@@ -145,9 +145,11 @@ export default async function ModelDetailPage({ params }) {
       </div>
 
       {/* Upcoming events */}
-      {upcomingEvents.length > 0 && (
-        <div style={{ marginTop: 48 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#2f2244', marginBottom: 16 }}>出演予定イベント</h2>
+      <div style={{ marginTop: 48 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#2f2244', marginBottom: 16 }}>公開中の参加イベント</h2>
+        {upcomingEvents.length === 0 ? (
+          <p style={{ color: '#aaa', fontSize: 14 }}>現在出演予定のイベントはありません。</p>
+        ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {upcomingEvents.map(ev => (
               <Link key={ev.id} href={`/events/${ev.id}`} style={{ textDecoration: 'none' }}>
@@ -164,8 +166,8 @@ export default async function ModelDetailPage({ params }) {
               </Link>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <PortfolioSlider images={portfolioImages} />
     </div>

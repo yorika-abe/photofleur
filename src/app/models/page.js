@@ -40,18 +40,6 @@ export default async function ModelsPage() {
                 <div style={{ padding: '12px 14px 16px' }}>
                   <div style={{ fontWeight: 700, fontSize: 15, color: '#2f2244', marginBottom: 2 }}>{model.name}</div>
                   {model.name_en && <div style={{ fontSize: 11, color: '#aaa', marginBottom: 8 }}>{model.name_en}</div>}
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {model.street_price && (
-                      <span style={{ fontSize: 11, background: '#e8f5e9', color: '#388e3c', borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>
-                        街 ¥{model.street_price.toLocaleString()}〜
-                      </span>
-                    )}
-                    {model.studio_price && (
-                      <span style={{ fontSize: 11, background: '#e8eaf6', color: '#3949ab', borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>
-                        Studio ¥{model.studio_price.toLocaleString()}〜
-                      </span>
-                    )}
-                  </div>
                 </div>
               </div>
             </Link>
