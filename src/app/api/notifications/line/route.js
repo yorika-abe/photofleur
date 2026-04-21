@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { sendLineMessage, buildBookingNoticeMessage, buildDayBeforeNoticeMessage } from '@/lib/line'
+import { sendLineMessage, sendLineGroupMessage, buildBookingNoticeMessage, buildDayBeforeNoticeMessage } from '@/lib/line'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -8,7 +8,7 @@ const supabase = createClient(
 
 export async function POST(request) {
   const body = await request.json()
-  const { type, booking_id, slot_id } = body
+  const { type, slot_id } = body
 
   if (!type) {
     return Response.json({ error: 'type is required' }, { status: 400 })
@@ -59,9 +59,14 @@ export async function POST(request) {
       customerName: booking?.name || '不明',
     })
 
-    const result = await sendLineMessage(model.line_id, message)
+    // モデル個人に送信（line_idがある場合）
+    const result = model.line_id
+      ? await sendLineMessage(model.line_id, message)
+      : { ok: false, reason: 'no line_id' }
 
-    // Log notification
+    // スタッフグループにも送信
+    await sendLineGroupMessage(message).catch(() => {})
+
     await supabase.from('line_notifications').insert({
       model_id: model.id,
       type: 'booking',
@@ -69,7 +74,7 @@ export async function POST(request) {
       status: result.ok ? 'sent' : 'failed',
     }).catch(() => {})
 
-    return Response.json({ ok: result.ok })
+    return Response.json({ ok: true })
   }
 
   if (type === 'day_before') {
@@ -117,6 +122,7 @@ export async function POST(request) {
         })
 
         const result = await sendLineMessage(model.line_id, message)
+        await sendLineGroupMessage(message).catch(() => {})
 
         await supabase.from('line_notifications').insert({
           model_id: model.id,
