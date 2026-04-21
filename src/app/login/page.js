@@ -7,16 +7,17 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { Suspense } from 'react'
 
 function LoginForm() {
-  const [email, setEmail] = useState(noticeEmail)
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [errorType, setErrorType] = useState(null)
   const searchParams = useSearchParams()
   const router = useRouter()
   const redirect = searchParams.get('redirect') || '/'
   const isAlreadyRegistered = searchParams.get('notice') === 'already_registered'
   const noticeEmail = searchParams.get('email') || ''
+
+  const [email, setEmail] = useState(noticeEmail)
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [errorType, setErrorType] = useState(null)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
