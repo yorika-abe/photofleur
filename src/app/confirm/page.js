@@ -235,16 +235,16 @@ function ConfirmForm() {
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', padding: '32px 16px' }}>
-      <Link href="/schedule" style={{ color: '#2f2244', textDecoration: 'none', fontSize: 14 }}>← スケジュールに戻る</Link>
-      <h1 style={{ fontSize: 26, fontWeight: 700, color: '#2f2244', margin: '16px 0 24px' }}>予約情報入力</h1>
+      <Link href="/schedule" style={{ color: '#1a3560', textDecoration: 'none', fontSize: 14 }}>← スケジュールに戻る</Link>
+      <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a3560', margin: '16px 0 24px' }}>予約情報入力</h1>
 
       {/* Booking summary */}
-      <div style={{ background: '#f8f5ff', borderRadius: 12, padding: '20px', marginBottom: 24, border: '1px solid #e0d5f5' }}>
+      <div style={{ background: '#f8fbff', borderRadius: 12, padding: '20px', marginBottom: 24, border: '1px solid #d6ecf5' }}>
         <div style={{ fontSize: 12, color: '#888', marginBottom: 10 }}>予約内容</div>
         {modelInfo && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
             {modelInfo.image && <img src={modelInfo.image} alt={modelInfo.name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />}
-            <span style={{ fontWeight: 700, fontSize: 16, color: '#2f2244' }}>{modelInfo.name}</span>
+            <span style={{ fontWeight: 700, fontSize: 16, color: '#1a3560' }}>{modelInfo.name}</span>
           </div>
         )}
         {eventInfo && (
@@ -259,7 +259,7 @@ function ConfirmForm() {
             スタジオが満員のため<strong>屋外撮影</strong>となります（スタジオ料金割引適用）
           </div>
         )}
-        <div style={{ fontWeight: 700, fontSize: 18, color: '#2f2244', marginTop: 12 }}>
+        <div style={{ fontWeight: 700, fontSize: 18, color: '#1a3560', marginTop: 12 }}>
           ¥{finalPrice.toLocaleString()}
           {coupon && <span style={{ fontSize: 12, color: '#388e3c', marginLeft: 8 }}>クーポン適用済み</span>}
         </div>
@@ -269,7 +269,7 @@ function ConfirmForm() {
 
         {/* Customer info */}
         <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #e5e5e5', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginBottom: 18, marginTop: 0 }}>お客様情報</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginBottom: 18, marginTop: 0 }}>お客様情報</h2>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <div>
@@ -311,12 +311,12 @@ function ConfirmForm() {
 
         {/* Coupon */}
         <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #e5e5e5', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginBottom: 14, marginTop: 0 }}>クーポン（任意）</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginBottom: 14, marginTop: 0 }}>クーポン（任意）</h2>
           <div style={{ display: 'flex', gap: 8 }}>
             <input style={{ ...inp, flex: 1 }} value={couponCode} onChange={e => setCouponCode(e.target.value)}
               placeholder="クーポンコードを入力" disabled={!!coupon} />
             <button type="button" onClick={validateCoupon} disabled={couponLoading || !!coupon}
-              style={{ padding: '11px 16px', background: coupon ? '#e8f5e9' : '#2f2244', color: coupon ? '#388e3c' : '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>
+              style={{ padding: '11px 16px', background: coupon ? '#e8f5e9' : '#1a3560', color: coupon ? '#388e3c' : '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap' }}>
               {coupon ? '適用済み' : couponLoading ? '確認中' : '適用'}
             </button>
           </div>
@@ -330,11 +330,11 @@ function ConfirmForm() {
 
         {/* Payment method */}
         <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #e5e5e5', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#2f2244', marginBottom: 14, marginTop: 0 }}>お支払い方法</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginBottom: 14, marginTop: 0 }}>お支払い方法</h2>
           <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
             {[['cash', '当日現金'], ['card', 'クレジットカード']].map(([val, label]) => (
               <button key={val} type="button" onClick={() => setPaymentMethod(val)}
-                style={{ flex: 1, padding: '12px', borderRadius: 8, border: `2px solid ${paymentMethod === val ? '#2f2244' : '#ddd'}`, background: paymentMethod === val ? '#2f2244' : '#fff', color: paymentMethod === val ? '#fff' : '#555', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
+                style={{ flex: 1, padding: '12px', borderRadius: 8, border: `2px solid ${paymentMethod === val ? '#1a3560' : '#ddd'}`, background: paymentMethod === val ? '#1a3560' : '#fff', color: paymentMethod === val ? '#fff' : '#555', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
                 {label}
               </button>
             ))}
@@ -374,7 +374,7 @@ function ConfirmForm() {
         )}
 
         <button type="submit" disabled={saving || (fullIndoor && !isOutdoor)}
-          style={{ width: '100%', background: '#2f2244', color: '#fff', border: 'none', borderRadius: 10, padding: '16px', fontSize: 16, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
+          style={{ width: '100%', background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '16px', fontSize: 16, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
           {saving ? '処理中...' : `予約を確定する（¥${finalPrice.toLocaleString()}）`}
         </button>
       </form>

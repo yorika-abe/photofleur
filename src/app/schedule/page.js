@@ -25,7 +25,7 @@ export default async function SchedulePage() {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 20px' }}>
-      <h1 style={{ fontSize: 32, fontWeight: 700, color: '#2f2244', marginBottom: 8 }}>スケジュール一覧</h1>
+      <h1 style={{ fontSize: 32, fontWeight: 700, color: '#1a3560', marginBottom: 8 }}>スケジュール一覧</h1>
       <p style={{ color: '#666', marginBottom: 32, fontSize: 15 }}>開催予定の撮影会イベントをご確認いただけます。</p>
 
       {error && <p style={{ color: 'red', fontSize: 14 }}>データの取得に失敗しました。</p>}
@@ -43,7 +43,7 @@ export default async function SchedulePage() {
                   <div style={{ display: 'inline-block', background: ev.event_type === 'street' ? '#e8f5e9' : '#e8eaf6', color: ev.event_type === 'street' ? '#388e3c' : '#3949ab', borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 600, marginBottom: 10 }}>
                     {ev.event_type === 'street' ? 'ストリート' : ev.event_type === 'studio' ? 'スタジオ' : 'イベント'}
                   </div>
-                  <div style={{ fontWeight: 700, fontSize: 20, color: '#2f2244', marginBottom: 4 }}>{formatDateFull(ev.event_date)}</div>
+                  <div style={{ fontWeight: 700, fontSize: 20, color: '#1a3560', marginBottom: 4 }}>{formatDateFull(ev.event_date)}</div>
                   <div style={{ fontSize: 14, color: '#666' }}>{ev.location_name}</div>
                 </div>
 
@@ -63,7 +63,7 @@ export default async function SchedulePage() {
                   </div>
                 )}
 
-                <div style={{ display: 'flex', alignItems: 'center', color: '#2f2244', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', color: '#1a3560', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>
                   詳細・予約 →
                 </div>
               </div>

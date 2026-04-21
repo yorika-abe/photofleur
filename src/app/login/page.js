@@ -48,7 +48,7 @@ function LoginForm() {
 
   return (
     <div style={{ maxWidth: 440, margin: '60px auto', padding: '0 20px' }}>
-      <h1 style={{ fontSize: 28, fontWeight: 700, color: '#2f2244', marginBottom: 8, textAlign: 'center' }}>ログイン</h1>
+      <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1a3560', marginBottom: 8, textAlign: 'center' }}>ログイン</h1>
       <p style={{ color: '#666', textAlign: 'center', marginBottom: 32, fontSize: 14 }}>PhotoFleurアカウントでログイン</p>
 
       <form onSubmit={handleLogin} style={{ background: '#fff', borderRadius: 16, padding: '32px', border: '1px solid #e5e5e5' }}>
@@ -85,23 +85,23 @@ function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          style={{ width: '100%', background: '#2f2244', color: '#fff', border: 'none', borderRadius: 8, padding: '14px', fontSize: 16, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}
+          style={{ width: '100%', background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '14px', fontSize: 16, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}
         >
           {loading ? 'ログイン中...' : 'ログイン'}
         </button>
 
         <div style={{ textAlign: 'center', marginTop: 20, fontSize: 14 }}>
           <span style={{ color: '#666' }}>アカウントをお持ちでない方は</span>{' '}
-          <Link href="/register" style={{ color: '#2f2244', fontWeight: 600 }}>新規登録</Link>
+          <Link href="/register" style={{ color: '#1a3560', fontWeight: 600 }}>新規登録</Link>
         </div>
       </form>
 
       {errorType === 'invalid' && (
-        <div style={{ background: '#f3f0ff', border: '2px solid #2f2244', borderRadius: 14, padding: '20px 24px', marginTop: 20, textAlign: 'center' }}>
+        <div style={{ background: '#f0f7fb', border: '2px solid #1a3560', borderRadius: 14, padding: '20px 24px', marginTop: 20, textAlign: 'center' }}>
           <div style={{ fontSize: 22, marginBottom: 8 }}>👤</div>
-          <div style={{ fontWeight: 700, color: '#2f2244', marginBottom: 6, fontSize: 15 }}>アカウントをお持ちでないですか？</div>
+          <div style={{ fontWeight: 700, color: '#1a3560', marginBottom: 6, fontSize: 15 }}>アカウントをお持ちでないですか？</div>
           <div style={{ color: '#666', fontSize: 13, marginBottom: 14 }}>初めての方は無料で新規登録できます</div>
-          <Link href="/register" style={{ display: 'inline-block', background: '#2f2244', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '12px 28px', fontWeight: 700, fontSize: 15 }}>
+          <Link href="/register" style={{ display: 'inline-block', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '12px 28px', fontWeight: 700, fontSize: 15 }}>
             新規登録はこちら →
           </Link>
         </div>

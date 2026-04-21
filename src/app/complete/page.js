@@ -85,7 +85,7 @@ function CompleteContent() {
 
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: '#2f2244', margin: 0 }}>ご予約ありがとうございます</h1>
+          <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a3560', margin: 0 }}>ご予約ありがとうございます</h1>
         </div>
 
         <p style={{ color: '#555', lineHeight: 1.8, marginBottom: 24, textAlign: 'center' }}>
@@ -93,11 +93,11 @@ function CompleteContent() {
         </p>
 
         {/* Booking details */}
-        <div style={{ background: '#f8f5ff', borderRadius: 12, padding: '20px', marginBottom: 24, border: '1px solid #e0d5f5' }}>
+        <div style={{ background: '#f8fbff', borderRadius: 12, padding: '20px', marginBottom: 24, border: '1px solid #d6ecf5' }}>
           {model && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
               {model.image && <img src={model.image} alt={model.name} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />}
-              <span style={{ fontWeight: 700, fontSize: 17, color: '#2f2244' }}>{model.name}</span>
+              <span style={{ fontWeight: 700, fontSize: 17, color: '#1a3560' }}>{model.name}</span>
             </div>
           )}
           <div style={{ fontSize: 14, color: '#555', lineHeight: 2.2 }}>
@@ -127,10 +127,10 @@ function CompleteContent() {
         </div>
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <Link href="/schedule" style={{ flex: 1, display: 'block', textAlign: 'center', padding: '12px', background: '#2f2244', color: '#fff', textDecoration: 'none', borderRadius: 10, fontWeight: 700, fontSize: 14 }}>
+          <Link href="/schedule" style={{ flex: 1, display: 'block', textAlign: 'center', padding: '12px', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 10, fontWeight: 700, fontSize: 14 }}>
             スケジュール一覧
           </Link>
-          <Link href="/" style={{ flex: 1, display: 'block', textAlign: 'center', padding: '12px', border: '2px solid #2f2244', color: '#2f2244', textDecoration: 'none', borderRadius: 10, fontWeight: 700, fontSize: 14 }}>
+          <Link href="/" style={{ flex: 1, display: 'block', textAlign: 'center', padding: '12px', border: '2px solid #1a3560', color: '#1a3560', textDecoration: 'none', borderRadius: 10, fontWeight: 700, fontSize: 14 }}>
             トップへ
           </Link>
         </div>

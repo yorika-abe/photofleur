@@ -67,7 +67,7 @@ export default async function EventDetailPage({ params }) {
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 16px' }}>
-      <Link href="/schedule" style={{ color: '#2f2244', textDecoration: 'none', fontSize: 14 }}>← スケジュール一覧</Link>
+      <Link href="/schedule" style={{ color: '#1a3560', textDecoration: 'none', fontSize: 14 }}>← スケジュール一覧</Link>
 
       {/* Hero image */}
       {event.main_image && (
@@ -79,7 +79,7 @@ export default async function EventDetailPage({ params }) {
       {/* Event header */}
       <div style={{ background: '#fff', borderRadius: 16, padding: '28px', border: '1px solid #e5e5e5', marginTop: 20, marginBottom: 24 }}>
         <span style={{ background: typeColor.bg, color: typeColor.color, borderRadius: 6, padding: '4px 12px', fontSize: 13, fontWeight: 600 }}>{typeLabel}</span>
-        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#2f2244', margin: '14px 0 8px' }}>
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a3560', margin: '14px 0 8px' }}>
           {event.title && <span>{event.title}<br /></span>}
           {formatDateFull(event.event_date)}
         </h1>
@@ -109,7 +109,7 @@ export default async function EventDetailPage({ params }) {
           {event.meeting_map_url && event.event_type !== 'street' && (
             <div style={{ display: 'flex', alignItems: 'flex-end' }}>
               <a href={event.meeting_map_url} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#2f2244', fontWeight: 600, fontSize: 14, textDecoration: 'none', background: '#f8f5ff', padding: '8px 14px', borderRadius: 8 }}>
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#1a3560', fontWeight: 600, fontSize: 14, textDecoration: 'none', background: '#f8fbff', padding: '8px 14px', borderRadius: 8 }}>
                 📍 Google Mapsで見る
               </a>
             </div>
@@ -127,7 +127,7 @@ export default async function EventDetailPage({ params }) {
 
         {/* Access / notes */}
         {event.access_note && (
-          <div style={{ marginTop: 16, background: '#f8f5ff', borderRadius: 8, padding: '14px', fontSize: 13, color: '#555', lineHeight: 1.8 }}>
+          <div style={{ marginTop: 16, background: '#f8fbff', borderRadius: 8, padding: '14px', fontSize: 13, color: '#555', lineHeight: 1.8 }}>
             <strong>アクセス：</strong>{event.access_note}
           </div>
         )}
@@ -145,7 +145,7 @@ export default async function EventDetailPage({ params }) {
       )}
 
       {/* Models & slots */}
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#2f2244', marginBottom: 16 }}>出演モデル・予約枠</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a3560', marginBottom: 16 }}>出演モデル・予約枠</h2>
 
       {!entries || entries.length === 0 ? (
         <p style={{ color: '#999' }}>出演モデルはまだ決まっていません。</p>
@@ -167,7 +167,7 @@ export default async function EventDetailPage({ params }) {
                   </Link>
                   <div style={{ flex: 1 }}>
                     <Link href={`/models/${model.id}`} style={{ textDecoration: 'none' }}>
-                      <div style={{ fontWeight: 700, fontSize: 18, color: '#2f2244', marginBottom: 2 }}>{model.name}</div>
+                      <div style={{ fontWeight: 700, fontSize: 18, color: '#1a3560', marginBottom: 2 }}>{model.name}</div>
                       {model.name_en && <div style={{ color: '#999', fontSize: 12, marginBottom: 6 }}>{model.name_en}</div>}
                     </Link>
                     {model.bio && <p style={{ color: '#666', fontSize: 13, lineHeight: 1.7, margin: 0 }}>{model.bio.slice(0, 100)}{model.bio.length > 100 ? '...' : ''}</p>}
@@ -193,10 +193,10 @@ export default async function EventDetailPage({ params }) {
                         <div key={slot.id} style={{
                           borderRadius: 10,
                           padding: '14px',
-                          border: `2px solid ${fullyBooked ? '#eee' : indoorFull ? '#ff9800' : '#2f2244'}`,
-                          background: fullyBooked ? '#fafafa' : indoorFull ? '#fff8e1' : '#f8f5ff',
+                          border: `2px solid ${fullyBooked ? '#eee' : indoorFull ? '#ff9800' : '#1a3560'}`,
+                          background: fullyBooked ? '#fafafa' : indoorFull ? '#fff8e1' : '#f8fbff',
                         }}>
-                          <div style={{ fontWeight: 700, fontSize: 15, color: '#2f2244', marginBottom: 4 }}>{slot.slot_label}</div>
+                          <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560', marginBottom: 4 }}>{slot.slot_label}</div>
                           {indoorFull && !fullyBooked ? (
                             <>
                               <div style={{ fontSize: 12, color: '#e65100', marginBottom: 6 }}>屋外撮影のみ</div>
@@ -210,7 +210,7 @@ export default async function EventDetailPage({ params }) {
                           ) : (
                             <>
                               <div style={{ fontSize: 14, color: '#555', marginBottom: 8 }}>¥{(slot.price || 0).toLocaleString()}</div>
-                              <Link href={`/confirm?slot_id=${slot.id}`} style={{ display: 'block', textAlign: 'center', background: '#2f2244', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '7px 0', fontSize: 13, fontWeight: 600 }}>
+                              <Link href={`/confirm?slot_id=${slot.id}`} style={{ display: 'block', textAlign: 'center', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '7px 0', fontSize: 13, fontWeight: 600 }}>
                                 予約する
                               </Link>
                             </>
@@ -229,7 +229,7 @@ export default async function EventDetailPage({ params }) {
       {/* Studio rules */}
       {event.studio_rules && (
         <div style={{ marginTop: 32, background: '#fff', borderRadius: 12, padding: '20px', border: '1px solid #e5e5e5' }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2f2244', marginTop: 0, marginBottom: 10 }}>スタジオ利用規約</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 10 }}>スタジオ利用規約</h3>
           <p style={{ fontSize: 13, color: '#555', lineHeight: 1.8, margin: 0, whiteSpace: 'pre-line' }}>{event.studio_rules}</p>
         </div>
       )}
