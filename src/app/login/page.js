@@ -109,7 +109,10 @@ function LoginForm() {
           {loading ? 'ログイン中...' : 'ログイン'}
         </button>
 
-        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 14 }}>
+        <div style={{ textAlign: 'center', marginTop: 16, fontSize: 13 }}>
+          <Link href="/forgot-password" style={{ color: '#888' }}>パスワードをお忘れの方はこちら</Link>
+        </div>
+        <div style={{ textAlign: 'center', marginTop: 12, fontSize: 14 }}>
           <span style={{ color: '#666' }}>アカウントをお持ちでない方は</span>{' '}
           <Link href="/register" style={{ color: '#1a3560', fontWeight: 600 }}>新規登録</Link>
         </div>
