@@ -37,7 +37,7 @@ function LoginForm() {
         setError('メールアドレスの確認が完了していません。登録時に届いたメールのリンクをクリックしてください。')
       } else if (msg.includes('Invalid login credentials') || msg.includes('invalid_credentials')) {
         setErrorType('invalid')
-        setError('メールアドレスまたはパスワードが正しくありません。アカウントをお持ちでない場合は新規登録してください。')
+        setError('invalid_credentials')
       } else {
         setErrorType('invalid')
         setError('ログインに失敗しました: ' + msg)
@@ -74,7 +74,9 @@ function LoginForm() {
         )}
         {error && (
           <div style={{ background: '#ffeef0', border: '1px solid #f5c0c5', borderRadius: 8, padding: '12px 16px', marginBottom: 20, color: '#c0392b', fontSize: 14 }}>
-            {error}
+            {error === 'invalid_credentials' ? (
+              <>メールアドレスまたはパスワードが正しくありません。アカウントをお持ちでない場合は<Link href="/register" style={{ color: '#c0392b', fontWeight: 700, textDecoration: 'underline' }}>新規登録</Link>してください。</>
+            ) : error}
           </div>
         )}
 
@@ -119,18 +121,7 @@ function LoginForm() {
         </div>
       </form>
 
-      {errorType === 'invalid' && (
-        <div style={{ background: '#f0f7fb', border: '2px solid #1a3560', borderRadius: 14, padding: '20px 24px', marginTop: 20, textAlign: 'center' }}>
-          <div style={{ fontSize: 22, marginBottom: 8 }}>👤</div>
-          <div style={{ fontWeight: 700, color: '#1a3560', marginBottom: 6, fontSize: 15 }}>アカウントをお持ちでないですか？</div>
-          <div style={{ color: '#666', fontSize: 13, marginBottom: 14 }}>初めての方は無料で新規登録できます</div>
-          <Link href="/register" style={{ display: 'inline-block', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '12px 28px', fontWeight: 700, fontSize: 15 }}>
-            新規登録はこちら →
-          </Link>
-        </div>
-      )}
-
-      {errorType === 'unconfirmed' && (
+{errorType === 'unconfirmed' && (
         <div style={{ background: '#fff8e1', border: '2px solid #f0c040', borderRadius: 14, padding: '20px 24px', marginTop: 20, textAlign: 'center' }}>
           <div style={{ fontSize: 22, marginBottom: 8 }}>📧</div>
           <div style={{ fontWeight: 700, color: '#795548', marginBottom: 6, fontSize: 15 }}>メール確認が必要です</div>
