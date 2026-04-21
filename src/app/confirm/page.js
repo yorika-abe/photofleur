@@ -47,6 +47,21 @@ function ConfirmForm() {
   useEffect(() => {
     if (!slotId) { setLoading(false); return }
     loadSlotInfo()
+    // ログイン済みならプロフィールを自動入力
+    fetch('/api/customer/profile').then(r => r.json()).then(({ profile, email }) => {
+      if (profile) {
+        setForm(f => ({
+          ...f,
+          last_name: profile.last_name || f.last_name,
+          first_name: profile.first_name || f.first_name,
+          last_name_kana: profile.last_name_kana || f.last_name_kana,
+          first_name_kana: profile.first_name_kana || f.first_name_kana,
+          phone: profile.phone || f.phone,
+          sns_url: profile.sns_url || f.sns_url,
+        }))
+      }
+      if (email) setForm(f => ({ ...f, email: f.email || email }))
+    }).catch(() => {})
   }, [slotId])
 
   useEffect(() => {
@@ -202,6 +217,13 @@ function ConfirmForm() {
       setError(bookingData.error || '予約の保存に失敗しました。')
       setSaving(false); return
     }
+
+    // ログイン済みならプロフィールを更新
+    fetch('/api/customer/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ last_name: form.last_name, first_name: form.first_name, last_name_kana: form.last_name_kana, first_name_kana: form.first_name_kana, phone: form.phone, sns_url: form.sns_url }),
+    }).catch(() => {})
 
     await fetch('/api/send-booking-mail', {
       method: 'POST',
