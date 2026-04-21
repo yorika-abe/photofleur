@@ -1,42 +1,194 @@
+const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
+
+const LINE_URL = 'https://lin.ee/VgTzmhe'
+
+function LineIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
+    </svg>
+  )
+}
+
 export default function RequestPage() {
   return (
-    <div style={{ maxWidth: 680, margin: '0 auto', padding: '60px 20px' }}>
-      <h1 style={{ fontSize: 32, fontWeight: 700, color: '#2f2244', marginBottom: 8 }}>リクエスト撮影</h1>
-      <p style={{ color: '#666', lineHeight: 1.8, marginBottom: 40, fontSize: 15 }}>
-        定期イベント以外にも、ご希望のロケーション・スタイル・モデルでカスタム撮影が可能です。
-      </p>
+    <div style={{ background: '#fff', color: '#1a1228' }}>
 
-      <div style={{ background: '#f8f5ff', borderRadius: 12, padding: '24px', marginBottom: 32, border: '1px solid #e0d5f5' }}>
-        <h3 style={{ fontWeight: 700, color: '#2f2244', marginBottom: 12 }}>リクエスト撮影とは？</h3>
-        <ul style={{ margin: 0, paddingLeft: 20, color: '#555', lineHeight: 2, fontSize: 14 }}>
-          <li>希望の日程・場所・モデルで撮影</li>
-          <li>人数・時間帯など柔軟に対応</li>
-          <li>プライベートな撮影会として開催</li>
-          <li>料金はリクエスト内容により異なります</li>
-        </ul>
-      </div>
+      {/* ─── HERO ─── */}
+      <section style={{ background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 100%)', color: '#fff', padding: 'clamp(80px, 12vw, 130px) 20px', textAlign: 'center' }}>
+        <div style={{ maxWidth: 700, margin: '0 auto' }}>
+          <p style={{ ...serif, fontSize: 11, letterSpacing: '0.4em', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginBottom: 20, fontStyle: 'italic' }}>Request Shooting</p>
+          <h1 style={{ ...serif, fontSize: 'clamp(32px, 6vw, 60px)', fontWeight: 400, lineHeight: 1.2, margin: '0 0 24px' }}>
+            📸 リクエスト撮影について
+          </h1>
+          <div style={{ width: 48, height: 1, background: 'rgba(168,226,244,0.5)', margin: '0 auto 28px' }} />
+          <p style={{ fontSize: 'clamp(14px, 2vw, 17px)', lineHeight: 2, color: 'rgba(255,255,255,0.8)', margin: 0 }}>
+            ご希望の<strong style={{ color: '#a8e2f4' }}>モデル・ロケーション・衣装・日時</strong>をもとに、<br />
+            完全オーダーメイドの撮影を承ります。<br />
+            ご希望のシチュエーションで、より自由度の高い撮影をお楽しみいただけます✨
+          </p>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 20, marginBottom: 0 }}>
+            ※土曜・日曜・祝日は定期撮影会開催日のため、リクエスト撮影の受付は行っておりません。
+          </p>
+        </div>
+      </section>
 
-      <div style={{ background: '#fff', borderRadius: 16, padding: '40px 32px', border: '1px solid #e5e5e5', textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>💬</div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#2f2244', marginBottom: 12 }}>公式LINEからお問い合わせください</h2>
-        <p style={{ color: '#666', lineHeight: 1.8, fontSize: 14, marginBottom: 28 }}>
-          ご希望の日程・場所・モデル・予算などをLINEでお気軽にご相談ください。<br />
-          担当者が丁寧にご対応いたします。
-        </p>
-        <a
-          href="https://lin.ee/VgTzmhe"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 10,
-            background: '#06C755', color: '#fff', textDecoration: 'none',
-            borderRadius: 10, padding: '14px 32px', fontWeight: 700, fontSize: 16,
-          }}
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
-          LINEで相談する
-        </a>
-      </div>
+      {/* ─── CONDITIONS ─── */}
+      <section style={{ background: '#fafcff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Requirements</p>
+            <h2 style={{ ...serif, fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
+              💡 ご利用条件
+            </h2>
+          </div>
+          <p style={{ fontSize: 14, color: '#556070', textAlign: 'center', marginBottom: 36, lineHeight: 1.8 }}>
+            下記2点の条件を満たしている方のみお申し込み可能です。
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+            <div style={{ background: '#fff', borderRadius: 12, padding: '32px 28px', border: '1px solid #d6ecf5' }}>
+              <div style={{ ...serif, fontSize: 32, fontWeight: 700, color: '#5bbfd6', marginBottom: 16 }}>①</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#5bbfd6', letterSpacing: '0.1em', marginBottom: 10 }}>安全管理のための条件</div>
+              <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0 }}>
+                Photo Fleurの撮影会を<strong>過去に10回以上ご利用</strong>いただいた方。<br />
+                <span style={{ fontSize: 12, color: '#aaa' }}>※規定回数未満の方はリクエスト撮影をご利用いただけません。</span>
+              </p>
+            </div>
+            <div style={{ background: '#fff', borderRadius: 12, padding: '32px 28px', border: '1px solid #d6ecf5' }}>
+              <div style={{ ...serif, fontSize: 32, fontWeight: 700, color: '#5bbfd6', marginBottom: 16 }}>②</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#5bbfd6', letterSpacing: '0.1em', marginBottom: 10 }}>モデル指名のための条件</div>
+              <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0 }}>
+                お申し込み月に<strong>2枠以上の撮影に参加</strong>しており、かつ<strong>希望モデルを過去に1回以上撮影</strong>したことがある方。
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── PRICING ─── */}
+      <section style={{ background: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Pricing</p>
+            <h2 style={{ ...serif, fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
+              💰 撮影料金
+            </h2>
+          </div>
+          <div style={{ background: '#f8fbff', borderRadius: 12, padding: '36px', border: '1px solid #d6ecf5' }}>
+            <div style={{ fontSize: 15, lineHeight: 2.2, color: '#3a3050' }}>
+              <p style={{ margin: '0 0 12px' }}>
+                <strong>基本料金：</strong>通常のモデル撮影料金 ＋ <strong style={{ color: '#1a3560' }}>¥1,000/h（スタッフ同伴料）</strong>
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '16px 0', borderTop: '1px solid #eef4f8', borderBottom: '1px solid #eef4f8', marginBottom: 16 }}>
+                <p style={{ fontSize: 13, color: '#888', margin: 0 }}>※モデルにより追加料金が発生する場合がございます。詳細はお問い合わせください。</p>
+                <p style={{ fontSize: 13, color: '#888', margin: 0 }}>※スタッフおよびモデルの<strong>交通費（実費）</strong>は別途ご負担となります。</p>
+              </div>
+              <p style={{ margin: 0, fontWeight: 600, color: '#1a3560' }}>
+                リクエスト撮影は<strong>2時間以上からの受付</strong>となります。
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── AREA ─── */}
+      <section style={{ background: '#f0f7fb', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Area</p>
+            <h2 style={{ ...serif, fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
+              🚃 対応エリア
+            </h2>
+          </div>
+          <div style={{ background: '#fff', borderRadius: 12, padding: '36px', border: '1px solid #c8e8f5', textAlign: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
+              {['東京都', '神奈川県', '千葉県', '埼玉県'].map(area => (
+                <span key={area} style={{ background: '#e8f4fb', color: '#1a3560', fontWeight: 600, fontSize: 14, padding: '8px 20px', borderRadius: 20, border: '1px solid #c8e8f5' }}>{area}</span>
+              ))}
+            </div>
+            <p style={{ fontSize: 14, color: '#556070', margin: 0, lineHeight: 2 }}>
+              上記以外の地域も、移動距離・拘束時間に応じた割増料金にて対応いたします。<br />
+              詳細はご相談ください。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── FLOW ─── */}
+      <section style={{ background: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Flow</p>
+            <h2 style={{ ...serif, fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
+              📅 日程調整の流れ
+            </h2>
+          </div>
+          <div style={{ background: '#f8fbff', borderRadius: 12, padding: '36px', border: '1px solid #d6ecf5' }}>
+            <p style={{ fontSize: 14, lineHeight: 2.2, color: '#3a3050', margin: 0 }}>
+              開催希望日を<strong>第1〜第3希望</strong>までお知らせください。<br />
+              モデル・スタッフのスケジュールを確認のうえ、<strong>2〜3日以内</strong>に折り返しご連絡させていただきます。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── HOW TO APPLY ─── */}
+      <section style={{ background: '#fafcff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>How to Apply</p>
+            <h2 style={{ ...serif, fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
+              ✉️ お申し込み方法
+            </h2>
+          </div>
+          <div style={{ background: '#fff', borderRadius: 12, padding: '36px', border: '1px solid #d6ecf5', marginBottom: 32 }}>
+            <p style={{ fontSize: 14, color: '#556070', marginTop: 0, marginBottom: 24 }}>
+              以下の内容をご記入のうえ、公式LINEにてご連絡ください。
+            </p>
+            <div style={{ background: '#f0f7fb', borderRadius: 8, padding: '20px 24px', marginBottom: 24 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', margin: '0 0 16px' }}>リクエスト撮影の依頼</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
+                {[
+                  '希望モデル名',
+                  'お名前',
+                  '電話番号',
+                  '第1希望日・希望時間',
+                  '第2希望日・希望時間',
+                  '第3希望日・希望時間',
+                  '撮影希望場所',
+                  '集合場所 / 解散場所',
+                ].map((item, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#3a3050', padding: '8px 0', borderBottom: '1px solid #eef4f8' }}>
+                    <span style={{ ...serif, fontSize: 16, color: '#5bbfd6', fontStyle: 'italic', lineHeight: 1, flexShrink: 0 }}>{i + 1}.</span>
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'center' }}>
+            <a href={LINE_URL} target="_blank" rel="noopener noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: '#06C755', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '16px 40px', fontWeight: 700, fontSize: 16 }}>
+              <LineIcon />
+              LINEで申し込む →
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── CLOSING ─── */}
+      <section style={{ background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 100%)', color: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px', textAlign: 'center' }}>
+        <div style={{ maxWidth: 640, margin: '0 auto' }}>
+          <div style={{ width: 40, height: 1, background: 'rgba(168,226,244,0.4)', margin: '0 auto 32px' }} />
+          <p style={{ fontSize: 15, lineHeight: 2.2, color: 'rgba(255,255,255,0.85)', margin: 0 }}>
+            📷 ご希望のロケーションで、あなたの理想を形にする特別撮影。<br />
+            モデル・スタッフ一同、心を込めてサポートいたします✨
+          </p>
+          <div style={{ width: 40, height: 1, background: 'rgba(168,226,244,0.4)', margin: '32px auto 0' }} />
+        </div>
+      </section>
+
     </div>
   )
 }
