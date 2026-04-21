@@ -14,47 +14,19 @@ function formatDateFull(dateStr) {
 
 export const metadata = { title: 'スケジュール一覧 | PhotoFleur' }
 
-export default async function SchedulePage({ searchParams }) {
-  const filter = (await searchParams)?.type || 'all'
+export default async function SchedulePage() {
   const today = new Date().toISOString().split('T')[0]
 
-  let query = supabase
+  const { data: events, error } = await supabase
     .from('events')
     .select(`*, event_entries(id, model_id, models(id, name, name_en, image))`)
     .gte('event_date', today)
     .order('event_date', { ascending: true })
 
-  if (filter !== 'all') {
-    query = query.eq('event_type', filter)
-  }
-
-  const { data: events, error } = await query
-
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 20px' }}>
       <h1 style={{ fontSize: 32, fontWeight: 700, color: '#2f2244', marginBottom: 8 }}>スケジュール一覧</h1>
       <p style={{ color: '#666', marginBottom: 32, fontSize: 15 }}>開催予定の撮影会イベントをご確認いただけます。</p>
-
-      {/* Filter tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 32 }}>
-        {[{ key: 'all', label: 'すべて' }, { key: 'street', label: 'ストリート' }, { key: 'studio', label: 'スタジオ' }].map(tab => (
-          <Link
-            key={tab.key}
-            href={`/schedule${tab.key === 'all' ? '' : `?type=${tab.key}`}`}
-            style={{
-              padding: '8px 20px',
-              borderRadius: 20,
-              fontSize: 14,
-              fontWeight: 600,
-              textDecoration: 'none',
-              background: filter === tab.key ? '#2f2244' : '#f0f0f0',
-              color: filter === tab.key ? '#fff' : '#555',
-            }}
-          >
-            {tab.label}
-          </Link>
-        ))}
-      </div>
 
       {error && <p style={{ color: 'red' }}>データの取得に失敗しました。</p>}
 
