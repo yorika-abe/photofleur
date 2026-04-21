@@ -17,7 +17,7 @@ export const metadata = { title: 'スケジュール一覧 | PhotoFleur' }
 export default async function SchedulePage() {
   const today = new Date().toISOString().split('T')[0]
 
-  const { data: events, error } = await supabase
+  const { data: events } = await supabase
     .from('events')
     .select(`*, event_entries(id, model_id, models(id, name, name_en, image))`)
     .gte('event_date', today)
@@ -28,11 +28,8 @@ export default async function SchedulePage() {
       <h1 style={{ fontSize: 32, fontWeight: 700, color: '#2f2244', marginBottom: 8 }}>スケジュール一覧</h1>
       <p style={{ color: '#666', marginBottom: 32, fontSize: 15 }}>開催予定の撮影会イベントをご確認いただけます。</p>
 
-      {error && <p style={{ color: 'red' }}>データの取得に失敗しました。</p>}
-
       {!events || events.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: '#999' }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>📅</div>
           <p>現在、予定されているイベントはありません。</p>
         </div>
       ) : (
