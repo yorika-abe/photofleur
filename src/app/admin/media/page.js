@@ -7,6 +7,7 @@ export default function AdminMediaPage() {
   const [heroImages, setHeroImages] = useState([])
   const [heroVideo, setHeroVideo] = useState('')
   const [uploading, setUploading] = useState(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -19,32 +20,48 @@ export default function AdminMediaPage() {
       })
   }, [])
 
+  function uploadWithProgress(file, path) {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('path', path)
+      const xhr = new XMLHttpRequest()
+      xhr.upload.addEventListener('progress', e => {
+        if (e.lengthComputable) setUploadProgress(Math.round(e.loaded / e.total * 100))
+      })
+      xhr.addEventListener('load', () => {
+        const data = JSON.parse(xhr.responseText)
+        if (data.error) { reject(data.error); return }
+        resolve(data.url)
+      })
+      xhr.addEventListener('error', () => reject('通信エラー'))
+      xhr.open('POST', '/api/admin/upload')
+      xhr.send(formData)
+    })
+  }
+
   async function uploadHeroImage(file) {
     setUploading('hero_bg')
-    const ext = file.name.split('.').pop()
-    const path = `site/hero-${Date.now()}.${ext}`
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('path', path)
-    const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
-    const data = await res.json()
-    if (data.error) { alert('アップロードエラー: ' + data.error); setUploading(null); return }
-    setHeroImages(imgs => [...imgs, data.url])
+    setUploadProgress(0)
+    const path = `site/hero-${Date.now()}.${file.name.split('.').pop()}`
+    try {
+      const url = await uploadWithProgress(file, path)
+      setHeroImages(imgs => [...imgs, url])
+    } catch (e) { alert('アップロードエラー: ' + e) }
     setUploading(null)
+    setUploadProgress(0)
   }
 
   async function uploadVideo(file) {
     setUploading('hero_video')
-    const ext = file.name.split('.').pop()
-    const path = `site/video-${Date.now()}.${ext}`
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('path', path)
-    const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
-    const data = await res.json()
-    if (data.error) { alert('アップロードエラー: ' + data.error); setUploading(null); return }
-    setHeroVideo(data.url)
+    setUploadProgress(0)
+    const path = `site/video-${Date.now()}.${file.name.split('.').pop()}`
+    try {
+      const url = await uploadWithProgress(file, path)
+      setHeroVideo(url)
+    } catch (e) { alert('アップロードエラー: ' + e) }
     setUploading(null)
+    setUploadProgress(0)
   }
 
   async function save() {
@@ -107,8 +124,17 @@ export default function AdminMediaPage() {
               <input type="file" accept="image/*" multiple style={{ display: 'none' }} disabled={!!uploading}
                 onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(f => uploadHeroImage(f)) }} />
             </label>
-            {uploading === 'hero_bg' && <span style={{ fontSize: 13, color: '#888' }}>アップロード中...</span>}
           </div>
+          {uploading === 'hero_bg' && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#888', marginBottom: 4 }}>
+                <span>アップロード中...</span><span>{uploadProgress}%</span>
+              </div>
+              <div style={{ background: '#e8f4fb', borderRadius: 99, height: 8, overflow: 'hidden' }}>
+                <div style={{ height: '100%', background: '#1a3560', borderRadius: 99, width: `${uploadProgress}%`, transition: 'width 0.2s ease' }} />
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Hero video */}
@@ -138,8 +164,17 @@ export default function AdminMediaPage() {
               <input type="file" accept="video/*" style={{ display: 'none' }} disabled={!!uploading}
                 onChange={e => e.target.files?.[0] && uploadVideo(e.target.files[0])} />
             </label>
-            {uploading === 'hero_video' && <span style={{ fontSize: 13, color: '#888' }}>アップロード中...</span>}
           </div>
+          {uploading === 'hero_video' && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#888', marginBottom: 4 }}>
+                <span>アップロード中...</span><span>{uploadProgress}%</span>
+              </div>
+              <div style={{ background: '#e8f4fb', borderRadius: 99, height: 8, overflow: 'hidden' }}>
+                <div style={{ height: '100%', background: '#1a3560', borderRadius: 99, width: `${uploadProgress}%`, transition: 'width 0.2s ease' }} />
+              </div>
+            </div>
+          )}
           <div style={{ marginTop: 12 }}>
             <input style={inp} value={heroVideo} onChange={e => setHeroVideo(e.target.value)} placeholder="またはYouTube URLを入力（例：https://youtu.be/xxxxx）" />
           </div>
