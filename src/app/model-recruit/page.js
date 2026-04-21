@@ -64,7 +64,7 @@ export default function ModelRecruitPage() {
               {
                 icon: '✿',
                 title: '女性が安心して働ける現場づくり',
-                body: '運営スタッフは女性が中心。不安なことや相談したいことがあれば、いつでも運営に話せる環境を整えています。',
+                body: '運営スタッフは完全女性のみ。不安なことや相談したいことがあれば、いつでも運営に話せる環境を整えています。',
               },
             ].map((item, i) => (
               <div key={i} style={{ background: '#f8fbff', borderRadius: 12, padding: '32px 28px', border: '1px solid #d6ecf5' }}>
@@ -108,6 +108,37 @@ export default function ModelRecruitPage() {
         </div>
       </section>
 
+      {/* ─── TRAINING ─── */}
+      <section style={{ background: '#f0f7fb', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Training</p>
+            <h2 style={{ ...serif, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
+              充実した研修内容
+            </h2>
+          </div>
+          <div style={{ background: '#fff', borderRadius: 12, padding: '36px', border: '1px solid #c8e8f5' }}>
+            <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', marginTop: 0, marginBottom: 20 }}>
+              不定期で開催の<strong>完全女性スタッフのみの撮影研修</strong>では
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
+              {[
+                'OGモデルによるポージング指導',
+                '撮影研修・ポートフォリオ撮影',
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, fontSize: 14, color: '#3a3050' }}>
+                  <span style={{ color: '#5bbfd6', fontWeight: 700, flexShrink: 0 }}>◇</span>
+                  {item}
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0, paddingTop: 20, borderTop: '1px solid #eef4f8' }}>
+              撮影の勉強が撮影会内でしっかりできる仕組みが整っています。
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ─── CONDITIONS ─── */}
       <section style={{ background: '#fafcff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -145,7 +176,7 @@ export default function ModelRecruitPage() {
               {[
                 '写真を撮られるのが好き',
                 '自分を変えたい・挑戦したい',
-                '将来モデル・女優・アイドルを目指している',
+                '将来モデル・女優・アナウンサーを目指している',
                 'コミュニケーションを楽しめる',
                 'ファッション・美容が好き',
                 '可愛い同年代の友だちがほしい',

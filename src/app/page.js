@@ -33,7 +33,7 @@ export default async function Home() {
       .from('models')
       .select('id, name, name_en, image, is_staff')
       .eq('is_staff', false)
-      .limit(8),
+      .eq('status', 'active'),
   ])
 
   return (
@@ -83,35 +83,21 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ─── CONCEPT ─── */}
-      <section style={{ background: '#fff', padding: '80px 0' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(40px, 8vw, 100px)', alignItems: 'center' }} className="concept-grid">
-            <div>
-              <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 20, fontWeight: 600 }}>About</p>
-              <h2 style={{ ...serif, fontSize: 'clamp(36px, 6vw, 60px)', fontWeight: 300, lineHeight: 1.1, margin: '0 0 24px', color: '#0d1f3a' }}>
-                撮影会という<br />
-                <em style={{ color: '#5bbfd6' }}>体験を、</em><br />
-                もっと自由に。
-              </h2>
-              <p style={{ fontSize: 14, lineHeight: 2, color: '#556', margin: '0 0 32px' }}>
-                PhotoFleurは、プロカメラマンと個性豊かなモデルが出会う撮影会予約プラットフォームです。
-                ストリートからスタジオまで、あなただけの特別な一枚を。
-              </p>
-              <Link href="/schedule" style={{
-                ...serif, display: 'inline-block', fontSize: 13, letterSpacing: '0.2em',
-                textTransform: 'uppercase', color: '#0d1f3a', textDecoration: 'none',
-                borderBottom: '2px solid #5bbfd6', paddingBottom: 3,
-              }}>
-                撮影会を探す →
-              </Link>
-            </div>
-            <div style={{ aspectRatio: '3/4', background: 'linear-gradient(135deg, #d6ecf5, #f4d6e8)', borderRadius: 4, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ textAlign: 'center', color: '#8bbfd0' }}>
-                <div style={{ ...serif, fontSize: 13, letterSpacing: '0.15em' }}>IMAGE</div>
-              </div>
-            </div>
-          </div>
+      {/* ─── MISSION ─── */}
+      <section style={{ background: '#fff', padding: 'clamp(80px, 12vw, 140px) 20px', textAlign: 'center' }}>
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+          <p style={{ fontSize: 11, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 24, fontWeight: 600 }}>Mission Statement.</p>
+          <h2 style={{ ...serif, fontSize: 'clamp(22px, 4vw, 38px)', fontWeight: 400, fontStyle: 'italic', color: '#0d1f3a', margin: '0 0 48px', lineHeight: 1.4 }}>
+            &ldquo;Every flower deserves to bloom.&rdquo;
+          </h2>
+          <div style={{ width: 40, height: 1, background: '#c8e8f5', margin: '0 auto 48px' }} />
+          <p style={{ fontSize: 'clamp(15px, 2.2vw, 18px)', lineHeight: 2.4, color: '#3a3050', margin: 0 }}>
+            ここに集まる全ての人が一人の人間として、<br />
+            モデル、カメラマン、クリエーターとして、<br />
+            <br />
+            それぞれが自分らしい<strong style={{ ...serif, fontSize: '1.1em', color: '#1a3560', fontStyle: 'italic' }}>&ldquo;花&rdquo;</strong>となり、芽生え咲き、輝ける。<br />
+            そんな場所を目指しています。
+          </p>
         </div>
       </section>
 
@@ -179,31 +165,27 @@ export default async function Home() {
       {models && models.length > 0 && (
         <section style={{ background: '#0d1f3a', padding: '80px 0' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 24 }}>
-              <div>
-                <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>Models</p>
-                <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#fff' }}>
-                  出演モデル
-                </h2>
-              </div>
-              <Link href="/models" style={{ ...serif, color: '#5bbfd6', fontSize: 13, letterSpacing: '0.15em', textDecoration: 'none', textTransform: 'uppercase', borderBottom: '1px solid #5bbfd6', paddingBottom: 2 }}>
-                All Models →
-              </Link>
+            <div style={{ textAlign: 'center', marginBottom: 56, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 32 }}>
+              <h2 style={{ ...serif, fontSize: 'clamp(56px, 10vw, 100px)', fontWeight: 300, margin: 0, color: '#fff', letterSpacing: '0.15em' }}>
+                MODELS
+              </h2>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(140px, 20vw, 200px), 1fr))', gap: 3 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(140px, 20vw, 200px), 1fr))', gap: 20 }}>
               {models.map((model) => (
                 <Link key={model.id} href={`/models/${model.id}`} style={{ textDecoration: 'none' }}>
-                  <div style={{ position: 'relative', aspectRatio: '2/3', background: '#1a3560', overflow: 'hidden' }} className="model-card">
-                    {model.image
-                      ? <img src={model.image} alt={model.name} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.6s ease' }} className="model-img" />
-                      : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5bbfd6' }}>
-                          <span style={{ fontSize: 36 }}>👤</span>
-                        </div>
-                    }
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 12px 10px', background: 'linear-gradient(to top, rgba(10,25,50,0.85), transparent)' }}>
-                      <div style={{ color: '#fff', fontWeight: 600, fontSize: 12 }}>{model.name}</div>
-                      {model.name_en && <div style={{ ...serif, color: '#a8e2f4', fontSize: 10, fontStyle: 'italic' }}>{model.name_en}</div>}
+                  <div>
+                    <div style={{ position: 'relative', aspectRatio: '2/3', background: '#1a3560', overflow: 'hidden', borderRadius: 2 }} className="model-card">
+                      {model.image
+                        ? <img src={model.image} alt={model.name} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.6s ease' }} className="model-img" />
+                        : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5bbfd6' }}>
+                            <span style={{ fontSize: 36 }}>👤</span>
+                          </div>
+                      }
+                    </div>
+                    <div style={{ padding: '10px 4px 0' }}>
+                      <div style={{ color: '#fff', fontWeight: 600, fontSize: 13 }}>{model.name}</div>
+                      {model.name_en && <div style={{ ...serif, color: '#a8e2f4', fontSize: 11, fontStyle: 'italic' }}>{model.name_en}</div>}
                     </div>
                   </div>
                 </Link>
@@ -243,7 +225,7 @@ export default async function Home() {
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 640, margin: '0 auto' }}>
           <p style={{ ...serif, fontSize: 12, letterSpacing: '0.3em', color: '#f4a0be', textTransform: 'uppercase', marginBottom: 20, fontStyle: 'italic' }}>Join us</p>
           <h2 style={{ ...serif, fontSize: 'clamp(36px, 7vw, 72px)', fontWeight: 300, color: '#0d1f3a', lineHeight: 1.1, margin: '0 0 24px' }}>
-            モデルとして<br /><em style={{ color: '#5bbfd6' }}>活躍しませんか？</em>
+            モデルとして<br /><em style={{ color: '#5bbfd6' }}>PhotoFleurの一員になりませんか？</em>
           </h2>
           <p style={{ fontSize: 14, color: '#667', lineHeight: 2, marginBottom: 40 }}>
             経験不問。公式LINEからお気軽にご連絡ください。
