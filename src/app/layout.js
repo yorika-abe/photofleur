@@ -1,9 +1,15 @@
-import { Geist } from "next/font/google";
+import { Geist, Cormorant_Garant } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
+const cormorant = Cormorant_Garant({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-cormorant",
+});
 
 export const metadata = {
   title: "PhotoFleur | 撮影会予約サービス",
@@ -12,7 +18,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ja" className={`${geist.variable} h-full`}>
+    <html lang="ja" className={`${geist.variable} ${cormorant.variable} h-full`}>
       <body style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-geist), Arial, sans-serif', background: '#fafafa', color: '#222' }}>
         <Header />
         <main style={{ flex: 1 }}>
