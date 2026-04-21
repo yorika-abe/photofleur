@@ -26,7 +26,7 @@ function LoginForm() {
     setLoading(true)
     setError('')
     setErrorType(null)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
       const msg = error.message || ''
       if (msg.includes('Email not confirmed')) {
@@ -41,7 +41,19 @@ function LoginForm() {
       }
       setLoading(false)
     } else {
-      router.push(redirect)
+      // redirectパラメータがあればそこへ、なければロールに応じて振り分け
+      if (redirect !== '/') {
+        router.push(redirect)
+      } else {
+        const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', data.user.id).single()
+        if (profile?.role === 'admin') {
+          router.push('/admin')
+        } else if (profile?.role === 'model') {
+          router.push('/model-portal')
+        } else {
+          router.push('/')
+        }
+      }
       router.refresh()
     }
   }
