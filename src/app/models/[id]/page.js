@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
+import PortfolioSlider from '@/components/PortfolioSlider'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -166,19 +167,7 @@ export default async function ModelDetailPage({ params }) {
         </div>
       )}
 
-      {/* Portfolio gallery */}
-      {portfolioImages.length > 0 && (
-        <div style={{ marginTop: 48 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#2f2244', marginBottom: 16 }}>ポートフォリオ</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-            {portfolioImages.map((img, i) => (
-              <div key={i} style={{ borderRadius: 10, overflow: 'hidden', aspectRatio: '3/4', background: '#e0d8f0' }}>
-                <img src={img} alt={`portfolio ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <PortfolioSlider images={portfolioImages} />
     </div>
   )
 }
