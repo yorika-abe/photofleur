@@ -5,11 +5,6 @@ import ScrollReveal from '@/components/ScrollReveal'
 
 export const dynamic = 'force-dynamic'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
-
 const adminSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -45,14 +40,14 @@ export default async function Home() {
   const today = new Date().toISOString().split('T')[0]
 
   const [{ data: events }, { data: models }, { data: siteSettingsRows }] = await Promise.all([
-    supabase
+    adminSupabase
       .from('events')
       .select('id, event_date, event_type, title, location_name, main_image, event_entries(id, models(id, name, image))')
       .eq('status', 'active')
       .gte('event_date', today)
       .order('event_date', { ascending: true })
       .limit(6),
-    supabase
+    adminSupabase
       .from('models')
       .select('id, name, name_en, image, is_staff')
       .eq('is_staff', false),
@@ -75,7 +70,7 @@ export default async function Home() {
       {/* ─── HERO ─── */}
       <section style={{ position: 'relative', height: '100svh', minHeight: 600, overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
         <span className="hero-desktop"><HeroSlideshow images={heroImages} /></span>
-        <span className="hero-mobile"><HeroSlideshow images={heroImagesMobile.length > 0 ? heroImagesMobile : heroImages} /></span>
+        <span className="hero-mobile"><HeroSlideshow images={heroImagesMobile.length > 0 ? heroImagesMobile : heroImages} objectFit="contain" /></span>
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,20,40,0.9) 0%, rgba(10,20,40,0.2) 50%, transparent 100%)' }} />
 
         <div style={{ position: 'absolute', top: 28, right: 28, textAlign: 'right' }}>
@@ -141,19 +136,19 @@ export default async function Home() {
       )}
 
       {/* ─── MISSION ─── */}
-      <section style={{ position: 'relative', padding: 'clamp(80px, 12vw, 140px) 20px', textAlign: 'center', overflow: 'hidden', background: '#fff' }}>
-        {missionBg && <img src={missionBg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.15 }} />}
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 760, margin: '0 auto' }}>
-          <p className="reveal" style={{ fontSize: 11, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 24, fontWeight: 600 }}>Mission Statement.</p>
-          <h2 className="reveal reveal-delay-1" style={{ ...serif, fontSize: 'clamp(22px, 4vw, 38px)', fontWeight: 400, fontStyle: 'italic', color: '#0d1f3a', margin: '0 0 48px', lineHeight: 1.4 }}>
+      <section style={{ position: 'relative', padding: 'clamp(40px, 7vw, 80px) 20px', textAlign: 'center', overflow: 'hidden', background: '#fff' }}>
+        {missionBg && <img src={missionBg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 640, margin: '0 auto' }}>
+          <p className="reveal" style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Mission Statement.</p>
+          <h2 className="reveal reveal-delay-1" style={{ ...serif, fontSize: 'clamp(18px, 3vw, 28px)', fontWeight: 400, fontStyle: 'italic', color: '#0d1f3a', margin: '0 0 20px', lineHeight: 1.4 }}>
             &ldquo;Every flower deserves to bloom.&rdquo;
           </h2>
-          <div className="reveal reveal-delay-2" style={{ width: 40, height: 1, background: '#c8e8f5', margin: '0 auto 48px' }} />
-          <p className="reveal reveal-delay-3" style={{ fontSize: 'clamp(15px, 2.2vw, 18px)', lineHeight: 2.4, color: '#3a3050', margin: 0 }}>
+          <div className="reveal reveal-delay-2" style={{ width: 32, height: 1, background: '#c8e8f5', margin: '0 auto 20px' }} />
+          <p className="reveal reveal-delay-3" style={{ fontSize: 'clamp(13px, 1.8vw, 15px)', lineHeight: 2, color: '#3a3050', margin: 0 }}>
             ここに集まる全ての人が一人の人間として、<br />
             モデル、カメラマン、クリエーターとして、<br />
             <br />
-            それぞれが自分らしい<strong style={{ ...serif, fontSize: '1.1em', color: '#1a3560', fontStyle: 'italic' }}>&ldquo;花&rdquo;</strong>となり、芽生え咲き、輝ける。<br />
+            それぞれが自分らしい<strong style={{ ...serif, fontSize: '1.05em', color: '#1a3560', fontStyle: 'italic' }}>&ldquo;花&rdquo;</strong>となり、芽生え咲き、輝ける。<br />
             そんな場所を目指しています。
           </p>
         </div>
@@ -229,7 +224,7 @@ export default async function Home() {
               </h2>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(140px, 20vw, 200px), 1fr))', gap: 20 }}>
+            <div className="model-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(140px, 20vw, 200px), 1fr))', gap: 20 }}>
               {models.map((model) => (
                 <Link key={model.id} href={`/models/${model.id}`} style={{ textDecoration: 'none' }}>
                   <div>
@@ -302,6 +297,7 @@ export default async function Home() {
         .event-card:hover .event-img { transform: scale(1.05); }
         .model-card:hover .model-img { transform: scale(1.05); }
         @media (max-width: 640px) { .concept-grid { grid-template-columns: 1fr !important; } }
+        @media (max-width: 640px) { .model-grid { grid-template-columns: 1fr !important; gap: 0 !important; } }
       `}</style>
     </div>
   )

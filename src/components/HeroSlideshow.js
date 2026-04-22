@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 
-export default function HeroSlideshow({ images }) {
+export default function HeroSlideshow({ images, objectFit = 'cover' }) {
   const [current, setCurrent] = useState(0)
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export default function HeroSlideshow({ images }) {
       {images.map((src, i) => (
         <img key={src} src={src} alt="" style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%',
-          objectFit: 'cover',
+          objectFit,
           opacity: i === current ? 1 : 0,
           transition: 'opacity 1.5s ease',
         }} />
