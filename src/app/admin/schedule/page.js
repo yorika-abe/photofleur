@@ -13,6 +13,7 @@ function formatDate(d) {
 export default function AdminSchedulePage() {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ event_date: '', event_type: 'street', title: '', location_name: '' })
   const [saving, setSaving] = useState(false)
@@ -22,7 +23,12 @@ export default function AdminSchedulePage() {
   async function load() {
     const res = await fetch('/api/admin/events')
     const data = await res.json()
-    setEvents(Array.isArray(data) ? data : [])
+    if (!Array.isArray(data)) {
+      setLoadError(data.error || JSON.stringify(data))
+      setEvents([])
+    } else {
+      setEvents(data)
+    }
     setLoading(false)
   }
 
@@ -114,8 +120,10 @@ export default function AdminSchedulePage() {
         </form>
       )}
 
+      {loadError && <div style={{ background: '#fce4ec', border: '1px solid #ef9a9a', borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#c62828' }}>エラー: {loadError}</div>}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {events.length === 0 ? <p style={{ color: '#999' }}>イベントはありません。</p> : events.map(ev => {
+        {events.length === 0 && !loadError ? <p style={{ color: '#999' }}>イベントはありません。</p> : events.map(ev => {
           const models = ev.event_entries?.map(e => e.models).filter(Boolean) || []
           const typeLabel = ev.event_type === 'street' ? 'ストリート' : ev.event_type === 'studio' ? 'スタジオ' : '不定期'
           const typeColor = ev.event_type === 'street' ? { bg: '#e8f5e9', color: '#388e3c' } : ev.event_type === 'studio' ? { bg: '#e8eaf6', color: '#3949ab' } : { bg: '#fff3e0', color: '#e65100' }
