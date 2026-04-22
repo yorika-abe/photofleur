@@ -1,10 +1,5 @@
 import Link from 'next/link'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
+import { createSupabaseAdminClient } from '@/lib/supabase-server'
 
 function formatDateFull(dateStr) {
   const d = new Date(dateStr)
@@ -16,12 +11,25 @@ export const metadata = { title: 'スケジュール一覧 | PhotoFleur' }
 
 export default async function SchedulePage() {
   const today = new Date().toISOString().split('T')[0]
+  const supabase = await createSupabaseAdminClient()
 
   const { data: events, error } = await supabase
     .from('events')
-    .select(`*, event_entries(id, model_id, models(id, name, name_en, image))`)
+    .select('*')
+    .eq('status', 'active')
     .gte('event_date', today)
     .order('event_date', { ascending: true })
+
+  const eventIds = (events || []).map(e => e.id)
+  const { data: entries } = eventIds.length > 0
+    ? await supabase.from('event_entries').select('id, event_id, model_id, models(id, name, name_en, image)').in('event_id', eventIds)
+    : { data: [] }
+  const entriesByEvent = {}
+  for (const entry of (entries || [])) {
+    if (!entriesByEvent[entry.event_id]) entriesByEvent[entry.event_id] = []
+    entriesByEvent[entry.event_id].push(entry)
+  }
+  const eventsWithEntries = (events || []).map(ev => ({ ...ev, event_entries: entriesByEvent[ev.id] || [] }))
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 20px' }}>
@@ -30,13 +38,13 @@ export default async function SchedulePage() {
 
       {error && <p style={{ color: 'red', fontSize: 14 }}>データの取得に失敗しました。</p>}
 
-      {!events || events.length === 0 ? (
+      {!eventsWithEntries || eventsWithEntries.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: '#999' }}>
           <p>現在、予定されているイベントはありません。</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {events.map(ev => (
+          {eventsWithEntries.map(ev => (
             <Link key={ev.id} href={`/events/${ev.id}`} style={{ textDecoration: 'none' }}>
               <div style={{ background: '#fff', borderRadius: 16, padding: '24px', border: '1px solid #e5e5e5', display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
                 <div style={{ minWidth: 160 }}>
