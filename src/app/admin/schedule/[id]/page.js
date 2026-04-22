@@ -41,15 +41,21 @@ export default function EventEditPage() {
   useEffect(() => { load() }, [id])
 
   async function load() {
-    const res = await fetch(`/api/admin/events/${id}`)
-    if (!res.ok) { setLoading(false); return }
-    const { event: ev, models: mods, entries: entriesWithSlots, shifts: shiftData } = await res.json()
-
-    setEvent({ ...(ev || {}), gallery_images: JSON.parse(ev?.gallery_images || '[]') })
-    setModels(mods || [])
-    setEntries(entriesWithSlots || [])
-    setShifts(shiftData || [])
-    setLoading(false)
+    try {
+      const res = await fetch(`/api/admin/events/${id}`)
+      if (!res.ok) { setLoading(false); return }
+      const { event: ev, models: mods, entries: entriesWithSlots, shifts: shiftData } = await res.json()
+      let galleryImages = []
+      try { galleryImages = JSON.parse(ev?.gallery_images || '[]') } catch {}
+      setEvent({ ...(ev || {}), gallery_images: galleryImages })
+      setModels(mods || [])
+      setEntries(entriesWithSlots || [])
+      setShifts(shiftData || [])
+    } catch (e) {
+      console.error('load error:', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function autoAddShiftedModels() {
