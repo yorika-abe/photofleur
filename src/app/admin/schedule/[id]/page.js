@@ -35,6 +35,8 @@ export default function EventEditPage() {
   const [saved, setSaved] = useState(false)
   const [activeTab, setActiveTab] = useState('basic')
   const [autoAdding, setAutoAdding] = useState(false)
+  const [uploading, setUploading] = useState(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -61,7 +63,7 @@ export default function EventEditPage() {
       ? await supabase.from('model_shifts').select('model_id, available_slots, status').eq('event_date', ev.event_date)
       : { data: [] }
 
-    setEvent(ev || {})
+    setEvent({ ...(ev || {}), gallery_images: JSON.parse(ev?.gallery_images || '[]') })
     setModels(mods || [])
     setEntries(entriesWithSlots)
     setShifts(shiftData || [])
@@ -142,6 +144,7 @@ export default function EventEditPage() {
       studio_capacity: event.studio_capacity ? parseInt(event.studio_capacity) : null,
       studio_fee: event.studio_fee ? parseInt(event.studio_fee) : 0,
       main_image: event.main_image,
+      gallery_images: JSON.stringify(event.gallery_images || []),
       booking_open_at: event.booking_open_at || null,
       meeting_place: event.meeting_place,
       meeting_address: event.meeting_address,
@@ -161,6 +164,55 @@ export default function EventEditPage() {
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     }
+  }
+
+  function uploadWithProgress(file, path) {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('path', path)
+      const xhr = new XMLHttpRequest()
+      xhr.upload.addEventListener('progress', e => {
+        if (e.lengthComputable) setUploadProgress(Math.round(e.loaded / e.total * 100))
+      })
+      xhr.addEventListener('load', () => {
+        const data = JSON.parse(xhr.responseText)
+        if (data.error) { reject(data.error); return }
+        resolve(data.url)
+      })
+      xhr.addEventListener('error', () => reject('通信エラー'))
+      xhr.open('POST', '/api/admin/upload')
+      xhr.send(formData)
+    })
+  }
+
+  async function uploadMainImage(file) {
+    setUploading('main_image')
+    setUploadProgress(0)
+    const path = `events/${id}/main-${Date.now()}.${file.name.split('.').pop()}`
+    try {
+      const url = await uploadWithProgress(file, path)
+      updateField('main_image', url)
+    } catch (e) { alert('アップロードエラー: ' + e) }
+    setUploading(null)
+    setUploadProgress(0)
+  }
+
+  async function uploadGalleryImages(files) {
+    setUploading('gallery')
+    setUploadProgress(0)
+    try {
+      const urls = []
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        const path = `events/${id}/gallery-${Date.now()}-${i}.${file.name.split('.').pop()}`
+        const url = await uploadWithProgress(file, path)
+        urls.push(url)
+      }
+      updateField('gallery_images', [...(event.gallery_images || []), ...urls])
+    } catch (e) { alert('アップロードエラー: ' + e) }
+    setUploading(null)
+    setUploadProgress(0)
   }
 
   async function addModelToEvent(modelId) {
@@ -263,6 +315,7 @@ export default function EventEditPage() {
 
   const tabs = [
     { key: 'basic', label: '基本情報' },
+    { key: 'gallery', label: 'ギャラリー' },
     { key: 'location', label: '場所・詳細' },
     { key: 'models', label: 'モデル・枠' },
     { key: 'notify', label: '通知設定' },
@@ -337,9 +390,28 @@ export default function EventEditPage() {
               </div>
             </div>
             <div style={{ marginBottom: 14 }}>
-              <label style={label}>メインイメージURL</label>
-              <input type="url" value={event.main_image || ''} onChange={e => updateField('main_image', e.target.value)} style={inp} placeholder="https://..." />
-              {event.main_image && <img src={event.main_image} style={{ marginTop: 8, width: '100%', maxHeight: 160, objectFit: 'cover', borderRadius: 8 }} />}
+              <label style={label}>メインイメージ</label>
+              {event.main_image && (
+                <div style={{ position: 'relative', marginBottom: 10 }}>
+                  <img src={event.main_image} style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 8 }} />
+                  <button onClick={() => updateField('main_image', '')}
+                    style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontSize: 12 }}>削除</button>
+                </div>
+              )}
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#2f2244', color: '#fff', borderRadius: 8, padding: '9px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 600, opacity: uploading === 'main_image' ? 0.7 : 1 }}>
+                📷 画像をアップロード
+                <input type="file" accept="image/*" style={{ display: 'none' }} disabled={!!uploading}
+                  onChange={e => e.target.files?.[0] && uploadMainImage(e.target.files[0])} />
+              </label>
+              {uploading === 'main_image' && (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888', marginBottom: 3 }}><span>アップロード中...</span><span>{uploadProgress}%</span></div>
+                  <div style={{ background: '#eee', borderRadius: 99, height: 6 }}><div style={{ height: '100%', background: '#2f2244', borderRadius: 99, width: `${uploadProgress}%`, transition: 'width 0.2s' }} /></div>
+                </div>
+              )}
+              <div style={{ marginTop: 8 }}>
+                <input type="url" value={event.main_image || ''} onChange={e => updateField('main_image', e.target.value)} style={{ ...inp, fontSize: 12 }} placeholder="またはURLを直接入力" />
+              </div>
             </div>
             <div>
               <label style={label}>イベントページURL（旧サイト等）</label>
@@ -367,6 +439,43 @@ export default function EventEditPage() {
                 <input type="url" value={event.studio_url || ''} onChange={e => updateField('studio_url', e.target.value)} style={inp} placeholder="https://..." />
               </div>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ギャラリータブ */}
+      {activeTab === 'gallery' && (
+        <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e5e5e5' }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2f2244', marginBottom: 4, marginTop: 0 }}>撮影イメージ ギャラリー</h3>
+          <p style={{ fontSize: 12, color: '#999', marginBottom: 16 }}>複数枚登録できます。イベント詳細ページに表示されます。</p>
+
+          {(event.gallery_images || []).length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 8, marginBottom: 16 }}>
+              {(event.gallery_images || []).map((url, i) => (
+                <div key={i} style={{ position: 'relative', aspectRatio: '1', borderRadius: 8, overflow: 'hidden' }}>
+                  <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button onClick={() => updateField('gallery_images', (event.gallery_images || []).filter((_, idx) => idx !== i))}
+                    style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#2f2244', color: '#fff', borderRadius: 8, padding: '9px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 600, opacity: uploading === 'gallery' ? 0.7 : 1 }}>
+            📷 画像を追加（複数可）
+            <input type="file" accept="image/*" multiple style={{ display: 'none' }} disabled={!!uploading}
+              onChange={e => e.target.files?.length && uploadGalleryImages(Array.from(e.target.files))} />
+          </label>
+
+          {uploading === 'gallery' && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888', marginBottom: 3 }}><span>アップロード中...</span><span>{uploadProgress}%</span></div>
+              <div style={{ background: '#eee', borderRadius: 99, height: 6 }}><div style={{ height: '100%', background: '#2f2244', borderRadius: 99, width: `${uploadProgress}%`, transition: 'width 0.2s' }} /></div>
+            </div>
+          )}
+
+          {(event.gallery_images || []).length > 0 && (
+            <p style={{ fontSize: 12, color: '#999', marginTop: 12 }}>変更後は「保存する」ボタンを押してください</p>
           )}
         </div>
       )}

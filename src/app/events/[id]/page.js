@@ -23,11 +23,12 @@ export async function generateMetadata({ params }) {
 export default async function EventDetailPage({ params }) {
   const { id } = await params
 
-  const { data: event } = await supabase
+  const { data: eventRaw } = await supabase
     .from('events')
     .select('*')
     .eq('id', id)
     .single()
+  const event = eventRaw ? { ...eventRaw, gallery_images: JSON.parse(eventRaw.gallery_images || '[]') } : null
 
   if (!event || event.status !== 'active') notFound()
 
@@ -223,6 +224,20 @@ export default async function EventDetailPage({ params }) {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Gallery */}
+      {event.gallery_images && event.gallery_images.length > 0 && (
+        <div style={{ marginTop: 40 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a3560', marginBottom: 16 }}>撮影イメージ</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
+            {event.gallery_images.map((url, i) => (
+              <div key={i} style={{ aspectRatio: '1', borderRadius: 10, overflow: 'hidden' }}>
+                <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
