@@ -42,7 +42,7 @@ export default async function Home() {
   const [{ data: events }, { data: models }, { data: siteSettingsRows }] = await Promise.all([
     adminSupabase
       .from('events')
-      .select('id, event_date, event_type, title, location_name, main_image, event_entries(id, models(id, name, image))')
+      .select('id, event_date, event_type, title, location_name, main_image')
       .eq('status', 'active')
       .gte('event_date', today)
       .order('event_date', { ascending: true })
@@ -53,6 +53,18 @@ export default async function Home() {
       .eq('is_staff', false),
     adminSupabase.from('site_settings').select('key, value'),
   ])
+
+  // Fetch event entries separately
+  const eventIds = (events || []).map(e => e.id)
+  const { data: eventEntries } = eventIds.length > 0
+    ? await adminSupabase.from('event_entries').select('id, event_id, model_id, models(id, name, image)').in('event_id', eventIds)
+    : { data: [] }
+  const entriesByEvent = {}
+  for (const entry of (eventEntries || [])) {
+    if (!entriesByEvent[entry.event_id]) entriesByEvent[entry.event_id] = []
+    entriesByEvent[entry.event_id].push(entry)
+  }
+  const eventsWithEntries = (events || []).map(ev => ({ ...ev, event_entries: entriesByEvent[ev.id] || [] }))
 
   const siteSettings = Object.fromEntries((siteSettingsRows || []).map(r => [r.key, r.value]))
   const heroImages = JSON.parse(siteSettings.hero_bg_images || '[]')
@@ -155,7 +167,7 @@ export default async function Home() {
       </section>
 
       {/* ─── SCHEDULE ─── */}
-      {events && events.length > 0 && (
+      {eventsWithEntries && eventsWithEntries.length > 0 && (
         <section style={{ background: '#f0f7fb', padding: '80px 0' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
             <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48, borderBottom: '1px solid #c8e8f5', paddingBottom: 24 }}>
@@ -171,7 +183,7 @@ export default async function Home() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 3 }}>
-              {events.map((ev) => {
+              {eventsWithEntries.map((ev) => {
                 const d = formatDate(ev.event_date)
                 const modelList = ev.event_entries?.map(e => e.models).filter(Boolean) || []
                 const isStreet = ev.event_type === 'street'
