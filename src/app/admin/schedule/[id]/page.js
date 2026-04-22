@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { createBrowserClient } from '@supabase/ssr'
 
 const STUDIO_SLOTS = [
   { label: '0部 09:00〜09:45', start: '09:00', end: '09:45', order: 0 },
@@ -38,34 +37,17 @@ export default function EventEditPage() {
   const [uploading, setUploading] = useState(null)
   const [uploadProgress, setUploadProgress] = useState(0)
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  )
 
   useEffect(() => { load() }, [id])
 
   async function load() {
-    const [{ data: ev }, { data: mods }, { data: ents }] = await Promise.all([
-      supabase.from('events').select('*').eq('id', id).single(),
-      supabase.from('models').select('id, name, image, studio_price, street_price').order('name'),
-      supabase.from('event_entries').select('id, event_id, model_id').eq('event_id', id),
-    ])
-
-    const entriesData = ents || []
-    const entriesWithSlots = await Promise.all(entriesData.map(async (entry) => {
-      const { data: slots } = await supabase.from('booking_slots').select('id, slot_label, slot_order, start_time, end_time, price, is_reserved, max_reservations').eq('event_entry_id', entry.id).order('slot_order')
-      return { ...entry, booking_slots: slots || [] }
-    }))
-
-    // シフト提出済みモデルを取得
-    const { data: shiftData } = ev?.event_date
-      ? await supabase.from('model_shifts').select('model_id, available_slots, status').eq('event_date', ev.event_date)
-      : { data: [] }
+    const res = await fetch(`/api/admin/events/${id}`)
+    if (!res.ok) { setLoading(false); return }
+    const { event: ev, models: mods, entries: entriesWithSlots, shifts: shiftData } = await res.json()
 
     setEvent({ ...(ev || {}), gallery_images: JSON.parse(ev?.gallery_images || '[]') })
     setModels(mods || [])
-    setEntries(entriesWithSlots)
+    setEntries(entriesWithSlots || [])
     setShifts(shiftData || [])
     setLoading(false)
   }
@@ -73,39 +55,7 @@ export default function EventEditPage() {
   async function autoAddShiftedModels() {
     if (!event.event_date) return
     setAutoAdding(true)
-    const { data: shiftData } = await supabase.from('model_shifts').select('model_id, available_slots').eq('event_date', event.event_date)
-    const existingModelIds = entries.map(e => e.model_id)
-    const toAdd = (shiftData || []).filter(s => !existingModelIds.includes(s.model_id))
-
-    for (const shift of toAdd) {
-      const model = models.find(m => m.id === shift.model_id)
-      if (!model) continue
-      const { data: entry } = await supabase.from('event_entries').insert({ event_id: id, model_id: shift.model_id }).select('id, event_id, model_id').single()
-      if (!entry) continue
-
-      const basePrice = event.event_type === 'studio'
-        ? (parseInt(model.studio_price || 0) + parseInt(event.studio_fee || 0))
-        : parseInt(model.street_price || 0)
-
-      const allSlots = event.event_type === 'studio' ? STUDIO_SLOTS : STREET_SLOTS
-      const submittedStarts = (shift.available_slots || []).map(s => s.start)
-      const targetSlots = submittedStarts.length > 0
-        ? allSlots.filter(s => submittedStarts.includes(s.start))
-        : allSlots.filter(s => s.order !== 0)
-
-      const slotsToInsert = targetSlots.map(slot => ({
-        event_entry_id: entry.id,
-        slot_label: slot.label,
-        slot_order: slot.order,
-        start_time: new Date(`${event.event_date}T${slot.start}:00+09:00`).toISOString(),
-        end_time: new Date(`${event.event_date}T${slot.end}:00+09:00`).toISOString(),
-        price: basePrice,
-        max_reservations: 1,
-        is_reserved: false,
-      }))
-      const { data: slots } = await supabase.from('booking_slots').insert(slotsToInsert).select('id, slot_label, slot_order, start_time, end_time, price, is_reserved, max_reservations')
-      setEntries(prev => [...prev, { ...entry, booking_slots: slots || [] }])
-    }
+    await fetch(`/api/admin/events/${id}/entries`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'auto_add', event }) })
     setAutoAdding(false)
     await load()
   }
@@ -130,37 +80,41 @@ export default function EventEditPage() {
 
   async function saveEvent() {
     setSaving(true)
-    const { error } = await supabase.from('events').update({
-      title: event.title,
-      subtitle: event.subtitle,
-      event_date: event.event_date,
-      event_type: event.event_type,
-      status: event.status,
-      location_name: event.location_name,
-      address: event.address,
-      map_address: event.map_address,
-      access_note: event.access_note,
-      studio_url: event.studio_url,
-      studio_capacity: event.studio_capacity ? parseInt(event.studio_capacity) : null,
-      studio_fee: event.studio_fee ? parseInt(event.studio_fee) : 0,
-      main_image: event.main_image,
-      gallery_images: JSON.stringify(event.gallery_images || []),
-      booking_open_at: event.booking_open_at || null,
-      meeting_place: event.meeting_place,
-      meeting_address: event.meeting_address,
-      meeting_map_url: event.meeting_map_url,
-      baggage_storage: event.baggage_storage,
-      model_assembly_offset_minutes: event.model_assembly_offset_minutes ? parseInt(event.model_assembly_offset_minutes) : 30,
-      model_extra_note: event.model_extra_note,
-      model_lunch_note: event.model_lunch_note,
-      studio_rules: event.studio_rules,
-      street_notes: event.street_notes,
-      reminder_extra_note: event.reminder_extra_note,
-      event_page_url: event.event_page_url,
-    }).eq('id', id)
-
+    const res = await fetch('/api/admin/events', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id,
+        title: event.title,
+        subtitle: event.subtitle,
+        event_date: event.event_date,
+        event_type: event.event_type,
+        status: event.status,
+        location_name: event.location_name,
+        address: event.address,
+        map_address: event.map_address,
+        access_note: event.access_note,
+        studio_url: event.studio_url,
+        studio_capacity: event.studio_capacity ? parseInt(event.studio_capacity) : null,
+        studio_fee: event.studio_fee ? parseInt(event.studio_fee) : 0,
+        main_image: event.main_image,
+        gallery_images: JSON.stringify(event.gallery_images || []),
+        booking_open_at: event.booking_open_at || null,
+        meeting_place: event.meeting_place,
+        meeting_address: event.meeting_address,
+        meeting_map_url: event.meeting_map_url,
+        baggage_storage: event.baggage_storage,
+        model_assembly_offset_minutes: event.model_assembly_offset_minutes ? parseInt(event.model_assembly_offset_minutes) : 30,
+        model_extra_note: event.model_extra_note,
+        model_lunch_note: event.model_lunch_note,
+        studio_rules: event.studio_rules,
+        street_notes: event.street_notes,
+        reminder_extra_note: event.reminder_extra_note,
+        event_page_url: event.event_page_url,
+      }),
+    })
     setSaving(false)
-    if (!error) {
+    if (res.ok) {
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     }
@@ -217,90 +171,50 @@ export default function EventEditPage() {
 
   async function addModelToEvent(modelId) {
     if (entries.find(e => e.model_id === modelId)) return
-    const { data: entry } = await supabase.from('event_entries').insert({ event_id: id, model_id: modelId }).select('id, event_id, model_id').single()
-    if (!entry) return
-
-    const model = models.find(m => m.id === modelId)
-    const basePrice = event.event_type === 'studio'
-      ? (parseInt(model?.studio_price || 0) + parseInt(event.studio_fee || 0))
-      : parseInt(model?.street_price || 0)
-
-    // モデルのシフト提出を確認
-    const { data: shift } = await supabase
-      .from('model_shifts')
-      .select('available_slots')
-      .eq('model_id', modelId)
-      .eq('event_date', event.event_date)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
-
-    const allSlots = event.event_type === 'studio' ? STUDIO_SLOTS : STREET_SLOTS
-
-    let targetSlots
-    if (shift?.available_slots?.length > 0) {
-      // シフト提出がある場合：提出した時間枠に合致するスロットを使用
-      const submittedStarts = shift.available_slots.map(s => s.start)
-      targetSlots = allSlots.filter(s => submittedStarts.includes(s.start))
-    } else {
-      // シフト提出がない場合：0枠以外全て
-      targetSlots = allSlots.filter(s => s.order !== 0)
-    }
-
-    const slotsToInsert = targetSlots.map(slot => ({
-      event_entry_id: entry.id,
-      slot_label: slot.label,
-      slot_order: slot.order,
-      start_time: new Date(`${event.event_date}T${slot.start}:00+09:00`).toISOString(),
-      end_time: new Date(`${event.event_date}T${slot.end}:00+09:00`).toISOString(),
-      price: basePrice,
-      max_reservations: 1,
-      is_reserved: false,
-    }))
-
-    const { data: slots } = await supabase.from('booking_slots').insert(slotsToInsert).select('id, slot_label, slot_order, start_time, end_time, price, is_reserved, max_reservations')
-    setEntries(prev => [...prev, { ...entry, booking_slots: slots || [] }])
+    const res = await fetch(`/api/admin/events/${id}/entries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'add_model', modelId, event }),
+    })
+    const data = await res.json()
+    if (data.entry) setEntries(prev => [...prev, data.entry])
   }
 
   async function removeModelFromEvent(entryId) {
     if (!confirm('このモデルをイベントから削除しますか？関連する予約枠も削除されます。')) return
-    await supabase.from('event_entries').delete().eq('id', entryId)
+    await fetch(`/api/admin/events/${id}/entries`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entryId }),
+    })
     setEntries(prev => prev.filter(e => e.id !== entryId))
   }
 
   async function addSlot(entryId, slot) {
-    const entry = entries.find(e => e.id === entryId)
-    if (!entry) return
-    const eventDate = event.event_date
-    const startTime = new Date(`${eventDate}T${slot.start}:00+09:00`).toISOString()
-    const endTime = new Date(`${eventDate}T${slot.end}:00+09:00`).toISOString()
-    const price = event.event_type === 'studio'
-      ? (parseInt(entry.studio_price || 0) + parseInt(event.studio_fee || 0))
-      : parseInt(entry.street_price || 0)
-
-    const { data } = await supabase.from('booking_slots').insert({
-      event_entry_id: entryId,
-      slot_label: slot.label,
-      slot_order: slot.order,
-      start_time: startTime,
-      end_time: endTime,
-      price: price,
-      max_reservations: 1,
-      is_reserved: false,
-    }).select().single()
-
-    if (data) {
-      setEntries(prev => prev.map(e => e.id === entryId ? { ...e, booking_slots: [...(e.booking_slots || []), data] } : e))
-    }
+    const res = await fetch(`/api/admin/events/${id}/slots`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entryId, slot, event }),
+    })
+    const data = await res.json()
+    if (data.slot) setEntries(prev => prev.map(e => e.id === entryId ? { ...e, booking_slots: [...(e.booking_slots || []), data.slot] } : e))
   }
 
   async function removeSlot(entryId, slotId) {
-    await supabase.from('booking_slots').delete().eq('id', slotId)
+    await fetch(`/api/admin/events/${id}/slots`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slotId }),
+    })
     setEntries(prev => prev.map(e => e.id === entryId ? { ...e, booking_slots: e.booking_slots.filter(s => s.id !== slotId) } : e))
   }
 
   async function updateSlotPrice(entryId, slotId, price) {
-    await supabase.from('booking_slots').update({ price: parseInt(price) }).eq('id', slotId)
+    await fetch(`/api/admin/events/${id}/slots`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slotId, price: parseInt(price) }),
+    })
     setEntries(prev => prev.map(e => e.id === entryId ? {
       ...e, booking_slots: e.booking_slots.map(s => s.id === slotId ? { ...s, price: parseInt(price) } : s)
     } : e))
