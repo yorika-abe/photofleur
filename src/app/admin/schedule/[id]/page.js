@@ -116,7 +116,6 @@ export default function EventEditPage() {
         studio_rules: event.studio_rules,
         street_notes: event.street_notes,
         reminder_extra_note: event.reminder_extra_note,
-        event_page_url: event.event_page_url,
       }),
     })
     setSaving(false)
@@ -332,10 +331,6 @@ export default function EventEditPage() {
               <div style={{ marginTop: 8 }}>
                 <input type="url" value={event.main_image || ''} onChange={e => updateField('main_image', e.target.value)} style={{ ...inp, fontSize: 12 }} placeholder="またはURLを直接入力" />
               </div>
-            </div>
-            <div>
-              <label style={label}>イベントページURL（旧サイト等）</label>
-              <input type="url" value={event.event_page_url || ''} onChange={e => updateField('event_page_url', e.target.value)} style={inp} placeholder="https://..." />
             </div>
           </div>
 
