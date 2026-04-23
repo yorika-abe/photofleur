@@ -31,8 +31,9 @@ export default function ModelShiftsPage() {
       }
       setUser(user)
 
-      const { data: profile } = await supabase.from('user_profiles').select('*').eq('id', user.id).single()
-      if (!profile || profile.role !== 'model') {
+      const { data: profile } = await supabase.from('user_profiles').select('roles, role').eq('id', user.id).single()
+      const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
+      if (!roles.includes('model')) {
         window.location.href = '/'
         return
       }

@@ -48,13 +48,14 @@ function LoginForm() {
       if (redirect !== '/') {
         router.push(redirect)
       } else {
-        const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', data.user.id).single()
-        if (profile?.role === 'admin') {
+        const { data: profile } = await supabase.from('user_profiles').select('roles, role').eq('id', data.user.id).single()
+        const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
+        if (roles.includes('admin')) {
           router.push('/admin')
-        } else if (profile?.role === 'model') {
+        } else if (roles.includes('model')) {
           router.push('/model-portal')
         } else {
-          router.push('/')
+          router.push('/my')
         }
       }
       router.refresh()

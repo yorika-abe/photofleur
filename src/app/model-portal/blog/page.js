@@ -26,8 +26,9 @@ export default function ModelBlogPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.href = '/login'; return }
 
-      const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', user.id).single()
-      if (!profile || profile.role !== 'model') { window.location.href = '/'; return }
+      const { data: profile } = await supabase.from('user_profiles').select('roles, role').eq('id', user.id).single()
+      const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
+      if (!roles.includes('model')) { window.location.href = '/'; return }
 
       setUserId(user.id)
 

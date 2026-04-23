@@ -6,8 +6,9 @@ export async function POST(req) {
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const admin = await createSupabaseAdminClient()
-  const { data: profile } = await admin.from('user_profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 })
+  const { data: profile } = await admin.from('user_profiles').select('roles, role').eq('id', user.id).single()
+  const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
+  if (!roles.includes('admin')) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
   const formData = await req.formData()
   const file = formData.get('file')

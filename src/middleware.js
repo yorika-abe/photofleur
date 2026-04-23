@@ -34,10 +34,11 @@ export async function middleware(request) {
     }
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('role')
+      .select('roles, role')
       .eq('id', user.id)
       .single()
-    if (!profile || profile.role !== 'admin') {
+    const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
+    if (!roles.includes('admin')) {
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
@@ -49,10 +50,11 @@ export async function middleware(request) {
     }
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('role')
+      .select('roles, role')
       .eq('id', user.id)
       .single()
-    if (!profile || !['model', 'admin'].includes(profile.role)) {
+    const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
+    if (!roles.some(r => ['model', 'admin'].includes(r))) {
       return NextResponse.redirect(new URL('/', request.url))
     }
   }

@@ -3,31 +3,30 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
-const ROLES = [
-  { value: 'owner', label: 'オーナー', color: '#7b1fa2', bg: '#f3e5f5' },
+const ROLE_OPTIONS = [
   { value: 'admin', label: '運営', color: '#1565c0', bg: '#e3f2fd' },
-  { value: 'head_staff', label: 'スタッフ（リーダー）', color: '#2e7d32', bg: '#e8f5e9' },
-  { value: 'reception', label: 'スタッフ（受付）', color: '#388e3c', bg: '#f1f8e9' },
   { value: 'model', label: 'モデル', color: '#c2185b', bg: '#fce4ec' },
-  { value: 'registered_photographer', label: '登録カメラマン', color: '#e65100', bg: '#fff3e0' },
-  { value: 'photographer', label: '一般', color: '#757575', bg: '#f5f5f5' },
 ]
-
-function RoleBadge({ role }) {
-  const r = ROLES.find(r => r.value === role) || ROLES[ROLES.length - 1]
-  return (
-    <span style={{ background: r.bg, color: r.color, borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 700 }}>
-      {r.label}
-    </span>
-  )
-}
 
 const TABS = [
   { key: 'all', label: 'すべて' },
   { key: 'admin', label: '運営' },
   { key: 'model', label: 'モデル' },
-  { key: 'head_staff', label: 'スタッフ' },
+  { key: 'photographer', label: '一般' },
 ]
+
+function RoleBadges({ roles }) {
+  if (!roles || roles.length === 0 || (roles.length === 1 && roles[0] === 'photographer')) {
+    return <span style={{ background: '#f5f5f5', color: '#888', borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 700 }}>一般</span>
+  }
+  return (
+    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+      {ROLE_OPTIONS.filter(r => roles.includes(r.value)).map(r => (
+        <span key={r.value} style={{ background: r.bg, color: r.color, borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 700 }}>{r.label}</span>
+      ))}
+    </div>
+  )
+}
 
 export default function UsersPage() {
   const [users, setUsers] = useState([])
@@ -44,22 +43,29 @@ export default function UsersPage() {
     setLoading(false)
   }
 
-  async function changeRole(userId, role) {
+  async function toggleRole(userId, role, currentRoles) {
     setChanging(userId)
+    const hasRole = currentRoles.includes(role)
+    let newRoles = hasRole
+      ? currentRoles.filter(r => r !== role)
+      : [...currentRoles.filter(r => r !== 'photographer'), role]
+    if (newRoles.length === 0) newRoles = ['photographer']
+
     await fetch('/api/admin/users', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, role }),
+      body: JSON.stringify({ userId, roles: newRoles }),
     })
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u))
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, roles: newRoles } : u))
     setChanging(null)
   }
 
   const filtered = users.filter(u => {
+    const roles = u.roles || []
     if (tab === 'all') return true
-    if (tab === 'admin') return u.role === 'admin' || u.role === 'owner'
-    if (tab === 'model') return u.role === 'model'
-    if (tab === 'head_staff') return u.role === 'head_staff' || u.role === 'reception'
+    if (tab === 'admin') return roles.includes('admin')
+    if (tab === 'model') return roles.includes('model')
+    if (tab === 'photographer') return !roles.includes('admin') && !roles.includes('model')
     return true
   })
 
@@ -86,32 +92,36 @@ export default function UsersPage() {
         <p style={{ color: '#999' }}>該当するユーザーはいません。</p>
       ) : (
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', overflow: 'hidden' }}>
-          {filtered.map((user, i) => (
-            <div key={user.id} style={{
-              display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', flexWrap: 'wrap',
-              borderBottom: i < filtered.length - 1 ? '1px solid #f0f0f0' : 'none',
-            }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560' }}>{user.name || '（名前なし）'}</div>
-                <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>{user.email}</div>
+          {filtered.map((user, i) => {
+            const userRoles = user.roles || ['photographer']
+            return (
+              <div key={user.id} style={{
+                display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', flexWrap: 'wrap',
+                borderBottom: i < filtered.length - 1 ? '1px solid #f0f0f0' : 'none',
+                opacity: changing === user.id ? 0.6 : 1,
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560' }}>{user.name || '（名前なし）'}</div>
+                  <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>{user.email}</div>
+                </div>
+                <RoleBadges roles={userRoles} />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {ROLE_OPTIONS.map(r => (
+                    <label key={r.value} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: userRoles.includes(r.value) ? r.color : '#aaa' }}>
+                      <input
+                        type="checkbox"
+                        checked={userRoles.includes(r.value)}
+                        disabled={changing === user.id}
+                        onChange={() => toggleRole(user.id, r.value, userRoles)}
+                        style={{ width: 16, height: 16, cursor: 'pointer', accentColor: r.color }}
+                      />
+                      {r.label}
+                    </label>
+                  ))}
+                </div>
               </div>
-              <RoleBadge role={user.role} />
-              <select
-                value={user.role}
-                disabled={changing === user.id}
-                onChange={e => changeRole(user.id, e.target.value)}
-                style={{
-                  padding: '7px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13,
-                  cursor: 'pointer', background: '#fafafa', minWidth: 160,
-                  opacity: changing === user.id ? 0.5 : 1,
-                }}
-              >
-                {ROLES.map(r => (
-                  <option key={r.value} value={r.value}>{r.label}</option>
-                ))}
-              </select>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

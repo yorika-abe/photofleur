@@ -8,7 +8,7 @@ import { createBrowserClient } from '@supabase/ssr'
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [user, setUser] = useState(null)
-  const [role, setRole] = useState(null)
+  const [roles, setRoles] = useState([])
   const pathname = usePathname()
 
   useEffect(() => {
@@ -21,10 +21,11 @@ export default function Header() {
       if (user) {
         const { data } = await supabase
           .from('user_profiles')
-          .select('role')
+          .select('roles, role')
           .eq('id', user.id)
           .single()
-        setRole(data?.role)
+        const r = data?.roles?.length > 0 ? data.roles : (data?.role ? [data.role] : [])
+        setRoles(r)
       }
     })
   }, [])
@@ -82,22 +83,21 @@ export default function Header() {
           ))}
           {user ? (
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 8 }}>
-              {role === 'admin' && (
+              {roles.includes('admin') && (
                 <Link href="/admin" style={{
-                  color: isActive('/admin') ? '#f0c040' : '#f0c040',
-                  textDecoration: 'none', fontSize: 13, fontWeight: 600,
+                  color: '#f0c040', textDecoration: 'none', fontSize: 13, fontWeight: 600,
                   padding: '6px 10px', borderRadius: 6,
                   background: isActive('/admin') ? 'rgba(240,192,64,0.15)' : 'transparent',
                 }}>管理画面</Link>
               )}
-              {role === 'model' && (
+              {roles.includes('model') && (
                 <>
-                  <Link href="/model-portal/profile" style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 8px' }}>プロフィール</Link>
+                  <Link href="/model-portal/profile" style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 8px' }}>モデル画面</Link>
                   <Link href="/model-portal/shifts" style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 8px' }}>シフト</Link>
                   <Link href="/model-portal/blog" style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 8px' }}>ブログ</Link>
                 </>
               )}
-              {!role && (
+              {!roles.includes('admin') && !roles.includes('model') && (
                 <Link href="/my" style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 10px' }}>マイページ</Link>
               )}
               <button onClick={handleLogout} style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontSize: 13 }}>
@@ -147,11 +147,11 @@ export default function Header() {
           ))}
           {user ? (
             <>
-              {role === 'admin' && <Link href="/admin" onClick={() => setMenuOpen(false)} style={{ color: '#f0c040', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>管理画面</Link>}
-              {role === 'model' && <Link href="/model-portal/profile" onClick={() => setMenuOpen(false)} style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>プロフィール</Link>}
-              {role === 'model' && <Link href="/model-portal/shifts" onClick={() => setMenuOpen(false)} style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>シフト</Link>}
-              {role === 'model' && <Link href="/model-portal/blog" onClick={() => setMenuOpen(false)} style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>ブログ</Link>}
-              {!role && <Link href="/my" onClick={() => setMenuOpen(false)} style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>マイページ</Link>}
+              {roles.includes('admin') && <Link href="/admin" onClick={() => setMenuOpen(false)} style={{ color: '#f0c040', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>管理画面</Link>}
+              {roles.includes('model') && <Link href="/model-portal/profile" onClick={() => setMenuOpen(false)} style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>モデル画面</Link>}
+              {roles.includes('model') && <Link href="/model-portal/shifts" onClick={() => setMenuOpen(false)} style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>シフト</Link>}
+              {roles.includes('model') && <Link href="/model-portal/blog" onClick={() => setMenuOpen(false)} style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>ブログ</Link>}
+              {!roles.includes('admin') && !roles.includes('model') && <Link href="/my" onClick={() => setMenuOpen(false)} style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>マイページ</Link>}
               <button onClick={handleLogout} style={{ background: 'none', color: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 16, padding: '10px 12px' }}>ログアウト</button>
             </>
           ) : (
