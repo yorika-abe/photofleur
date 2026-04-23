@@ -24,14 +24,20 @@ export async function POST(req) {
   if (!(await checkAdmin(admin))) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await req.json()
-  const { request_date, event_type, notes, deadline } = body
+  const { request_date, dates, event_type, notes, deadline } = body
 
-  const { data, error } = await admin.from('shift_request_dates').insert({
-    request_date,
+  // 複数日まとめて登録
+  const rows = (dates && dates.length > 0 ? dates : [request_date]).map(d => ({
+    request_date: d,
     event_type: event_type || 'both',
     notes: notes || null,
     deadline: deadline || null,
-  }).select().single()
+  }))
+
+  const { data, error } = await admin
+    .from('shift_request_dates')
+    .upsert(rows, { onConflict: 'request_date', ignoreDuplicates: true })
+    .select()
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json(data)
