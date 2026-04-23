@@ -1,73 +1,98 @@
 'use client'
 import { useState } from 'react'
 
+function isVideo(url) {
+  if (!url) return false
+  const ext = url.split('?')[0].split('.').pop().toLowerCase()
+  return ['mp4', 'mov', 'webm', 'avi'].includes(ext)
+}
+
+function MediaThumb({ url, style }) {
+  if (isVideo(url)) {
+    return (
+      <div style={{ ...style, position: 'relative' }}>
+        <video src={url} muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          onMouseEnter={e => e.target.play()} onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0 }} />
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 14, marginLeft: 3 }}>▶</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  return <img src={url} alt="" style={{ ...style, objectFit: 'cover' }} />
+}
+
 export default function PortfolioSlider({ images }) {
-  const [current, setCurrent] = useState(0)
+  const [lightbox, setLightbox] = useState(null)
 
   if (!images || images.length === 0) return null
 
-  const prev = () => setCurrent(i => (i - 1 + images.length) % images.length)
-  const next = () => setCurrent(i => (i + 1) % images.length)
+  const prev = () => setLightbox(i => (i - 1 + images.length) % images.length)
+  const next = () => setLightbox(i => (i + 1) % images.length)
+
+  // Build mosaic layout: first item large (2×2), then alternating patterns
+  const gridItems = images.map((url, i) => {
+    let colSpan = 1, rowSpan = 1
+    if (i === 0) { colSpan = 2; rowSpan = 2 }
+    else if (i % 7 === 3) { colSpan = 2 }
+    return { url, colSpan, rowSpan }
+  })
 
   return (
-    <div style={{ marginTop: 48 }}>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#2f2244', marginBottom: 20 }}>ポートフォリオ</h2>
+    <div style={{ marginTop: 56 }}>
+      <p style={{ fontSize: 11, fontWeight: 600, color: '#aaa', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 20 }}>Portfolio</p>
 
-      {/* Main image */}
-      <div style={{ position: 'relative', aspectRatio: '3/4', maxWidth: 480, margin: '0 auto', background: '#e0d8f0', borderRadius: 12, overflow: 'hidden' }}>
-        <img
-          src={images[current]}
-          alt={`portfolio ${current + 1}`}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.3s ease' }}
-        />
-
-        {images.length > 1 && (
-          <>
-            <button onClick={prev} style={{
-              position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-              background: 'rgba(0,0,0,0.4)', color: '#fff', border: 'none', borderRadius: '50%',
-              width: 40, height: 40, fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>‹</button>
-            <button onClick={next} style={{
-              position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-              background: 'rgba(0,0,0,0.4)', color: '#fff', border: 'none', borderRadius: '50%',
-              width: 40, height: 40, fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>›</button>
-
-            <div style={{ position: 'absolute', bottom: 14, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 6 }}>
-              {images.map((_, i) => (
-                <button key={i} onClick={() => setCurrent(i)} style={{
-                  width: i === current ? 20 : 6, height: 6, borderRadius: 3, border: 'none', cursor: 'pointer',
-                  background: i === current ? '#fff' : 'rgba(255,255,255,0.4)',
-                  padding: 0, transition: 'all 0.2s ease',
-                }} />
-              ))}
-            </div>
-          </>
-        )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gridAutoRows: '180px', gap: 4 }}>
+        {gridItems.map(({ url, colSpan, rowSpan }, i) => (
+          <div
+            key={i}
+            onClick={() => setLightbox(i)}
+            style={{
+              gridColumn: `span ${colSpan}`,
+              gridRow: `span ${rowSpan}`,
+              overflow: 'hidden',
+              background: '#e0d8f0',
+              cursor: 'pointer',
+              position: 'relative',
+            }}
+            className="pf-item"
+          >
+            <MediaThumb url={url} style={{ width: '100%', height: '100%', transition: 'transform 0.4s ease' }} />
+          </div>
+        ))}
       </div>
 
-      {/* Counter */}
-      {images.length > 1 && (
-        <p style={{ textAlign: 'center', fontSize: 13, color: '#aaa', marginTop: 12 }}>
-          {current + 1} / {images.length}
-        </p>
-      )}
+      {/* Lightbox */}
+      {lightbox !== null && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.94)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setLightbox(null)}
+        >
+          <button onClick={e => { e.stopPropagation(); prev() }}
+            style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff', width: 48, height: 48, borderRadius: '50%', fontSize: 24, cursor: 'pointer', zIndex: 1 }}>‹</button>
 
-      {/* Thumbnails */}
-      {images.length > 1 && (
-        <div style={{ display: 'flex', gap: 8, marginTop: 16, overflowX: 'auto', paddingBottom: 4 }}>
-          {images.map((img, i) => (
-            <button key={i} onClick={() => setCurrent(i)} style={{
-              flexShrink: 0, width: 64, height: 80, borderRadius: 6, overflow: 'hidden',
-              border: i === current ? '2px solid #2f2244' : '2px solid transparent',
-              padding: 0, cursor: 'pointer', background: '#e0d8f0',
-            }}>
-              <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </button>
-          ))}
+          <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', maxWidth: '92vw', maxHeight: '92vh' }}>
+            {isVideo(images[lightbox])
+              ? <video src={images[lightbox]} controls autoPlay style={{ maxWidth: '92vw', maxHeight: '92vh', borderRadius: 4 }} />
+              : <img src={images[lightbox]} alt="" style={{ maxWidth: '92vw', maxHeight: '92vh', objectFit: 'contain', borderRadius: 4 }} />
+            }
+          </div>
+
+          <button onClick={e => { e.stopPropagation(); next() }}
+            style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff', width: 48, height: 48, borderRadius: '50%', fontSize: 24, cursor: 'pointer', zIndex: 1 }}>›</button>
+
+          <button onClick={() => setLightbox(null)}
+            style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: 28, cursor: 'pointer', lineHeight: 1 }}>✕</button>
+
+          <div style={{ position: 'absolute', bottom: 16, left: 0, right: 0, textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
+            {lightbox + 1} / {images.length}
+          </div>
         </div>
       )}
+
+      <style>{`.pf-item:hover img, .pf-item:hover video { transform: scale(1.04); }`}</style>
     </div>
   )
 }

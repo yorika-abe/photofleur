@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
+import RichEditor from '@/components/RichEditor'
 
 function slugify(text) {
   return text
@@ -20,8 +21,9 @@ export default function ModelBlogEditPage() {
   const [form, setForm] = useState({ title: '', slug: '', content: '', cover_image: '' })
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const [coverUploading, setCoverUploading] = useState(false)
   const [userId, setUserId] = useState(null)
+  const coverInputRef = useRef(null)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -49,14 +51,17 @@ export default function ModelBlogEditPage() {
   }, [id])
 
   async function uploadCover(file) {
-    setUploading(true)
+    setCoverUploading(true)
     const ext = file.name.split('.').pop()
-    const path = `blog/${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('images').upload(path, file, { upsert: true })
-    if (error) { alert('アップロードエラー: ' + error.message); setUploading(false); return }
-    const { data } = supabase.storage.from('images').getPublicUrl(path)
-    setForm(f => ({ ...f, cover_image: data.publicUrl }))
-    setUploading(false)
+    const path = `blog/cover/${userId || 'u'}-${Date.now()}.${ext}`
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('path', path)
+    const res = await fetch('/api/model-portal/upload', { method: 'POST', body: fd })
+    const data = await res.json()
+    setCoverUploading(false)
+    if (data.error) { alert('アップロードエラー: ' + data.error); return }
+    setForm(f => ({ ...f, cover_image: data.url }))
   }
 
   async function save(submitForReview = false) {
@@ -94,7 +99,7 @@ export default function ModelBlogEditPage() {
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>読み込み中...</div>
 
   return (
-    <div style={{ maxWidth: 760, margin: '0 auto', padding: '40px 20px' }}>
+    <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 20px' }}>
       <Link href="/model-portal/blog" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← ブログ記事一覧</Link>
       <h1 style={{ fontSize: 22, fontWeight: 700, color: '#2f2244', margin: '8px 0 24px' }}>
         {isNew ? '新規記事作成' : '記事編集'}
@@ -106,6 +111,7 @@ export default function ModelBlogEditPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
+        {/* タイトル・スラッグ */}
         <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>タイトル *</label>
@@ -119,34 +125,46 @@ export default function ModelBlogEditPage() {
           </div>
         </div>
 
-        {/* Cover image */}
+        {/* カバー画像 */}
         <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
           <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 12 }}>カバー画像（任意）</label>
           {form.cover_image && (
-            <div style={{ marginBottom: 12, borderRadius: 10, overflow: 'hidden', height: 180 }}>
+            <div style={{ position: 'relative', marginBottom: 12, borderRadius: 10, overflow: 'hidden', height: 200 }}>
               <img src={form.cover_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <button
+                type="button"
+                onClick={() => setForm(f => ({ ...f, cover_image: '' }))}
+                style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >✕</button>
             </div>
           )}
-          <input type="file" accept="image/*" disabled={uploading}
-            onChange={e => e.target.files?.[0] && uploadCover(e.target.files[0])} style={{ fontSize: 13, marginBottom: 8, display: 'block' }} />
-          <input style={inp} value={form.cover_image} onChange={e => setForm(f => ({ ...f, cover_image: e.target.value }))} placeholder="または画像URL https://..." />
+          <input ref={coverInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+            onChange={e => e.target.files?.[0] && uploadCover(e.target.files[0])} />
+          <label
+            onMouseDown={() => coverInputRef.current?.click()}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#f0f7fb', color: '#1a3560', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600, border: '2px dashed #5bbfd6' }}
+          >
+            {coverUploading ? '⏳ アップロード中...' : '📷 カバー画像をアップロード'}
+          </label>
         </div>
 
-        {/* Content */}
+        {/* 本文エディター */}
         <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
-          <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8 }}>本文 *</label>
-          <p style={{ fontSize: 12, color: '#aaa', margin: '0 0 10px' }}>改行で段落が区切られます</p>
-          <textarea style={{ ...inp, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.9 }} rows={18}
-            value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-            placeholder="ここに記事の内容を書いてください..." />
+          <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 12 }}>本文 *</label>
+          <RichEditor
+            value={form.content}
+            onChange={content => setForm(f => ({ ...f, content }))}
+            uploadPath={`blog/${userId || 'tmp'}`}
+          />
         </div>
 
+        {/* ボタン */}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button onClick={() => save(false)} disabled={saving || uploading}
+          <button onClick={() => save(false)} disabled={saving || coverUploading}
             style={{ background: '#f0f0f0', color: '#555', border: 'none', borderRadius: 10, padding: '13px 24px', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
             下書き保存
           </button>
-          <button onClick={() => save(true)} disabled={saving || uploading}
+          <button onClick={() => save(true)} disabled={saving || coverUploading}
             style={{ background: '#2f2244', color: '#fff', border: 'none', borderRadius: 10, padding: '13px 28px', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
             {saving ? '送信中...' : '承認を申請する'}
           </button>

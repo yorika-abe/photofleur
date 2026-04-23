@@ -49,6 +49,7 @@ export default async function AdminPage() {
           { href: '/admin/models', label: 'モデル管理', icon: '👤' },
           { href: '/admin/schedule', label: 'スケジュール管理', icon: '📅' },
           { href: '/admin/shifts', label: 'シフト承認', icon: '🗓️' },
+          { href: '/admin/shift-requests', label: 'シフト指定日管理', icon: '📆' },
           { href: '/admin/coupons', label: 'クーポン管理', icon: '🎟️' },
           { href: '/admin/blog', label: 'ブログ管理', icon: '✍️' },
           { href: '/admin/media', label: 'メディア管理', icon: '🖼️' },

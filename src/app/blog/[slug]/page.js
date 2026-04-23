@@ -29,7 +29,8 @@ export default async function BlogPostPage({ params }) {
     ? await supabase.from('models').select('name, image').eq('user_id', post.author_id).single().catch(() => ({ data: null }))
     : { data: null }
 
-  const paragraphs = (post.content || '').split('\n').filter(l => l.trim())
+  // HTMLタグが含まれているか判定（リッチエディター出力）
+  const isHtml = (post.content || '').includes('<')
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: 'clamp(32px,5vw,56px) 20px' }}>
@@ -56,12 +57,27 @@ export default async function BlogPostPage({ params }) {
           </div>
         </div>
 
-        <div style={{ fontSize: 15, color: '#444', lineHeight: 2, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {paragraphs.map((p, i) => (
-            <p key={i} style={{ margin: 0 }}>{p}</p>
-          ))}
-        </div>
+        {isHtml ? (
+          <div
+            className="blog-content"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+            style={{ fontSize: 15, color: '#444', lineHeight: 2 }}
+          />
+        ) : (
+          <div style={{ fontSize: 15, color: '#444', lineHeight: 2, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {(post.content || '').split('\n').filter(l => l.trim()).map((p, i) => (
+              <p key={i} style={{ margin: 0 }}>{p}</p>
+            ))}
+          </div>
+        )}
       </div>
+
+      <style>{`
+        .blog-content img { max-width: 100%; border-radius: 8px; margin: 8px 0; }
+        .blog-content video { max-width: 100%; border-radius: 8px; margin: 8px 0; }
+        .blog-content a { color: #1a3560; }
+        .blog-content p { margin: 0 0 12px; }
+      `}</style>
 
       <div style={{ marginTop: 48, paddingTop: 24, borderTop: '1px solid #f0f0f0' }}>
         <Link href="/blog" style={{ color: '#2f2244', textDecoration: 'none', fontWeight: 600, fontSize: 14 }}>← ブログ一覧に戻る</Link>

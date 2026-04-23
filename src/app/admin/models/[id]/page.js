@@ -260,20 +260,26 @@ export default function AdminModelEditPage() {
           <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 18 }}>ポートフォリオ画像</h2>
           {portfolioImages.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 10, marginBottom: 16 }}>
-              {portfolioImages.map((url, i) => (
-                <div key={i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', aspectRatio: '3/4', background: '#e0d8f0' }}>
-                  <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <button onClick={() => setPortfolioImages(prev => prev.filter((_, idx) => idx !== i))}
-                    style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: 13 }}>
-                    ×
-                  </button>
-                </div>
-              ))}
+              {portfolioImages.map((url, i) => {
+                const isVid = /\.(mp4|mov|webm)(\?|$)/i.test(url)
+                return (
+                  <div key={i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', aspectRatio: '3/4', background: '#e0d8f0' }}>
+                    {isVid
+                      ? <video src={url} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    }
+                    <button onClick={() => setPortfolioImages(prev => prev.filter((_, idx) => idx !== i))}
+                      style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: 13 }}>
+                      ×
+                    </button>
+                  </div>
+                )
+              })}
             </div>
           )}
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#f0f7fb', color: '#1a3560', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600, border: '2px dashed #5bbfd6' }}>
-            📷 写真を追加（複数可）
-            <input type="file" accept="image/*" multiple disabled={uploading} style={{ display: 'none' }}
+            📷 写真・動画を追加（複数可）
+            <input type="file" accept="image/*,video/*" multiple disabled={uploading} style={{ display: 'none' }}
               onChange={async e => {
                 if (!e.target.files?.length) return
                 setUploading(true)

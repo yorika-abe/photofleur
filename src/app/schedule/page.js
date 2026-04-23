@@ -1,19 +1,20 @@
 import Link from 'next/link'
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 
-function formatDateFull(dateStr) {
-  const d = new Date(dateStr)
-  const days = ['日', '月', '火', '水', '木', '金', '土']
-  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`
-}
-
 export const metadata = { title: 'スケジュール一覧 | PhotoFleur' }
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${mm}/${dd}`
+}
 
 export default async function SchedulePage() {
   const today = new Date().toISOString().split('T')[0]
   const supabase = await createSupabaseAdminClient()
 
-  const { data: events, error } = await supabase
+  const { data: events } = await supabase
     .from('events')
     .select('*')
     .eq('status', 'active')
@@ -32,53 +33,87 @@ export default async function SchedulePage() {
   const eventsWithEntries = (events || []).map(ev => ({ ...ev, event_entries: entriesByEvent[ev.id] || [] }))
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 20px' }}>
-      <h1 style={{ fontSize: 32, fontWeight: 700, color: '#1a3560', marginBottom: 8 }}>スケジュール一覧</h1>
-      <p style={{ color: '#666', marginBottom: 32, fontSize: 15 }}>開催予定の撮影会イベントをご確認いただけます。</p>
+    <div style={{ background: '#f7f5f2', minHeight: '100vh' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: 'clamp(40px, 6vw, 72px) 20px' }}>
 
-      {error && <p style={{ color: 'red', fontSize: 14 }}>データの取得に失敗しました。</p>}
-
-      {!eventsWithEntries || eventsWithEntries.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#999' }}>
-          <p>現在、予定されているイベントはありません。</p>
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <p style={{ fontSize: 11, letterSpacing: '0.35em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>Schedule</p>
+          <h1 style={{ fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 700, color: '#1a3560', margin: 0 }}>開催予定のイベント</h1>
         </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {eventsWithEntries.map(ev => (
-            <Link key={ev.id} href={`/events/${ev.id}`} style={{ textDecoration: 'none' }}>
-              <div style={{ background: '#fff', borderRadius: 16, padding: '24px', border: '1px solid #e5e5e5', display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                <div style={{ minWidth: 160 }}>
-                  <div style={{ display: 'inline-block', background: ev.event_type === 'street' ? '#e8f5e9' : '#e8eaf6', color: ev.event_type === 'street' ? '#388e3c' : '#3949ab', borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 600, marginBottom: 10 }}>
-                    {ev.event_type === 'street' ? 'ストリート' : ev.event_type === 'studio' ? 'スタジオ' : 'イベント'}
-                  </div>
-                  <div style={{ fontWeight: 700, fontSize: 20, color: '#1a3560', marginBottom: 4 }}>{formatDateFull(ev.event_date)}</div>
-                  <div style={{ fontSize: 14, color: '#666' }}>{ev.location_name}</div>
-                </div>
 
-                {ev.event_entries && ev.event_entries.length > 0 && (
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, color: '#999', marginBottom: 10 }}>出演モデル</div>
-                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                      {ev.event_entries.map(entry => entry.models && (
-                        <div key={entry.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#e0d8f0', overflow: 'hidden', flexShrink: 0 }}>
-                            {entry.models.image && <img src={entry.models.image} alt={entry.models.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+        {!eventsWithEntries || eventsWithEntries.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '80px 20px', color: '#999' }}>
+            <p>現在、予定されているイベントはありません。</p>
+          </div>
+        ) : (
+          <div className="schedule-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+            {eventsWithEntries.map(ev => {
+              const date = formatDate(ev.event_date)
+              const isStreet = ev.event_type === 'street'
+              const modelList = (ev.event_entries || []).map(e => e.models).filter(Boolean)
+
+              return (
+                <Link key={ev.id} href={`/events/${ev.id}`} style={{ textDecoration: 'none', display: 'block' }}>
+                  <div className="sched-card" style={{ background: '#fff', borderRadius: 4, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', transition: 'box-shadow 0.3s ease, transform 0.3s ease' }}>
+
+                    {/* 画像エリア */}
+                    <div style={{ position: 'relative', aspectRatio: '4/3', background: isStreet ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : 'linear-gradient(160deg,#f4d6e8,#e8b8d0)', overflow: 'hidden' }}>
+                      {ev.main_image && (
+                        <img src={ev.main_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }} className="sched-img" />
+                      )}
+                      <div style={{ position: 'absolute', top: 12, left: 12 }}>
+                        <span style={{ fontSize: 10, letterSpacing: '0.15em', color: '#fff', textTransform: 'uppercase', background: isStreet ? 'rgba(91,191,214,0.85)' : 'rgba(244,160,190,0.85)', padding: '4px 10px', borderRadius: 2, fontWeight: 600 }}>
+                          {isStreet ? 'Street' : ev.event_type === 'studio' ? 'Studio' : 'Special'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* テキストエリア */}
+                    <div style={{ padding: '18px 20px 20px' }}>
+                      <div style={{ fontSize: 'clamp(22px, 4vw, 28px)', fontWeight: 700, color: '#1a3560', letterSpacing: '0.05em', marginBottom: 6 }}>
+                        {date}
+                      </div>
+                      {ev.title && (
+                        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginBottom: 4 }}>{ev.title}</div>
+                      )}
+                      {ev.location_name && (
+                        <div style={{ fontSize: 12, color: '#888', marginBottom: 12 }}>{ev.location_name}</div>
+                      )}
+
+                      {modelList.length > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ display: 'flex' }}>
+                            {modelList.slice(0, 5).map((m, idx) => (
+                              <div key={idx} style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid #fff', overflow: 'hidden', background: '#e0d8f0', marginLeft: idx > 0 ? -8 : 0, boxShadow: '0 1px 4px rgba(0,0,0,0.12)' }}>
+                                {m.image && <img src={m.image} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                              </div>
+                            ))}
                           </div>
-                          <span style={{ fontSize: 13, color: '#444', fontWeight: 600 }}>{entry.models.name}</span>
+                          {modelList.length > 5 && (
+                            <span style={{ fontSize: 11, color: '#aaa' }}>+{modelList.length - 5}</span>
+                          )}
                         </div>
-                      ))}
+                      )}
+
+                      <div style={{ marginTop: 14, fontSize: 12, color: '#5bbfd6', fontWeight: 600, letterSpacing: '0.05em' }}>
+                        詳細・予約 →
+                      </div>
                     </div>
                   </div>
-                )}
+                </Link>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', color: '#1a3560', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>
-                  詳細・予約 →
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      <style>{`
+        .sched-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.14) !important; transform: translateY(-2px); }
+        .sched-card:hover .sched-img { transform: scale(1.04); }
+        @media (max-width: 600px) {
+          .schedule-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </div>
   )
 }
