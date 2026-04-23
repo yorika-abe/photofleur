@@ -13,7 +13,7 @@ export async function PUT(req, { params }) {
   const { id } = await params
   const body = await req.json()
   const supabase = await createSupabaseAdminClient()
-  const { error } = await supabase.from('models').update({ ...body, updated_at: new Date().toISOString() }).eq('id', id)
+  const { error } = await supabase.from('models').update(body).eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json({ ok: true })
 }
