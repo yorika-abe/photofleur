@@ -150,6 +150,7 @@ export default async function Home() {
       {/* ─── MISSION ─── */}
       <section style={{ position: 'relative', padding: 'clamp(40px, 7vw, 80px) 20px', textAlign: 'center', overflow: 'hidden', background: '#fff' }}>
         {missionBg && <img src={missionBg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+        {missionBg && <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.45)' }} />}
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 640, margin: '0 auto' }}>
           <p className="reveal" style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Mission Statement.</p>
           <h2 className="reveal reveal-delay-1" style={{ ...serif, fontSize: 'clamp(18px, 3vw, 28px)', fontWeight: 400, fontStyle: 'italic', color: '#0d1f3a', margin: '0 0 20px', lineHeight: 1.4 }}>
