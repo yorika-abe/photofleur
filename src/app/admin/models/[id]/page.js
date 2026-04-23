@@ -64,15 +64,16 @@ export default function AdminModelEditPage() {
 
   async function uploadImage(file, field) {
     setUploading(true)
-    const { createBrowserClient } = await import('@supabase/ssr')
-    const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
     const ext = file.name.split('.').pop()
     const path = `models/${isNew ? 'new' : id}/${field}-${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('images').upload(path, file, { upsert: true })
-    if (error) { alert('アップロードエラー: ' + error.message); setUploading(false); return }
-    const { data } = supabase.storage.from('images').getPublicUrl(path)
-    if (field === 'portfolio') setPortfolioImages(prev => [...prev, data.publicUrl])
-    else setForm(f => ({ ...f, [field]: data.publicUrl }))
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('path', path)
+    const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+    const data = await res.json()
+    if (data.error) { alert('アップロードエラー: ' + data.error); setUploading(false); return }
+    if (field === 'portfolio') setPortfolioImages(prev => [...prev, data.url])
+    else setForm(f => ({ ...f, [field]: data.url }))
     setUploading(false)
   }
 
@@ -228,8 +229,8 @@ export default function AdminModelEditPage() {
                   onClick={() => setForm(f => ({ ...f, price_tier: tier.key, street_price: tier.street, studio_price: tier.studio }))}
                   style={{ padding: '14px 10px', borderRadius: 10, border: selected ? `2px solid ${tier.color}` : '2px solid #e5e5e5', cursor: 'pointer', background: selected ? tier.bg : '#fafafa', textAlign: 'center' }}>
                   <div style={{ fontWeight: 700, fontSize: 14, color: tier.color, marginBottom: 4 }}>{tier.label}</div>
-                  <div style={{ fontSize: 11, color: '#666' }}>ストリート ¥{tier.street.toLocaleString()}</div>
-                  <div style={{ fontSize: 11, color: '#666' }}>スタジオ ¥{tier.studio.toLocaleString()}</div>
+                  <div style={{ fontSize: 11, color: '#666' }}>ストリート90分 ¥{tier.street.toLocaleString()}</div>
+                  <div style={{ fontSize: 11, color: '#666' }}>スタジオ60分 ¥{tier.studio.toLocaleString()}</div>
                 </button>
               )
             })}
@@ -276,15 +277,16 @@ export default function AdminModelEditPage() {
               onChange={async e => {
                 if (!e.target.files?.length) return
                 setUploading(true)
-                const { createBrowserClient: cbc } = await import('@supabase/ssr')
-                const sb = cbc(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
                 for (const file of Array.from(e.target.files)) {
                   const ext = file.name.split('.').pop()
                   const path = `models/${isNew ? 'new' : id}/portfolio-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-                  const { error } = await sb.storage.from('images').upload(path, file, { upsert: true })
-                  if (error) { alert('アップロードエラー: ' + error.message); continue }
-                  const { data } = sb.storage.from('images').getPublicUrl(path)
-                  setPortfolioImages(prev => [...prev, data.publicUrl])
+                  const formData = new FormData()
+                  formData.append('file', file)
+                  formData.append('path', path)
+                  const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+                  const data = await res.json()
+                  if (data.error) { alert('アップロードエラー: ' + data.error); continue }
+                  setPortfolioImages(prev => [...prev, data.url])
                 }
                 setUploading(false)
               }} />
