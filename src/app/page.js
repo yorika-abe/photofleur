@@ -268,18 +268,18 @@ export default async function Home() {
             <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>How it works</p>
             <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>ご参加の流れ</h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 1, background: '#e8f4f8' }}>
+          <div className="how-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, background: '#e8f4f8' }}>
             {[
               { num: '01', en: 'Browse', ja: 'スケジュールを確認', desc: '開催日程・出演モデルをチェック。ストリートとスタジオから選べます。' },
               { num: '02', en: 'Reserve', ja: '時間枠を選んで予約', desc: '好きな時間枠を選択し、お名前・メールアドレスを入力するだけ。' },
               { num: '03', en: 'Confirm', ja: '確認メールを受け取る', desc: '予約確認メールが届いたら完了。当日はQRコードをご提示ください。' },
               { num: '04', en: 'Shoot', ja: '当日を楽しむ', desc: 'カメラを持って現地へ。スタッフがご案内します。素敵な写真を撮りましょう。' },
             ].map(item => (
-              <div key={item.num} style={{ background: '#fff', padding: '40px 28px' }}>
-                <div style={{ ...serif, fontSize: 'clamp(48px, 8vw, 72px)', fontWeight: 300, color: '#d6ecf5', lineHeight: 1, marginBottom: 16 }}>{item.num}</div>
-                <p style={{ fontSize: 10, letterSpacing: '0.25em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 8, fontWeight: 600 }}>{item.en}</p>
-                <h3 style={{ ...serif, fontSize: 18, fontWeight: 600, color: '#0d1f3a', marginBottom: 12, marginTop: 0 }}>{item.ja}</h3>
-                <p style={{ fontSize: 13, color: '#667', lineHeight: 1.8, margin: 0 }}>{item.desc}</p>
+              <div key={item.num} className="how-item" style={{ background: '#fff', padding: '40px 28px' }}>
+                <div style={{ ...serif, fontSize: 'clamp(32px, 6vw, 72px)', fontWeight: 300, color: '#d6ecf5', lineHeight: 1, marginBottom: 16 }}>{item.num}</div>
+                <p style={{ fontSize: 'clamp(8px, 1.5vw, 10px)', letterSpacing: '0.15em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 6, fontWeight: 600 }}>{item.en}</p>
+                <h3 className="how-title" style={{ ...serif, fontSize: 'clamp(9px, 1.8vw, 18px)', fontWeight: 600, color: '#0d1f3a', marginBottom: 8, marginTop: 0, wordBreak: 'keep-all' }}>{item.ja}</h3>
+                <p className="how-desc" style={{ fontSize: 'clamp(8px, 1.4vw, 13px)', color: '#667', lineHeight: 1.6, margin: 0, wordBreak: 'keep-all' }}>{item.desc}</p>
               </div>
             ))}
           </div>
@@ -310,7 +310,12 @@ export default async function Home() {
         .event-card:hover .event-img { transform: scale(1.05); }
         .model-card:hover .model-img { transform: scale(1.05); }
         @media (max-width: 640px) { .concept-grid { grid-template-columns: 1fr !important; } }
-        @media (max-width: 640px) { .model-grid { grid-template-columns: 1fr !important; gap: 0 !important; } }
+        @media (max-width: 640px) { .model-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 8px !important; } }
+        @media (max-width: 640px) { .model-grid a > div > div:last-child { padding: 6px 4px 8px !important; } }
+        @media (max-width: 640px) { .model-grid a > div > div:last-child > div:first-child { font-size: 10px !important; } }
+        @media (max-width: 640px) { .model-grid a > div > div:last-child > div:last-child { font-size: 9px !important; } }
+        @media (max-width: 640px) { .how-item { padding: 16px 8px !important; } }
+        @media (max-width: 640px) { .how-desc { display: none; } }
       `}</style>
     </div>
   )
