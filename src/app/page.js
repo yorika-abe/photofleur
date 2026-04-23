@@ -49,8 +49,8 @@ export default async function Home() {
       .limit(6),
     adminSupabase
       .from('models')
-      .select('id, name, name_en, image, is_staff')
-      .eq('is_staff', false),
+      .select('id, name, name_en, image')
+      .eq('status', 'active'),
     adminSupabase.from('site_settings').select('key, value'),
   ])
 
