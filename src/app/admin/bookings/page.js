@@ -23,7 +23,10 @@ export default function AdminBookingsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   )
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    document.cookie = `bookings_last_viewed=${new Date().toISOString()}; path=/; max-age=${60 * 60 * 24 * 365}`
+    load()
+  }, [])
 
   async function load() {
     setLoading(true)

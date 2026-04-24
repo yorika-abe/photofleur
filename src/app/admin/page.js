@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 
 export const dynamic = 'force-dynamic'
@@ -8,7 +9,8 @@ export default async function AdminPage() {
   const supabase = await createSupabaseAdminClient()
 
   const today = new Date().toISOString().split('T')[0]
-  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  const cookieStore = await cookies()
+  const lastViewed = cookieStore.get('bookings_last_viewed')?.value
 
   const [
     { count: pendingShifts },
@@ -17,7 +19,9 @@ export default async function AdminPage() {
   ] = await Promise.all([
     supabase.from('model_shifts').select('*', { count: 'exact', head: true }).eq('status', 'pending_approval').gte('event_date', today),
     supabase.from('models').select('*', { count: 'exact', head: true }).not('pending_data', 'is', null),
-    supabase.from('bookings').select('*', { count: 'exact', head: true }).gte('created_at', since24h),
+    lastViewed
+      ? supabase.from('bookings').select('*', { count: 'exact', head: true }).gt('created_at', lastViewed)
+      : supabase.from('bookings').select('*', { count: 'exact', head: true }),
   ])
 
   return (
