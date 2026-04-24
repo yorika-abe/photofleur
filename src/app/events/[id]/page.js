@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
+import BookingSection from './BookingSection'
 
 export const dynamic = 'force-dynamic'
 
@@ -128,7 +129,6 @@ export default async function EventDetailPage({ params }) {
           )}
         </div>
 
-        {/* Studio info */}
         {event.event_type === 'studio' && event.studio_url && (
           <div style={{ marginTop: 12 }}>
             <a href={event.studio_url} target="_blank" rel="noopener noreferrer" style={{ color: '#3949ab', fontSize: 13, textDecoration: 'none' }}>
@@ -137,7 +137,6 @@ export default async function EventDetailPage({ params }) {
           </div>
         )}
 
-        {/* Access / notes */}
         {event.access_note && (
           <div style={{ marginTop: 16, background: '#f8fbff', borderRadius: 8, padding: '14px', fontSize: 13, color: '#555', lineHeight: 1.8 }}>
             <strong>アクセス：</strong>{event.access_note}
@@ -156,106 +155,9 @@ export default async function EventDetailPage({ params }) {
         </div>
       )}
 
-      {/* Models */}
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a3560', marginBottom: 16 }}>出演モデル</h2>
-      {!entries || entries.length === 0 ? (
-        <p style={{ color: '#999', marginBottom: 32 }}>出演モデルはまだ決まっていません。</p>
-      ) : (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 40 }}>
-          {entries.filter(e => e.models).map(entry => {
-            const model = entry.models
-            return (
-              <Link key={entry.id} href={`/models/${model.id}`} style={{ textDecoration: 'none' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, width: 90 }}>
-                  <div style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', border: '2px solid #e0ecf8', background: '#f0f4fb' }}>
-                    {model.image
-                      ? <img src={model.image} alt={model.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>👤</div>
-                    }
-                  </div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#1a3560', textAlign: 'center', lineHeight: 1.3 }}>{model.name}</div>
-                  {model.name_en && <div style={{ fontSize: 10, color: '#aaa', textAlign: 'center' }}>{model.name_en}</div>}
-                </div>
-              </Link>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Booking slots */}
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a3560', marginBottom: 16 }}>予約枠</h2>
-      {!bookingOpen ? (
-        <div style={{ background: '#f8fbff', border: '1px solid #d6ecf5', borderRadius: 12, padding: '20px 24px', marginBottom: 32 }}>
-          <p style={{ color: '#888', fontSize: 14, margin: 0 }}>
-            予約受付開始：<strong style={{ color: '#1a3560' }}>
-              {new Date(event.booking_open_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-            </strong>
-          </p>
-        </div>
-      ) : !entries || entries.length === 0 ? (
-        <p style={{ color: '#999' }}>予約枠はまだありません。</p>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-          {entries.map(entry => {
-            if (!entry.models) return null
-            const model = entry.models
-            const slots = (slotsByEntry[entry.id] || []).filter(s => s.slot_order !== 0)
-            if (slots.length === 0) return null
-
-            return (
-              <div key={entry.id} style={{ background: '#fff', borderRadius: 16, padding: '24px', border: '1px solid #e5e5e5' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', background: '#e0d8f0', flexShrink: 0 }}>
-                    {model.image && <img src={model.image} alt={model.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                  </div>
-                  <Link href={`/models/${model.id}`} style={{ textDecoration: 'none' }}>
-                    <div style={{ fontWeight: 700, fontSize: 16, color: '#1a3560' }}>{model.name}</div>
-                  </Link>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
-                  {slots.map(slot => {
-                    const indoor = indoorCountBySlot[slot.id] || 0
-                    const maxIndoor = slot.max_reservations || 1
-                    const studioFee = event.studio_fee || 0
-                    const outdoorPrice = Math.max(0, slot.price - studioFee)
-                    const indoorFull = indoor >= maxIndoor
-                    const totalBookings = (bookingCounts || []).filter(b => b.slot_id === slot.id).length
-                    const fullyBooked = slot.is_reserved && indoorFull && totalBookings >= maxIndoor * 2
-
-                    return (
-                      <div key={slot.id} style={{
-                        borderRadius: 10, padding: '14px',
-                        border: `2px solid ${fullyBooked ? '#eee' : indoorFull ? '#ff9800' : '#1a3560'}`,
-                        background: fullyBooked ? '#fafafa' : indoorFull ? '#fff8e1' : '#f8fbff',
-                      }}>
-                        <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560', marginBottom: 4 }}>{slot.slot_label}</div>
-                        {indoorFull && !fullyBooked ? (
-                          <>
-                            <div style={{ fontSize: 12, color: '#e65100', marginBottom: 6 }}>屋外撮影のみ</div>
-                            <div style={{ fontSize: 14, color: '#555', marginBottom: 8 }}>¥{outdoorPrice.toLocaleString()}</div>
-                            <Link href={`/confirm?slot_id=${slot.id}`} style={{ display: 'block', textAlign: 'center', background: '#ff9800', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '7px 0', fontSize: 12, fontWeight: 600 }}>屋外で予約</Link>
-                          </>
-                        ) : fullyBooked ? (
-                          <div style={{ fontSize: 13, color: '#999', fontWeight: 600, marginTop: 8 }}>満席</div>
-                        ) : (
-                          <>
-                            <div style={{ fontSize: 14, color: '#555', marginBottom: 8 }}>¥{(slot.price || 0).toLocaleString()}</div>
-                            <Link href={`/confirm?slot_id=${slot.id}`} style={{ display: 'block', textAlign: 'center', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '7px 0', fontSize: 13, fontWeight: 600 }}>予約する</Link>
-                          </>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
       {/* Gallery */}
       {event.gallery_images && event.gallery_images.length > 0 && (
-        <div style={{ marginTop: 40 }}>
+        <div style={{ marginBottom: 40 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a3560', marginBottom: 16 }}>撮影イメージ</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
             {event.gallery_images.map((url, i) => (
@@ -266,6 +168,17 @@ export default async function EventDetailPage({ params }) {
           </div>
         </div>
       )}
+
+      {/* Booking */}
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a3560', marginBottom: 16 }}>予約する</h2>
+      <BookingSection
+        entries={entries}
+        slotsByEntry={slotsByEntry}
+        indoorCountBySlot={indoorCountBySlot}
+        bookingCounts={bookingCounts || []}
+        bookingOpen={bookingOpen}
+        bookingOpenAt={event.booking_open_at}
+      />
 
       {/* Studio rules */}
       {event.studio_rules && (
