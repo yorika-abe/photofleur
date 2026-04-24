@@ -3,11 +3,6 @@ import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
 import PortfolioSlider from '@/components/PortfolioSlider'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
-
 function formatDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00')
   const days = ['日', '月', '火', '水', '木', '金', '土']
@@ -15,6 +10,7 @@ function formatDate(dateStr) {
 }
 
 export async function generateMetadata({ params }) {
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   const { id } = await params
   const { data: model } = await supabase.from('models').select('name, name_en').eq('id', id).single()
   if (!model) return {}
@@ -22,6 +18,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ModelDetailPage({ params }) {
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   const { id } = await params
   const today = new Date().toISOString().split('T')[0]
 

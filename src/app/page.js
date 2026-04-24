@@ -6,11 +6,6 @@ import ScheduleCarousel from '@/components/ScheduleCarousel'
 
 export const dynamic = 'force-dynamic'
 
-const adminSupabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
-
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
 function toEmbedUrl(url) {
@@ -28,6 +23,10 @@ function toEmbedUrl(url) {
 }
 
 export default async function Home() {
+  const adminSupabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
   const today = new Date().toISOString().split('T')[0]
 
   const [{ data: events }, { data: models }, { data: siteSettingsRows }] = await Promise.all([

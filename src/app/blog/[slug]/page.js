@@ -2,18 +2,15 @@ import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
-
 export async function generateMetadata({ params }) {
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   const { slug } = await params
   const { data } = await supabase.from('blog_posts').select('title').eq('slug', slug).single()
   return { title: data ? `${data.title} | PhotoFleur Blog` : 'ブログ' }
 }
 
 export default async function BlogPostPage({ params }) {
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   const { slug } = await params
 
   const { data: post } = await supabase
