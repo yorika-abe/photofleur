@@ -18,11 +18,17 @@ export async function GET() {
 
   const { data: entries } = await supabase
     .from('event_entries')
-    .select('id, event_id, models(id, name, price_tier, is_staff)')
+    .select('id, event_id, model_id')
     .in('event_id', eventIds)
 
   const entryIds = (entries || []).map(e => e.id)
   if (entryIds.length === 0) return Response.json({ events: events.map(e => ({ event: e, timeSlots: [], rows: [] })) })
+
+  const modelIds = [...new Set((entries || []).map(e => e.model_id).filter(Boolean))]
+  const { data: modelsData } = modelIds.length
+    ? await supabase.from('models').select('id, name, price_tier, is_staff').in('id', modelIds)
+    : { data: [] }
+  const modelMap = Object.fromEntries((modelsData || []).map(m => [m.id, m]))
 
   const { data: slots } = await supabase
     .from('booking_slots')
@@ -59,7 +65,6 @@ export async function GET() {
     const eventEntries = entriesByEvent[event.id] || []
     const allSlots = eventEntries.flatMap(e => slotsByEntry[e.id] || [])
 
-    // Collect unique time slot labels sorted by slot_order
     const labelMinOrder = {}
     for (const s of allSlots) {
       if (labelMinOrder[s.slot_label] === undefined || s.slot_order < labelMinOrder[s.slot_label]) {
@@ -68,16 +73,15 @@ export async function GET() {
     }
     const timeSlots = Object.keys(labelMinOrder).sort((a, b) => labelMinOrder[a] - labelMinOrder[b])
 
-    // Sort models by tier order
     const sortedEntries = [...eventEntries]
-      .filter(e => e.models)
-      .sort((a, b) => (TIER_ORDER[a.models?.price_tier] ?? 99) - (TIER_ORDER[b.models?.price_tier] ?? 99))
+      .filter(e => modelMap[e.model_id])
+      .sort((a, b) => (TIER_ORDER[modelMap[a.model_id]?.price_tier] ?? 99) - (TIER_ORDER[modelMap[b.model_id]?.price_tier] ?? 99))
 
     const rows = sortedEntries.map(e => {
       const cellByLabel = {}
       for (const s of slotsByEntry[e.id] || []) cellByLabel[s.slot_label] = s
       return {
-        model: e.models,
+        model: modelMap[e.model_id],
         cells: Object.fromEntries(timeSlots.map(label => [label, cellByLabel[label] || null])),
       }
     })

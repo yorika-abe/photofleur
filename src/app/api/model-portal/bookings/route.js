@@ -35,7 +35,7 @@ export async function GET(req) {
     .eq('model_id', model.id)
 
   const upcomingEntries = (entries || []).filter(e =>
-    e.events && e.events.status === 'active' && e.events.event_date >= today
+    e.events && e.events.status !== 'cancelled' && e.events.event_date >= today
   ).sort((a, b) => a.events.event_date.localeCompare(b.events.event_date))
 
   if (upcomingEntries.length === 0) return Response.json({ events: [] })
