@@ -31,15 +31,16 @@ function ConfirmForm() {
     last_name: '', first_name: '',
     last_name_kana: '', first_name_kana: '',
     email: '', phone: '', sns_url: '',
-    marketing_consent: false,
+    marketing_consent: true,
   })
+  const [termsAgreed, setTermsAgreed] = useState(false)
 
   const [couponCode, setCouponCode] = useState('')
   const [coupon, setCoupon] = useState(null)
   const [couponError, setCouponError] = useState('')
   const [couponLoading, setCouponLoading] = useState(false)
 
-  const [paymentMethod, setPaymentMethod] = useState('cash')
+  const [paymentMethod, setPaymentMethod] = useState('card')
   const [squareReady, setSquareReady] = useState(false)
   const cardRef = useRef(null)
   const paymentsRef = useRef(null)
@@ -122,6 +123,10 @@ function ConfirmForm() {
 
   async function initCard() {
     try {
+      if (!SQUARE_APP_ID) { setError('クレジットカード決済は現在利用できません。当日現金をお選びください。'); return }
+      // DOM要素が確実に存在するまで待機
+      await new Promise(r => setTimeout(r, 100))
+      if (!document.getElementById('card-container')) { setError('カード入力フォームの初期化に失敗しました。'); return }
       const payments = window.Square.payments(SQUARE_APP_ID, SQUARE_LOCATION_ID)
       paymentsRef.current = payments
       const card = await payments.card()
@@ -129,7 +134,7 @@ function ConfirmForm() {
       cardRef.current = card
       setSquareReady(true)
     } catch (e) {
-      setError('カード入力フォームの初期化に失敗しました。')
+      setError('カード入力フォームの初期化に失敗しました。当日現金をお選びいただくか、時間をおいて再度お試しください。')
     }
   }
 
@@ -165,6 +170,9 @@ function ConfirmForm() {
     const { last_name, first_name, last_name_kana, first_name_kana, email, phone } = form
     if (!last_name || !first_name || !last_name_kana || !first_name_kana || !email || !phone || !form.sns_url) {
       setError('必須項目を全て入力してください。'); return
+    }
+    if (!termsAgreed) {
+      setError('利用規約への同意が必要です。'); return
     }
 
     setSaving(true)
@@ -377,7 +385,7 @@ function ConfirmForm() {
         </div>
 
         {/* Marketing consent */}
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 12 }}>
           <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontSize: 13, color: '#555', lineHeight: 1.6 }}>
             <input type="checkbox" checked={form.marketing_consent} onChange={e => setForm(f => ({ ...f, marketing_consent: e.target.checked }))}
               style={{ marginTop: 2, flexShrink: 0 }} />
@@ -385,9 +393,17 @@ function ConfirmForm() {
           </label>
         </div>
 
-        <p style={{ fontSize: 12, color: '#999', marginBottom: 20, lineHeight: 1.7 }}>
-          予約することで<Link href="/terms" style={{ color: '#666' }}>利用規約</Link>に同意したことになります。
-        </p>
+        {/* Terms agreement (required) */}
+        <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: '14px 16px', marginBottom: 20 }}>
+          <p style={{ fontSize: 13, color: '#795548', margin: '0 0 10px', lineHeight: 1.7 }}>
+            ご予約前に<Link href="/terms" target="_blank" style={{ color: '#1a3560', fontWeight: 700 }}>利用規約</Link>を必ずご確認ください。予約することで利用規約に同意したこととします。
+          </p>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#555' }}>
+            <input type="checkbox" checked={termsAgreed} onChange={e => setTermsAgreed(e.target.checked)}
+              style={{ width: 18, height: 18, flexShrink: 0 }} />
+            利用規約に同意する <span style={{ color: 'red' }}>*</span>
+          </label>
+        </div>
 
         {error && (
           <div style={{ background: '#ffeef0', border: '1px solid #f5c0c5', borderRadius: 8, padding: '12px', marginBottom: 16, color: '#c0392b', fontSize: 14 }}>
