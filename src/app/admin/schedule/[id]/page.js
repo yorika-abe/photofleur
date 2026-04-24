@@ -37,6 +37,9 @@ export default function EventEditPage() {
   const [autoAdding, setAutoAdding] = useState(false)
   const [uploading, setUploading] = useState(null)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [products, setProducts] = useState([])
+  const [modelsSubTab, setModelsSubTab] = useState('models')
+  const [newProduct, setNewProduct] = useState({ name: '', image: '', description: '', price: 0, stock: 1 })
 
 
   useEffect(() => { load() }, [id])
@@ -52,6 +55,8 @@ export default function EventEditPage() {
       setModels(mods || [])
       setEntries(entriesWithSlots || [])
       setShifts(shiftData || [])
+      const productsRes = await fetch(`/api/admin/events/${id}/products`)
+      setProducts(productsRes.ok ? await productsRes.json() : [])
       // 保存済みテンプレートがあれば使用、なければイベント種別のデフォルトを使用
       let savedTemplates = null
       try { savedTemplates = ev?.slot_templates ? JSON.parse(ev.slot_templates) : null } catch {}
@@ -241,6 +246,41 @@ export default function EventEditPage() {
       ...e, booking_slots: e.booking_slots.map(s => s.id === slotId ? { ...s, price: parseInt(price) } : s)
     } : e))
   }
+
+  async function updateSlotMaxReservations(entryId, slotId, max) {
+    const val = Math.max(1, parseInt(max) || 1)
+    await fetch(`/api/admin/events/${id}/slots`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slotId, max_reservations: val }),
+    })
+    setEntries(prev => prev.map(e => e.id === entryId ? {
+      ...e, booking_slots: e.booking_slots.map(s => s.id === slotId ? { ...s, max_reservations: val } : s)
+    } : e))
+  }
+
+  async function addProduct() {
+    if (!newProduct.name.trim()) { alert('商品名を入力してください'); return }
+    const res = await fetch(`/api/admin/events/${id}/products`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newProduct),
+    })
+    const data = await res.json()
+    if (data.id) {
+      setProducts(prev => [...prev, data])
+      setNewProduct({ name: '', image: '', description: '', price: 0, stock: 1 })
+    }
+  }
+
+  async function removeProduct(productId) {
+    if (!confirm('この商品を削除しますか？')) return
+    await fetch(`/api/admin/events/${id}/products`, {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId }),
+    })
+    setProducts(prev => prev.filter(p => p.id !== productId))
+  }
+
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>読み込み中...</div>
 
@@ -571,23 +611,103 @@ export default function EventEditPage() {
             </div>
           )}
 
-          {/* モデル手動追加 */}
-          <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e5e5e5' }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2f2244', marginBottom: 12, marginTop: 0 }}>モデルを手動追加</h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {models.filter(m => !entryModelIds.includes(m.id)).map(m => {
-                const hasShift = shifts.some(s => s.model_id === m.id)
-                return (
-                  <button key={m.id} onClick={() => addModelToEvent(m.id)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: hasShift ? '#f1f8e9' : '#f8f5ff', border: `1px solid ${hasShift ? '#c5e1a5' : '#e0d5f5'}`, borderRadius: 20, padding: '5px 12px 5px 6px', cursor: 'pointer' }}>
-                    {m.image && <img src={m.image} style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover' }} />}
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#2f2244' }}>+ {m.name}</span>
-                    {hasShift && <span style={{ fontSize: 10, color: '#388e3c', fontWeight: 700 }}>提出済</span>}
-                  </button>
-                )
-              })}
-              {models.filter(m => !entryModelIds.includes(m.id)).length === 0 && (
-                <p style={{ color: '#999', fontSize: 13 }}>追加できるモデルがいません</p>
+          {/* 手動追加セクション（モデル・予約商品） */}
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', overflow: 'hidden' }}>
+            {/* サブタブ */}
+            <div style={{ display: 'flex', borderBottom: '1px solid #e5e5e5' }}>
+              {[['models', 'モデルを追加'], ['products', '予約商品を追加']].map(([key, label]) => (
+                <button key={key} onClick={() => setModelsSubTab(key)}
+                  style={{ flex: 1, padding: '12px 8px', border: 'none', background: modelsSubTab === key ? '#2f2244' : '#f8f8f8', color: modelsSubTab === key ? '#fff' : '#666', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ padding: 20 }}>
+              {modelsSubTab === 'models' && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {models.filter(m => !entryModelIds.includes(m.id)).map(m => {
+                    const hasShift = shifts.some(s => s.model_id === m.id)
+                    return (
+                      <button key={m.id} onClick={() => addModelToEvent(m.id)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: hasShift ? '#f1f8e9' : '#f8f5ff', border: `1px solid ${hasShift ? '#c5e1a5' : '#e0d5f5'}`, borderRadius: 20, padding: '5px 12px 5px 6px', cursor: 'pointer' }}>
+                        {m.image && <img src={m.image} style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover' }} />}
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#2f2244' }}>+ {m.name}</span>
+                        {hasShift && <span style={{ fontSize: 10, color: '#388e3c', fontWeight: 700 }}>提出済</span>}
+                      </button>
+                    )
+                  })}
+                  {models.filter(m => !entryModelIds.includes(m.id)).length === 0 && (
+                    <p style={{ color: '#999', fontSize: 13 }}>追加できるモデルがいません</p>
+                  )}
+                </div>
+              )}
+
+              {modelsSubTab === 'products' && (
+                <div>
+                  {/* 商品追加フォーム */}
+                  <div style={{ background: '#f8fbff', borderRadius: 10, padding: 16, marginBottom: 16, border: '1px solid #e0ecf8' }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', marginBottom: 12, marginTop: 0 }}>新しい予約商品を追加</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>商品名 *</label>
+                          <input value={newProduct.name} onChange={e => setNewProduct(p => ({ ...p, name: e.target.value }))}
+                            style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }} placeholder="フォトブック" />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>料金 ¥</label>
+                          <input type="number" value={newProduct.price} onChange={e => setNewProduct(p => ({ ...p, price: e.target.value }))}
+                            style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }} placeholder="3000" />
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>画像URL</label>
+                          <input value={newProduct.image} onChange={e => setNewProduct(p => ({ ...p, image: e.target.value }))}
+                            style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }} placeholder="https://..." />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>在庫数</label>
+                          <input type="number" min="1" value={newProduct.stock} onChange={e => setNewProduct(p => ({ ...p, stock: e.target.value }))}
+                            style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }} />
+                        </div>
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>詳細説明</label>
+                        <textarea value={newProduct.description} onChange={e => setNewProduct(p => ({ ...p, description: e.target.value }))}
+                          rows={2} style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, resize: 'vertical', boxSizing: 'border-box' }} placeholder="商品の説明..." />
+                      </div>
+                      <button onClick={addProduct}
+                        style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', cursor: 'pointer', fontWeight: 700, fontSize: 13, alignSelf: 'flex-start' }}>
+                        + 追加する
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 登録済み商品リスト */}
+                  {products.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <p style={{ fontSize: 12, fontWeight: 600, color: '#555', margin: 0 }}>登録済み予約商品</p>
+                      {products.map(p => (
+                        <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f8f8f8', borderRadius: 8, padding: '10px 12px' }}>
+                          {p.image && <img src={p.image} style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, fontSize: 13, color: '#1a3560' }}>{p.name}</div>
+                            {p.description && <div style={{ fontSize: 11, color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description}</div>}
+                          </div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#333', whiteSpace: 'nowrap' }}>¥{(p.price || 0).toLocaleString()}</div>
+                          <div style={{ fontSize: 12, color: '#888', whiteSpace: 'nowrap' }}>在庫{p.stock}</div>
+                          <button onClick={() => removeProduct(p.id)}
+                            style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 12, flexShrink: 0 }}>削除</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {products.length === 0 && (
+                    <p style={{ color: '#aaa', fontSize: 13, margin: 0 }}>まだ予約商品がありません</p>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -625,6 +745,10 @@ export default function EventEditPage() {
                         <input type="number" defaultValue={slot.price}
                           onBlur={e => updateSlotPrice(entry.id, slot.id, e.target.value)}
                           style={{ width: 80, padding: '4px 6px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, textAlign: 'right' }} />
+                        <span style={{ fontSize: 11, color: '#888', marginLeft: 4 }}>人数</span>
+                        <input type="number" min="1" key={slot.id + '_max'} defaultValue={slot.max_reservations || 1}
+                          onBlur={e => updateSlotMaxReservations(entry.id, slot.id, e.target.value)}
+                          style={{ width: 48, padding: '4px 6px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, textAlign: 'center' }} />
                         {!slot.is_reserved && (
                           <button onClick={() => removeSlot(entry.id, slot.id)}
                             style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: 16, padding: '0 4px' }}>×</button>

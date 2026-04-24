@@ -26,8 +26,11 @@ export async function DELETE(req) {
 }
 
 export async function PATCH(req) {
-  const { slotId, price } = await req.json()
+  const { slotId, price, max_reservations } = await req.json()
   const supabase = await createSupabaseAdminClient()
-  await supabase.from('booking_slots').update({ price }).eq('id', slotId)
+  const updates = {}
+  if (price !== undefined) updates.price = price
+  if (max_reservations !== undefined) updates.max_reservations = max_reservations
+  await supabase.from('booking_slots').update(updates).eq('id', slotId)
   return Response.json({ ok: true })
 }
