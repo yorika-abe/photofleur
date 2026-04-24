@@ -78,7 +78,12 @@ export default function EventEditPage() {
     await load()
   }
 
+  function resetSlotTemplates(eventType) {
+    setSlotTemplates((eventType === 'studio' ? STUDIO_SLOTS : STREET_SLOTS).map(s => ({ ...s })))
+  }
+
   function updateField(key, value) {
+    if (key === 'event_type') resetSlotTemplates(value)
     setEvent(prev => {
       const updated = { ...prev, [key]: value }
       if (key === 'event_date' && value && !prev.booking_open_at) {
@@ -502,11 +507,22 @@ export default function EventEditPage() {
           {/* 予約受付枠テンプレート管理 */}
           <div style={{ background: '#fff', borderRadius: 12, padding: 16, border: '1px solid #e5e5e5' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>予約受付枠の設定</h3>
-              <button onClick={addSlotTemplate}
-                style={{ fontSize: 12, background: '#e0f7fa', color: '#0097a7', border: 'none', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontWeight: 700 }}>
-                + 枠を追加
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>予約受付枠の設定</h3>
+                <span style={{ fontSize: 11, background: event.event_type === 'studio' ? '#e3f2fd' : '#e8f5e9', color: event.event_type === 'studio' ? '#1565c0' : '#388e3c', borderRadius: 4, padding: '2px 8px', fontWeight: 700 }}>
+                  {event.event_type === 'studio' ? 'スタジオ' : event.event_type === 'street' ? 'ストリート' : '不定期'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button onClick={() => resetSlotTemplates(event.event_type)}
+                  style={{ fontSize: 12, background: '#f5f5f5', color: '#888', border: '1px solid #ddd', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontWeight: 600 }}>
+                  デフォルトに戻す
+                </button>
+                <button onClick={addSlotTemplate}
+                  style={{ fontSize: 12, background: '#e0f7fa', color: '#0097a7', border: 'none', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontWeight: 700 }}>
+                  + 枠を追加
+                </button>
+              </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {currentSlots.map((slot, idx) => (
