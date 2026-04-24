@@ -1,14 +1,20 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 
 export default function BlogPage() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  )
+  const supabaseRef = useRef(null)
+  function getSupabase() {
+    if (!supabaseRef.current) {
+      supabaseRef.current = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      )
+    }
+    return supabaseRef.current
+  }
   const [posts, setPosts] = useState([])
   const [categories, setCategories] = useState([])
   const [activeCategory, setActiveCategory] = useState('')
@@ -25,7 +31,7 @@ export default function BlogPage() {
 
   async function load() {
     setLoading(true)
-    let query = supabase
+    let query = getSupabase()
       .from('blog_posts')
       .select('id, title, slug, cover_image, category, published_at')
       .eq('status', 'published')
