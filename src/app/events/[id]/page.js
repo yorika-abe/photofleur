@@ -1,11 +1,6 @@
 import Link from 'next/link'
-import { createClient } from '@supabase/supabase-js'
+import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
 
 function formatDateFull(dateStr) {
   const d = new Date(dateStr + 'T00:00:00')
@@ -15,6 +10,7 @@ function formatDateFull(dateStr) {
 
 export async function generateMetadata({ params }) {
   const { id } = await params
+  const supabase = await createSupabaseAdminClient()
   const { data: event } = await supabase.from('events').select('event_date, title, location_name').eq('id', id).single()
   if (!event) return {}
   return { title: `${formatDateFull(event.event_date)} ${event.title || event.location_name} | PhotoFleur` }
@@ -22,6 +18,7 @@ export async function generateMetadata({ params }) {
 
 export default async function EventDetailPage({ params }) {
   const { id } = await params
+  const supabase = await createSupabaseAdminClient()
 
   const { data: eventRaw } = await supabase
     .from('events')
