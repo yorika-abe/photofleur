@@ -10,6 +10,7 @@ export default function ModelPortalHome() {
   const [model, setModel] = useState(null)
   const [allModels, setAllModels] = useState(null) // null = not admin, [] = admin with no selection
   const [upcomingEvents, setUpcomingEvents] = useState([])
+  const [myShifts, setMyShifts] = useState([])
   const [loading, setLoading] = useState(true)
 
   const supabase = createBrowserClient(
@@ -53,6 +54,17 @@ export default function ModelPortalHome() {
         .slice(0, 5)
 
       setUpcomingEvents(upcoming)
+
+      // 提出済みシフトを取得
+      const shiftRes = await fetch('/api/model-portal/shifts')
+      const shiftData = await shiftRes.json()
+      const today2 = new Date().toISOString().split('T')[0]
+      const futureShifts = (Array.isArray(shiftData) ? shiftData : [])
+        .filter(s => s.event_date >= today2)
+        .sort((a, b) => a.event_date.localeCompare(b.event_date))
+        .slice(0, 5)
+      setMyShifts(futureShifts)
+
       setLoading(false)
     }
     init()
@@ -167,6 +179,51 @@ export default function ModelPortalHome() {
             </Link>
           ))}
         </div>
+
+        {/* 提出済みシフト */}
+        {!isAdminView && (
+          <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #e8e0f5', marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0d1f3a', margin: 0 }}>提出済みシフト</h2>
+              <Link href="/model-portal/shifts/history" style={{ fontSize: 13, color: '#7c5cbf', fontWeight: 600, textDecoration: 'none' }}>
+                確認・編集 →
+              </Link>
+            </div>
+            {myShifts.length === 0 ? (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p style={{ color: '#aaa', fontSize: 14, margin: 0 }}>提出済みのシフトはありません。</p>
+                <Link href="/model-portal/shifts" style={{ fontSize: 13, color: '#7c5cbf', fontWeight: 600, textDecoration: 'none', background: '#ede7f6', borderRadius: 8, padding: '7px 14px' }}>
+                  シフトを提出 →
+                </Link>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {myShifts.map(shift => {
+                  const d = new Date(shift.event_date + 'T00:00:00')
+                  const days = ['日', '月', '火', '水', '木', '金', '土']
+                  const label = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}（${days[d.getDay()]}）`
+                  const isAllDay = shift.available_from === '00:00' && shift.available_until === '00:00'
+                  const statusColors = { submitted: '#7c5cbf', confirmed: '#388e3c', rejected: '#c62828', pending_approval: '#e65100' }
+                  const statusLabels = { submitted: '提出済み', confirmed: '確定', rejected: '却下', pending_approval: '承認待ち' }
+                  return (
+                    <div key={shift.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#faf8ff', borderRadius: 8, padding: '10px 14px', border: '1px solid #ede7f6' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontWeight: 700, fontSize: 14, color: d.getDay() === 0 ? '#e53935' : d.getDay() === 6 ? '#1565c0' : '#0d1f3a' }}>{label}</span>
+                        <span style={{ fontSize: 12, color: '#aaa' }}>{isAllDay ? '終日' : `${shift.available_from}〜${shift.available_until}`}</span>
+                      </div>
+                      <span style={{ fontSize: 11, background: `${statusColors[shift.status]}20`, color: statusColors[shift.status] || '#7c5cbf', borderRadius: 4, padding: '2px 8px', fontWeight: 700 }}>
+                        {statusLabels[shift.status] || shift.status}
+                      </span>
+                    </div>
+                  )
+                })}
+                <div style={{ textAlign: 'right', marginTop: 4 }}>
+                  <Link href="/model-portal/shifts" style={{ fontSize: 12, color: '#888', textDecoration: 'none' }}>新しいシフトを提出 →</Link>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 参加予定イベント */}
         <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #d6ecf5' }}>

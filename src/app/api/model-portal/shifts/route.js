@@ -45,10 +45,12 @@ export async function POST(req) {
     .maybeSingle()
 
   const isAllDay = available_from === '00:00' && available_until === '00:00'
+  // model_shifts の event_type は 'street'/'studio' のみ許可。'both' は保存しない
+  const safeEventType = ['street', 'studio'].includes(event_type) ? event_type : null
   const payload = {
     model_id: model.id,
     event_date,
-    event_type,
+    ...(safeEventType ? { event_type: safeEventType } : {}),
     available_from: available_from || '00:00',
     available_until: available_until || '00:00',
     notes: notes || null,
