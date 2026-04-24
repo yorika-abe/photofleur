@@ -29,6 +29,7 @@ export default function EventEditPage() {
   const [models, setModels] = useState([])
   const [entries, setEntries] = useState([])
   const [shifts, setShifts] = useState([])
+  const [slotTemplates, setSlotTemplates] = useState(null) // カスタム予約枠テンプレート
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -51,6 +52,13 @@ export default function EventEditPage() {
       setModels(mods || [])
       setEntries(entriesWithSlots || [])
       setShifts(shiftData || [])
+      // 保存済みテンプレートがあれば使用、なければイベント種別のデフォルトを使用
+      let savedTemplates = null
+      try { savedTemplates = ev?.slot_templates ? JSON.parse(ev.slot_templates) : null } catch {}
+      if (!savedTemplates) {
+        savedTemplates = (ev?.event_type === 'studio' ? STUDIO_SLOTS : STREET_SLOTS).map(s => ({ ...s }))
+      }
+      setSlotTemplates(savedTemplates)
     } catch (e) {
       console.error('load error:', e)
     } finally {
@@ -61,7 +69,11 @@ export default function EventEditPage() {
   async function autoAddShiftedModels() {
     if (!event.event_date) return
     setAutoAdding(true)
-    await fetch(`/api/admin/events/${id}/entries`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'auto_add', event }) })
+    await fetch(`/api/admin/events/${id}/entries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'auto_add', event, slotTemplates }),
+    })
     setAutoAdding(false)
     await load()
   }
@@ -116,6 +128,7 @@ export default function EventEditPage() {
         studio_rules: event.studio_rules,
         street_notes: event.street_notes,
         reminder_extra_note: event.reminder_extra_note,
+        slot_templates: JSON.stringify(slotTemplates || []),
       }),
     })
     setSaving(false)
@@ -179,7 +192,7 @@ export default function EventEditPage() {
     const res = await fetch(`/api/admin/events/${id}/entries`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'add_model', modelId, event }),
+      body: JSON.stringify({ action: 'add_model', modelId, event, slotTemplates }),
     })
     const data = await res.json()
     if (data.entry) setEntries(prev => [...prev, data.entry])
@@ -229,8 +242,30 @@ export default function EventEditPage() {
 
   const inp = { width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }
   const label = { display: 'block', fontWeight: 600, fontSize: 12, marginBottom: 5, color: '#555' }
-  const slotOptions = event.event_type === 'studio' ? STUDIO_SLOTS : STREET_SLOTS
   const entryModelIds = entries.map(e => e.model_id)
+  const currentSlots = slotTemplates || (event.event_type === 'studio' ? STUDIO_SLOTS : STREET_SLOTS)
+
+  function updateSlotTemplate(idx, key, value) {
+    setSlotTemplates(prev => {
+      const next = [...(prev || currentSlots)]
+      next[idx] = { ...next[idx], [key]: value }
+      // ラベルを自動更新
+      next[idx].label = `${next[idx].order}部 ${next[idx].start}〜${next[idx].end}`
+      return next
+    })
+  }
+
+  function addSlotTemplate() {
+    setSlotTemplates(prev => {
+      const list = prev || currentSlots
+      const maxOrder = Math.max(...list.map(s => s.order), 0)
+      return [...list, { label: `${maxOrder + 1}部 00:00〜00:00`, start: '00:00', end: '00:00', order: maxOrder + 1 }]
+    })
+  }
+
+  function removeSlotTemplate(idx) {
+    setSlotTemplates(prev => (prev || currentSlots).filter((_, i) => i !== idx))
+  }
 
   const tabs = [
     { key: 'basic', label: '基本情報' },
@@ -464,6 +499,34 @@ export default function EventEditPage() {
       {/* モデル・枠タブ */}
       {activeTab === 'models' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* 予約受付枠テンプレート管理 */}
+          <div style={{ background: '#fff', borderRadius: 12, padding: 16, border: '1px solid #e5e5e5' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>予約受付枠の設定</h3>
+              <button onClick={addSlotTemplate}
+                style={{ fontSize: 12, background: '#e0f7fa', color: '#0097a7', border: 'none', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontWeight: 700 }}>
+                + 枠を追加
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {currentSlots.map((slot, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f8f8f8', borderRadius: 8, padding: '6px 10px' }}>
+                  <span style={{ fontSize: 12, color: '#888', minWidth: 24, textAlign: 'right' }}>{slot.order}部</span>
+                  <input type="time" value={slot.start} onChange={e => updateSlotTemplate(idx, 'start', e.target.value)}
+                    style={{ padding: '3px 6px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, fontWeight: 600, width: 88 }} />
+                  <span style={{ color: '#bbb', fontSize: 13 }}>〜</span>
+                  <input type="time" value={slot.end} onChange={e => updateSlotTemplate(idx, 'end', e.target.value)}
+                    style={{ padding: '3px 6px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, fontWeight: 600, width: 88 }} />
+                  <span style={{ fontSize: 12, color: '#aaa', flex: 1 }}>{slot.label}</span>
+                  <button onClick={() => removeSlotTemplate(idx)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 16, padding: '0 4px', lineHeight: 1 }}>×</button>
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: 11, color: '#aaa', margin: '8px 0 0' }}>変更後は「保存する」ボタンで保存してください</p>
+          </div>
+
           {/* シフト提出済み一括追加 */}
           {shifts.filter(s => !entryModelIds.includes(s.model_id)).length > 0 && (
             <div style={{ background: '#e8f5e9', borderRadius: 12, padding: 16, border: '1px solid #a5d6a7' }}>
@@ -559,7 +622,7 @@ export default function EventEditPage() {
                 {/* 枠追加 */}
                 <p style={{ fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 8 }}>予約枠を追加</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {slotOptions.filter(s => !existingLabels.includes(s.label)).map(s => (
+                  {currentSlots.filter(s => !existingLabels.includes(s.label)).map(s => (
                     <button key={s.label} onClick={() => addSlot(entry.id, s)}
                       style={{ background: '#f5f5f5', border: '1px solid #ddd', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 12, color: '#333' }}>
                       + {s.label}
