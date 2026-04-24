@@ -11,6 +11,8 @@ export default function ModelPortalHome() {
   const [allModels, setAllModels] = useState(null) // null = not admin, [] = admin with no selection
   const [upcomingEvents, setUpcomingEvents] = useState([])
   const [myShifts, setMyShifts] = useState([])
+  const [extraDates, setExtraDates] = useState([]) // 追加申請できる日
+  const [extra, setExtra] = useState({})
   const [loading, setLoading] = useState(true)
 
   const supabase = createBrowserClient(
@@ -55,15 +57,28 @@ export default function ModelPortalHome() {
 
       setUpcomingEvents(upcoming)
 
-      // 提出済みシフトを取得
-      const shiftRes = await fetch('/api/model-portal/shifts')
-      const shiftData = await shiftRes.json()
+      // 提出済みシフトと追加申請できる日を取得
       const today2 = new Date().toISOString().split('T')[0]
-      const futureShifts = (Array.isArray(shiftData) ? shiftData : [])
+      const [shiftRes, reqRes2] = await Promise.all([
+        fetch('/api/model-portal/shifts'),
+        fetch('/api/admin/shift-requests'),
+      ])
+      const shiftData = await shiftRes.json()
+      const reqData2 = await reqRes2.json()
+
+      const allShifts = Array.isArray(shiftData) ? shiftData : []
+      const futureShifts = allShifts
         .filter(s => s.event_date >= today2)
         .sort((a, b) => a.event_date.localeCompare(b.event_date))
         .slice(0, 5)
       setMyShifts(futureShifts)
+
+      // 追加申請: 締め切り済み & 未来 & 未提出の日程
+      const submittedDates = new Set(allShifts.map(s => s.event_date))
+      const extras = (Array.isArray(reqData2) ? reqData2 : []).filter(r =>
+        r.request_date >= today2 && r.deadline && r.deadline < today2 && !submittedDates.has(r.request_date)
+      )
+      setExtraDates(extras)
 
       setLoading(false)
     }
@@ -179,6 +194,81 @@ export default function ModelPortalHome() {
             </Link>
           ))}
         </div>
+
+        {/* 追加エントリー申請 */}
+        {!isAdminView && extraDates.length > 0 && (
+          <div style={{ background: '#fffde7', borderRadius: 12, padding: '20px 24px', border: '1px solid #ffe082', marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div>
+                <h2 style={{ fontSize: 15, fontWeight: 700, color: '#f57f17', margin: '0 0 2px' }}>追加エントリー申請</h2>
+                <p style={{ fontSize: 12, color: '#888', margin: 0 }}>締め切り後の参加申請です。承認が必要です。</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {extraDates.map(req => {
+                const d = new Date(req.request_date + 'T00:00:00')
+                const days = ['日', '月', '火', '水', '木', '金', '土']
+                const label = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}（${days[d.getDay()]}）`
+                const typeColors = { street: '#0097a7', studio: '#d81b60', both: '#555' }
+                const typeLabels = { street: 'ST', studio: 'Stu', both: '両方' }
+                const tc = typeColors[req.event_type] || '#555'
+                const ex = extra[req.id] || {}
+                return (
+                  <div key={req.id} style={{ background: '#fff', borderRadius: 10, padding: '12px 14px', border: '1px solid #ffe082' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: ex.open ? 10 : 0 }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: d.getDay() === 0 ? '#e53935' : d.getDay() === 6 ? '#1565c0' : '#1a1a2e' }}>{label}</span>
+                      <span style={{ fontSize: 11, background: `${tc}20`, color: tc, borderRadius: 4, padding: '2px 7px', fontWeight: 700 }}>{typeLabels[req.event_type] || req.event_type}</span>
+                      {ex.result === 'ok'
+                        ? <span style={{ fontSize: 12, color: '#388e3c', fontWeight: 700, marginLeft: 'auto' }}>✓ 申請しました</span>
+                        : <button onClick={() => setExtra(prev => ({ ...prev, [req.id]: { allDay: true, from: '09:00', until: '23:00', notes: '', ...prev[req.id], open: !ex.open } }))}
+                            style={{ marginLeft: 'auto', fontSize: 12, color: '#f57f17', background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontWeight: 700 }}>
+                            {ex.open ? '閉じる' : '申請する →'}
+                          </button>
+                      }
+                    </div>
+                    {ex.open && (
+                      <div>
+                        <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+                          {[{ k: true, l: '終日' }, { k: false, l: '時間指定' }].map(opt => (
+                            <button key={String(opt.k)}
+                              onClick={() => setExtra(prev => ({ ...prev, [req.id]: { ...prev[req.id], allDay: opt.k } }))}
+                              style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, border: '1.5px solid', cursor: 'pointer', borderColor: ex.allDay === opt.k ? '#43a047' : '#ddd', background: ex.allDay === opt.k ? '#e8f5e9' : '#fff', color: ex.allDay === opt.k ? '#2e7d32' : '#888', fontWeight: ex.allDay === opt.k ? 700 : 400 }}>
+                              {opt.l}
+                            </button>
+                          ))}
+                        </div>
+                        {!ex.allDay && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                            <input type="time" value={ex.from || '09:00'} onChange={e => setExtra(prev => ({ ...prev, [req.id]: { ...prev[req.id], from: e.target.value } }))}
+                              style={{ padding: '4px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, fontWeight: 600, width: 95 }} />
+                            <span style={{ color: '#bbb' }}>〜</span>
+                            <input type="time" value={ex.until || '23:00'} onChange={e => setExtra(prev => ({ ...prev, [req.id]: { ...prev[req.id], until: e.target.value } }))}
+                              style={{ padding: '4px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, fontWeight: 600, width: 95 }} />
+                          </div>
+                        )}
+                        <input value={ex.notes || ''} onChange={e => setExtra(prev => ({ ...prev, [req.id]: { ...prev[req.id], notes: e.target.value } }))}
+                          placeholder="申請理由（任意）"
+                          style={{ width: '100%', boxSizing: 'border-box', padding: '5px 10px', border: '1px solid #e0e0e0', borderRadius: 6, fontSize: 12, color: '#555', background: '#fffde7', marginBottom: 8 }} />
+                        <button disabled={ex.submitting} onClick={async () => {
+                          setExtra(prev => ({ ...prev, [req.id]: { ...prev[req.id], submitting: true } }))
+                          const from = ex.allDay !== false ? '00:00' : (ex.from || '09:00')
+                          const until = ex.allDay !== false ? '00:00' : (ex.until || '23:00')
+                          const res = await fetch('/api/model-portal/shifts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event_date: req.request_date, event_type: req.event_type, available_from: from, available_until: until, notes: ex.notes || '', unavailable: false, status: 'pending_approval' }) })
+                          const data = await res.json()
+                          setExtra(prev => ({ ...prev, [req.id]: { ...prev[req.id], submitting: false, result: data?.error ? 'error' : 'ok', open: false } }))
+                        }}
+                          style={{ width: '100%', background: '#f57f17', color: '#fff', border: 'none', borderRadius: 7, padding: '8px', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: ex.submitting ? 0.7 : 1 }}>
+                          {ex.submitting ? '申請中...' : '追加申請を送る'}
+                        </button>
+                        {ex.result === 'error' && <p style={{ fontSize: 12, color: '#c62828', margin: '6px 0 0' }}>エラーが発生しました。再度お試しください。</p>}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* 提出済みシフト */}
         {!isAdminView && (

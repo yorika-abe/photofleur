@@ -38,14 +38,11 @@ function choiceBtn(active, variant) {
 export default function ModelShiftsPage() {
   const [model, setModel] = useState(null)
   const [requestDates, setRequestDates] = useState([])
-  const [myShifts, setMyShifts] = useState([])
   const [loading, setLoading] = useState(true)
   const [forms, setForms] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [submitResult, setSubmitResult] = useState(null)
   const [submitError, setSubmitError] = useState('')
-  // 追加申請: { reqId: { open, from, until, allDay, notes, submitting, result } }
-  const [extra, setExtra] = useState({})
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -75,7 +72,6 @@ export default function ModelShiftsPage() {
     const shifts = Array.isArray(shiftData) ? shiftData : []
 
     setRequestDates(futureReqs)
-    setMyShifts(shifts)
 
     const initForms = {}
     futureReqs.forEach(r => {
@@ -151,49 +147,10 @@ export default function ModelShiftsPage() {
     await load()
   }
 
-  async function submitExtra(req) {
-    const e = extra[req.id] || {}
-    setExtra(prev => ({ ...prev, [req.id]: { ...prev[req.id], submitting: true, result: null } }))
-    const from = e.allDay ? '00:00' : (e.from || '09:00')
-    const until = e.allDay ? '00:00' : (e.until || '23:00')
-    try {
-      const res = await fetch('/api/model-portal/shifts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event_date: req.request_date,
-          event_type: req.event_type,
-          available_from: from,
-          available_until: until,
-          notes: e.notes || '',
-          unavailable: false,
-          status: 'pending_approval',
-        }),
-      })
-      const data = await res.json()
-      if (data?.error) {
-        setExtra(prev => ({ ...prev, [req.id]: { ...prev[req.id], submitting: false, result: 'error' } }))
-      } else {
-        setExtra(prev => ({ ...prev, [req.id]: { ...prev[req.id], submitting: false, result: 'ok', open: false } }))
-        await load()
-      }
-    } catch {
-      setExtra(prev => ({ ...prev, [req.id]: { ...prev[req.id], submitting: false, result: 'error' } }))
-    }
-  }
-
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>読み込み中...</div>
 
   const submittedCount = requestDates.filter(r => forms[r.id]?.submitted).length
   const pendingCount = requestDates.filter(r => !forms[r.id]?.submitted && !forms[r.id]?.locked).length
-  const today = new Date().toISOString().split('T')[0]
-  const pastShifts = myShifts.filter(s => s.event_date < today)
-
-  // 追加申請できる日: 締め切り済み & 未提出 & 未申請
-  const extraRequestDates = requestDates.filter(r => {
-    const f = forms[r.id]
-    return f?.locked && !f?.submitted
-  })
 
   return (
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 16px' }}>
@@ -349,97 +306,7 @@ export default function ModelShiftsPage() {
             </Link>
           </div>
 
-          {/* 追加申請セクション */}
-          {extraRequestDates.length > 0 && (
-            <div style={{ marginTop: 28, background: '#fffde7', border: '1px solid #fff176', borderRadius: 12, padding: '16px' }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#f57f17', margin: '0 0 4px' }}>シフト追加申請</p>
-              <p style={{ fontSize: 12, color: '#888', margin: '0 0 14px' }}>締め切り後の参加申請です。運営の承認が必要です。</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {extraRequestDates.map(req => {
-                  const { label, dow, dowIdx } = fmtDate(req.request_date)
-                  const tc = TYPE_COLORS[req.event_type] || TYPE_COLORS.both
-                  const ex = extra[req.id] || {}
-                  return (
-                    <div key={req.id} style={{ background: '#fff', borderRadius: 10, padding: '10px 14px', border: '1px solid #ffe082' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: ex.open ? 10 : 0 }}>
-                        <span style={{ fontWeight: 700, fontSize: 15, color: dowIdx === 0 ? '#e53935' : dowIdx === 6 ? '#1565c0' : '#1a1a2e' }}>
-                          {label}
-                        </span>
-                        <span style={{ fontSize: 12, color: '#aaa' }}>（{dow}）</span>
-                        <span style={{ fontSize: 11, background: `${tc}20`, color: tc, borderRadius: 4, padding: '2px 7px', fontWeight: 700 }}>
-                          {TYPE_LABELS[req.event_type] || req.event_type}
-                        </span>
-                        {ex.result === 'ok' ? (
-                          <span style={{ fontSize: 12, color: '#388e3c', fontWeight: 700, marginLeft: 'auto' }}>✓ 申請しました</span>
-                        ) : (
-                          <button onClick={() => setExtra(prev => ({ ...prev, [req.id]: { open: !ex.open, allDay: true, from: '09:00', until: '23:00', notes: '', ...prev[req.id] } }))}
-                            style={{ marginLeft: 'auto', fontSize: 12, color: '#f57f17', background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontWeight: 600 }}>
-                            {ex.open ? '閉じる' : '追加申請する'}
-                          </button>
-                        )}
-                      </div>
-                      {ex.open && (
-                        <div>
-                          <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
-                            {[{ key: 'allDay', label: '終日' }, { key: 'time', label: '時間指定' }].map(opt => (
-                              <button key={opt.key}
-                                onClick={() => setExtra(prev => ({ ...prev, [req.id]: { ...prev[req.id], allDay: opt.key === 'allDay' } }))}
-                                style={choiceBtn(opt.key === 'allDay' ? ex.allDay !== false : ex.allDay === false, opt.key)}>
-                                {opt.label}
-                              </button>
-                            ))}
-                          </div>
-                          {ex.allDay === false && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                              <input type="time" value={ex.from || '09:00'} min="00:00" max="23:59"
-                                onChange={e => setExtra(prev => ({ ...prev, [req.id]: { ...prev[req.id], from: e.target.value } }))}
-                                style={{ padding: '4px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, fontWeight: 600, width: 95 }} />
-                              <span style={{ color: '#bbb' }}>〜</span>
-                              <input type="time" value={ex.until || '23:00'} min="00:00" max="23:59"
-                                onChange={e => setExtra(prev => ({ ...prev, [req.id]: { ...prev[req.id], until: e.target.value } }))}
-                                style={{ padding: '4px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, fontWeight: 600, width: 95 }} />
-                            </div>
-                          )}
-                          <input value={ex.notes || ''} onChange={e => setExtra(prev => ({ ...prev, [req.id]: { ...prev[req.id], notes: e.target.value } }))}
-                            placeholder="申請理由（任意）"
-                            style={{ width: '100%', boxSizing: 'border-box', padding: '5px 10px', border: '1px solid #e0e0e0', borderRadius: 6, fontSize: 12, color: '#555', background: '#fffde7', marginBottom: 8 }} />
-                          <button onClick={() => submitExtra(req)} disabled={ex.submitting}
-                            style={{ width: '100%', background: '#f57f17', color: '#fff', border: 'none', borderRadius: 7, padding: '8px', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: ex.submitting ? 0.7 : 1 }}>
-                            {ex.submitting ? '申請中...' : '追加申請を送る'}
-                          </button>
-                          {ex.result === 'error' && <p style={{ fontSize: 12, color: '#c62828', margin: '6px 0 0' }}>エラーが発生しました。再度お試しください。</p>}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
         </>
-      )}
-
-      {pastShifts.length > 0 && (
-        <div style={{ marginTop: 36 }}>
-          <p style={{ fontSize: 12, fontWeight: 600, color: '#bbb', letterSpacing: '0.1em', marginBottom: 8 }}>過去の提出履歴</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            {pastShifts.slice(0, 10).map(shift => {
-              const { label, dow, dowIdx } = fmtDate(shift.event_date)
-              const isUnavailable = shift.available_slots?.[0]?.unavailable === true
-              const isAllDay = !isUnavailable && shift.available_from === '00:00' && shift.available_until === '00:00'
-              return (
-                <div key={shift.id} style={{ display: 'flex', justifyContent: 'space-between', background: '#f9f9f9', borderRadius: 8, padding: '8px 12px', opacity: 0.65 }}>
-                  <span style={{ fontSize: 13, color: dowIdx === 0 ? '#e53935' : dowIdx === 6 ? '#1565c0' : '#555', fontWeight: 600 }}>
-                    {label}（{dow}）
-                  </span>
-                  <span style={{ fontSize: 12, color: '#aaa' }}>
-                    {isUnavailable ? '不参加' : isAllDay ? '終日' : `${shift.available_from}〜${shift.available_until}`}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
       )}
     </div>
   )
