@@ -107,8 +107,10 @@ export async function POST(req) {
     const eventDate = formatDate(event?.event_date);
     const slotLabel = slot?.slot_label || "未取得";
     const displayPrice = final_price ?? slot?.price ?? 0;
-    const qrImageUrl = qr_token
-      ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qr_token)}`
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://photofleur.vercel.app'
+    const verifyUrl = qr_token ? `${baseUrl}/booking-verify?token=${qr_token}` : null
+    const qrImageUrl = verifyUrl
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(verifyUrl)}`
       : null;
 
     const locationBlock =
@@ -122,7 +124,7 @@ export async function POST(req) {
               <strong>開催エリア：</strong>${event?.location_name || "未取得"}
             </p>
             <p style="margin:0; font-size:14px; line-height:1.9; color:#555;">
-              集合場所の詳細は開催日の3日前にメールにてご案内いたします。
+              確定メールを送信させていただきますのでご確認ください。
             </p>
           </div>
         `

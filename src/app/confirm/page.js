@@ -66,10 +66,10 @@ function ConfirmForm() {
   }, [slotId])
 
   useEffect(() => {
-    if (paymentMethod === 'card' && !squareReady) {
+    if (!loading && paymentMethod === 'card' && !squareReady) {
       loadSquareSDK()
     }
-  }, [paymentMethod])
+  }, [paymentMethod, loading])
 
   async function loadSlotInfo() {
     const { data: slot } = await supabase
@@ -125,7 +125,7 @@ function ConfirmForm() {
     try {
       if (!SQUARE_APP_ID) { setError('クレジットカード決済は現在利用できません。当日現金をお選びください。'); return }
       // DOM要素が確実に存在するまで待機
-      await new Promise(r => setTimeout(r, 100))
+      await new Promise(r => setTimeout(r, 300))
       if (!document.getElementById('card-container')) { setError('カード入力フォームの初期化に失敗しました。'); return }
       const payments = window.Square.payments(SQUARE_APP_ID, SQUARE_LOCATION_ID)
       paymentsRef.current = payments
@@ -330,7 +330,7 @@ function ConfirmForm() {
 
           <div style={{ marginBottom: 12 }}>
             <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>電話番号 <span style={{ color: 'red' }}>*</span></label>
-            <input type="tel" style={inp} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="090-0000-0000" required />
+            <input type="tel" style={inp} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="09012345678" required />
           </div>
 
           <div>
