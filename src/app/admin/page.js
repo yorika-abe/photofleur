@@ -8,15 +8,16 @@ export default async function AdminPage() {
   const supabase = await createSupabaseAdminClient()
 
   const today = new Date().toISOString().split('T')[0]
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
   const [
     { count: pendingShifts },
     { count: pendingModels },
-    { data: recentBookings },
+    { count: newBookings },
   ] = await Promise.all([
     supabase.from('model_shifts').select('*', { count: 'exact', head: true }).eq('status', 'pending_approval').gte('event_date', today),
     supabase.from('models').select('*', { count: 'exact', head: true }).not('pending_data', 'is', null),
-    supabase.from('bookings').select('id, name, email, created_at, booking_slots(slot_label, price, event_entries(events(event_date, location_name), models(name)))').order('created_at', { ascending: false }).limit(5),
+    supabase.from('bookings').select('*', { count: 'exact', head: true }).gte('created_at', since24h),
   ])
 
   return (
@@ -27,7 +28,7 @@ export default async function AdminPage() {
       {/* Quick links */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 48 }}>
         {[
-          { href: '/admin/bookings', label: '予約一覧', icon: '📋' },
+          { href: '/admin/bookings', label: '予約一覧', icon: '📋', badge: newBookings ?? 0 },
           { href: '/admin/booking-status', label: '予約状況', icon: '📊' },
           { href: '/admin/sales', label: '売上管理', icon: '💰' },
           { href: '/admin/models', label: 'モデル管理', icon: '👤', badge: pendingModels ?? 0 },
@@ -54,42 +55,6 @@ export default async function AdminPage() {
         ))}
       </div>
 
-      {/* Recent bookings */}
-      <div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a3560', marginBottom: 20 }}>最近の予約</h2>
-        {recentBookings && recentBookings.length > 0 ? (
-          <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e5e5', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: '#f8f5ff' }}>
-                  {['お名前', 'メール', 'イベント', '時間枠', '料金', '予約日'].map(h => (
-                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#555', borderBottom: '1px solid #e5e5e5' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {recentBookings.map(b => {
-                  const slot = b.booking_slots
-                  const event = slot?.event_entries?.events
-                  const model = slot?.event_entries?.models
-                  return (
-                    <tr key={b.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                      <td style={{ padding: '12px 16px', fontSize: 14, fontWeight: 600, color: '#333' }}>{b.name}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#666' }}>{b.email}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#666' }}>{event?.event_date} {model?.name && `(${model.name})`}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#666' }}>{slot?.slot_label}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 13, color: '#333', fontWeight: 600 }}>¥{(slot?.price || 0).toLocaleString()}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 12, color: '#999' }}>{new Date(b.created_at).toLocaleDateString('ja-JP')}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p style={{ color: '#999' }}>まだ予約はありません。</p>
-        )}
-      </div>
     </div>
   )
 }
