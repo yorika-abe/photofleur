@@ -28,19 +28,21 @@ export default function ModelProfilePage() {
       const { model } = await res.json()
       if (model) {
         setModel(model)
+        // 申請中データがあればそちらをフォームに表示（最新の申請内容を反映）
+        const src = model.pending_data || model
         setForm({
-          name: model.name || '',
-          name_en: model.name_en || '',
-          bio: model.bio || '',
-          height: model.height || '',
-          birthday: model.birthday || '',
-          shoe_size: model.shoe_size || '',
-          image: model.image || '',
-          twitter_url: model.twitter_url || '',
-          instagram_url: model.instagram_url || '',
-          favorite_things: model.favorite_things || '',
+          name: src.name || '',
+          name_en: src.name_en || '',
+          bio: src.bio || '',
+          height: src.height || '',
+          birthday: src.birthday || '',
+          shoe_size: src.shoe_size || '',
+          image: src.image || '',
+          twitter_url: src.twitter_url || '',
+          instagram_url: src.instagram_url || '',
+          favorite_things: src.favorite_things || '',
         })
-        setPortfolioImages(model.portfolio_images || [])
+        setPortfolioImages(src.portfolio_images || model.portfolio_images || [])
       }
       setLoading(false)
     }
@@ -135,8 +137,10 @@ export default function ModelProfilePage() {
       </div>
 
       {model.status === 'pending' && (
-        <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#795548' }}>
-          現在プロフィールは運営の確認待ちです。承認後に公開されます。
+        <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#795548', lineHeight: 1.7 }}>
+          {model.pending_data
+            ? '⏳ 変更申請中です。運営が承認するまで、一般公開ページには以前の情報が表示されています。'
+            : '⏳ プロフィールは運営の確認待ちです。承認後に公開されます。'}
         </div>
       )}
 

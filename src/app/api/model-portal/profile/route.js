@@ -43,7 +43,7 @@ export async function PUT(req) {
   if (!existing) return Response.json({ error: 'モデルレコードが見つかりません' }, { status: 404 })
 
   const { error } = await admin.from('models').update({
-    ...body,
+    pending_data: body,
     status: 'pending',
   }).eq('user_id', user.id)
 

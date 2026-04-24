@@ -24,12 +24,15 @@ export async function POST(req, { params }) {
   const supabase = await createSupabaseAdminClient()
 
   if (action === 'approve') {
-    await supabase.from('models').update({ status: 'active' }).eq('id', id)
+    const { data: model } = await supabase.from('models').select('pending_data').eq('id', id).single()
+    const updates = { status: 'active', pending_data: null }
+    if (model?.pending_data) Object.assign(updates, model.pending_data)
+    await supabase.from('models').update(updates).eq('id', id)
     return Response.json({ ok: true })
   }
 
   if (action === 'reject') {
-    await supabase.from('models').update({ status: 'inactive' }).eq('id', id)
+    await supabase.from('models').update({ status: 'inactive', pending_data: null }).eq('id', id)
     return Response.json({ ok: true })
   }
 
