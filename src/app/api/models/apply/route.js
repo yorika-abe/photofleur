@@ -1,13 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 export async function POST(request) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
+  const resend = new Resend(process.env.RESEND_API_KEY)
   const body = await request.json()
   const { name, name_en, email, phone, height, birthday, bio, experience, instagram_url, twitter_url } = body
 

@@ -1,11 +1,6 @@
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
-
 function formatDate(dateString) {
   if (!dateString) return ''
   const d = new Date(dateString + 'T00:00:00')
@@ -14,6 +9,10 @@ function formatDate(dateString) {
 }
 
 export async function POST(req) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
   try {
     const { slot_id, email } = await req.json()
     if (!slot_id || !email) return Response.json({ error: 'slot_id, email は必須です' }, { status: 400 })
