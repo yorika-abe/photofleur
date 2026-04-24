@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
+
 function formatDateFull(dateStr) {
   const d = new Date(dateStr + 'T00:00:00')
   const days = ['日', '月', '火', '水', '木', '金', '土']

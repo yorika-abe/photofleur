@@ -27,7 +27,7 @@ export default function AdminBlogPage() {
     setLoading(true)
     const { data } = await supabase
       .from('blog_posts')
-      .select('id, title, slug, status, published_at, created_at, author_id')
+      .select('id, title, slug, status, category, published_at, created_at, author_id')
       .order('created_at', { ascending: false })
     setPosts(data || [])
     setLoading(false)
@@ -53,10 +53,16 @@ export default function AdminBlogPage() {
       <Link href="/admin" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0 24px' }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: '#2f2244', margin: 0 }}>ブログ管理</h1>
-        <Link href="/admin/blog/new"
-          style={{ background: '#2f2244', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '10px 18px', fontWeight: 600, fontSize: 14 }}>
-          + 新規作成
-        </Link>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link href="/admin/blog/categories"
+            style={{ background: '#f0f4fb', color: '#1a3560', textDecoration: 'none', borderRadius: 8, padding: '10px 16px', fontWeight: 600, fontSize: 14 }}>
+            カテゴリー管理
+          </Link>
+          <Link href="/admin/blog/new"
+            style={{ background: '#2f2244', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '10px 18px', fontWeight: 600, fontSize: 14 }}>
+            + 新規作成
+          </Link>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
@@ -81,10 +87,13 @@ export default function AdminBlogPage() {
               <div key={post.id} style={{ background: '#fff', borderRadius: 12, padding: '16px 20px', border: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: 200 }}>
                   <div style={{ fontWeight: 700, fontSize: 15, color: '#2f2244', marginBottom: 4 }}>{post.title}</div>
-                  <div style={{ fontSize: 12, color: '#aaa' }}>
-                    {post.published_at
-                      ? `公開: ${new Date(post.published_at).toLocaleDateString('ja-JP')}`
-                      : `作成: ${new Date(post.created_at).toLocaleDateString('ja-JP')}`}
+                  <div style={{ fontSize: 12, color: '#aaa', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {post.category && <span style={{ background: '#e8f5e9', color: '#388e3c', borderRadius: 4, padding: '1px 6px' }}>{post.category}</span>}
+                    <span>
+                      {post.published_at
+                        ? `公開: ${new Date(post.published_at).toLocaleDateString('ja-JP')}`
+                        : `作成: ${new Date(post.created_at).toLocaleDateString('ja-JP')}`}
+                    </span>
                   </div>
                 </div>
                 <span style={{ background: sc.bg, color: sc.color, borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>

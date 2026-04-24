@@ -17,10 +17,11 @@ export default function AdminBlogEditPage() {
   const router = useRouter()
   const isNew = id === 'new'
 
-  const [form, setForm] = useState({ title: '', slug: '', content: '', cover_image: '', status: 'draft' })
+  const [form, setForm] = useState({ title: '', slug: '', content: '', cover_image: '', status: 'draft', category: '' })
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [categories, setCategories] = useState([])
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -28,9 +29,10 @@ export default function AdminBlogEditPage() {
   )
 
   useEffect(() => {
+    fetch('/api/admin/blog/categories').then(r => r.json()).then(d => setCategories(Array.isArray(d) ? d : []))
     if (isNew) return
     supabase.from('blog_posts').select('*').eq('id', id).single().then(({ data }) => {
-      if (data) setForm({ title: data.title || '', slug: data.slug || '', content: data.content || '', cover_image: data.cover_image || '', status: data.status || 'draft' })
+      if (data) setForm({ title: data.title || '', slug: data.slug || '', content: data.content || '', cover_image: data.cover_image || '', status: data.status || 'draft', category: data.category || '' })
       setLoading(false)
     })
   }, [id])
@@ -58,6 +60,7 @@ export default function AdminBlogEditPage() {
       content: form.content,
       cover_image: form.cover_image || null,
       status,
+      category: form.category || null,
       updated_at: new Date().toISOString(),
       ...(publishNow && !form.published_at ? { published_at: new Date().toISOString() } : {}),
     }
@@ -104,12 +107,21 @@ export default function AdminBlogEditPage() {
             <p style={{ fontSize: 11, color: '#aaa', margin: '4px 0 0' }}>/blog/{form.slug || 'スラッグ'}</p>
           </div>
 
-          <div>
-            <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>ステータス</label>
-            <select style={{ ...inp, width: 'auto' }} value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
-              <option value="draft">下書き</option>
-              <option value="published">公開</option>
-            </select>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            <div>
+              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>ステータス</label>
+              <select style={{ ...inp, width: 'auto' }} value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
+                <option value="draft">下書き</option>
+                <option value="published">公開</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>カテゴリー</label>
+              <select style={{ ...inp, width: 'auto' }} value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
+                <option value="">未分類</option>
+                {categories.map(c => <option key={c.id} value={c.slug}>{c.name}</option>)}
+              </select>
+            </div>
           </div>
         </div>
 
