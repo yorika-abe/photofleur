@@ -31,12 +31,22 @@ export default async function EventDetailPage({ params }) {
 
   if (!event || event.status !== 'active') notFound()
 
-  const { data: entries } = await supabase
+  const { data: entriesRaw } = await supabase
     .from('event_entries')
-    .select('id, model_id, models(id, name, name_en, image, bio, street_price, studio_price)')
+    .select('id, model_id')
     .eq('event_id', id)
 
-  const entryIds = entries?.map(e => e.id) || []
+  const entryIds = entriesRaw?.map(e => e.id) || []
+  const modelIds = entriesRaw?.map(e => e.model_id).filter(Boolean) || []
+
+  const { data: modelsData } = modelIds.length
+    ? await supabase.from('models').select('id, name, name_en, image, bio, street_price, studio_price').in('id', modelIds)
+    : { data: [] }
+
+  const modelMap = {}
+  for (const m of modelsData || []) modelMap[m.id] = m
+
+  const entries = (entriesRaw || []).map(e => ({ ...e, models: modelMap[e.model_id] || null }))
 
   const [{ data: allSlots }, { data: bookingCounts }] = await Promise.all([
     entryIds.length
