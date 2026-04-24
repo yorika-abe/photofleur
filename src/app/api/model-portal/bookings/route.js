@@ -33,15 +33,27 @@ export async function GET(req) {
 
   const today = new Date().toISOString().split('T')[0]
 
-  // モデルが参加するイベントを取得
+  // モデルが参加するエントリーを取得
   const { data: entries } = await admin
     .from('event_entries')
-    .select('id, events(id, event_date, event_type, title, location_name, status)')
+    .select('id, event_id')
     .eq('model_id', model.id)
 
-  const upcomingEntries = (entries || []).filter(e =>
-    e.events && e.events.status !== 'cancelled' && e.events.event_date >= today
-  ).sort((a, b) => a.events.event_date.localeCompare(b.events.event_date))
+  if (!entries || entries.length === 0) return Response.json({ events: [] })
+
+  const eventIds = entries.map(e => e.event_id).filter(Boolean)
+  const { data: eventsData } = eventIds.length
+    ? await admin.from('events').select('id, event_date, event_type, title, location_name, status').in('id', eventIds)
+    : { data: [] }
+
+  const eventMap = Object.fromEntries((eventsData || []).map(ev => [ev.id, ev]))
+
+  const upcomingEntries = entries
+    .map(e => ({ ...e, events: eventMap[e.event_id] || null }))
+    .filter(e =>
+      e.events && e.events.status !== 'cancelled' && e.events.event_date >= today
+    )
+    .sort((a, b) => a.events.event_date.localeCompare(b.events.event_date))
 
   if (upcomingEntries.length === 0) return Response.json({ events: [] })
 

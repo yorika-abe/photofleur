@@ -43,14 +43,21 @@ export default function ModelPortalHome() {
       const today = new Date().toISOString().split('T')[0]
       const { data: entries } = await supabase
         .from('event_entries')
-        .select('id, events(id, event_date, event_type, title, location_name, status)')
+        .select('id, event_id')
         .eq('model_id', model.id)
 
-      const upcoming = (entries || [])
-        .map(e => e.events)
-        .filter(ev => ev && ev.status === 'active' && ev.event_date >= today)
-        .sort((a, b) => a.event_date.localeCompare(b.event_date))
-        .slice(0, 5)
+      let upcoming = []
+      if (entries && entries.length > 0) {
+        const eventIds = entries.map(e => e.event_id).filter(Boolean)
+        const { data: eventsData } = await supabase
+          .from('events')
+          .select('id, event_date, event_type, title, location_name, status')
+          .in('id', eventIds)
+        upcoming = (eventsData || [])
+          .filter(ev => ev.status !== 'cancelled' && ev.event_date >= today)
+          .sort((a, b) => a.event_date.localeCompare(b.event_date))
+          .slice(0, 5)
+      }
 
       setUpcomingEvents(upcoming)
 
