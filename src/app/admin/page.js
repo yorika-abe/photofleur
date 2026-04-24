@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 
+export const dynamic = 'force-dynamic'
 export const metadata = { title: '管理画面 | PhotoFleur' }
 
 export default async function AdminPage() {
