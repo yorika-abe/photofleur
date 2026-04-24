@@ -41,7 +41,7 @@ export default async function EventDetailPage({ params }) {
   const modelIds = entriesRaw?.map(e => e.model_id).filter(Boolean) || []
 
   const { data: modelsData } = modelIds.length
-    ? await supabase.from('models').select('id, name, name_en, image, bio, street_price, studio_price').in('id', modelIds)
+    ? await supabase.from('models').select('id, name, name_en, image, bio, street_price, studio_price, twitter_url').in('id', modelIds)
     : { data: [] }
 
   const modelMap = {}

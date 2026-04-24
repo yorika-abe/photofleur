@@ -107,7 +107,15 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
             <div style={{ flex: 1, padding: '32px 28px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div>
                 <div style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', marginBottom: 4 }}>{modal.models.name}</div>
-                {modal.models.name_en && <div style={{ fontSize: 13, color: '#aaa' }}>{modal.models.name_en}</div>}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  {modal.models.name_en && <div style={{ fontSize: 13, color: '#aaa' }}>{modal.models.name_en}</div>}
+                  {modal.models.twitter_url && (
+                    <a href={modal.models.twitter_url} target="_blank" rel="noopener noreferrer"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#1a1a1a', textDecoration: 'none', background: '#000', color: '#fff', borderRadius: 6, padding: '3px 10px', fontWeight: 600 }}>
+                      𝕏 フォローする
+                    </a>
+                  )}
+                </div>
               </div>
 
               <div style={{ fontSize: 22, fontWeight: 700, color: '#1a3560' }}>
