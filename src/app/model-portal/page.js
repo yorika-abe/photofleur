@@ -202,14 +202,15 @@ export default function ModelPortalHome() {
                   const d = new Date(shift.event_date + 'T00:00:00')
                   const days = ['日', '月', '火', '水', '木', '金', '土']
                   const label = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}（${days[d.getDay()]}）`
-                  const isAllDay = shift.available_from === '00:00' && shift.available_until === '00:00'
-                  const statusColors = { submitted: '#7c5cbf', confirmed: '#388e3c', rejected: '#c62828', pending_approval: '#e65100' }
+                  const isUnavailable = shift.available_slots?.[0]?.unavailable === true
+                  const isAllDay = !isUnavailable && shift.available_from === '00:00' && shift.available_until === '00:00'
+                  const statusColors = { submitted: '#0097a7', confirmed: '#388e3c', rejected: '#c62828', pending_approval: '#e65100' }
                   const statusLabels = { submitted: '提出済み', confirmed: '確定', rejected: '却下', pending_approval: '承認待ち' }
                   return (
                     <div key={shift.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#faf8ff', borderRadius: 8, padding: '10px 14px', border: '1px solid #ede7f6' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <span style={{ fontWeight: 700, fontSize: 14, color: d.getDay() === 0 ? '#e53935' : d.getDay() === 6 ? '#1565c0' : '#0d1f3a' }}>{label}</span>
-                        <span style={{ fontSize: 12, color: '#aaa' }}>{isAllDay ? '終日' : `${shift.available_from}〜${shift.available_until}`}</span>
+                        <span style={{ fontSize: 12, color: isUnavailable ? '#555' : '#aaa' }}>{isUnavailable ? '不参加' : isAllDay ? '終日' : `${shift.available_from}〜${shift.available_until}`}</span>
                       </div>
                       <span style={{ fontSize: 11, background: `${statusColors[shift.status]}20`, color: statusColors[shift.status] || '#7c5cbf', borderRadius: 4, padding: '2px 8px', fontWeight: 700 }}>
                         {statusLabels[shift.status] || shift.status}

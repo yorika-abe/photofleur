@@ -197,7 +197,7 @@ export default function ShiftHistoryPage() {
                   {!isEditingThis && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                       <div>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: unavail ? '#e53935' : '#1a1a2e' }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: unavail ? '#333' : '#1a1a2e' }}>
                           {unavail ? '不参加' : isAllDay ? '終日' : `${shift.available_from} 〜 ${shift.available_until}`}
                         </span>
                         {shift.notes && (
@@ -230,7 +230,7 @@ export default function ShiftHistoryPage() {
                               setEditing(prev => ({ ...prev, [shift.id]: { ...prev[shift.id], unavailable: false, allDay: false } }))
                             }
                           }}
-                            style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, border: '1.5px solid', borderColor: opt.active ? (opt.key === 'unavailable' ? '#e53935' : '#0097a7') : '#ddd', background: opt.active ? (opt.key === 'unavailable' ? '#fce4ec' : '#e0f7fa') : '#fff', color: opt.active ? (opt.key === 'unavailable' ? '#e53935' : '#00838f') : '#888', fontWeight: opt.active ? 700 : 400, cursor: 'pointer' }}>
+                            style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, border: '1.5px solid', cursor: 'pointer', borderColor: opt.active ? (opt.key === 'unavailable' ? '#e53935' : '#43a047') : '#ddd', background: opt.active ? (opt.key === 'unavailable' ? '#fce4ec' : '#e8f5e9') : '#fff', color: opt.active ? (opt.key === 'unavailable' ? '#e53935' : '#2e7d32') : '#888', fontWeight: opt.active ? 700 : 400 }}>
                             {opt.label}
                           </button>
                         ))}
@@ -288,7 +288,7 @@ export default function ShiftHistoryPage() {
                     {label}（{dow}）
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 12, color: unavail ? '#e53935' : '#aaa' }}>
+                    <span style={{ fontSize: 12, color: unavail ? '#555' : '#aaa' }}>
                       {unavail ? '不参加' : isAllDay ? '終日' : `${shift.available_from}〜${shift.available_until}`}
                     </span>
                     <span style={{ fontSize: 11, background: sc.bg, color: sc.color, borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>

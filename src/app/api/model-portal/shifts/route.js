@@ -34,7 +34,7 @@ export async function POST(req) {
   if (!model) return Response.json({ error: 'モデルアカウントが見つかりません' }, { status: 404 })
 
   const body = await req.json()
-  const { event_date, event_type, available_from, available_until, notes, unavailable } = body
+  const { event_date, event_type, available_from, available_until, notes, unavailable, status: reqStatus } = body
 
   // 既存シフトがあれば更新、なければ挿入
   const { data: existing } = await admin
@@ -54,7 +54,7 @@ export async function POST(req) {
     available_from: '00:00',
     available_until: '00:00',
     notes: notes || null,
-    status: 'submitted',
+    status: reqStatus === 'pending_approval' ? 'pending_approval' : 'submitted',
     available_slots: unavailable
       ? [{ unavailable: true }]
       : isAllDay
