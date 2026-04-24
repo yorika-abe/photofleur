@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
+import Link from 'next/link'
 
 const DOW = ['日', '月', '火', '水', '木', '金', '土']
 const TYPE_LABELS = { street: 'ST', studio: 'Stu', both: '両方' }
@@ -22,14 +23,6 @@ function fmtDeadline(dateStr) {
   return `${d.getMonth() + 1}月${d.getDate()}日（${DOW[d.getDay()]}）`
 }
 
-function slotPreview(from, until) {
-  if (!from || !until || (from === '00:00' && until === '00:00')) return '終日'
-  const slots = ['10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00']
-  const fromMin = +from.split(':')[0] * 60 + +from.split(':')[1]
-  const untilMin = +until.split(':')[0] * 60 + +until.split(':')[1]
-  const active = slots.filter(s => +s.split(':')[0] * 60 >= fromMin && (+s.split(':')[0] + 1) * 60 <= untilMin)
-  return active.length === 0 ? '対象枠なし' : active[0] + '〜' + active[active.length - 1].replace(':00', '') + ':00'
-}
 
 export default function ModelShiftsPage() {
   const [model, setModel] = useState(null)
@@ -38,6 +31,8 @@ export default function ModelShiftsPage() {
   const [loading, setLoading] = useState(true)
   const [forms, setForms] = useState({})
   const [submitting, setSubmitting] = useState(false)
+  const [submitResult, setSubmitResult] = useState(null) // 'ok' | 'error'
+  const [submitError, setSubmitError] = useState('')
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -64,13 +59,16 @@ export default function ModelShiftsPage() {
 
     const today = new Date().toISOString().split('T')[0]
     const futureReqs = (Array.isArray(reqData) ? reqData : []).filter(r => r.request_date >= today)
+    const shifts = Array.isArray(shiftData) ? shiftData : []
 
     setRequestDates(futureReqs)
-    setMyShifts(Array.isArray(shiftData) ? shiftData : [])
+    setMyShifts(shifts)
 
     const initForms = {}
     futureReqs.forEach(r => {
-      const existing = (Array.isArray(shiftData) ? shiftData : []).find(s => s.event_date === r.request_date)
+      const existing = shifts.find(s => s.event_date === r.request_date)
+      const isDeadlinePast = r.deadline && r.deadline < today
+
       if (existing) {
         const isAllDay = existing.available_from === '00:00' && existing.available_until === '00:00'
         initForms[r.id] = {
@@ -80,9 +78,10 @@ export default function ModelShiftsPage() {
           allDay: isAllDay,
           submitted: true,
           shiftId: existing.id,
+          locked: isDeadlinePast,
         }
       } else {
-        initForms[r.id] = { from: '09:00', until: '23:00', notes: '', allDay: true, submitted: false }
+        initForms[r.id] = { from: '09:00', until: '23:00', notes: '', allDay: true, submitted: false, locked: isDeadlinePast }
       }
     })
     setForms(initForms)
@@ -95,47 +94,83 @@ export default function ModelShiftsPage() {
     setForms(prev => ({ ...prev, [id]: { ...prev[id], [key]: value } }))
   }
 
-  // まとめて提出
   async function submitAll() {
-    const targets = requestDates.filter(r => forms[r.id])
+    const targets = requestDates.filter(r => forms[r.id] && !forms[r.id]?.locked)
     if (targets.length === 0) return
     setSubmitting(true)
+    setSubmitResult(null)
+    setSubmitError('')
 
+    const errors = []
     for (const req of targets) {
       const f = forms[req.id]
       const from = f.allDay ? '00:00' : f.from
       const until = f.allDay ? '00:00' : f.until
-      await fetch('/api/model-portal/shifts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          request_date_id: req.id,
-          event_date: req.request_date,
-          event_type: req.event_type,
-          available_from: from,
-          available_until: until,
-          notes: f.notes,
-        }),
-      })
+      try {
+        const res = await fetch('/api/model-portal/shifts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event_date: req.request_date,
+            event_type: req.event_type,
+            available_from: from,
+            available_until: until,
+            notes: f.notes,
+          }),
+        })
+        const data = await res.json()
+        if (data?.error) errors.push(data.error)
+      } catch (e) {
+        errors.push(e.message)
+      }
     }
+
     setSubmitting(false)
+    if (errors.length > 0) {
+      setSubmitResult('error')
+      setSubmitError(errors[0])
+    } else {
+      setSubmitResult('ok')
+    }
     await load()
-    alert('シフトを提出しました')
   }
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>読み込み中...</div>
 
-  const pendingCount = requestDates.filter(r => !forms[r.id]?.submitted).length
-  const pastShifts = myShifts.filter(s => s.event_date < new Date().toISOString().split('T')[0])
+  const submittedCount = requestDates.filter(r => forms[r.id]?.submitted).length
+  const pendingCount = requestDates.filter(r => !forms[r.id]?.submitted && !forms[r.id]?.locked).length
+  const today = new Date().toISOString().split('T')[0]
+  const pastShifts = myShifts.filter(s => s.event_date < today)
 
   return (
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 16px' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#2f2244', marginBottom: 4 }}>シフト提出</h1>
-      {model && <p style={{ color: '#888', marginBottom: 24, fontSize: 13 }}>{model.name} さんの出演可能時間を登録してください。</p>}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#2f2244', marginBottom: 4 }}>シフト提出</h1>
+          {model && <p style={{ color: '#888', fontSize: 13, margin: 0 }}>{model.name} さんの出演可能時間を登録してください。</p>}
+        </div>
+        <Link href="/model-portal/shifts/history"
+          style={{ fontSize: 13, color: '#7c5cbf', textDecoration: 'none', fontWeight: 600, background: '#ede7f6', borderRadius: 8, padding: '7px 14px', whiteSpace: 'nowrap' }}>
+          提出済み確認 →
+        </Link>
+      </div>
 
       {!model && (
         <div style={{ background: '#fff3e0', border: '1px solid #ffe082', borderRadius: 10, padding: 16, marginBottom: 24 }}>
           <p style={{ color: '#795548', margin: 0, fontSize: 13 }}>モデルアカウントが設定されていません。運営にご連絡ください。</p>
+        </div>
+      )}
+
+      {/* 提出結果フィードバック */}
+      {submitResult === 'ok' && (
+        <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 14, color: '#2e7d32', fontWeight: 600 }}>
+          ✓ シフトを提出しました。
+          <Link href="/model-portal/shifts/history" style={{ color: '#7c5cbf', marginLeft: 12, fontSize: 13 }}>提出内容を確認 →</Link>
+        </div>
+      )}
+      {submitResult === 'error' && (
+        <div style={{ background: '#fce4ec', border: '1px solid #f48fb1', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 14, color: '#c62828' }}>
+          送信エラー: {submitError || '再度お試しください。'}
         </div>
       )}
 
@@ -148,111 +183,114 @@ export default function ModelShiftsPage() {
 
       {model && requestDates.length > 0 && (
         <>
-          {/* まとめて提出ボタン（上） */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <p style={{ margin: 0, fontSize: 13, color: '#888' }}>
-              {pendingCount > 0 ? `未提出 ${pendingCount}日` : 'すべて提出済み'}
+              {submittedCount > 0 && <span style={{ color: '#7c5cbf', fontWeight: 600, marginRight: 8 }}>✓ {submittedCount}日提出済み</span>}
+              {pendingCount > 0 && <span>未提出 {pendingCount}日</span>}
             </p>
-            <button
-              onClick={submitAll}
-              disabled={submitting}
-              style={{ background: '#7c5cbf', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 22px', cursor: 'pointer', fontWeight: 700, fontSize: 14, opacity: submitting ? 0.7 : 1 }}
-            >
-              {submitting ? '送信中...' : 'まとめて提出・更新'}
+            <button onClick={submitAll} disabled={submitting || pendingCount === 0}
+              style={{ background: pendingCount === 0 ? '#ddd' : '#7c5cbf', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 22px', cursor: pendingCount === 0 ? 'default' : 'pointer', fontWeight: 700, fontSize: 14, opacity: submitting ? 0.7 : 1 }}>
+              {submitting ? '送信中...' : 'まとめて提出'}
             </button>
           </div>
 
-          {/* 日程リスト */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
             {requestDates.map(req => {
               const f = forms[req.id] || {}
               const { label, dow, dowIdx } = fmtDate(req.request_date)
               const isWeekend = dowIdx === 0 || dowIdx === 6
               const tc = TYPE_COLORS[req.event_type] || TYPE_COLORS.both
-              const isDeadlinePast = req.deadline && req.deadline < new Date().toISOString().split('T')[0]
-              const preview = f.allDay ? '終日' : slotPreview(f.from, f.until)
 
               return (
-                <div key={req.id} style={{ background: '#fff', border: f.submitted ? '2px solid #7c5cbf' : '1px solid #e8e0f5', borderRadius: 12, padding: '14px 16px' }}>
-                  {/* 1行目：日付・種別・ステータス */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <div key={req.id} style={{
+                  background: '#fff',
+                  border: f.submitted ? '2px solid #7c5cbf' : '1px solid #e8e0f5',
+                  borderRadius: 12, padding: '12px 14px',
+                  opacity: f.locked ? 0.6 : 1,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: f.locked ? 0 : 8 }}>
                     <span style={{ fontWeight: 700, fontSize: 16, color: isWeekend ? (dowIdx === 0 ? '#e53935' : '#1565c0') : '#2f2244' }}>
                       {label}
                     </span>
-                    <span style={{ fontSize: 13, color: isWeekend ? (dowIdx === 0 ? '#e53935' : '#1565c0') : '#888' }}>（{dow}）</span>
-                    <span style={{ fontSize: 11, background: `${tc}22`, color: tc, borderRadius: 4, padding: '2px 7px', fontWeight: 700 }}>
+                    <span style={{ fontSize: 13, color: '#aaa' }}>（{dow}）</span>
+                    <span style={{ fontSize: 11, background: `${tc}20`, color: tc, borderRadius: 4, padding: '2px 7px', fontWeight: 700 }}>
                       {TYPE_LABELS[req.event_type] || req.event_type}
                     </span>
+
+                    {f.submitted && (
+                      <span style={{ fontSize: 11, background: '#ede7f6', color: '#7c5cbf', borderRadius: 4, padding: '2px 7px', fontWeight: 700 }}>
+                        ✓ 提出済み
+                      </span>
+                    )}
                     {req.deadline && (
-                      <span style={{ fontSize: 11, color: isDeadlinePast ? '#e53935' : '#aaa', marginLeft: 'auto' }}>
+                      <span style={{ fontSize: 11, color: '#bbb', marginLeft: 'auto' }}>
                         〆{fmtDeadline(req.deadline)}
                       </span>
                     )}
-                    {f.submitted && (
-                      <span style={{ fontSize: 11, background: '#ede7f6', color: '#7c5cbf', borderRadius: 4, padding: '2px 7px', fontWeight: 700, marginLeft: f.deadline ? 0 : 'auto' }}>✓ 提出済</span>
+                    {f.locked && (
+                      <span style={{ fontSize: 11, color: '#e53935', fontWeight: 600 }}>締め切り済み</span>
                     )}
                   </div>
 
-                  {/* 2行目：時間設定 */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    {/* 終日トグル */}
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, color: '#555', userSelect: 'none' }}>
-                      <input type="checkbox" checked={!!f.allDay} onChange={e => updateForm(req.id, 'allDay', e.target.checked)}
-                        style={{ width: 15, height: 15, accentColor: '#7c5cbf', cursor: 'pointer' }} />
-                      終日
-                    </label>
+                  {!f.locked && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: 13, color: '#555', userSelect: 'none' }}>
+                        <input type="checkbox" checked={!!f.allDay} onChange={e => updateForm(req.id, 'allDay', e.target.checked)}
+                          style={{ width: 15, height: 15, accentColor: '#7c5cbf', cursor: 'pointer' }} />
+                        終日
+                      </label>
 
-                    {!f.allDay && (
-                      <>
-                        <input type="time" value={f.from || '09:00'} min="00:00" max="23:00"
-                          onChange={e => updateForm(req.id, 'from', e.target.value)}
-                          style={{ padding: '5px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, fontWeight: 600, color: '#2f2244', width: 100 }} />
-                        <span style={{ color: '#bbb' }}>〜</span>
-                        <input type="time" value={f.until || '23:00'} min="00:00" max="23:59"
-                          onChange={e => updateForm(req.id, 'until', e.target.value)}
-                          style={{ padding: '5px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, fontWeight: 600, color: '#2f2244', width: 100 }} />
-                      </>
-                    )}
+                      {!f.allDay && (
+                        <>
+                          <input type="time" value={f.from || '09:00'} min="00:00" max="23:59"
+                            onChange={e => updateForm(req.id, 'from', e.target.value)}
+                            style={{ padding: '4px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, fontWeight: 600, color: '#2f2244', width: 95 }} />
+                          <span style={{ color: '#bbb' }}>〜</span>
+                          <input type="time" value={f.until || '23:00'} min="00:00" max="23:59"
+                            onChange={e => updateForm(req.id, 'until', e.target.value)}
+                            style={{ padding: '4px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, fontWeight: 600, color: '#2f2244', width: 95 }} />
+                        </>
+                      )}
 
-                    <span style={{ fontSize: 11, color: '#9575cd', background: '#f3e5f5', borderRadius: 5, padding: '3px 8px' }}>
-                      {preview}
-                    </span>
+                      <input value={f.notes || ''} onChange={e => updateForm(req.id, 'notes', e.target.value)}
+                        placeholder="備考（任意）"
+                        style={{ flex: 1, minWidth: 100, padding: '4px 10px', border: '1px solid #ede8f5', borderRadius: 6, fontSize: 12, color: '#666', background: '#faf8ff' }} />
+                    </div>
+                  )}
 
-                    {/* 備考（折りたたみ式） */}
-                    <input
-                      value={f.notes || ''}
-                      onChange={e => updateForm(req.id, 'notes', e.target.value)}
-                      placeholder="備考（任意）"
-                      style={{ flex: 1, minWidth: 120, padding: '5px 10px', border: '1px solid #ede8f5', borderRadius: 6, fontSize: 12, color: '#666', background: '#faf8ff' }}
-                    />
-                  </div>
+                  {f.locked && f.submitted && (
+                    <div style={{ fontSize: 12, color: '#7c5cbf', marginTop: 4 }}>
+                      {forms[req.id]?.allDay ? '終日' : `${forms[req.id]?.from} 〜 ${forms[req.id]?.until}`}
+                    </div>
+                  )}
                 </div>
               )
             })}
           </div>
 
-          {/* まとめて提出ボタン（下） */}
-          <button
-            onClick={submitAll}
-            disabled={submitting}
-            style={{ width: '100%', background: '#7c5cbf', color: '#fff', border: 'none', borderRadius: 10, padding: '13px', cursor: 'pointer', fontWeight: 700, fontSize: 15, opacity: submitting ? 0.7 : 1 }}
-          >
-            {submitting ? '送信中...' : `${requestDates.length}日分をまとめて提出・更新`}
+          <button onClick={submitAll} disabled={submitting || pendingCount === 0}
+            style={{ width: '100%', background: pendingCount === 0 ? '#ddd' : '#7c5cbf', color: '#fff', border: 'none', borderRadius: 10, padding: '13px', cursor: pendingCount === 0 ? 'default' : 'pointer', fontWeight: 700, fontSize: 15, opacity: submitting ? 0.7 : 1 }}>
+            {submitting ? '送信中...' : pendingCount === 0 ? 'すべて提出済みです' : `${pendingCount}日分をまとめて提出`}
           </button>
+
+          <div style={{ textAlign: 'center', marginTop: 12 }}>
+            <Link href="/model-portal/shifts/history" style={{ fontSize: 13, color: '#7c5cbf', fontWeight: 600 }}>
+              提出済みシフトを確認・編集 →
+            </Link>
+          </div>
         </>
       )}
 
-      {/* 過去履歴 */}
       {pastShifts.length > 0 && (
-        <div style={{ marginTop: 40 }}>
-          <p style={{ fontSize: 12, fontWeight: 600, color: '#bbb', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10 }}>過去の提出履歴</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {pastShifts.map(shift => {
+        <div style={{ marginTop: 36 }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: '#bbb', letterSpacing: '0.1em', marginBottom: 8 }}>過去の提出履歴</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {pastShifts.slice(0, 10).map(shift => {
               const { label, dow, dowIdx } = fmtDate(shift.event_date)
               const isAllDay = shift.available_from === '00:00' && shift.available_until === '00:00'
               return (
-                <div key={shift.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f9f9f9', borderRadius: 8, padding: '10px 14px', opacity: 0.7 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: dowIdx === 0 ? '#e53935' : dowIdx === 6 ? '#1565c0' : '#555' }}>
+                <div key={shift.id} style={{ display: 'flex', justifyContent: 'space-between', background: '#f9f9f9', borderRadius: 8, padding: '8px 12px', opacity: 0.65 }}>
+                  <span style={{ fontSize: 13, color: dowIdx === 0 ? '#e53935' : dowIdx === 6 ? '#1565c0' : '#555', fontWeight: 600 }}>
                     {label}（{dow}）
                   </span>
                   <span style={{ fontSize: 12, color: '#aaa' }}>

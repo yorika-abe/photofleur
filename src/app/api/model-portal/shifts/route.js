@@ -34,7 +34,7 @@ export async function POST(req) {
   if (!model) return Response.json({ error: 'モデルアカウントが見つかりません' }, { status: 404 })
 
   const body = await req.json()
-  const { request_date_id, event_date, event_type, available_from, available_until, notes } = body
+  const { event_date, event_type, available_from, available_until, notes } = body
 
   // 既存シフトがあれば更新、なければ挿入
   const { data: existing } = await admin
@@ -44,6 +44,7 @@ export async function POST(req) {
     .eq('event_date', event_date)
     .maybeSingle()
 
+  const isAllDay = available_from === '00:00' && available_until === '00:00'
   const payload = {
     model_id: model.id,
     event_date,
@@ -52,9 +53,7 @@ export async function POST(req) {
     available_until: available_until || '00:00',
     notes: notes || null,
     status: 'submitted',
-    shift_request_id: request_date_id || null,
-    // 後方互換のため available_slots も保持
-    available_slots: (available_from === '00:00' && available_until === '00:00')
+    available_slots: isAllDay
       ? [{ start: '00:00', end: '00:00', all_day: true }]
       : [{ start: available_from || '00:00', end: available_until || '00:00' }],
   }
