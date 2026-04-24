@@ -34,6 +34,7 @@ function ConfirmForm() {
     marketing_consent: true,
   })
   const [termsAgreed, setTermsAgreed] = useState(false)
+  const [idAgreed, setIdAgreed] = useState(false)
 
   const [couponCode, setCouponCode] = useState('')
   const [coupon, setCoupon] = useState(null)
@@ -173,6 +174,9 @@ function ConfirmForm() {
     }
     if (!termsAgreed) {
       setError('利用規約への同意が必要です。'); return
+    }
+    if (!idAgreed) {
+      setError('当日の身分証提示への同意が必要です。'); return
     }
 
     setSaving(true)
@@ -390,6 +394,18 @@ function ConfirmForm() {
             <input type="checkbox" checked={form.marketing_consent} onChange={e => setForm(f => ({ ...f, marketing_consent: e.target.checked }))}
               style={{ marginTop: 2, flexShrink: 0 }} />
             メールマガジン・お知らせの受け取りに同意する
+          </label>
+        </div>
+
+        {/* ID verification agreement (required) */}
+        <div style={{ background: '#fce4ec', border: '1px solid #f48fb1', borderRadius: 10, padding: '14px 16px', marginBottom: 12 }}>
+          <p style={{ fontSize: 13, color: '#880e4f', margin: '0 0 10px', lineHeight: 1.7 }}>
+            当日受付時に<strong>本人様確認のため顔写真付き身分証</strong>のご提示をお願いいたします。
+          </p>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#555' }}>
+            <input type="checkbox" checked={idAgreed} onChange={e => setIdAgreed(e.target.checked)}
+              style={{ width: 18, height: 18, flexShrink: 0 }} />
+            当日、顔写真付き身分証を提示することに同意する <span style={{ color: 'red' }}>*</span>
           </label>
         </div>
 
