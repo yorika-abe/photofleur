@@ -12,13 +12,13 @@ function ToolBtn({ onClick, active, title, children, style }) {
       title={title}
       style={{
         padding: '4px 8px',
-        border: active ? '2px solid #1a3560' : '1px solid #ddd',
+        border: active ? '2px solid #0097a7' : '1px solid #ddd',
         borderRadius: 5,
-        background: active ? '#e8f0fb' : '#fff',
+        background: active ? '#e0f7fa' : '#fff',
         cursor: 'pointer',
         fontSize: 13,
         fontWeight: 600,
-        color: '#333',
+        color: active ? '#00838f' : '#333',
         minWidth: 30,
         lineHeight: 1.4,
         ...style,
@@ -66,13 +66,32 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog' }) {
   const [textColor, setTextColor] = useState('#000000')
   const [hlColor, setHlColor] = useState('#fdd835')
   const [fontSize, setFontSize] = useState('16px')
+  const [fmt, setFmt] = useState({ bold: false, italic: false, underline: false, strikeThrough: false, justifyLeft: false, justifyCenter: false, justifyRight: false, insertUnorderedList: false, insertOrderedList: false })
+
+  const updateFmt = useCallback(() => {
+    try {
+      setFmt({
+        bold: document.queryCommandState('bold'),
+        italic: document.queryCommandState('italic'),
+        underline: document.queryCommandState('underline'),
+        strikeThrough: document.queryCommandState('strikeThrough'),
+        justifyLeft: document.queryCommandState('justifyLeft'),
+        justifyCenter: document.queryCommandState('justifyCenter'),
+        justifyRight: document.queryCommandState('justifyRight'),
+        insertUnorderedList: document.queryCommandState('insertUnorderedList'),
+        insertOrderedList: document.queryCommandState('insertOrderedList'),
+      })
+    } catch {}
+  }, [])
 
   useEffect(() => {
     if (editorRef.current && !editorRef.current.dataset.initialized) {
       editorRef.current.innerHTML = value || ''
       editorRef.current.dataset.initialized = '1'
     }
-  }, [])
+    document.addEventListener('selectionchange', updateFmt)
+    return () => document.removeEventListener('selectionchange', updateFmt)
+  }, [updateFmt])
 
   const exec = useCallback((cmd, val = null) => {
     editorRef.current?.focus()
@@ -152,10 +171,10 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog' }) {
         <div style={{ width: 1, height: 22, background: '#ddd', margin: '0 2px' }} />
 
         {/* テキスト装飾 */}
-        <ToolBtn onClick={() => exec('bold')} title="太文字 (Ctrl+B)"><b>B</b></ToolBtn>
-        <ToolBtn onClick={() => exec('italic')} title="イタリック (Ctrl+I)"><i>I</i></ToolBtn>
-        <ToolBtn onClick={() => exec('underline')} title="下線 (Ctrl+U)"><u>U</u></ToolBtn>
-        <ToolBtn onClick={() => exec('strikeThrough')} title="取り消し線" style={{ textDecoration: 'line-through' }}>S</ToolBtn>
+        <ToolBtn onClick={() => exec('bold')} active={fmt.bold} title="太文字 (Ctrl+B)"><b>B</b></ToolBtn>
+        <ToolBtn onClick={() => exec('italic')} active={fmt.italic} title="イタリック (Ctrl+I)"><i>I</i></ToolBtn>
+        <ToolBtn onClick={() => exec('underline')} active={fmt.underline} title="下線 (Ctrl+U)"><u>U</u></ToolBtn>
+        <ToolBtn onClick={() => exec('strikeThrough')} active={fmt.strikeThrough} title="取り消し線" style={{ textDecoration: 'line-through' }}>S</ToolBtn>
 
         <div style={{ width: 1, height: 22, background: '#ddd', margin: '0 2px' }} />
 
@@ -182,15 +201,15 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog' }) {
         <div style={{ width: 1, height: 22, background: '#ddd', margin: '0 2px' }} />
 
         {/* 配置 */}
-        <ToolBtn onClick={() => exec('justifyLeft')} title="左揃え">≡L</ToolBtn>
-        <ToolBtn onClick={() => exec('justifyCenter')} title="中央揃え">≡C</ToolBtn>
-        <ToolBtn onClick={() => exec('justifyRight')} title="右揃え">≡R</ToolBtn>
+        <ToolBtn onClick={() => exec('justifyLeft')} active={fmt.justifyLeft} title="左揃え">≡L</ToolBtn>
+        <ToolBtn onClick={() => exec('justifyCenter')} active={fmt.justifyCenter} title="中央揃え">≡C</ToolBtn>
+        <ToolBtn onClick={() => exec('justifyRight')} active={fmt.justifyRight} title="右揃え">≡R</ToolBtn>
 
         <div style={{ width: 1, height: 22, background: '#ddd', margin: '0 2px' }} />
 
         {/* リスト */}
-        <ToolBtn onClick={() => exec('insertUnorderedList')} title="箇条書き">・</ToolBtn>
-        <ToolBtn onClick={() => exec('insertOrderedList')} title="番号リスト">1.</ToolBtn>
+        <ToolBtn onClick={() => exec('insertUnorderedList')} active={fmt.insertUnorderedList} title="箇条書き">・</ToolBtn>
+        <ToolBtn onClick={() => exec('insertOrderedList')} active={fmt.insertOrderedList} title="番号リスト">1.</ToolBtn>
 
         <div style={{ width: 1, height: 22, background: '#ddd', margin: '0 2px' }} />
 
