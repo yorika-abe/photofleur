@@ -47,7 +47,6 @@ export async function PUT(req) {
   const { error } = await admin.from('models').update({
     ...body,
     status: newStatus,
-    updated_at: new Date().toISOString(),
   }).eq('user_id', user.id)
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
