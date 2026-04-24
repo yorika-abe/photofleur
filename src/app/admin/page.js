@@ -11,10 +11,12 @@ export default async function AdminPage() {
   const [
     { count: totalBookings },
     { count: upcomingEvents },
+    { count: pendingShifts },
     { data: recentBookings },
   ] = await Promise.all([
     supabase.from('bookings').select('*', { count: 'exact', head: true }),
     supabase.from('events').select('*', { count: 'exact', head: true }).gte('event_date', today).eq('status', 'active'),
+    supabase.from('model_shifts').select('*', { count: 'exact', head: true }).eq('status', 'pending_approval').gte('event_date', today),
     supabase.from('bookings').select('id, name, email, created_at, booking_slots(slot_label, price, event_entries(events(event_date, location_name), models(name)))').order('created_at', { ascending: false }).limit(5),
   ])
 
@@ -48,7 +50,7 @@ export default async function AdminPage() {
           { href: '/admin/sales', label: '売上管理', icon: '💰' },
           { href: '/admin/models', label: 'モデル管理', icon: '👤' },
           { href: '/admin/schedule', label: 'スケジュール管理', icon: '📅' },
-          { href: '/admin/shifts', label: 'シフト承認', icon: '🗓️' },
+          { href: '/admin/shifts', label: 'シフト承認', icon: '🗓️', badge: pendingShifts ?? 0 },
           { href: '/admin/shift-requests', label: 'シフト指定日管理', icon: '📆' },
           { href: '/admin/coupons', label: 'クーポン管理', icon: '🎟️' },
           { href: '/admin/blog', label: 'ブログ管理', icon: '✍️' },
@@ -57,9 +59,14 @@ export default async function AdminPage() {
           { href: '/model-portal', label: 'モデルポータル', icon: '🌸' },
         ].map(link => (
           <Link key={link.href} href={link.href} style={{ textDecoration: 'none' }}>
-            <div style={{ background: '#1a3560', color: '#fff', borderRadius: 12, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ background: '#1a3560', color: '#fff', borderRadius: 12, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
               <span style={{ fontSize: 24 }}>{link.icon}</span>
               <span style={{ fontWeight: 600, fontSize: 16 }}>{link.label}</span>
+              {link.badge > 0 && (
+                <span style={{ marginLeft: 'auto', background: '#e53935', color: '#fff', borderRadius: 12, padding: '2px 8px', fontSize: 13, fontWeight: 700, minWidth: 24, textAlign: 'center' }}>
+                  {link.badge}
+                </span>
+              )}
             </div>
           </Link>
         ))}
