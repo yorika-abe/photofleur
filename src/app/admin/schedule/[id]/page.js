@@ -128,7 +128,6 @@ export default function EventEditPage() {
         studio_rules: event.studio_rules,
         street_notes: event.street_notes,
         reminder_extra_note: event.reminder_extra_note,
-        slot_templates: JSON.stringify(slotTemplates || []),
       }),
     })
     setSaving(false)
