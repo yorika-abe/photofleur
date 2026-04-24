@@ -16,9 +16,14 @@ export async function GET(req) {
   if (roles.includes('admin')) {
     const { searchParams } = new URL(req.url)
     const modelId = searchParams.get('model_id')
-    if (!modelId) return Response.json({ events: [] })
-    const { data } = await admin.from('models').select('id').eq('id', modelId).single()
-    model = data
+    if (modelId) {
+      const { data } = await admin.from('models').select('id').eq('id', modelId).single()
+      model = data
+    } else {
+      // admin who is also a model: look up by user_id
+      const { data } = await admin.from('models').select('id').eq('user_id', user.id).single()
+      model = data
+    }
   } else {
     const { data } = await admin.from('models').select('id').eq('user_id', user.id).single()
     model = data
