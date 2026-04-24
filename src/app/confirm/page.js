@@ -163,7 +163,7 @@ function ConfirmForm() {
   async function handleSubmit(e) {
     e.preventDefault()
     const { last_name, first_name, last_name_kana, first_name_kana, email, phone } = form
-    if (!last_name || !first_name || !last_name_kana || !first_name_kana || !email || !phone) {
+    if (!last_name || !first_name || !last_name_kana || !first_name_kana || !email || !phone || !form.sns_url) {
       setError('必須項目を全て入力してください。'); return
     }
 
@@ -326,8 +326,8 @@ function ConfirmForm() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>SNS URL（任意）</label>
-            <input style={inp} value={form.sns_url} onChange={e => setForm(f => ({ ...f, sns_url: e.target.value }))} placeholder="https://twitter.com/..." />
+            <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>SNS URL <span style={{ color: 'red' }}>*</span></label>
+            <input style={inp} value={form.sns_url} onChange={e => setForm(f => ({ ...f, sns_url: e.target.value }))} placeholder="https://twitter.com/..." required />
           </div>
         </div>
 
