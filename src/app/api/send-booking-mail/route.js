@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 
 function formatDate(dateString) {
   if (!dateString) return "未取得";
@@ -17,6 +17,10 @@ function formatDate(dateString) {
 }
 
 export async function POST(req) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
   try {
     const body = await req.json();
     const { slot_id, customerName, email, qr_token, final_price, is_outdoor } = body;
