@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { Geist, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
