@@ -10,46 +10,25 @@ export default async function AdminPage() {
   const today = new Date().toISOString().split('T')[0]
 
   const [
-    { count: totalBookings },
-    { count: upcomingEvents },
     { count: pendingShifts },
     { count: pendingModels },
     { data: recentBookings },
   ] = await Promise.all([
-    supabase.from('bookings').select('*', { count: 'exact', head: true }),
-    supabase.from('events').select('*', { count: 'exact', head: true }).gte('event_date', today).eq('status', 'active'),
     supabase.from('model_shifts').select('*', { count: 'exact', head: true }).eq('status', 'pending_approval').gte('event_date', today),
     supabase.from('models').select('*', { count: 'exact', head: true }).not('pending_data', 'is', null),
     supabase.from('bookings').select('id, name, email, created_at, booking_slots(slot_label, price, event_entries(events(event_date, location_name), models(name)))').order('created_at', { ascending: false }).limit(5),
   ])
-
-  const stats = [
-    { label: '開催予定イベント', value: upcomingEvents ?? 0, href: '/admin/schedule', color: '#388e3c' },
-    { label: '予約状況', value: '確認', href: '/admin/booking-status', color: '#1a3560', isLink: true },
-    { label: '総予約数', value: totalBookings ?? 0, href: '/admin/bookings', color: '#e65100' },
-  ]
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 20px' }}>
       <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1a3560', marginBottom: 8 }}>管理ダッシュボード</h1>
       <p style={{ color: '#666', marginBottom: 40, fontSize: 14 }}>PhotoFleur 運営管理パネル</p>
 
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20, marginBottom: 48 }}>
-        {stats.map(s => (
-          <Link key={s.label} href={s.href} style={{ textDecoration: 'none' }}>
-            <div style={{ background: '#fff', borderRadius: 16, padding: '24px', border: `2px solid ${s.color}20`, textAlign: 'center' }}>
-              <div style={{ fontSize: s.isLink ? 36 : 40, fontWeight: 700, color: s.color, marginBottom: 8 }}>{s.isLink ? '📊' : s.value}</div>
-              <div style={{ fontSize: 14, color: '#666', fontWeight: 600 }}>{s.label}</div>
-            </div>
-          </Link>
-        ))}
-      </div>
-
       {/* Quick links */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 48 }}>
         {[
           { href: '/admin/bookings', label: '予約一覧', icon: '📋' },
+          { href: '/admin/booking-status', label: '予約状況', icon: '📊' },
           { href: '/admin/sales', label: '売上管理', icon: '💰' },
           { href: '/admin/models', label: 'モデル管理', icon: '👤', badge: pendingModels ?? 0 },
           { href: '/admin/schedule', label: 'スケジュール管理', icon: '📅' },
