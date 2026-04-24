@@ -6,10 +6,10 @@ import Link from 'next/link'
 
 const DOW = ['日', '月', '火', '水', '木', '金', '土']
 const TYPE_LABELS = { street: 'ST', studio: 'Stu', both: '両方' }
-const TYPE_COLORS = { street: '#0097a7', studio: '#d81b60', both: '#7c5cbf' }
+const TYPE_COLORS = { street: '#0097a7', studio: '#d81b60', both: '#555' }
 const STATUS_LABELS = { submitted: '提出済み', confirmed: '確定', rejected: '却下', pending_approval: '承認待ち' }
 const STATUS_COLORS = {
-  submitted: { bg: '#ede7f6', color: '#7c5cbf' },
+  submitted: { bg: '#e0f7fa', color: '#00838f' },
   confirmed: { bg: '#e8f5e9', color: '#388e3c' },
   rejected: { bg: '#fce4ec', color: '#c62828' },
   pending_approval: { bg: '#fff3e0', color: '#e65100' },
@@ -141,8 +141,8 @@ export default function ShiftHistoryPage() {
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <Link href="/model-portal/shifts" style={{ fontSize: 13, color: '#7c5cbf', textDecoration: 'none' }}>← シフト提出</Link>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#2f2244', marginBottom: 4, marginTop: 6 }}>提出済みシフト</h1>
+          <Link href="/model-portal/shifts" style={{ fontSize: 13, color: '#0097a7', textDecoration: 'none' }}>← シフト提出</Link>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', marginBottom: 4, marginTop: 6 }}>提出済みシフト</h1>
         </div>
       </div>
 
@@ -155,7 +155,7 @@ export default function ShiftHistoryPage() {
 
       {futureShifts.length > 0 && (
         <div style={{ marginBottom: 32 }}>
-          <p style={{ fontSize: 12, fontWeight: 600, color: '#7c5cbf', letterSpacing: '0.1em', marginBottom: 10 }}>今後の予定</p>
+          <p style={{ fontSize: 12, fontWeight: 600, color: '#0097a7', letterSpacing: '0.1em', marginBottom: 10 }}>今後の予定</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {futureShifts.map(shift => {
               const { label, dow, dowIdx } = fmtDate(shift.event_date)
@@ -172,12 +172,12 @@ export default function ShiftHistoryPage() {
               return (
                 <div key={shift.id} style={{
                   background: '#fff',
-                  border: '1.5px solid #e8e0f5',
+                  border: '1.5px solid #e0f0f4',
                   borderRadius: 12,
                   padding: '14px 16px',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: isEditingThis ? 12 : 6, flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 700, fontSize: 16, color: isWeekend ? (dowIdx === 0 ? '#e53935' : '#1565c0') : '#2f2244' }}>
+                    <span style={{ fontWeight: 700, fontSize: 16, color: isWeekend ? (dowIdx === 0 ? '#e53935' : '#1565c0') : '#1a1a2e' }}>
                       {label}
                     </span>
                     <span style={{ fontSize: 13, color: '#aaa' }}>（{dow}）</span>
@@ -197,7 +197,7 @@ export default function ShiftHistoryPage() {
                   {!isEditingThis && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                       <div>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: unavail ? '#e53935' : '#7c5cbf' }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: unavail ? '#e53935' : '#1a1a2e' }}>
                           {unavail ? '不参加' : isAllDay ? '終日' : `${shift.available_from} 〜 ${shift.available_until}`}
                         </span>
                         {shift.notes && (
@@ -206,7 +206,7 @@ export default function ShiftHistoryPage() {
                       </div>
                       {editable && (
                         <button onClick={() => startEdit(shift)}
-                          style={{ fontSize: 12, color: '#7c5cbf', background: '#ede7f6', border: 'none', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                          style={{ fontSize: 12, color: '#0097a7', background: '#e0f7fa', border: 'none', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>
                           変更
                         </button>
                       )}
@@ -230,7 +230,7 @@ export default function ShiftHistoryPage() {
                               setEditing(prev => ({ ...prev, [shift.id]: { ...prev[shift.id], unavailable: false, allDay: false } }))
                             }
                           }}
-                            style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, border: '1.5px solid', borderColor: opt.active ? (opt.key === 'unavailable' ? '#e53935' : '#7c5cbf') : '#ddd', background: opt.active ? (opt.key === 'unavailable' ? '#fce4ec' : '#ede7f6') : '#fff', color: opt.active ? (opt.key === 'unavailable' ? '#e53935' : '#7c5cbf') : '#888', fontWeight: opt.active ? 700 : 400, cursor: 'pointer' }}>
+                            style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, border: '1.5px solid', borderColor: opt.active ? (opt.key === 'unavailable' ? '#e53935' : '#0097a7') : '#ddd', background: opt.active ? (opt.key === 'unavailable' ? '#fce4ec' : '#e0f7fa') : '#fff', color: opt.active ? (opt.key === 'unavailable' ? '#e53935' : '#00838f') : '#888', fontWeight: opt.active ? 700 : 400, cursor: 'pointer' }}>
                             {opt.label}
                           </button>
                         ))}
@@ -249,11 +249,11 @@ export default function ShiftHistoryPage() {
                       {!e.unavailable && (
                       <input value={e.notes || ''} onChange={ev => updateEdit(shift.id, 'notes', ev.target.value)}
                         placeholder="備考（任意）"
-                        style={{ width: '100%', boxSizing: 'border-box', padding: '6px 10px', border: '1px solid #ede8f5', borderRadius: 6, fontSize: 12, color: '#666', background: '#faf8ff', marginBottom: 8 }} />
+                        style={{ width: '100%', boxSizing: 'border-box', padding: '6px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12, color: '#555', background: '#f8f8f8', marginBottom: 8 }} />
                       )}
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button onClick={() => saveEdit(shift)} disabled={saving[shift.id]}
-                          style={{ flex: 1, background: '#7c5cbf', color: '#fff', border: 'none', borderRadius: 7, padding: '8px', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: saving[shift.id] ? 0.7 : 1 }}>
+                          style={{ flex: 1, background: '#0097a7', color: '#fff', border: 'none', borderRadius: 7, padding: '8px', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: saving[shift.id] ? 0.7 : 1 }}>
                           {saving[shift.id] ? '保存中...' : '保存'}
                         </button>
                         <button onClick={() => cancelEdit(shift.id)}
