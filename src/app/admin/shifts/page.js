@@ -59,7 +59,6 @@ export default function AdminShiftsPage() {
   const filters = [
     ['pending_approval', '承認待ち'],
     ['submitted', '提出済み'],
-    ['confirmed', '確定'],
     ['rejected', '却下'],
     ['all', '全て'],
   ]
@@ -132,7 +131,6 @@ export default function AdminShiftsPage() {
                       <select value={shift.status} onChange={e => updateStatus(shift.id, e.target.value)} disabled={isUpdating}
                         style={{ padding: '5px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, cursor: 'pointer', opacity: isUpdating ? 0.6 : 1 }}>
                         <option value="submitted">提出済み</option>
-                        <option value="confirmed">確定</option>
                         <option value="pending_approval">承認待ち</option>
                         <option value="rejected">却下</option>
                       </select>
