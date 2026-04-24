@@ -17,26 +17,26 @@ export default async function BookingVerifyPage({ searchParams }) {
 
   const { data: booking } = await supabase
     .from('bookings')
-    .select(`
-      id, last_name, first_name, last_name_kana, first_name_kana,
-      email, phone, sns_url, is_outdoor, final_price, created_at,
-      booking_slots(
-        slot_label, price,
-        event_entries(
-          models(name),
-          events(event_date, location_name, event_type)
-        )
-      )
-    `)
+    .select('id, last_name, first_name, last_name_kana, first_name_kana, email, phone, sns_url, is_outdoor, final_price, created_at, slot_id')
     .eq('qr_token', token)
     .single()
 
   if (!booking) notFound()
 
-  const slot = booking.booking_slots
-  const entry = slot?.event_entries
-  const event = entry?.events
-  const model = entry?.models
+  const { data: slot } = await supabase
+    .from('booking_slots')
+    .select('slot_label, price, event_entry_id')
+    .eq('id', booking.slot_id)
+    .single()
+
+  const { data: entry } = slot
+    ? await supabase.from('event_entries').select('model_id, event_id').eq('id', slot.event_entry_id).single()
+    : { data: null }
+
+  const [{ data: model }, { data: event }] = await Promise.all([
+    entry ? supabase.from('models').select('name').eq('id', entry.model_id).single() : { data: null },
+    entry ? supabase.from('events').select('event_date, location_name, event_type').eq('id', entry.event_id).single() : { data: null },
+  ])
 
   return (
     <div style={{ maxWidth: 500, margin: '0 auto', padding: '40px 16px', fontFamily: 'sans-serif' }}>
