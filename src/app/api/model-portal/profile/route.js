@@ -42,10 +42,10 @@ export async function PUT(req) {
   const { data: existing } = await admin.from('models').select('id, status').eq('user_id', user.id).single()
   if (!existing) return Response.json({ error: 'モデルレコードが見つかりません' }, { status: 404 })
 
-  const { error } = await admin.from('models').update({
-    pending_data: body,
-    status: 'pending',
-  }).eq('user_id', user.id)
+  const updateData = { pending_data: body }
+  if (existing.status !== 'active') updateData.status = 'pending'
+
+  const { error } = await admin.from('models').update(updateData).eq('user_id', user.id)
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json({ ok: true, status: 'pending' })

@@ -129,7 +129,7 @@ export default async function ModelDetailPage({ params }) {
             {(model.twitter_url || model.sns) && (
               <a href={model.twitter_url || model.sns} target="_blank" rel="noopener noreferrer"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#000', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600 }}>
-                𝕏 Twitter / X
+                𝕏 /Twitter
               </a>
             )}
           </div>

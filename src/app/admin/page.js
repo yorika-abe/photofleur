@@ -19,7 +19,7 @@ export default async function AdminPage() {
     supabase.from('bookings').select('*', { count: 'exact', head: true }),
     supabase.from('events').select('*', { count: 'exact', head: true }).gte('event_date', today).eq('status', 'active'),
     supabase.from('model_shifts').select('*', { count: 'exact', head: true }).eq('status', 'pending_approval').gte('event_date', today),
-    supabase.from('models').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('models').select('*', { count: 'exact', head: true }).not('pending_data', 'is', null),
     supabase.from('bookings').select('id, name, email, created_at, booking_slots(slot_label, price, event_entries(events(event_date, location_name), models(name)))').order('created_at', { ascending: false }).limit(5),
   ])
 

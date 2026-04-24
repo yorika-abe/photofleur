@@ -109,12 +109,6 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
                 <div style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', marginBottom: 4 }}>{modal.models.name}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   {modal.models.name_en && <div style={{ fontSize: 13, color: '#aaa' }}>{modal.models.name_en}</div>}
-                  {modal.models.twitter_url && (
-                    <a href={modal.models.twitter_url} target="_blank" rel="noopener noreferrer"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#1a1a1a', textDecoration: 'none', background: '#000', color: '#fff', borderRadius: 6, padding: '3px 10px', fontWeight: 600 }}>
-                      𝕏 フォローする
-                    </a>
-                  )}
                 </div>
               </div>
 
@@ -153,6 +147,13 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
               <Link href={`/models/${modal.models.id}`} style={{ textAlign: 'center', fontSize: 13, color: '#1a3560', textDecoration: 'none' }}>
                 プロフィールを見る →
               </Link>
+
+              {modal.models.twitter_url && (
+                <a href={modal.models.twitter_url} target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#000', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700 }}>
+                  𝕏 /Twitter
+                </a>
+              )}
 
               <button onClick={closeModal}
                 style={{ position: 'absolute', top: 16, right: 20, background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#888' }}>
