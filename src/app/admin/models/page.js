@@ -43,8 +43,8 @@ export default function AdminModelsPage() {
     setModels(prev => prev.map(m => m.id === id ? { ...m, status: 'inactive' } : m))
   }
 
-  const pending = models.filter(m => m.status === 'pending')
-  const active = models.filter(m => m.status === 'active' || !m.status)
+  const pending = models.filter(m => m.status === 'pending' || (m.status === 'active' && m.pending_data))
+  const active = models.filter(m => m.status === 'active' && !m.pending_data)
   const inactive = models.filter(m => m.status === 'inactive')
 
   const tabs = [
@@ -96,7 +96,9 @@ export default function AdminModelsPage() {
                     : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b0a0c0', fontSize: 32 }}>👤</div>
                   }
                   {tab === 'pending' && (
-                    <div style={{ position: 'absolute', top: 8, left: 8, background: '#ff9800', color: '#fff', borderRadius: 4, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>承認待ち</div>
+                    <div style={{ position: 'absolute', top: 8, left: 8, background: model.status === 'active' ? '#1565c0' : '#ff9800', color: '#fff', borderRadius: 4, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>
+                      {model.status === 'active' ? '変更申請' : '新規申請'}
+                    </div>
                   )}
                 </div>
                 <div style={{ padding: '14px 16px' }}>
@@ -113,11 +115,11 @@ export default function AdminModelsPage() {
                       <>
                         <button onClick={() => approve(model.id)}
                           style={{ flex: 1, background: '#388e3c', color: '#fff', border: 'none', borderRadius: 7, padding: '8px', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                          承認して公開
+                          {model.status === 'active' ? '変更を承認' : '承認して公開'}
                         </button>
                         <button onClick={() => reject(model.id)}
                           style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 7, padding: '8px 12px', cursor: 'pointer', fontWeight: 600, fontSize: 12 }}>
-                          却下
+                          {model.status === 'active' ? '却下（変更を取消）' : '却下'}
                         </button>
                       </>
                     )}

@@ -32,7 +32,9 @@ export async function POST(req, { params }) {
   }
 
   if (action === 'reject') {
-    await supabase.from('models').update({ status: 'inactive', pending_data: null }).eq('id', id)
+    const { data: current } = await supabase.from('models').select('status').eq('id', id).single()
+    const newStatus = current?.status === 'active' ? 'active' : 'inactive'
+    await supabase.from('models').update({ status: newStatus, pending_data: null }).eq('id', id)
     return Response.json({ ok: true })
   }
 

@@ -101,8 +101,9 @@ export default function ModelPortalHome() {
     </div>
   )
 
-  const statusColor = model.status === 'active' ? '#388e3c' : model.status === 'pending' ? '#e65100' : '#999'
-  const statusLabel = model.status === 'active' ? '公開中' : model.status === 'pending' ? '承認待ち' : '非公開'
+  const hasPendingChange = model.status === 'active' && model.pending_data
+  const statusColor = hasPendingChange ? '#1565c0' : model.status === 'active' ? '#388e3c' : model.status === 'pending' ? '#e65100' : '#999'
+  const statusLabel = hasPendingChange ? '変更審査中' : model.status === 'active' ? '公開中' : model.status === 'pending' ? '承認待ち' : '非公開'
 
   const adminModelId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('model_id') : null
   const isAdminView = !!adminModelId
@@ -143,6 +144,11 @@ export default function ModelPortalHome() {
         {model.status === 'pending' && (
           <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 12, padding: '16px 20px', marginBottom: 24, fontSize: 14, color: '#795548' }}>
             プロフィールは現在審査中です。承認されると公開されます。
+          </div>
+        )}
+        {model.status === 'active' && model.pending_data && (
+          <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 12, padding: '16px 20px', marginBottom: 24, fontSize: 14, color: '#1565c0' }}>
+            プロフィールの変更申請を受け付けました。承認されると反映されます。現在は変更前の内容が公開されています。
           </div>
         )}
 
