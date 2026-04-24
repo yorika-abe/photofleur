@@ -1,6 +1,7 @@
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 export async function POST(req) {
+  const supabase = getSupabase()
   try {
     const body = await req.json();
     const { slot_id, name, email } = body;

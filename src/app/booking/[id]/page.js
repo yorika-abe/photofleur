@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 export default async function BookingPage({ params }) {
+  const supabase = getSupabase()
   const { id } = await params;
 
   const { data: model } = await supabase
