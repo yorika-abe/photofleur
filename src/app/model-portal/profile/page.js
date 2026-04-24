@@ -228,10 +228,17 @@ export default function ModelProfilePage() {
           {uploading && <p style={{ color: '#888', fontSize: 12, marginTop: 8 }}>アップロード中...</p>}
         </section>
 
-        <button onClick={save} disabled={saving || uploading}
-          style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '16px 32px', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
-          {saving ? '保存中...' : '保存して申請する'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <button onClick={save} disabled={saving || uploading}
+            style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '16px 32px', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+            {saving ? '保存中...' : '保存して申請する'}
+          </button>
+          {message && (
+            <span style={{ fontSize: 14, fontWeight: 600, color: message.startsWith('エラー') ? '#c62828' : '#388e3c' }}>
+              {message.startsWith('エラー') ? '' : '✓ '}{message}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   )
