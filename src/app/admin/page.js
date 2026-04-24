@@ -13,11 +13,13 @@ export default async function AdminPage() {
     { count: totalBookings },
     { count: upcomingEvents },
     { count: pendingShifts },
+    { count: pendingModels },
     { data: recentBookings },
   ] = await Promise.all([
     supabase.from('bookings').select('*', { count: 'exact', head: true }),
     supabase.from('events').select('*', { count: 'exact', head: true }).gte('event_date', today).eq('status', 'active'),
     supabase.from('model_shifts').select('*', { count: 'exact', head: true }).eq('status', 'pending_approval').gte('event_date', today),
+    supabase.from('models').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('bookings').select('id, name, email, created_at, booking_slots(slot_label, price, event_entries(events(event_date, location_name), models(name)))').order('created_at', { ascending: false }).limit(5),
   ])
 
@@ -49,7 +51,7 @@ export default async function AdminPage() {
         {[
           { href: '/admin/bookings', label: '予約一覧', icon: '📋' },
           { href: '/admin/sales', label: '売上管理', icon: '💰' },
-          { href: '/admin/models', label: 'モデル管理', icon: '👤' },
+          { href: '/admin/models', label: 'モデル管理', icon: '👤', badge: pendingModels ?? 0 },
           { href: '/admin/schedule', label: 'スケジュール管理', icon: '📅' },
           { href: '/admin/shifts', label: 'シフト承認', icon: '🗓️', badge: pendingShifts ?? 0 },
           { href: '/admin/shift-requests', label: 'シフト指定日管理', icon: '📆' },

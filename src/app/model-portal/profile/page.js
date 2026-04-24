@@ -98,7 +98,7 @@ export default function ModelProfilePage() {
     if (data.error) {
       setMessage('エラー: ' + data.error)
     } else {
-      setMessage(data.status === 'pending' ? '保存しました。運営の確認後に公開されます。' : '保存しました。')
+      setMessage('申請しました。運営の確認後に公開されます。')
     }
   }
 
