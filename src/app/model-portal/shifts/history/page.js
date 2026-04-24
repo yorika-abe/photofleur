@@ -72,15 +72,21 @@ export default function ShiftHistoryPage() {
     return deadline >= today
   }
 
+  function isUnavailable(shift) {
+    return shift.available_slots?.[0]?.unavailable === true
+  }
+
   function startEdit(shift) {
-    const isAllDay = shift.available_from === '00:00' && shift.available_until === '00:00'
+    const unavail = isUnavailable(shift)
+    const isAllDay = !unavail && shift.available_from === '00:00' && shift.available_until === '00:00'
     setEditing(prev => ({
       ...prev,
       [shift.id]: {
-        from: isAllDay ? '09:00' : (shift.available_from || '09:00'),
-        until: isAllDay ? '23:00' : (shift.available_until || '23:00'),
+        from: (!isAllDay && !unavail) ? (shift.available_from || '09:00') : '09:00',
+        until: (!isAllDay && !unavail) ? (shift.available_until || '23:00') : '23:00',
         notes: shift.notes || '',
         allDay: isAllDay,
+        unavailable: unavail,
       }
     }))
     setSavedResult(prev => ({ ...prev, [shift.id]: null }))
@@ -99,20 +105,19 @@ export default function ShiftHistoryPage() {
     if (!e) return
     setSaving(prev => ({ ...prev, [shift.id]: true }))
 
-    const from = e.allDay ? '00:00' : e.from
-    const until = e.allDay ? '00:00' : e.until
+    const from = e.unavailable || e.allDay ? '00:00' : e.from
+    const until = e.unavailable || e.allDay ? '00:00' : e.until
 
-    const req = requestDates.find(r => r.request_date === shift.event_date)
     const res = await fetch('/api/model-portal/shifts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        request_date_id: req?.id || shift.shift_request_id,
         event_date: shift.event_date,
         event_type: shift.event_type,
         available_from: from,
         available_until: until,
         notes: e.notes,
+        unavailable: e.unavailable || false,
       }),
     })
     const data = await res.json()
@@ -157,7 +162,8 @@ export default function ShiftHistoryPage() {
               const isWeekend = dowIdx === 0 || dowIdx === 6
               const tc = TYPE_COLORS[shift.event_type] || TYPE_COLORS.both
               const sc = STATUS_COLORS[shift.status] || STATUS_COLORS.submitted
-              const isAllDay = shift.available_from === '00:00' && shift.available_until === '00:00'
+              const unavail = isUnavailable(shift)
+              const isAllDay = !unavail && shift.available_from === '00:00' && shift.available_until === '00:00'
               const deadline = getDeadline(shift)
               const editable = isEditable(shift)
               const isEditingThis = !!editing[shift.id]
@@ -191,8 +197,8 @@ export default function ShiftHistoryPage() {
                   {!isEditingThis && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                       <div>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: '#7c5cbf' }}>
-                          {isAllDay ? '終日' : `${shift.available_from} 〜 ${shift.available_until}`}
+                        <span style={{ fontSize: 14, fontWeight: 600, color: unavail ? '#e53935' : '#7c5cbf' }}>
+                          {unavail ? '不参加' : isAllDay ? '終日' : `${shift.available_from} 〜 ${shift.available_until}`}
                         </span>
                         {shift.notes && (
                           <p style={{ fontSize: 12, color: '#888', margin: '4px 0 0' }}>{shift.notes}</p>
@@ -209,27 +215,42 @@ export default function ShiftHistoryPage() {
 
                   {isEditingThis && (
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: 13, color: '#555', userSelect: 'none' }}>
-                          <input type="checkbox" checked={!!e.allDay} onChange={ev => updateEdit(shift.id, 'allDay', ev.target.checked)}
-                            style={{ width: 15, height: 15, accentColor: '#7c5cbf', cursor: 'pointer' }} />
-                          終日
-                        </label>
-                        {!e.allDay && (
-                          <>
-                            <input type="time" value={e.from || '09:00'} min="00:00" max="23:59"
-                              onChange={ev => updateEdit(shift.id, 'from', ev.target.value)}
-                              style={{ padding: '4px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, fontWeight: 600, color: '#2f2244', width: 95 }} />
-                            <span style={{ color: '#bbb' }}>〜</span>
-                            <input type="time" value={e.until || '23:00'} min="00:00" max="23:59"
-                              onChange={ev => updateEdit(shift.id, 'until', ev.target.value)}
-                              style={{ padding: '4px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, fontWeight: 600, color: '#2f2244', width: 95 }} />
-                          </>
-                        )}
+                      <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+                        {[
+                          { key: 'allDay', label: '終日', active: !e.unavailable && e.allDay },
+                          { key: 'time', label: '時間指定', active: !e.unavailable && !e.allDay },
+                          { key: 'unavailable', label: '不参加', active: e.unavailable },
+                        ].map(opt => (
+                          <button key={opt.key} onClick={() => {
+                            if (opt.key === 'unavailable') {
+                              setEditing(prev => ({ ...prev, [shift.id]: { ...prev[shift.id], unavailable: true, allDay: false } }))
+                            } else if (opt.key === 'allDay') {
+                              setEditing(prev => ({ ...prev, [shift.id]: { ...prev[shift.id], unavailable: false, allDay: true } }))
+                            } else {
+                              setEditing(prev => ({ ...prev, [shift.id]: { ...prev[shift.id], unavailable: false, allDay: false } }))
+                            }
+                          }}
+                            style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, border: '1.5px solid', borderColor: opt.active ? (opt.key === 'unavailable' ? '#e53935' : '#7c5cbf') : '#ddd', background: opt.active ? (opt.key === 'unavailable' ? '#fce4ec' : '#ede7f6') : '#fff', color: opt.active ? (opt.key === 'unavailable' ? '#e53935' : '#7c5cbf') : '#888', fontWeight: opt.active ? 700 : 400, cursor: 'pointer' }}>
+                            {opt.label}
+                          </button>
+                        ))}
                       </div>
+                      {!e.unavailable && !e.allDay && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                          <input type="time" value={e.from || '09:00'} min="00:00" max="23:59"
+                            onChange={ev => updateEdit(shift.id, 'from', ev.target.value)}
+                            style={{ padding: '4px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, fontWeight: 600, color: '#2f2244', width: 95 }} />
+                          <span style={{ color: '#bbb' }}>〜</span>
+                          <input type="time" value={e.until || '23:00'} min="00:00" max="23:59"
+                            onChange={ev => updateEdit(shift.id, 'until', ev.target.value)}
+                            style={{ padding: '4px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, fontWeight: 600, color: '#2f2244', width: 95 }} />
+                        </div>
+                      )}
+                      {!e.unavailable && (
                       <input value={e.notes || ''} onChange={ev => updateEdit(shift.id, 'notes', ev.target.value)}
                         placeholder="備考（任意）"
                         style={{ width: '100%', boxSizing: 'border-box', padding: '6px 10px', border: '1px solid #ede8f5', borderRadius: 6, fontSize: 12, color: '#666', background: '#faf8ff', marginBottom: 8 }} />
+                      )}
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button onClick={() => saveEdit(shift)} disabled={saving[shift.id]}
                           style={{ flex: 1, background: '#7c5cbf', color: '#fff', border: 'none', borderRadius: 7, padding: '8px', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: saving[shift.id] ? 0.7 : 1 }}>
@@ -241,7 +262,7 @@ export default function ShiftHistoryPage() {
                         </button>
                       </div>
                       {savedResult[shift.id] === 'error' && (
-                        <p style={{ fontSize: 12, color: '#c62828', marginTop: 6 }}>保存に失敗しました。もう一度お試しください。</p>
+                        <p style={{ fontSize: 12, color: '#c62828', margin: '6px 0 0' }}>保存に失敗しました。もう一度お試しください。</p>
                       )}
                     </div>
                   )}
@@ -258,7 +279,8 @@ export default function ShiftHistoryPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {pastShifts.map(shift => {
               const { label, dow, dowIdx } = fmtDate(shift.event_date)
-              const isAllDay = shift.available_from === '00:00' && shift.available_until === '00:00'
+              const unavail = isUnavailable(shift)
+              const isAllDay = !unavail && shift.available_from === '00:00' && shift.available_until === '00:00'
               const sc = STATUS_COLORS[shift.status] || STATUS_COLORS.submitted
               return (
                 <div key={shift.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f9f9f9', borderRadius: 8, padding: '9px 14px', opacity: 0.65 }}>
@@ -266,8 +288,8 @@ export default function ShiftHistoryPage() {
                     {label}（{dow}）
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 12, color: '#aaa' }}>
-                      {isAllDay ? '終日' : `${shift.available_from}〜${shift.available_until}`}
+                    <span style={{ fontSize: 12, color: unavail ? '#e53935' : '#aaa' }}>
+                      {unavail ? '不参加' : isAllDay ? '終日' : `${shift.available_from}〜${shift.available_until}`}
                     </span>
                     <span style={{ fontSize: 11, background: sc.bg, color: sc.color, borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>
                       {STATUS_LABELS[shift.status] || shift.status}

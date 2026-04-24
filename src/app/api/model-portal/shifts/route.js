@@ -34,7 +34,7 @@ export async function POST(req) {
   if (!model) return Response.json({ error: 'モデルアカウントが見つかりません' }, { status: 404 })
 
   const body = await req.json()
-  const { event_date, event_type, available_from, available_until, notes } = body
+  const { event_date, event_type, available_from, available_until, notes, unavailable } = body
 
   // 既存シフトがあれば更新、なければ挿入
   const { data: existing } = await admin
@@ -44,20 +44,26 @@ export async function POST(req) {
     .eq('event_date', event_date)
     .maybeSingle()
 
-  const isAllDay = available_from === '00:00' && available_until === '00:00'
-  // model_shifts の event_type は 'street'/'studio' のみ許可。'both' は保存しない
+  // model_shifts の event_type は 'street'/'studio' のみ許可
   const safeEventType = ['street', 'studio'].includes(event_type) ? event_type : null
+  const isAllDay = !unavailable && available_from === '00:00' && available_until === '00:00'
   const payload = {
     model_id: model.id,
     event_date,
     ...(safeEventType ? { event_type: safeEventType } : {}),
-    available_from: available_from || '00:00',
-    available_until: available_until || '00:00',
+    available_from: '00:00',
+    available_until: '00:00',
     notes: notes || null,
     status: 'submitted',
-    available_slots: isAllDay
-      ? [{ start: '00:00', end: '00:00', all_day: true }]
-      : [{ start: available_from || '00:00', end: available_until || '00:00' }],
+    available_slots: unavailable
+      ? [{ unavailable: true }]
+      : isAllDay
+        ? [{ start: '00:00', end: '00:00', all_day: true }]
+        : [{ start: available_from || '00:00', end: available_until || '00:00' }],
+  }
+  if (!unavailable) {
+    payload.available_from = available_from || '00:00'
+    payload.available_until = available_until || '00:00'
   }
 
   let result

@@ -70,18 +70,20 @@ export default function ModelShiftsPage() {
       const isDeadlinePast = r.deadline && r.deadline < today
 
       if (existing) {
-        const isAllDay = existing.available_from === '00:00' && existing.available_until === '00:00'
+        const isUnavailable = existing.available_slots?.[0]?.unavailable === true
+        const isAllDay = !isUnavailable && existing.available_from === '00:00' && existing.available_until === '00:00'
         initForms[r.id] = {
-          from: isAllDay ? '09:00' : (existing.available_from || '09:00'),
-          until: isAllDay ? '23:00' : (existing.available_until || '23:00'),
+          from: (!isAllDay && !isUnavailable) ? (existing.available_from || '09:00') : '09:00',
+          until: (!isAllDay && !isUnavailable) ? (existing.available_until || '23:00') : '23:00',
           notes: existing.notes || '',
           allDay: isAllDay,
+          unavailable: isUnavailable,
           submitted: true,
           shiftId: existing.id,
           locked: isDeadlinePast,
         }
       } else {
-        initForms[r.id] = { from: '09:00', until: '23:00', notes: '', allDay: true, submitted: false, locked: isDeadlinePast }
+        initForms[r.id] = { from: '09:00', until: '23:00', notes: '', allDay: true, unavailable: false, submitted: false, locked: isDeadlinePast }
       }
     })
     setForms(initForms)
@@ -116,6 +118,7 @@ export default function ModelShiftsPage() {
             available_from: from,
             available_until: until,
             notes: f.notes,
+            unavailable: f.unavailable || false,
           }),
         })
         const data = await res.json()
@@ -233,15 +236,30 @@ export default function ModelShiftsPage() {
                   </div>
 
                   {!f.locked && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: 13, color: '#555', userSelect: 'none' }}>
-                        <input type="checkbox" checked={!!f.allDay} onChange={e => updateForm(req.id, 'allDay', e.target.checked)}
-                          style={{ width: 15, height: 15, accentColor: '#7c5cbf', cursor: 'pointer' }} />
-                        終日
-                      </label>
+                    <div>
+                      <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+                        {[
+                          { key: 'allDay', label: '終日', active: !f.unavailable && f.allDay },
+                          { key: 'time', label: '時間指定', active: !f.unavailable && !f.allDay },
+                          { key: 'unavailable', label: '不参加', active: f.unavailable },
+                        ].map(opt => (
+                          <button key={opt.key} onClick={() => {
+                            if (opt.key === 'unavailable') {
+                              setForms(prev => ({ ...prev, [req.id]: { ...prev[req.id], unavailable: true, allDay: false } }))
+                            } else if (opt.key === 'allDay') {
+                              setForms(prev => ({ ...prev, [req.id]: { ...prev[req.id], unavailable: false, allDay: true } }))
+                            } else {
+                              setForms(prev => ({ ...prev, [req.id]: { ...prev[req.id], unavailable: false, allDay: false } }))
+                            }
+                          }}
+                            style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, border: '1.5px solid', borderColor: opt.active ? (opt.key === 'unavailable' ? '#e53935' : '#7c5cbf') : '#ddd', background: opt.active ? (opt.key === 'unavailable' ? '#fce4ec' : '#ede7f6') : '#fff', color: opt.active ? (opt.key === 'unavailable' ? '#e53935' : '#7c5cbf') : '#888', fontWeight: opt.active ? 700 : 400, cursor: 'pointer' }}>
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
 
-                      {!f.allDay && (
-                        <>
+                      {!f.unavailable && !f.allDay && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                           <input type="time" value={f.from || '09:00'} min="00:00" max="23:59"
                             onChange={e => updateForm(req.id, 'from', e.target.value)}
                             style={{ padding: '4px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, fontWeight: 600, color: '#2f2244', width: 95 }} />
@@ -249,18 +267,20 @@ export default function ModelShiftsPage() {
                           <input type="time" value={f.until || '23:00'} min="00:00" max="23:59"
                             onChange={e => updateForm(req.id, 'until', e.target.value)}
                             style={{ padding: '4px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, fontWeight: 600, color: '#2f2244', width: 95 }} />
-                        </>
+                        </div>
                       )}
 
-                      <input value={f.notes || ''} onChange={e => updateForm(req.id, 'notes', e.target.value)}
-                        placeholder="備考（任意）"
-                        style={{ flex: 1, minWidth: 100, padding: '4px 10px', border: '1px solid #ede8f5', borderRadius: 6, fontSize: 12, color: '#666', background: '#faf8ff' }} />
+                      {!f.unavailable && (
+                        <input value={f.notes || ''} onChange={e => updateForm(req.id, 'notes', e.target.value)}
+                          placeholder="備考（任意）"
+                          style={{ width: '100%', boxSizing: 'border-box', padding: '4px 10px', border: '1px solid #ede8f5', borderRadius: 6, fontSize: 12, color: '#666', background: '#faf8ff' }} />
+                      )}
                     </div>
                   )}
 
                   {f.locked && f.submitted && (
-                    <div style={{ fontSize: 12, color: '#7c5cbf', marginTop: 4 }}>
-                      {forms[req.id]?.allDay ? '終日' : `${forms[req.id]?.from} 〜 ${forms[req.id]?.until}`}
+                    <div style={{ fontSize: 12, color: f.unavailable ? '#e53935' : '#7c5cbf', marginTop: 4 }}>
+                      {f.unavailable ? '不参加' : f.allDay ? '終日' : `${f.from} 〜 ${f.until}`}
                     </div>
                   )}
                 </div>
