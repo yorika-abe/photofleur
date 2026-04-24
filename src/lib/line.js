@@ -48,3 +48,21 @@ ${eventDate}（明日）の撮影があります。
 
 よろしくお願いいたします。`
 }
+
+const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://photofleur.vercel.app'
+
+export function buildShiftOpenMessage() {
+  return `お疲れ様です😊
+📢シフト提出受付を開始しました。
+
+モデルポータルから📅シフト提出日を確認して締め切りまでに提出よろしくお願いします🙇‍♂️
+🔗${SITE_URL}`
+}
+
+export function buildShiftDeadlineReminderMessage() {
+  return `お疲れ様です🎀🫧
+📢シフト提出締め切り前日になりました。
+
+未提出者は連絡確認次第モデルポータルからシフト提出日お願いします🙇‍♂️
+🔗${SITE_URL}`
+}

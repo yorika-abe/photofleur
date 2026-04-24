@@ -144,11 +144,14 @@ export default function ShiftRequestsPage() {
       byType[type].push(date)
     }
 
-    for (const [type, dates] of Object.entries(byType)) {
+    const typeEntries = Object.entries(byType)
+    for (let i = 0; i < typeEntries.length; i++) {
+      const [type, dates] = typeEntries[i]
+      const isLast = i === typeEntries.length - 1
       const res = await fetch('/api/admin/shift-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dates, event_type: type, deadline: common.deadline || null, notes: common.notes || null }),
+        body: JSON.stringify({ dates, event_type: type, deadline: common.deadline || null, notes: common.notes || null, notify: isLast }),
       })
       const data = await res.json()
       if (data?.error) { alert('エラー: ' + data.error); setSaving(false); return }

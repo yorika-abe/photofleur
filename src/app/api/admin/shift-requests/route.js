@@ -1,4 +1,5 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
+import { sendLineGroupMessage, buildShiftOpenMessage } from '@/lib/line'
 
 async function checkAdmin(admin) {
   const server = await createSupabaseServerClient()
@@ -24,7 +25,7 @@ export async function POST(req) {
   if (!(await checkAdmin(admin))) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await req.json()
-  const { request_date, dates, event_type, notes, deadline } = body
+  const { request_date, dates, event_type, notes, deadline, notify } = body
 
   // 複数日まとめて登録
   const targetDates = dates && dates.length > 0 ? dates : [request_date]
@@ -48,6 +49,11 @@ export async function POST(req) {
 
   const { data, error } = await admin.from('shift_request_dates').insert(rows).select()
   if (error) return Response.json({ error: error.message }, { status: 500 })
+
+  if (notify) {
+    await sendLineGroupMessage(buildShiftOpenMessage()).catch(() => {})
+  }
+
   return Response.json(data)
 }
 
