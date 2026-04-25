@@ -12,16 +12,13 @@ export async function POST(req) {
 
   const formData = await req.formData()
   const file = formData.get('file')
-  const path = formData.get('path')
-
-  if (!file || !path) return Response.json({ error: 'Missing file or path' }, { status: 400 })
+  const path = formData.get('path') || `blog/admin/${Date.now()}-${file.name}`
 
   const arrayBuffer = await file.arrayBuffer()
   const { error } = await admin.storage.from('images').upload(path, arrayBuffer, {
     contentType: file.type,
     upsert: true,
   })
-
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
   const { data } = admin.storage.from('images').getPublicUrl(path)

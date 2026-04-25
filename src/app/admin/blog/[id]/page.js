@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
+import RichEditor from '@/components/RichEditor'
 
 function slugify(text) {
   return text
@@ -22,6 +23,7 @@ export default function AdminBlogEditPage() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [categories, setCategories] = useState([])
+  const coverInputRef = useRef(null)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -41,11 +43,14 @@ export default function AdminBlogEditPage() {
     setUploading(true)
     const ext = file.name.split('.').pop()
     const path = `blog/${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('images').upload(path, file, { upsert: true })
-    if (error) { alert('アップロードエラー: ' + error.message); setUploading(false); return }
-    const { data } = supabase.storage.from('images').getPublicUrl(path)
-    setForm(f => ({ ...f, cover_image: data.publicUrl }))
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('path', path)
+    const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+    const data = await res.json()
     setUploading(false)
+    if (data.error) { alert('アップロードエラー: ' + data.error); return }
+    setForm(f => ({ ...f, cover_image: data.url }))
   }
 
   async function save(publishNow = false) {
@@ -128,32 +133,40 @@ export default function AdminBlogEditPage() {
         {/* Cover image */}
         <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
           <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 12 }}>カバー画像</label>
-          {form.cover_image && (
-            <div style={{ marginBottom: 12, borderRadius: 10, overflow: 'hidden', height: 200 }}>
-              <img src={form.cover_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          {form.cover_image ? (
+            <div style={{ marginBottom: 12, borderRadius: 10, overflow: 'hidden', position: 'relative' }}>
+              <img src={form.cover_image} alt="" style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block', borderRadius: 10 }} />
+              <button
+                type="button"
+                onClick={() => setForm(f => ({ ...f, cover_image: '' }))}
+                style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.55)', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 12 }}
+              >
+                削除
+              </button>
+            </div>
+          ) : (
+            <div style={{ marginBottom: 12 }}>
+              <input ref={coverInputRef} type="file" accept="image/*" style={{ display: 'none' }}
+                onChange={e => e.target.files?.[0] && uploadCover(e.target.files[0])} />
+              <label
+                onMouseDown={() => coverInputRef.current?.click()}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#f0f7fb', color: '#1a3560', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600, border: '2px dashed #5bbfd6' }}
+              >
+                {uploading ? '⏳ アップロード中...' : '📷 カバー画像をアップロード'}
+              </label>
             </div>
           )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div>
-              <p style={{ fontSize: 12, color: '#888', margin: '0 0 6px' }}>ファイルアップロード</p>
-              <input type="file" accept="image/*" disabled={uploading}
-                onChange={e => e.target.files?.[0] && uploadCover(e.target.files[0])} style={{ fontSize: 13 }} />
-              {uploading && <span style={{ fontSize: 12, color: '#888', marginLeft: 8 }}>アップロード中...</span>}
-            </div>
-            <div>
-              <p style={{ fontSize: 12, color: '#888', margin: '0 0 6px' }}>または画像URL</p>
-              <input style={inp} value={form.cover_image} onChange={e => setForm(f => ({ ...f, cover_image: e.target.value }))} placeholder="https://..." />
-            </div>
-          </div>
         </div>
 
         {/* Content */}
         <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
-          <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8 }}>本文</label>
-          <p style={{ fontSize: 12, color: '#aaa', margin: '0 0 10px' }}>改行で段落を区切ります</p>
-          <textarea style={{ ...inp, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.8 }} rows={20}
-            value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-            placeholder="ここに記事の内容を書いてください..." />
+          <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 12 }}>本文</label>
+          <RichEditor
+            value={form.content}
+            onChange={content => setForm(f => ({ ...f, content }))}
+            uploadPath="blog/admin"
+            uploadEndpoint="/api/admin/upload"
+          />
         </div>
 
         {/* Actions */}

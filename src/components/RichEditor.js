@@ -58,7 +58,7 @@ function ColorPicker({ onSelect, title, current, icon }) {
   )
 }
 
-export default function RichEditor({ value, onChange, uploadPath = 'blog' }) {
+export default function RichEditor({ value, onChange, uploadPath = 'blog', uploadEndpoint = '/api/model-portal/upload' }) {
   const editorRef = useRef(null)
   const imgInputRef = useRef(null)
   const videoInputRef = useRef(null)
@@ -134,7 +134,7 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog' }) {
     const fd = new FormData()
     fd.append('file', file)
     fd.append('path', path)
-    const res = await fetch('/api/model-portal/upload', { method: 'POST', body: fd })
+    const res = await fetch(uploadEndpoint, { method: 'POST', body: fd })
     const data = await res.json()
     setUploading(false)
     if (data.error) { alert('アップロードエラー: ' + data.error); return }
