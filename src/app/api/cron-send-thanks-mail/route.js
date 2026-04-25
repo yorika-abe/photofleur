@@ -14,19 +14,34 @@ export async function GET(req) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
-  // 今日の日付（JST）
-  const jstDate = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const now = new Date()
+  // 過去1時間以内に end_time が来たスロットを対象にする
+  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString()
+  const nowIso = now.toISOString()
 
-  // 当日開催で Thanks Mail 未送信のイベントを取得
-  const { data: events } = await supabase
-    .from('events')
-    .select('id, event_date')
-    .eq('event_date', jstDate)
-    .eq('status', 'active')
+  // end_time が過去1時間以内に終わったスロットを取得
+  const { data: slots } = await supabase
+    .from('booking_slots')
+    .select('id')
+    .lte('end_time', nowIso)
+    .gte('end_time', oneHourAgo)
+
+  if (!slots?.length) {
+    return Response.json({ success: true, message: '対象スロットなし', sent: 0 })
+  }
+
+  const slotIds = slots.map(s => s.id)
+
+  // そのスロットの予約のうち thanks_mail_sent_at が null のものを取得
+  const { data: bookings } = await supabase
+    .from('bookings')
+    .select('id, email, name')
+    .in('slot_id', slotIds)
+    .is('cancelled_at', null)
     .is('thanks_mail_sent_at', null)
 
-  if (!events?.length) {
-    return Response.json({ success: true, message: '対象イベントなし', sent: 0 })
+  if (!bookings?.length) {
+    return Response.json({ success: true, message: '未送信予約なし', sent: 0 })
   }
 
   const resend = new Resend(process.env.RESEND_API_KEY)
@@ -91,48 +106,20 @@ export async function GET(req) {
   </div>
 </div>`
 
-  let totalSent = 0
-
-  for (const event of events) {
-    // entries → slots → bookings
-    const { data: entries } = await supabase.from('event_entries').select('id').eq('event_id', event.id)
-    const entryIds = (entries || []).map(e => e.id)
-    if (!entryIds.length) continue
-
-    const { data: slots } = await supabase.from('booking_slots').select('id').in('event_entry_id', entryIds)
-    const slotIds = (slots || []).map(s => s.id)
-    if (!slotIds.length) continue
-
-    const { data: bookings } = await supabase
-      .from('bookings')
-      .select('email, name')
-      .in('slot_id', slotIds)
-      .is('cancelled_at', null)
-
-    // Deduplicate by email
-    const seen = new Set()
-    const targets = (bookings || []).filter(b => {
-      if (!b.email || seen.has(b.email)) return false
-      seen.add(b.email)
-      return true
+  let sent = 0
+  for (const booking of bookings) {
+    if (!booking.email) continue
+    const result = await resend.emails.send({
+      from: 'Photo Fleur運営 <onboarding@resend.dev>',
+      to: booking.email,
+      subject: 'この度はPhotoFleur撮影会にご来場いただきありがとうございました',
+      html,
     })
-
-    await Promise.allSettled(
-      targets.map(b =>
-        resend.emails.send({
-          from: 'Photo Fleur運営 <onboarding@resend.dev>',
-          to: b.email,
-          subject: 'この度はPhotoFleur撮影会にご来場いただきありがとうございました',
-          html,
-        })
-      )
-    )
-
-    totalSent += targets.length
-
-    // 送信済みフラグを更新
-    await supabase.from('events').update({ thanks_mail_sent_at: new Date().toISOString() }).eq('id', event.id)
+    if (!result.error) {
+      await supabase.from('bookings').update({ thanks_mail_sent_at: nowIso }).eq('id', booking.id)
+      sent++
+    }
   }
 
-  return Response.json({ success: true, sent: totalSent })
+  return Response.json({ success: true, sent })
 }
