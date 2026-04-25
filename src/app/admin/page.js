@@ -17,6 +17,7 @@ export default async function AdminPage() {
     { count: pendingModels },
     { count: newBookings },
     { count: pendingPrivateInfo },
+    { count: unreadFeedback },
   ] = await Promise.all([
     supabase.from('model_shifts').select('*', { count: 'exact', head: true }).eq('status', 'pending_approval').gte('event_date', today),
     supabase.from('models').select('*', { count: 'exact', head: true }).not('pending_data', 'is', null),
@@ -24,6 +25,7 @@ export default async function AdminPage() {
       ? supabase.from('bookings').select('*', { count: 'exact', head: true }).gt('created_at', lastViewed)
       : supabase.from('bookings').select('*', { count: 'exact', head: true }),
     supabase.from('model_private_info').select('*', { count: 'exact', head: true }).not('pending_changes', 'is', null),
+    supabase.from('feedbacks').select('*', { count: 'exact', head: true }).eq('is_read', false),
   ])
 
   return (
@@ -44,6 +46,7 @@ export default async function AdminPage() {
           { href: '/admin/coupons', label: 'クーポン管理', icon: '🎟️' },
           { href: '/admin/blog', label: 'ブログ管理', icon: '✍️' },
           { href: '/admin/notices', label: 'お知らせ管理', icon: '📢' },
+          { href: '/admin/feedback', label: 'ご意見箱', icon: '📮', badge: unreadFeedback ?? 0 },
           { href: '/admin/media', label: 'メディア管理', icon: '🖼️' },
           { href: '/admin/representative', label: '代表メッセージ', icon: '✉️' },
           { href: '/admin/users', label: 'ユーザー権限管理', icon: '🔑' },

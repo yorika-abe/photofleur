@@ -20,12 +20,28 @@ export default function AdminBookingStatusPage() {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedIdx, setSelectedIdx] = useState(0)
+  const [sending, setSending] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/booking-status')
       .then(r => r.json())
       .then(({ events }) => { setData(events || []); setLoading(false) })
   }, [])
+
+  async function sendThanks() {
+    const current = data[selectedIdx]
+    if (!current) return
+    if (!confirm(`${formatDate(current.event.event_date)} のご来場者全員にThanks Mailを送信しますか？`)) return
+    setSending(true)
+    const res = await fetch('/api/admin/send-thanks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_id: current.event.id }),
+    })
+    const data2 = await res.json()
+    setSending(false)
+    alert(`Thanks Mailを ${data2.sent}件 送信しました。`)
+  }
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>読み込み中...</div>
 
@@ -41,8 +57,8 @@ export default function AdminBookingStatusPage() {
         <p style={{ color: '#999' }}>開催予定のイベントはありません。</p>
       ) : (
         <>
-          {/* Event tabs */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+          {/* Event tabs + Thanks Mail */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20, alignItems: 'center' }}>
             {data.map((item, i) => {
               const isStreet = item.event.event_type === 'street'
               const active = selectedIdx === i
@@ -54,6 +70,10 @@ export default function AdminBookingStatusPage() {
                 </button>
               )
             })}
+            <button onClick={sendThanks} disabled={sending}
+              style={{ marginLeft: 'auto', background: sending ? '#ccc' : '#1a3560', color: '#fff', border: 'none', borderRadius: 20, padding: '8px 18px', fontWeight: 700, fontSize: 13, cursor: sending ? 'default' : 'pointer', whiteSpace: 'nowrap' }}>
+              {sending ? '送信中...' : '📮 Thanks Mail送信'}
+            </button>
           </div>
 
           {/* Grid */}
