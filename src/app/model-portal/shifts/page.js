@@ -10,11 +10,7 @@ const TYPE_COLORS = { street: '#0097a7', studio: '#d81b60', both: '#555' }
 
 function fmtDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00')
-  return {
-    label: `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`,
-    dow: DOW[d.getDay()],
-    dowIdx: d.getDay(),
-  }
+  return { label: `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`, dow: DOW[d.getDay()], dowIdx: d.getDay() }
 }
 
 function fmtDeadline(dateStr) {
@@ -23,7 +19,6 @@ function fmtDeadline(dateStr) {
   return `${d.getMonth() + 1}月${d.getDate()}日（${DOW[d.getDay()]}）`
 }
 
-// アクティブ選択ボタンの色: 終日/時間指定=緑, 不参加=赤
 function choiceBtn(active, variant) {
   const isUnavail = variant === 'unavailable'
   return {
@@ -43,6 +38,7 @@ export default function ModelShiftsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitResult, setSubmitResult] = useState(null)
   const [submitError, setSubmitError] = useState('')
+  const [savingId, setSavingId] = useState(null)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -77,7 +73,6 @@ export default function ModelShiftsPage() {
     futureReqs.forEach(r => {
       const existing = shifts.find(s => s.event_date === r.request_date)
       const isDeadlinePast = r.deadline && r.deadline < today
-
       if (existing) {
         const isUnavailable = existing.available_slots?.[0]?.unavailable === true
         const isAllDay = !isUnavailable && existing.available_from === '00:00' && existing.available_until === '00:00'
@@ -90,9 +85,10 @@ export default function ModelShiftsPage() {
           submitted: true,
           shiftId: existing.id,
           locked: isDeadlinePast,
+          editing: false,
         }
       } else {
-        initForms[r.id] = { from: '09:00', until: '23:00', notes: '', allDay: true, unavailable: false, submitted: false, locked: isDeadlinePast }
+        initForms[r.id] = { from: '09:00', until: '23:00', notes: '', allDay: true, unavailable: false, submitted: false, locked: isDeadlinePast, editing: false }
       }
     })
     setForms(initForms)
@@ -105,13 +101,26 @@ export default function ModelShiftsPage() {
     setForms(prev => ({ ...prev, [id]: { ...prev[id], [key]: value } }))
   }
 
+  async function submitSingle(req) {
+    setSavingId(req.id)
+    const f = forms[req.id]
+    const from = f.allDay || f.unavailable ? '00:00' : f.from
+    const until = f.allDay || f.unavailable ? '00:00' : f.until
+    await fetch('/api/model-portal/shifts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_date: req.request_date, event_type: req.event_type, available_from: from, available_until: until, notes: f.notes, unavailable: f.unavailable || false }),
+    })
+    setForms(prev => ({ ...prev, [req.id]: { ...prev[req.id], submitted: true, editing: false } }))
+    setSavingId(null)
+  }
+
   async function submitAll() {
-    const targets = requestDates.filter(r => forms[r.id] && !forms[r.id]?.locked)
+    const targets = requestDates.filter(r => forms[r.id] && !forms[r.id]?.locked && !forms[r.id]?.submitted)
     if (targets.length === 0) return
     setSubmitting(true)
     setSubmitResult(null)
     setSubmitError('')
-
     const errors = []
     for (const req of targets) {
       const f = forms[req.id]
@@ -121,29 +130,15 @@ export default function ModelShiftsPage() {
         const res = await fetch('/api/model-portal/shifts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            event_date: req.request_date,
-            event_type: req.event_type,
-            available_from: from,
-            available_until: until,
-            notes: f.notes,
-            unavailable: f.unavailable || false,
-          }),
+          body: JSON.stringify({ event_date: req.request_date, event_type: req.event_type, available_from: from, available_until: until, notes: f.notes, unavailable: f.unavailable || false }),
         })
         const data = await res.json()
         if (data?.error) errors.push(data.error)
-      } catch (e) {
-        errors.push(e.message)
-      }
+      } catch (e) { errors.push(e.message) }
     }
-
     setSubmitting(false)
-    if (errors.length > 0) {
-      setSubmitResult('error')
-      setSubmitError(errors[0])
-    } else {
-      setSubmitResult('ok')
-    }
+    if (errors.length > 0) { setSubmitResult('error'); setSubmitError(errors[0]) }
+    else setSubmitResult('ok')
     await load()
   }
 
@@ -159,9 +154,9 @@ export default function ModelShiftsPage() {
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', marginBottom: 4 }}>シフト提出</h1>
           {model && <p style={{ color: '#888', fontSize: 13, margin: 0 }}>{model.name} さんの出演可能時間を登録してください。</p>}
         </div>
-        <Link href="/model-portal/shifts/history"
+        <Link href="/model-portal/shifts/extra"
           style={{ fontSize: 13, color: '#0097a7', textDecoration: 'none', fontWeight: 600, background: '#e0f7fa', borderRadius: 8, padding: '7px 14px', whiteSpace: 'nowrap' }}>
-          提出済み確認 →
+          追加エントリー・変更申請 →
         </Link>
       </div>
 
@@ -174,7 +169,6 @@ export default function ModelShiftsPage() {
       {submitResult === 'ok' && (
         <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 14, color: '#2e7d32', fontWeight: 600 }}>
           ✓ シフトを提出しました。
-          <Link href="/model-portal/shifts/history" style={{ color: '#0097a7', marginLeft: 12, fontSize: 13 }}>提出内容を確認 →</Link>
         </div>
       )}
       {submitResult === 'error' && (
@@ -209,15 +203,21 @@ export default function ModelShiftsPage() {
               const { label, dow, dowIdx } = fmtDate(req.request_date)
               const isWeekend = dowIdx === 0 || dowIdx === 6
               const tc = TYPE_COLORS[req.event_type] || TYPE_COLORS.both
+              const isEditing = !f.submitted || f.editing
+              const isSaving = savingId === req.id
+
+              // Summary text for submitted/locked
+              const summaryText = f.unavailable ? '不参加' : f.allDay ? '終日' : `${f.from} 〜 ${f.until}`
 
               return (
                 <div key={req.id} style={{
                   background: '#fff',
-                  border: f.submitted ? '2px solid #0097a7' : '1px solid #e0f0f4',
+                  border: f.submitted && !f.editing ? '2px solid #0097a7' : '1px solid #e0f0f4',
                   borderRadius: 12, padding: '12px 14px',
                   opacity: f.locked && !f.submitted ? 0.55 : 1,
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: f.locked ? 0 : 8, flexWrap: 'wrap' }}>
+                  {/* Header row */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <span style={{ fontWeight: 700, fontSize: 16, color: isWeekend ? (dowIdx === 0 ? '#e53935' : '#1565c0') : '#1a1a2e' }}>
                       {label}
                     </span>
@@ -231,17 +231,31 @@ export default function ModelShiftsPage() {
                       </span>
                     )}
                     {req.deadline && (
-                      <span style={{ fontSize: 11, color: '#bbb', marginLeft: 'auto' }}>
-                        〆{fmtDeadline(req.deadline)}
+                      <span style={{ fontSize: 11, color: f.locked ? '#e53935' : '#bbb', marginLeft: 'auto', fontWeight: f.locked ? 600 : 400 }}>
+                        〆{fmtDeadline(req.deadline)}{f.locked ? '　締め切り済み' : ''}
                       </span>
-                    )}
-                    {f.locked && (
-                      <span style={{ fontSize: 11, color: '#e53935', fontWeight: 600 }}>締め切り済み</span>
                     )}
                   </div>
 
-                  {!f.locked && (
-                    <div>
+                  {/* 提出済み・非編集モード */}
+                  {f.submitted && !f.editing && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                      <span style={{ fontSize: 14, color: f.unavailable ? '#e53935' : '#333', fontWeight: 600 }}>
+                        {summaryText}
+                        {f.notes && <span style={{ color: '#aaa', marginLeft: 8, fontSize: 12, fontWeight: 400 }}>{f.notes}</span>}
+                      </span>
+                      {!f.locked && (
+                        <button onClick={() => setForms(prev => ({ ...prev, [req.id]: { ...prev[req.id], editing: true } }))}
+                          style={{ fontSize: 12, padding: '4px 14px', borderRadius: 6, border: '1px solid #0097a7', background: '#e0f7fa', color: '#0097a7', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap', marginLeft: 12 }}>
+                          変更
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 未提出 or 編集モード */}
+                  {isEditing && (
+                    <div style={{ marginTop: 8 }}>
                       <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
                         {[
                           { key: 'allDay', label: '終日' },
@@ -249,13 +263,9 @@ export default function ModelShiftsPage() {
                           { key: 'unavailable', label: '不参加' },
                         ].map(opt => (
                           <button key={opt.key} onClick={() => {
-                            if (opt.key === 'unavailable') {
-                              setForms(prev => ({ ...prev, [req.id]: { ...prev[req.id], unavailable: true, allDay: false } }))
-                            } else if (opt.key === 'allDay') {
-                              setForms(prev => ({ ...prev, [req.id]: { ...prev[req.id], unavailable: false, allDay: true } }))
-                            } else {
-                              setForms(prev => ({ ...prev, [req.id]: { ...prev[req.id], unavailable: false, allDay: false } }))
-                            }
+                            if (opt.key === 'unavailable') setForms(prev => ({ ...prev, [req.id]: { ...prev[req.id], unavailable: true, allDay: false } }))
+                            else if (opt.key === 'allDay') setForms(prev => ({ ...prev, [req.id]: { ...prev[req.id], unavailable: false, allDay: true } }))
+                            else setForms(prev => ({ ...prev, [req.id]: { ...prev[req.id], unavailable: false, allDay: false } }))
                           }}
                             style={choiceBtn(
                               opt.key === 'unavailable' ? f.unavailable : opt.key === 'allDay' ? (!f.unavailable && f.allDay) : (!f.unavailable && !f.allDay),
@@ -279,15 +289,22 @@ export default function ModelShiftsPage() {
                       {!f.unavailable && (
                         <input value={f.notes || ''} onChange={e => updateForm(req.id, 'notes', e.target.value)}
                           placeholder="備考（任意）"
-                          style={{ width: '100%', boxSizing: 'border-box', padding: '4px 10px', border: '1px solid #e0e0e0', borderRadius: 6, fontSize: 12, color: '#555', background: '#f8f8f8' }} />
+                          style={{ width: '100%', boxSizing: 'border-box', padding: '4px 10px', border: '1px solid #e0e0e0', borderRadius: 6, fontSize: 12, color: '#555', background: '#f8f8f8', marginBottom: 8 }} />
                       )}
-                    </div>
-                  )}
 
-                  {f.locked && f.submitted && (
-                    <div style={{ fontSize: 13, color: f.unavailable ? '#333' : '#555', marginTop: 6 }}>
-                      {f.unavailable ? '不参加' : f.allDay ? '終日' : `${f.from} 〜 ${f.until}`}
-                      {f.notes && <span style={{ color: '#aaa', marginLeft: 8, fontSize: 12 }}>{f.notes}</span>}
+                      {/* 編集モード時：保存・キャンセルボタン */}
+                      {f.editing && (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                          <button onClick={() => submitSingle(req)} disabled={isSaving}
+                            style={{ background: '#0097a7', color: '#fff', border: 'none', borderRadius: 7, padding: '7px 20px', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: isSaving ? 0.7 : 1 }}>
+                            {isSaving ? '保存中...' : '保存する'}
+                          </button>
+                          <button onClick={() => setForms(prev => ({ ...prev, [req.id]: { ...prev[req.id], editing: false } }))}
+                            style={{ background: '#f5f5f5', color: '#555', border: 'none', borderRadius: 7, padding: '7px 16px', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                            キャンセル
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -299,13 +316,6 @@ export default function ModelShiftsPage() {
             style={{ width: '100%', background: pendingCount === 0 ? '#ddd' : '#0097a7', color: '#fff', border: 'none', borderRadius: 10, padding: '13px', cursor: pendingCount === 0 ? 'default' : 'pointer', fontWeight: 700, fontSize: 15, opacity: submitting ? 0.7 : 1 }}>
             {submitting ? '送信中...' : pendingCount === 0 ? 'すべて提出済みです' : `${pendingCount}日分をまとめて提出`}
           </button>
-
-          <div style={{ textAlign: 'center', marginTop: 12 }}>
-            <Link href="/model-portal/shifts/history" style={{ fontSize: 13, color: '#0097a7', fontWeight: 600 }}>
-              提出済みシフトを確認・編集 →
-            </Link>
-          </div>
-
         </>
       )}
     </div>
