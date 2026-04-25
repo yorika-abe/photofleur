@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import HeroSlideshow from '@/components/HeroSlideshow'
 import ScrollReveal from '@/components/ScrollReveal'
 import ScheduleCarousel from '@/components/ScheduleCarousel'
+import RepMessage from '@/components/RepMessage'
 
 export const dynamic = 'force-dynamic'
 
@@ -64,6 +65,11 @@ export default async function Home() {
   const missionBg = siteSettings.mission_bg || ''
   const recruitBgImages = JSON.parse(siteSettings.recruit_bg_images || '[]')
   const recruitBgVideo = siteSettings.recruit_bg_video || ''
+  const repPhoto = siteSettings.rep_photo || ''
+  const repRole = siteSettings.rep_role || ''
+  const repName = siteSettings.rep_name || ''
+  const repMessage = siteSettings.rep_message || ''
+  const repModelId = siteSettings.rep_model_id || ''
   const isYoutube = heroVideo.includes('youtube') || heroVideo.includes('youtu.be')
   const isYoutube2 = heroVideo2.includes('youtube') || heroVideo2.includes('youtu.be')
   const isRecruitYoutube = recruitBgVideo.includes('youtube') || recruitBgVideo.includes('youtu.be')
@@ -282,6 +288,11 @@ export default async function Home() {
           </Link>
         </div>
       </section>
+
+      {/* ─── REPRESENTATIVE MESSAGE ─── */}
+      {(repName || repMessage) && (
+        <RepMessage photo={repPhoto} role={repRole} name={repName} message={repMessage} modelId={repModelId} />
+      )}
 
       <style>{`
         .event-card:hover .event-img { transform: scale(1.05); }

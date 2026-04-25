@@ -42,6 +42,7 @@ export default async function AdminPage() {
           { href: '/admin/coupons', label: 'クーポン管理', icon: '🎟️' },
           { href: '/admin/blog', label: 'ブログ管理', icon: '✍️' },
           { href: '/admin/media', label: 'メディア管理', icon: '🖼️' },
+          { href: '/admin/representative', label: '代表メッセージ', icon: '✉️' },
           { href: '/admin/users', label: 'ユーザー権限管理', icon: '🔑' },
           { href: '/model-portal', label: 'モデルポータル', icon: '🌸' },
         ].map(link => (
