@@ -19,6 +19,12 @@ const DEFAULT_STREET_SLOTS = [
   { label: '7部 21:00〜22:30', start: '21:00', end: '22:30', order: 7 },
 ]
 
+function get0buPrice(studioPrice) {
+  if (studioPrice >= 12000) return 7500
+  if (studioPrice >= 9900) return 5900
+  return 4900
+}
+
 // モデルのシフト提出内容に基づきスロットをフィルタ
 function filterSlotsByShift(slots, shift) {
   const avail = shift?.available_slots?.[0]
@@ -60,7 +66,8 @@ export async function POST(req, { params }) {
         .single()
       if (!entry) continue
 
-      const basePrice = event.event_type === 'studio'
+      const isStudioType = event.event_type === 'studio' || event.event_type === 'irregular'
+      const basePrice = isStudioType
         ? (parseInt(model.studio_price || 0) + parseInt(event.studio_fee || 0))
         : parseInt(model.street_price || 0)
 
@@ -71,7 +78,8 @@ export async function POST(req, { params }) {
         event_entry_id: entry.id, slot_label: slot.label, slot_order: slot.order,
         start_time: new Date(`${event.event_date}T${slot.start}:00+09:00`).toISOString(),
         end_time: new Date(`${event.event_date}T${slot.end}:00+09:00`).toISOString(),
-        price: basePrice, max_reservations: 1, is_reserved: false,
+        price: (isStudioType && slot.order === 0) ? get0buPrice(parseInt(model.studio_price || 0)) : basePrice,
+        max_reservations: 1, is_reserved: false,
       }))
       await supabase.from('booking_slots').insert(slotsToInsert)
     }
@@ -88,7 +96,8 @@ export async function POST(req, { params }) {
     if (!entry) return Response.json({ error: 'Failed' }, { status: 500 })
 
     const { data: model } = await supabase.from('models').select('studio_price, street_price').eq('id', modelId).single()
-    const basePrice = event.event_type === 'studio'
+    const isStudioType = event.event_type === 'studio' || event.event_type === 'irregular'
+    const basePrice = isStudioType
       ? (parseInt(model?.studio_price || 0) + parseInt(event.studio_fee || 0))
       : parseInt(model?.street_price || 0)
 
@@ -109,7 +118,8 @@ export async function POST(req, { params }) {
       event_entry_id: entry.id, slot_label: slot.label, slot_order: slot.order,
       start_time: new Date(`${event.event_date}T${slot.start}:00+09:00`).toISOString(),
       end_time: new Date(`${event.event_date}T${slot.end}:00+09:00`).toISOString(),
-      price: basePrice, max_reservations: 1, is_reserved: false,
+      price: (isStudioType && slot.order === 0) ? get0buPrice(parseInt(model?.studio_price || 0)) : basePrice,
+      max_reservations: 1, is_reserved: false,
     }))
     const { data: slots } = await supabase
       .from('booking_slots')

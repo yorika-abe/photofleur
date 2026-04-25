@@ -128,7 +128,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
                   <option value="">選択してください</option>
                   {availableSlots.map(slot => (
                     <option key={slot.id} value={slot.id} disabled={slot.indoorFull && !slot.fullyBooked}>
-                      {slot.slot_label}{slot.indoorFull ? '（屋外のみ）' : ''}
+                      {slot.slot_label}{slot.indoorFull ? '（企画定員超え割引）' : ''}
                     </option>
                   ))}
                 </select>

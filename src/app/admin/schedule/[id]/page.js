@@ -445,7 +445,7 @@ export default function EventEditPage() {
             </div>
           </div>
 
-          {event.event_type === 'studio' && (
+          {(event.event_type === 'studio' || event.event_type === 'irregular') && (
             <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e5e5e5' }}>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2f2244', marginBottom: 16, marginTop: 0 }}>スタジオ設定</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
@@ -456,7 +456,7 @@ export default function EventEditPage() {
                 </div>
                 <div>
                   <label style={label}>追加料金 ¥（スタジオ・衣装等）</label>
-                  <input type="number" value={event.studio_fee ?? 2000} onChange={e => updateField('studio_fee', e.target.value)} style={inp} placeholder="2000" />
+                  <input type="number" value={event.studio_fee || 2000} onChange={e => updateField('studio_fee', e.target.value)} style={inp} placeholder="2000" />
                   <p style={{ fontSize: 11, color: '#999', margin: '4px 0 0' }}>野外時はこの金額を引いた料金になります（基本2,000円）</p>
                 </div>
               </div>

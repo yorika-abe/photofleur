@@ -1,5 +1,11 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 
+function get0buPrice(studioPrice) {
+  if (studioPrice >= 12000) return 7500
+  if (studioPrice >= 9900) return 5900
+  return 4900
+}
+
 export async function POST(req) {
   const { entryId, slot, event } = await req.json()
   const supabase = await createSupabaseAdminClient()
@@ -7,9 +13,11 @@ export async function POST(req) {
   const endTime = new Date(`${event.event_date}T${slot.end}:00+09:00`).toISOString()
   const { data: entry } = await supabase.from('event_entries').select('model_id').eq('id', entryId).single()
   const { data: model } = entry ? await supabase.from('models').select('studio_price, street_price').eq('id', entry.model_id).single() : { data: null }
-  const price = event.event_type === 'studio'
+  const isStudioType = event.event_type === 'studio' || event.event_type === 'irregular'
+  const basePrice = isStudioType
     ? (parseInt(model?.studio_price || 0) + parseInt(event.studio_fee || 0))
     : parseInt(model?.street_price || 0)
+  const price = (isStudioType && slot.order === 0) ? get0buPrice(parseInt(model?.studio_price || 0)) : basePrice
 
   const { data } = await supabase.from('booking_slots').insert({
     event_entry_id: entryId, slot_label: slot.label, slot_order: slot.order,
