@@ -54,7 +54,11 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
 
   const availableSlots = modalSlots.filter(s => !s.fullyBooked)
   const selectedSlot = availableSlots.find(s => s.id === selectedSlotId)
-  const displayPrice = selectedSlot?.price ?? availableSlots[0]?.price ?? 0
+  const modalPrices = availableSlots.map(s => s.price)
+  const modalMinPrice = modalPrices.length ? Math.min(...modalPrices) : 0
+  const modalAllSamePrice = modalPrices.length > 0 && modalPrices.every(p => p === modalPrices[0])
+  const displayPrice = selectedSlot ? selectedSlot.price : modalMinPrice
+  const showPriceRange = !selectedSlot && !modalAllSamePrice
 
   return (
     <>
@@ -62,8 +66,10 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 40 }}>
         {validEntries.map(entry => {
           const model = entry.models
-          const slots = (slotsByEntry[entry.id] || []).filter(s => s.slot_order !== 0)
-          const price = slots[0]?.price || 0
+          const slots = slotsByEntry[entry.id] || []
+          const cardPrices = slots.map(s => s.price)
+          const cardMinPrice = cardPrices.length ? Math.min(...cardPrices) : 0
+          const cardAllSame = cardPrices.length > 0 && cardPrices.every(p => p === cardPrices[0])
           const allFull = slots.every(s => {
             const indoor = indoorCountBySlot[s.id] || 0
             const totalBookings = (bookingCounts || []).filter(b => b.slot_id === s.id).length
@@ -87,7 +93,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
                 <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560', marginBottom: 2 }}>{model.name}</div>
                 {model.name_en && <div style={{ fontSize: 11, color: '#aaa', marginBottom: 6 }}>{model.name_en}</div>}
                 <div style={{ fontSize: 14, color: '#555', fontWeight: 600 }}>
-                  {allFull ? <span style={{ color: '#999' }}>満席</span> : `¥${price.toLocaleString()}`}
+                  {allFull ? <span style={{ color: '#999' }}>満席</span> : `¥${cardMinPrice.toLocaleString()}${cardAllSame ? '' : '〜'}`}
                 </div>
               </div>
             </div>
@@ -116,7 +122,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
               </div>
 
               <div style={{ fontSize: 22, fontWeight: 700, color: '#1a3560' }}>
-                ¥{displayPrice.toLocaleString()}
+                ¥{displayPrice.toLocaleString()}{showPriceRange ? '〜' : ''}
               </div>
 
               <div>
