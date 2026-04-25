@@ -16,8 +16,9 @@ export default function Header() {
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     )
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      setUser(user)
+
+    async function applyUser(user) {
+      setUser(user ?? null)
       if (user) {
         const { data } = await supabase
           .from('user_profiles')
@@ -26,8 +27,18 @@ export default function Header() {
           .single()
         const r = data?.roles?.length > 0 ? data.roles : (data?.role ? [data.role] : [])
         setRoles(r)
+      } else {
+        setRoles([])
       }
+    }
+
+    supabase.auth.getUser().then(({ data: { user } }) => applyUser(user))
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      applyUser(session?.user ?? null)
     })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   async function handleLogout() {
