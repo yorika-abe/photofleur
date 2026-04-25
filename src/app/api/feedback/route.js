@@ -5,7 +5,7 @@ export async function POST(req) {
   const { data: { user } } = await server.auth.getUser()
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { content } = await req.json()
+  const { content, sns_url } = await req.json()
   if (!content?.trim()) return Response.json({ error: 'content required' }, { status: 400 })
 
   const admin = await createSupabaseAdminClient()
@@ -13,6 +13,7 @@ export async function POST(req) {
     user_id: user.id,
     user_email: user.email,
     content: content.trim(),
+    sns_url: sns_url?.trim() || null,
   })
   if (error) return Response.json({ error: error.message }, { status: 500 })
 

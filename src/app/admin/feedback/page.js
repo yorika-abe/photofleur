@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || ''
 
 export default function AdminFeedbackPage() {
   const [feedbacks, setFeedbacks] = useState(null)
@@ -62,7 +61,11 @@ export default function AdminFeedbackPage() {
               <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 12 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>
-                    {fb.user_email || '不明'} ・ {new Date(fb.created_at).toLocaleString('ja-JP')}
+                    {fb.sns_url
+                      ? <a href={fb.sns_url} target="_blank" rel="noopener noreferrer" style={{ color: '#5bbfd6', textDecoration: 'none', fontWeight: 600 }}>{fb.sns_url}</a>
+                      : (fb.user_email || '不明')
+                    }
+                    {' '}・ {new Date(fb.created_at).toLocaleString('ja-JP')}
                   </div>
                   <p style={{ fontSize: 14, lineHeight: 1.9, color: '#333', margin: 0, whiteSpace: 'pre-wrap' }}>{fb.content}</p>
                 </div>
