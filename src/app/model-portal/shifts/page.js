@@ -212,7 +212,7 @@ export default function ModelShiftsPage() {
               return (
                 <div key={req.id} style={{
                   background: '#fff',
-                  border: f.submitted && !f.editing ? '2px solid #0097a7' : '1px solid #e0f0f4',
+                  border: f.submitted && !f.editing ? '2px solid #1a1a2e' : '1px solid #bbb',
                   borderRadius: 12, padding: '12px 14px',
                   opacity: f.locked && !f.submitted ? 0.55 : 1,
                 }}>
