@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import HeroSlideshow from '@/components/HeroSlideshow'
 import ScrollReveal from '@/components/ScrollReveal'
 import ScheduleCarousel from '@/components/ScheduleCarousel'
+import NoticesCarousel from '@/components/NoticesCarousel'
 import RepMessage from '@/components/RepMessage'
 
 export const dynamic = 'force-dynamic'
@@ -30,7 +31,7 @@ export default async function Home() {
   )
   const today = new Date().toISOString().split('T')[0]
 
-  const [{ data: events }, { data: models }, { data: siteSettingsRows }] = await Promise.all([
+  const [{ data: events }, { data: models }, { data: siteSettingsRows }, { data: noticesData }] = await Promise.all([
     adminSupabase
       .from('events')
       .select('id, event_date, event_type, title, location_name, main_image')
@@ -43,7 +44,15 @@ export default async function Home() {
       .select('id, name, name_en, image')
       .eq('status', 'active'),
     adminSupabase.from('site_settings').select('key, value'),
+    adminSupabase
+      .from('blog_posts')
+      .select('id, title, cover_image, content, published_at')
+      .eq('category', 'notice')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(8),
   ])
+  const notices = noticesData || []
 
   // Fetch event entries separately
   const eventIds = (events || []).map(e => e.id)
@@ -174,7 +183,7 @@ export default async function Home() {
               <div>
                 <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>Schedule</p>
                 <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>
-                  開催予定の撮影会
+                  開催予定のイベント
                 </h2>
               </div>
               <Link href="/schedule" style={{ ...serif, color: '#5bbfd6', fontSize: 13, letterSpacing: '0.15em', textDecoration: 'none', textTransform: 'uppercase', borderBottom: '1px solid #5bbfd6', paddingBottom: 2 }}>
@@ -227,23 +236,41 @@ export default async function Home() {
             <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>How it works</p>
             <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>ご参加の流れ</h2>
           </div>
-          <div className="how-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 1, background: '#e8f4f8' }}>
+          <div className="how-grid" style={{ display: 'grid', gap: 1, background: '#e8f4f8' }}>
             {[
               { num: '01', en: 'Browse', ja: 'スケジュールを確認', desc: '開催日程・出演モデルをチェック。撮影場所の雰囲気などもご確認ください。' },
               { num: '02', en: 'Reserve', ja: '時間枠を選んで予約', desc: '好きな時間枠を選択し、お名前・メールアドレスを入力するだけ。' },
               { num: '03', en: 'Confirm', ja: '確認メールを受け取る', desc: '予約確認メールが届いたら完了。当日はQRコードをご提示ください。' },
               { num: '04', en: 'Shoot', ja: '撮影当日', desc: 'カメラを持って現地へ。スタッフがご案内します。素敵な作品を作りましょう。' },
+              { num: '05', en: 'After', ja: '撮影会終了後', desc: 'PhotoFleurでは日々改善・改良を重ねています。ご予約のメール宛にご意見箱やお知らせを送信いたします。' },
             ].map(item => (
               <div key={item.num} className="how-item" style={{ background: '#fff', padding: '40px 28px' }}>
-                <div style={{ ...serif, fontSize: 'clamp(32px, 6vw, 72px)', fontWeight: 300, color: '#d6ecf5', lineHeight: 1, marginBottom: 16 }}>{item.num}</div>
-                <p style={{ fontSize: 'clamp(8px, 1.5vw, 10px)', letterSpacing: '0.15em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 6, fontWeight: 600 }}>{item.en}</p>
-                <h3 className="how-title" style={{ ...serif, fontSize: 'clamp(9px, 1.8vw, 18px)', fontWeight: 600, color: '#0d1f3a', marginBottom: 8, marginTop: 0, wordBreak: 'keep-all' }}>{item.ja}</h3>
-                <p className="how-desc" style={{ fontSize: 'clamp(8px, 1.4vw, 13px)', color: '#667', lineHeight: 1.6, margin: 0, wordBreak: 'keep-all' }}>{item.desc}</p>
+                <div style={{ ...serif, fontSize: 'clamp(32px, 5vw, 64px)', fontWeight: 300, color: '#d6ecf5', lineHeight: 1, marginBottom: 16 }}>{item.num}</div>
+                <p style={{ fontSize: 10, letterSpacing: '0.15em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 6, fontWeight: 600 }}>{item.en}</p>
+                <h3 className="how-title" style={{ ...serif, fontSize: 'clamp(13px, 1.5vw, 17px)', fontWeight: 600, color: '#0d1f3a', marginBottom: 8, marginTop: 0 }}>{item.ja}</h3>
+                <p className="how-desc" style={{ fontSize: 13, color: '#667', lineHeight: 1.7, margin: 0 }}>{item.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
+
+      {/* ─── NOTICES ─── */}
+      {notices.length > 0 && (
+        <section style={{ background: '#fdf7fb', padding: '80px 0 0' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
+            <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8, borderBottom: '1px solid #f0d6e8', paddingBottom: 24 }}>
+              <div>
+                <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#f4a0be', textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>News &amp; Notice</p>
+                <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>
+                  お知らせ
+                </h2>
+              </div>
+            </div>
+          </div>
+          <NoticesCarousel notices={notices} />
+        </section>
+      )}
 
       {/* ─── RECRUIT CTA ─── */}
       <section style={{ position: 'relative', padding: '120px 20px', overflow: 'hidden', textAlign: 'center' }}>
@@ -302,8 +329,11 @@ export default async function Home() {
         @media (max-width: 640px) { .model-grid a > div > div:last-child { padding: 6px 4px 8px !important; } }
         @media (max-width: 640px) { .model-grid a > div > div:last-child > div:first-child { font-size: 10px !important; } }
         @media (max-width: 640px) { .model-grid a > div > div:last-child > div:last-child { font-size: 9px !important; } }
-        @media (max-width: 640px) { .how-item { padding: 16px 8px !important; } }
-        @media (max-width: 640px) { .how-desc { display: none; } }
+        .how-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+        @media (max-width: 900px) { .how-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 600px) { .how-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 640px) { .how-item { padding: 20px 14px !important; } }
+        @media (max-width: 640px) { .how-desc { font-size: 11px !important; } }
       `}</style>
     </div>
   )

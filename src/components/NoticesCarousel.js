@@ -5,13 +5,17 @@ import Link from 'next/link'
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
 function formatDate(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00')
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  return `${mm}/${dd}`
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
 }
 
-export default function ScheduleCarousel({ events }) {
+function stripHtml(html) {
+  if (!html) return ''
+  return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim()
+}
+
+export default function NoticesCarousel({ notices }) {
   const trackRef = useRef(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const activeIndexRef = useRef(0)
@@ -22,7 +26,7 @@ export default function ScheduleCarousel({ events }) {
     if (!track) return
     const handleScroll = () => {
       const center = track.scrollLeft + track.clientWidth / 2
-      const cards = track.querySelectorAll('.s-card')
+      const cards = track.querySelectorAll('.n-card')
       let closest = 0
       let minDist = Infinity
       cards.forEach((card, i) => {
@@ -39,7 +43,7 @@ export default function ScheduleCarousel({ events }) {
     track.addEventListener('touchstart', () => { isPausedRef.current = true })
     track.addEventListener('touchend', () => { setTimeout(() => { isPausedRef.current = false }, 2000) })
     setTimeout(() => {
-      const cards = track.querySelectorAll('.s-card')
+      const cards = track.querySelectorAll('.n-card')
       if (cards.length > 0) {
         const card = cards[0]
         track.scrollLeft = card.offsetWidth * 0 - (track.clientWidth - card.offsetWidth) / 2
@@ -51,7 +55,7 @@ export default function ScheduleCarousel({ events }) {
       if (isPausedRef.current) return
       const t = trackRef.current
       if (!t) return
-      const cards = t.querySelectorAll('.s-card')
+      const cards = t.querySelectorAll('.n-card')
       if (!cards.length) return
       const nextIndex = (activeIndexRef.current + 1) % cards.length
       const card = cards[nextIndex]
@@ -64,7 +68,7 @@ export default function ScheduleCarousel({ events }) {
     }
   }, [])
 
-  if (!events || events.length === 0) return null
+  if (!notices || notices.length === 0) return null
 
   return (
     <div style={{ position: 'relative', overflow: 'hidden' }}>
@@ -81,17 +85,15 @@ export default function ScheduleCarousel({ events }) {
           alignItems: 'center',
         }}
       >
-        {events.map((ev, i) => {
-          const date = formatDate(ev.event_date)
-          const modelList = (ev.event_entries || []).map(e => e.models).filter(Boolean)
-          const isStreet = ev.event_type === 'street'
+        {notices.map((notice, i) => {
           const isActive = i === activeIndex
+          const preview = stripHtml(notice.content).slice(0, 80)
 
           return (
             <Link
-              key={ev.id}
-              href={`/events/${ev.id}`}
-              className="s-card"
+              key={notice.id}
+              href={`/notices/${notice.id}`}
+              className="n-card"
               style={{
                 flexShrink: 0,
                 width: 'clamp(220px, 48vw, 300px)',
@@ -105,36 +107,29 @@ export default function ScheduleCarousel({ events }) {
                 opacity: isActive ? 1 : 0.72,
               }}
             >
-              <div style={{ position: 'relative', overflow: 'hidden', aspectRatio: '3/4', background: '#d6ecf5', borderRadius: 6, boxShadow: isActive ? '0 16px 48px rgba(0,0,0,0.28)' : '0 4px 12px rgba(0,0,0,0.12)' }}>
-                {ev.main_image
-                  ? <img src={ev.main_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <div style={{ width: '100%', height: '100%', background: isStreet ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : 'linear-gradient(160deg,#f4d6e8,#e8b8d0)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ fontSize: 48, opacity: 0.4 }}>{isStreet ? '🌆' : '🏢'}</span>
+              <div style={{ position: 'relative', overflow: 'hidden', aspectRatio: '3/4', background: '#f4e8f0', borderRadius: 6, boxShadow: isActive ? '0 16px 48px rgba(0,0,0,0.28)' : '0 4px 12px rgba(0,0,0,0.12)' }}>
+                {notice.cover_image
+                  ? <img src={notice.cover_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(160deg,#fce8f0,#e8f4fb)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: 48, opacity: 0.4 }}>📢</span>
                     </div>
                 }
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,25,50,0.85) 0%, rgba(10,25,50,0.05) 55%, transparent 100%)' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,25,50,0.88) 0%, rgba(10,25,50,0.05) 55%, transparent 100%)' }} />
                 <div style={{ position: 'absolute', top: 14, left: 14 }}>
-                  <span style={{ fontSize: 9, letterSpacing: '0.2em', color: '#fff', textTransform: 'uppercase', background: isStreet ? 'rgba(91,191,214,0.75)' : 'rgba(244,160,190,0.75)', padding: '3px 8px', borderRadius: 2, fontWeight: 600 }}>
-                    {isStreet ? 'Street' : ev.event_type === 'studio' ? 'Studio' : 'Special'}
+                  <span style={{ fontSize: 9, letterSpacing: '0.2em', color: '#fff', textTransform: 'uppercase', background: 'rgba(244,160,190,0.75)', padding: '3px 8px', borderRadius: 2, fontWeight: 600 }}>
+                    Notice
                   </span>
                 </div>
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 18px' }}>
-                  <div style={{ ...serif, fontSize: 'clamp(26px, 5vw, 38px)', fontWeight: 400, color: '#fff', lineHeight: 1, marginBottom: 8, letterSpacing: '0.02em' }}>
-                    {date}
+                  {notice.published_at && (
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>{formatDate(notice.published_at)}</div>
+                  )}
+                  <div style={{ ...serif, fontSize: 'clamp(14px, 3vw, 18px)', fontWeight: 600, color: '#fff', lineHeight: 1.4, marginBottom: 8 }}>
+                    {notice.title}
                   </div>
-                  {ev.title && (
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', marginBottom: 4 }}>{ev.title}</div>
-                  )}
-                  {ev.location_name && (
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginBottom: 10 }}>{ev.location_name}</div>
-                  )}
-                  {modelList.length > 0 && (
-                    <div style={{ display: 'flex' }}>
-                      {modelList.slice(0, 4).map((m, idx) => (
-                        <div key={idx} style={{ width: 26, height: 26, borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.6)', overflow: 'hidden', background: '#d6ecf5', marginLeft: idx > 0 ? -7 : 0 }}>
-                          {m.image && <img src={m.image} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                        </div>
-                      ))}
+                  {preview && (
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {preview}
                     </div>
                   )}
                 </div>
