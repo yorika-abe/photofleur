@@ -7,9 +7,8 @@ const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
 export default function FeedbackPage() {
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState(null)
+  const [, setUser] = useState(null)
   const [content, setContent] = useState('')
-  const [snsUrl, setSnsUrl] = useState('')
   const [sending, setSending] = useState(false)
   const [done, setDone] = useState(false)
 
@@ -32,10 +31,10 @@ export default function FeedbackPage() {
     const res = await fetch('/api/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content, sns_url: snsUrl }),
+      body: JSON.stringify({ content }),
     })
     setSending(false)
-    if (res.ok) { setDone(true); setContent(''); setSnsUrl('') }
+    if (res.ok) { setDone(true); setContent('') }
     else alert('送信に失敗しました。再度お試しください。')
   }
 
@@ -79,14 +78,6 @@ export default function FeedbackPage() {
             </div>
           ) : (
             <>
-              <label style={{ display: 'block', fontWeight: 700, fontSize: 14, color: '#0d1f3a', marginBottom: 6 }}>SNS URL（任意）</label>
-              <input
-                type="url"
-                value={snsUrl}
-                onChange={e => setSnsUrl(e.target.value)}
-                placeholder="https://instagram.com/yourname"
-                style={{ width: '100%', padding: '12px 14px', border: '1px solid #d6ecf5', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box', outline: 'none', marginBottom: 20 }}
-              />
               <label style={{ display: 'block', fontWeight: 700, fontSize: 14, color: '#0d1f3a', marginBottom: 10 }}>ご意見・ご感想</label>
               <textarea
                 value={content}
