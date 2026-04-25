@@ -39,7 +39,7 @@ export default function EventEditPage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [products, setProducts] = useState([])
   const [modelsSubTab, setModelsSubTab] = useState('models')
-  const [newProduct, setNewProduct] = useState({ name: '', image: '', description: '', price: 0, stock: 1, available_slots: [] })
+  const [newProduct, setNewProduct] = useState({ name: '', image: '', description: '', price: 0, stock: 1, options: [] })
   const [uploadingProductImg, setUploadingProductImg] = useState(false)
   const [productImgProgress, setProductImgProgress] = useState(0)
 
@@ -282,7 +282,7 @@ export default function EventEditPage() {
     const data = await res.json()
     if (data.id) {
       setProducts(prev => [...prev, data])
-      setNewProduct({ name: '', image: '', description: '', price: 0, stock: 1, available_slots: [] })
+      setNewProduct({ name: '', image: '', description: '', price: 0, stock: 1, options: [] })
     } else if (data.error) {
       alert('エラー: ' + data.error)
     }
@@ -295,6 +295,22 @@ export default function EventEditPage() {
       body: JSON.stringify({ productId }),
     })
     setProducts(prev => prev.filter(p => p.id !== productId))
+  }
+
+  async function updateProductOptions(productId, options) {
+    await fetch(`/api/admin/events/${id}/products`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId, options }),
+    })
+    setProducts(prev => prev.map(p => p.id === productId ? { ...p, options } : p))
+  }
+
+  async function updateProductStock(productId, stock) {
+    await fetch(`/api/admin/events/${id}/products`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId, stock: parseInt(stock) || 1 }),
+    })
+    setProducts(prev => prev.map(p => p.id === productId ? { ...p, stock: parseInt(stock) || 1 } : p))
   }
 
 
@@ -677,8 +693,7 @@ export default function EventEditPage() {
                             style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }} placeholder="3000" />
                         </div>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
-                        <div>
+                      <div>
                           <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>画像</label>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             {newProduct.image && (
@@ -694,32 +709,36 @@ export default function EventEditPage() {
                                 onChange={e => e.target.files?.[0] && uploadProductImage(e.target.files[0])} />
                             </label>
                           </div>
-                        </div>
-                        <div>
-                          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>在庫数</label>
-                          <input type="number" min="1" value={newProduct.stock} onChange={e => setNewProduct(p => ({ ...p, stock: e.target.value }))}
-                            style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }} />
-                        </div>
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 6 }}>利用可能時間枠（複数選択可）</label>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                          {currentSlots.filter(s => s.order !== 0).map(s => {
-                            const checked = newProduct.available_slots.includes(s.label)
-                            return (
-                              <label key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 4, background: checked ? '#1a3560' : '#f5f5f5', color: checked ? '#fff' : '#555', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 600, border: `1px solid ${checked ? '#1a3560' : '#ddd'}` }}>
-                                <input type="checkbox" style={{ display: 'none' }} checked={checked}
-                                  onChange={e => setNewProduct(p => ({
-                                    ...p,
-                                    available_slots: e.target.checked
-                                      ? [...p.available_slots, s.label]
-                                      : p.available_slots.filter(l => l !== s.label)
-                                  }))} />
-                                {s.label}
-                              </label>
-                            )
-                          })}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: '#555' }}>選択肢（オプション）</label>
+                          <button type="button" onClick={() => setNewProduct(p => ({ ...p, options: [...p.options, { name: '', stock: 1 }] }))}
+                            style={{ fontSize: 11, background: '#e8f0fe', color: '#1a3560', border: 'none', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', fontWeight: 700 }}>
+                            + 選択肢を追加
+                          </button>
                         </div>
+                        {newProduct.options.length === 0 ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 12, color: '#888' }}>在庫数（選択肢なし）</span>
+                            <input type="number" min="1" value={newProduct.stock} onChange={e => setNewProduct(p => ({ ...p, stock: e.target.value }))}
+                              style={{ width: 72, padding: '6px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }} />
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {newProduct.options.map((opt, idx) => (
+                              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <input value={opt.name} onChange={e => setNewProduct(p => ({ ...p, options: p.options.map((o, i) => i === idx ? { ...o, name: e.target.value } : o) }))}
+                                  placeholder="例: S / M / L / 1部..." style={{ flex: 1, padding: '6px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13 }} />
+                                <span style={{ fontSize: 12, color: '#888', whiteSpace: 'nowrap' }}>在庫</span>
+                                <input type="number" min="0" value={opt.stock} onChange={e => setNewProduct(p => ({ ...p, options: p.options.map((o, i) => i === idx ? { ...o, stock: parseInt(e.target.value) || 0 } : o) }))}
+                                  style={{ width: 60, padding: '6px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, textAlign: 'center' }} />
+                                <button type="button" onClick={() => setNewProduct(p => ({ ...p, options: p.options.filter((_, i) => i !== idx) }))}
+                                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 18, lineHeight: 1, padding: '0 2px' }}>×</button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <div>
                         <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>詳細説明</label>
@@ -738,19 +757,43 @@ export default function EventEditPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       <p style={{ fontSize: 12, fontWeight: 600, color: '#555', margin: 0 }}>登録済み予約商品</p>
                       {products.map(p => (
-                        <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f8f8f8', borderRadius: 8, padding: '10px 12px' }}>
-                          {p.image && <img src={p.image} style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: 700, fontSize: 13, color: '#1a3560' }}>{p.name}</div>
-                            {p.available_slots?.length > 0 && (
-                              <div style={{ fontSize: 10, color: '#5bbfd6', marginTop: 2 }}>🕐 {p.available_slots.join(' / ')}</div>
-                            )}
-                            {p.description && <div style={{ fontSize: 11, color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description}</div>}
+                        <div key={p.id} style={{ background: '#f8f8f8', borderRadius: 8, padding: '10px 12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            {p.image && <img src={p.image} style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 700, fontSize: 13, color: '#1a3560' }}>{p.name}</div>
+                              {p.description && <div style={{ fontSize: 11, color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description}</div>}
+                            </div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: '#333', whiteSpace: 'nowrap' }}>¥{(p.price || 0).toLocaleString()}</div>
+                            <button onClick={() => removeProduct(p.id)}
+                              style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 12, flexShrink: 0 }}>削除</button>
                           </div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: '#333', whiteSpace: 'nowrap' }}>¥{(p.price || 0).toLocaleString()}</div>
-                          <div style={{ fontSize: 12, color: '#888', whiteSpace: 'nowrap' }}>在庫{p.stock}</div>
-                          <button onClick={() => removeProduct(p.id)}
-                            style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 12, flexShrink: 0 }}>削除</button>
+                          {/* 選択肢（options）または在庫 */}
+                          <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #e8e8e8' }}>
+                            {p.options?.length > 0 ? (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                {p.options.map((opt, idx) => (
+                                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff', border: '1px solid #ddd', borderRadius: 6, padding: '4px 8px' }}>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: '#1a3560' }}>{opt.name}</span>
+                                    <span style={{ fontSize: 11, color: '#aaa' }}>在庫</span>
+                                    <input type="number" min="0" defaultValue={opt.stock}
+                                      style={{ width: 48, padding: '2px 4px', border: '1px solid #ddd', borderRadius: 4, fontSize: 12, textAlign: 'center' }}
+                                      onBlur={e => {
+                                        const updated = p.options.map((o, i) => i === idx ? { ...o, stock: parseInt(e.target.value) || 0 } : o)
+                                        updateProductOptions(p.id, updated)
+                                      }} />
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ fontSize: 12, color: '#888' }}>在庫</span>
+                                <input type="number" min="0" defaultValue={p.stock}
+                                  style={{ width: 60, padding: '3px 6px', border: '1px solid #ddd', borderRadius: 5, fontSize: 13, textAlign: 'center' }}
+                                  onBlur={e => updateProductStock(p.id, e.target.value)} />
+                              </div>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
