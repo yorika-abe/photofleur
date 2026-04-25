@@ -220,10 +220,10 @@ export default async function Home() {
           </div>
           <div className="how-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, background: '#e8f4f8' }}>
             {[
-              { num: '01', en: 'Browse', ja: 'スケジュールを確認', desc: '開催日程・出演モデルをチェック。ストリートとスタジオから選べます。' },
+              { num: '01', en: 'Browse', ja: 'スケジュールを確認', desc: '開催日程・出演モデルをチェック。撮影場所の雰囲気などもご確認ください。' },
               { num: '02', en: 'Reserve', ja: '時間枠を選んで予約', desc: '好きな時間枠を選択し、お名前・メールアドレスを入力するだけ。' },
               { num: '03', en: 'Confirm', ja: '確認メールを受け取る', desc: '予約確認メールが届いたら完了。当日はQRコードをご提示ください。' },
-              { num: '04', en: 'Shoot', ja: '当日を楽しむ', desc: 'カメラを持って現地へ。スタッフがご案内します。素敵な写真を撮りましょう。' },
+              { num: '04', en: 'Shoot', ja: '撮影当日', desc: 'カメラを持って現地へ。スタッフがご案内します。素敵な作品を作りましょう。' },
             ].map(item => (
               <div key={item.num} className="how-item" style={{ background: '#fff', padding: '40px 28px' }}>
                 <div style={{ ...serif, fontSize: 'clamp(32px, 6vw, 72px)', fontWeight: 300, color: '#d6ecf5', lineHeight: 1, marginBottom: 16 }}>{item.num}</div>
