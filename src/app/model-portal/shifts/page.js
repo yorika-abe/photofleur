@@ -64,7 +64,9 @@ export default function ModelShiftsPage() {
     const shiftData = await shiftRes.json()
 
     const today = new Date().toISOString().split('T')[0]
-    const futureReqs = (Array.isArray(reqData) ? reqData : []).filter(r => r.request_date >= today)
+    const futureReqs = (Array.isArray(reqData) ? reqData : []).filter(r =>
+      r.request_date >= today && (!r.deadline || r.deadline >= today)
+    )
     const shifts = Array.isArray(shiftData) ? shiftData : []
 
     setRequestDates(futureReqs)

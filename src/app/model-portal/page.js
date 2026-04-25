@@ -10,6 +10,7 @@ export default function ModelPortalHome() {
   const [model, setModel] = useState(null)
   const [allModels, setAllModels] = useState(null) // null = not admin, [] = admin with no selection
   const [upcomingEvents, setUpcomingEvents] = useState([])
+  const [pendingShiftCount, setPendingShiftCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   const supabase = createBrowserClient(
@@ -60,6 +61,20 @@ export default function ModelPortalHome() {
       }
 
       setUpcomingEvents(upcoming)
+
+      // 未提出シフト数カウント
+      const [reqRes, shiftRes] = await Promise.all([
+        fetch('/api/admin/shift-requests'),
+        fetch('/api/model-portal/shifts'),
+      ])
+      const reqData = await reqRes.json()
+      const shiftData = await shiftRes.json()
+      const todayStr = today
+      const activeReqs = (Array.isArray(reqData) ? reqData : []).filter(r =>
+        r.request_date >= todayStr && (!r.deadline || r.deadline >= todayStr)
+      )
+      const submittedDates = new Set((Array.isArray(shiftData) ? shiftData : []).map(s => s.event_date))
+      setPendingShiftCount(activeReqs.filter(r => !submittedDates.has(r.request_date)).length)
 
       setLoading(false)
     }
@@ -169,13 +184,18 @@ export default function ModelPortalHome() {
           ] : [
             { href: '/model-portal/profile', icon: '✏️', label: 'プロフィール編集', desc: '写真・プロフィールを更新' },
             { href: '/model-portal/bookings', icon: '📋', label: '予約状況', desc: 'カメラマンSNS・空き確認' },
-            { href: '/model-portal/shifts', icon: '📅', label: 'シフト提出', desc: '参加可能日程を登録' },
+            { href: '/model-portal/shifts', icon: '📅', label: 'シフト提出', desc: '参加可能日程を登録', badge: pendingShiftCount },
             { href: '/model-portal/shifts/extra', icon: '➕', label: '追加エントリー・変更申請', desc: '締め切り後の参加・変更申請' },
             { href: '/model-portal/blog', icon: '📝', label: 'ブログ', desc: '記事を書く' },
             { href: '/model-portal/private-info', icon: '🔒', label: '非公開登録情報', desc: '住所・連絡先・契約同意' },
           ]).map(item => (
             <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
-              <div style={{ background: '#fff', borderRadius: 12, padding: '20px', border: '1px solid #d6ecf5', transition: 'box-shadow 0.2s' }}>
+              <div style={{ background: '#fff', borderRadius: 12, padding: '20px', border: '1px solid #d6ecf5', transition: 'box-shadow 0.2s', position: 'relative' }}>
+                {item.badge > 0 && (
+                  <span style={{ position: 'absolute', top: 12, right: 12, background: '#e53935', color: '#fff', borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 700, minWidth: 22, textAlign: 'center' }}>
+                    {item.badge}
+                  </span>
+                )}
                 <div style={{ fontSize: 24, marginBottom: 8 }}>{item.icon}</div>
                 <div style={{ fontWeight: 700, fontSize: 15, color: '#0d1f3a', marginBottom: 4 }}>{item.label}</div>
                 <div style={{ fontSize: 12, color: '#888' }}>{item.desc}</div>
