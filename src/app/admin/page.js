@@ -16,12 +16,14 @@ export default async function AdminPage() {
     { count: pendingShifts },
     { count: pendingModels },
     { count: newBookings },
+    { count: pendingPrivateInfo },
   ] = await Promise.all([
     supabase.from('model_shifts').select('*', { count: 'exact', head: true }).eq('status', 'pending_approval').gte('event_date', today),
     supabase.from('models').select('*', { count: 'exact', head: true }).not('pending_data', 'is', null),
     lastViewed
       ? supabase.from('bookings').select('*', { count: 'exact', head: true }).gt('created_at', lastViewed)
       : supabase.from('bookings').select('*', { count: 'exact', head: true }),
+    supabase.from('model_private_info').select('*', { count: 'exact', head: true }).not('pending_changes', 'is', null),
   ])
 
   return (
@@ -44,7 +46,7 @@ export default async function AdminPage() {
           { href: '/admin/media', label: 'メディア管理', icon: '🖼️' },
           { href: '/admin/representative', label: '代表メッセージ', icon: '✉️' },
           { href: '/admin/users', label: 'ユーザー権限管理', icon: '🔑' },
-          { href: '/model-portal', label: 'モデルポータル', icon: '🌸' },
+          { href: '/admin/private-info', label: '非公開登録情報', icon: '🔒', badge: pendingPrivateInfo ?? 0 },
         ].map(link => (
           <Link key={link.href} href={link.href} style={{ textDecoration: 'none' }}>
             <div style={{ background: '#1a3560', color: '#fff', borderRadius: 12, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>

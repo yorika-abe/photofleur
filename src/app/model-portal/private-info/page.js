@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 const REQUIRED_FIELDS = ['real_name', 'address', 'station', 'phone', 'email']
+const EMPTY_FORM = { real_name: '', address: '', station: '', agency: '', phone: '', email: '', school_company: '', guardian_name: '' }
 
 function ContractModal({ form, onClose, onAgree }) {
   const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -17,76 +18,31 @@ function ContractModal({ form, onClose, onAgree }) {
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1a3560' }}>業務委託契約書・肖像権使用同意書</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#888' }}>×</button>
         </div>
-
         <div
-          onScroll={e => {
-            const el = e.currentTarget
-            if (el.scrollTop + el.clientHeight >= el.scrollHeight - 20) setScrolled(true)
-          }}
+          onScroll={e => { const el = e.currentTarget; if (el.scrollTop + el.clientHeight >= el.scrollHeight - 20) setScrolled(true) }}
           style={{ overflowY: 'auto', padding: '24px', flex: 1, fontSize: 13, lineHeight: 2, color: '#333' }}
         >
           <p style={{ color: '#888', fontSize: 12, marginTop: 0 }}>※ 最後までスクロールして内容をご確認ください</p>
 
-          {/* ① 業務委託契約書 */}
           <h3 style={{ fontSize: 15, fontWeight: 700, borderBottom: '2px solid #1a3560', paddingBottom: 6, color: '#1a3560' }}>① 業務委託契約書</h3>
-          <p><strong>契約日：</strong>{today}</p>
-          <p><strong>依頼者（甲）：</strong>PhotoFleur</p>
-          <p>
-            <strong>モデル（乙）</strong><br />
-            氏名：{form.real_name || '（未入力）'}<br />
-            住所：{form.address || '（未入力）'}<br />
-            電話番号：{form.phone || '（未入力）'}
-          </p>
-
-          <p><strong>第1条（契約の目的）</strong><br />
-          甲は乙に対し、撮影会におけるモデル業務を委託し、乙はこれを受託する。</p>
-
-          <p><strong>第2条（業務内容）</strong><br />
-          ・撮影日時：不定期で開催される撮影会の日時<br />
-          ・場所：不定期で開催される撮影会の開催場所<br />
-          ・業務内容：撮影会へのモデル出演</p>
-
-          <p><strong>第3条（報酬）</strong><br />
-          ・報酬金額：￥最低3,000円/時間（税込）変動あり<br />
-          ・支払方法：当日現金</p>
-
-          <p><strong>第4条（肖像権と著作権）</strong><br />
-          乙は、甲または甲の許可した者が撮影した写真を、商業的または非商業的に使用することに同意する。</p>
-
-          <p><strong>第5条（禁止事項）</strong><br />
-          別紙で指定する当撮影会の規約を違反する行為を禁止する。発覚した場合直ちに登録解除とするとともに当撮影会に被害が被った場合それと同等以上の請求をするものとする。</p>
-
-          <p><strong>第6条（契約の解除）</strong><br />
-          天災、病気、その他やむを得ない理由を除き、乙は契約を解除できない。</p>
-
+          <p><strong>契約日：</strong>{today}<br /><strong>依頼者（甲）：</strong>PhotoFleur</p>
+          <p><strong>モデル（乙）</strong><br />氏名：{form.real_name}<br />住所：{form.address}<br />電話番号：{form.phone}</p>
+          <p><strong>第1条（契約の目的）</strong><br />甲は乙に対し、撮影会におけるモデル業務を委託し、乙はこれを受託する。</p>
+          <p><strong>第2条（業務内容）</strong><br />・撮影日時：不定期で開催される撮影会の日時<br />・場所：不定期で開催される撮影会の開催場所<br />・業務内容：撮影会へのモデル出演</p>
+          <p><strong>第3条（報酬）</strong><br />・報酬金額：￥最低3,000円/時間（税込）変動あり<br />・支払方法：当日現金</p>
+          <p><strong>第4条（肖像権と著作権）</strong><br />乙は、甲または甲の許可した者が撮影した写真を、商業的または非商業的に使用することに同意する。</p>
+          <p><strong>第5条（禁止事項）</strong><br />別紙で指定する当撮影会の規約を違反する行為を禁止する。発覚した場合直ちに登録解除とするとともに当撮影会に被害が被った場合それと同等以上の請求をするものとする。</p>
+          <p><strong>第6条（契約の解除）</strong><br />天災、病気、その他やむを得ない理由を除き、乙は契約を解除できない。</p>
           {form.guardian_name && <p><strong>保護者氏名：</strong>{form.guardian_name}</p>}
+          <p>甲署名：photofleur撮影会主催 阿部依花<br />乙署名：{form.real_name}<br />住所：{form.address}</p>
 
-          <p>
-            甲署名：photofleur撮影会主催 阿部依花<br />
-            乙署名：{form.real_name || '（本名）'}<br />
-            住所：{form.address || '（住所）'}
-          </p>
-
-          {/* ② 肖像権使用同意書 */}
           <h3 style={{ fontSize: 15, fontWeight: 700, borderBottom: '2px solid #1a3560', paddingBottom: 6, color: '#1a3560', marginTop: 32 }}>② 肖像権使用同意書</h3>
-          <p>電話番号：{form.phone || '（未入力）'}</p>
-          <p>
-            私は、PhotoFleur撮影会において撮影されるすべての写真・動画について、以下の条件に同意します。<br />
-            ・使用目的：SNS、Webサイト、広告宣伝、印刷物など<br />
-            ・使用範囲：国内外問わず<br />
-            ・使用期間：無期限<br />
-            ・使用料：撮影報酬に含むものとする
-          </p>
-          <p>
-            署名：{form.real_name || '（本名）'}<br />
-            日付：{today}
-          </p>
+          <p>電話番号：{form.phone}</p>
+          <p>私は、PhotoFleur撮影会において撮影されるすべての写真・動画について、以下の条件に同意します。<br />・使用目的：SNS、Webサイト、広告宣伝、印刷物など<br />・使用範囲：国内外問わず<br />・使用期間：無期限<br />・使用料：撮影報酬に含むものとする</p>
+          <p>署名：{form.real_name}<br />日付：{today}</p>
         </div>
-
         <div style={{ padding: '16px 24px', borderTop: '1px solid #e5e5e5', background: '#f8fbff' }}>
-          {!scrolled && (
-            <p style={{ fontSize: 12, color: '#e65100', margin: '0 0 12px', fontWeight: 600 }}>↓ 最後までスクロールすると同意できます</p>
-          )}
+          {!scrolled && <p style={{ fontSize: 12, color: '#e65100', margin: '0 0 12px', fontWeight: 600 }}>↓ 最後までスクロールすると同意できます</p>}
           {scrolled && (
             <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1a3560' }}>
               <input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer' }} />
@@ -94,12 +50,10 @@ function ContractModal({ form, onClose, onAgree }) {
             </label>
           )}
           <div style={{ display: 'flex', gap: 10 }}>
-            <button onClick={onClose} style={{ flex: 1, background: '#f5f5f5', color: '#555', border: 'none', borderRadius: 8, padding: '12px', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
-              キャンセル
-            </button>
+            <button onClick={onClose} style={{ flex: 1, background: '#f5f5f5', color: '#555', border: 'none', borderRadius: 8, padding: '12px', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>キャンセル</button>
             <button onClick={() => checked && onAgree()} disabled={!checked}
               style={{ flex: 2, background: checked ? '#1a3560' : '#ccc', color: '#fff', border: 'none', borderRadius: 8, padding: '12px', cursor: checked ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: 14 }}>
-              同意して登録する
+              同意して締結する
             </button>
           </div>
         </div>
@@ -108,45 +62,66 @@ function ContractModal({ form, onClose, onAgree }) {
   )
 }
 
+function Field({ label, required, value, editing, onChange, placeholder }) {
+  return (
+    <div>
+      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, color: '#444' }}>
+        {label}{required && <span style={{ color: '#e53935', marginLeft: 4 }}>*</span>}
+      </div>
+      {editing ? (
+        <input
+          style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }}
+          value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} />
+      ) : (
+        <div style={{ padding: '10px 12px', background: '#f5f7fa', borderRadius: 8, fontSize: 14, color: value ? '#1a3560' : '#bbb', fontWeight: value ? 600 : 400, minHeight: 42, display: 'flex', alignItems: 'center' }}>
+          {value || '未入力'}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function PrivateInfoPage() {
-  const [form, setForm] = useState({
-    real_name: '', address: '', station: '', agency: '',
-    phone: '', email: '', school_company: '', guardian_name: '',
-  })
+  const [liveData, setLiveData] = useState(null)
+  const [form, setForm] = useState(EMPTY_FORM)
   const [contractAgreedAt, setContractAgreedAt] = useState(null)
+  const [pendingChanges, setPendingChanges] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [showContract, setShowContract] = useState(false)
+  const [editMode, setEditMode] = useState(false)
 
   useEffect(() => {
     fetch('/api/model-portal/private-info').then(r => r.json()).then(data => {
       if (data && !data.error) {
-        setForm({
-          real_name: data.real_name || '',
-          address: data.address || '',
-          station: data.station || '',
-          agency: data.agency || '',
-          phone: data.phone || '',
-          email: data.email || '',
-          school_company: data.school_company || '',
-          guardian_name: data.guardian_name || '',
-        })
+        const live = {
+          real_name: data.real_name || '', address: data.address || '',
+          station: data.station || '', agency: data.agency || '',
+          phone: data.phone || '', email: data.email || '',
+          school_company: data.school_company || '', guardian_name: data.guardian_name || '',
+        }
+        setLiveData(live)
+        setForm(live)
         setContractAgreedAt(data.contract_agreed_at || null)
+        setPendingChanges(data.pending_changes || null)
       }
       setLoading(false)
     })
   }, [])
 
+  const isLocked = !!contractAgreedAt
+  const isEditing = !isLocked || editMode
   const canAgree = REQUIRED_FIELDS.every(f => form[f]?.trim())
 
-  async function save(agreedAt) {
+  async function saveInitial() {
     setSaving(true)
     await fetch('/api/model-portal/private-info', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, contract_agreed_at: agreedAt }),
+      body: JSON.stringify({ ...form }),
     })
+    setLiveData({ ...form })
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
@@ -154,61 +129,82 @@ export default function PrivateInfoPage() {
 
   async function handleAgree() {
     const now = new Date().toISOString()
+    setSaving(true)
+    await fetch('/api/model-portal/private-info', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...form, contract_agreed_at: now }),
+    })
+    setLiveData({ ...form })
     setContractAgreedAt(now)
     setShowContract(false)
-    await save(now)
+    setSaving(false)
   }
 
-  const inp = { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }
-  const label = (text, required) => (
-    <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 6, color: '#444' }}>
-      {text}{required && <span style={{ color: '#e53935', marginLeft: 4 }}>*</span>}
-    </label>
-  )
+  async function submitChangeRequest() {
+    setSaving(true)
+    await fetch('/api/model-portal/private-info', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pending_changes: form }),
+    })
+    setPendingChanges({ ...form })
+    setForm({ ...liveData })
+    setEditMode(false)
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 3000)
+  }
+
+  function cancelEdit() {
+    setForm({ ...liveData })
+    setEditMode(false)
+  }
 
   if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#aaa' }}>読み込み中...</div>
 
   return (
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '40px 20px' }}>
-      {showContract && (
-        <ContractModal form={form} onClose={() => setShowContract(false)} onAgree={handleAgree} />
-      )}
+      {showContract && <ContractModal form={form} onClose={() => setShowContract(false)} onAgree={handleAgree} />}
 
       <Link href="/model-portal" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← モデルポータル</Link>
       <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: '16px 0 6px' }}>非公開登録情報</h1>
-      <p style={{ fontSize: 13, color: '#888', marginBottom: 28 }}>この情報はモデル様と運営のみが閲覧できます。ホームページには一切表示されません。</p>
+      <p style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>この情報はモデル様と運営のみが閲覧できます。ホームページには一切表示されません。</p>
 
-      <div style={{ background: '#fff3e0', border: '1px solid #ffe082', borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 13, color: '#795548' }}>
-        <strong>⚠️ 必須情報について</strong><br />
-        本名・住所・最寄り駅・電話番号・メールアドレスは業務委託契約に必要な情報です。正確にご入力ください。
-      </div>
+      {/* 変更申請中バナー */}
+      {pendingChanges && (
+        <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 10, padding: '14px 18px', marginBottom: 20, fontSize: 13, color: '#1565c0' }}>
+          <strong>📋 変更申請中</strong><br />
+          変更申請を受け付けました。運営が確認次第、情報を更新します。
+        </div>
+      )}
+
+      {!isLocked && (
+        <div style={{ background: '#fff3e0', border: '1px solid #ffe082', borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 13, color: '#795548' }}>
+          <strong>⚠️ 必須情報について</strong><br />
+          本名・住所・最寄り駅・電話番号・メールアドレスを入力のうえ、業務委託契約に同意してください。
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
         {/* 基本情報 */}
         <div style={{ background: '#fff', border: '1px solid #d6ecf5', borderRadius: 14, padding: '24px' }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 20 }}>基本情報</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', margin: 0 }}>基本情報</h2>
+            {isLocked && !editMode && !pendingChanges && (
+              <button onClick={() => setEditMode(true)}
+                style={{ background: 'none', border: '1px solid #1a3560', color: '#1a3560', borderRadius: 8, padding: '6px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                変更を申請する
+              </button>
+            )}
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div>
-              {label('本名', true)}
-              <input style={inp} value={form.real_name} onChange={e => setForm(f => ({ ...f, real_name: e.target.value }))} placeholder="山田 花子" />
-            </div>
-            <div>
-              {label('住所', true)}
-              <input style={inp} value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="東京都渋谷区..." />
-            </div>
-            <div>
-              {label('最寄り駅', true)}
-              <input style={inp} value={form.station} onChange={e => setForm(f => ({ ...f, station: e.target.value }))} placeholder="渋谷駅" />
-            </div>
-            <div>
-              {label('電話番号', true)}
-              <input style={inp} type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="090-0000-0000" />
-            </div>
-            <div>
-              {label('メールアドレス（ログイン用）', true)}
-              <input style={inp} type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="example@email.com" />
-            </div>
+            <Field label="本名" required value={form.real_name} editing={isEditing} onChange={v => setForm(f => ({ ...f, real_name: v }))} placeholder="山田 花子" />
+            <Field label="住所" required value={form.address} editing={isEditing} onChange={v => setForm(f => ({ ...f, address: v }))} placeholder="東京都渋谷区..." />
+            <Field label="最寄り駅" required value={form.station} editing={isEditing} onChange={v => setForm(f => ({ ...f, station: v }))} placeholder="渋谷駅" />
+            <Field label="電話番号" required value={form.phone} editing={isEditing} onChange={v => setForm(f => ({ ...f, phone: v }))} placeholder="090-0000-0000" />
+            <Field label="メールアドレス（ログイン用）" required value={form.email} editing={isEditing} onChange={v => setForm(f => ({ ...f, email: v }))} placeholder="example@email.com" />
           </div>
         </div>
 
@@ -216,32 +212,22 @@ export default function PrivateInfoPage() {
         <div style={{ background: '#fff', border: '1px solid #d6ecf5', borderRadius: 14, padding: '24px' }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 20 }}>追加情報</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div>
-              {label('事務所名（所属している場合）')}
-              <input style={inp} value={form.agency} onChange={e => setForm(f => ({ ...f, agency: e.target.value }))} placeholder="〇〇プロダクション" />
-            </div>
-            <div>
-              {label('学校名または会社名（任意）')}
-              <input style={inp} value={form.school_company} onChange={e => setForm(f => ({ ...f, school_company: e.target.value }))} placeholder="〇〇大学 / 〇〇株式会社" />
-            </div>
-            <div>
-              {label('保護者名（未成年の場合）')}
-              <input style={inp} value={form.guardian_name} onChange={e => setForm(f => ({ ...f, guardian_name: e.target.value }))} placeholder="山田 太郎" />
-            </div>
+            <Field label="事務所名（所属している場合）" value={form.agency} editing={isEditing} onChange={v => setForm(f => ({ ...f, agency: v }))} placeholder="〇〇プロダクション" />
+            <Field label="学校名または会社名（任意）" value={form.school_company} editing={isEditing} onChange={v => setForm(f => ({ ...f, school_company: v }))} placeholder="〇〇大学 / 〇〇株式会社" />
+            <Field label="保護者名（未成年の場合）" value={form.guardian_name} editing={isEditing} onChange={v => setForm(f => ({ ...f, guardian_name: v }))} placeholder="山田 太郎" />
           </div>
         </div>
 
         {/* 業務委託契約同意 */}
-        <div style={{ background: '#fff', border: contractAgreedAt ? '1px solid #a5d6a7' : '1px solid #d6ecf5', borderRadius: 14, padding: '24px' }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 8 }}>業務委託契約・肖像権使用同意</h2>
-
+        <div style={{ background: '#fff', border: contractAgreedAt ? '2px solid #a5d6a7' : '1px solid #d6ecf5', borderRadius: 14, padding: '24px' }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 12 }}>業務委託契約・肖像権使用同意</h2>
           {contractAgreedAt ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 22 }}>✅</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: '#e8f5e9', borderRadius: 10, padding: '16px 20px' }}>
+              <span style={{ fontSize: 36 }}>✅</span>
               <div>
-                <div style={{ fontWeight: 700, color: '#388e3c', fontSize: 14 }}>同意済み</div>
-                <div style={{ fontSize: 12, color: '#888' }}>
-                  {new Date(contractAgreedAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                <div style={{ fontWeight: 700, color: '#2e7d32', fontSize: 16 }}>契約締結済み</div>
+                <div style={{ fontSize: 12, color: '#555', marginTop: 4 }}>
+                  締結日：{new Date(contractAgreedAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
             </div>
@@ -251,30 +237,39 @@ export default function PrivateInfoPage() {
                 業務委託契約書および肖像権使用同意書への同意が必要です。<br />
                 <strong>必須情報をすべて入力してから</strong>同意画面をお開きください。
               </p>
-              <button
-                onClick={() => canAgree ? setShowContract(true) : null}
-                disabled={!canAgree}
-                style={{ background: canAgree ? '#1a3560' : '#ccc', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 24px', fontWeight: 700, fontSize: 14, cursor: canAgree ? 'pointer' : 'not-allowed' }}>
-                契約書・同意書を確認して同意する
+              <button onClick={() => canAgree ? setShowContract(true) : null} disabled={!canAgree}
+                style={{ background: canAgree ? '#1a3560' : '#ccc', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 24px', fontWeight: 700, fontSize: 14, cursor: canAgree ? 'pointer' : 'not-allowed' }}>
+                契約書・同意書を確認して締結する
               </button>
-              {!canAgree && (
-                <p style={{ fontSize: 12, color: '#e53935', marginTop: 8 }}>
-                  ※ 本名・住所・最寄り駅・電話番号・メールアドレスを入力してください
-                </p>
-              )}
+              {!canAgree && <p style={{ fontSize: 12, color: '#e53935', marginTop: 8 }}>※ 本名・住所・最寄り駅・電話番号・メールアドレスを入力してください</p>}
             </>
           )}
         </div>
 
       </div>
 
-      <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
-        <button onClick={() => save(contractAgreedAt)} disabled={saving}
-          style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 48px', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
-          {saving ? '保存中...' : '保存する'}
-        </button>
-        {saved && (
-          <span style={{ fontSize: 14, color: '#388e3c', fontWeight: 600 }}>✓ 保存しました</span>
+      {/* アクションボタン */}
+      <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
+        {!isLocked && (
+          <>
+            <button onClick={saveInitial} disabled={saving}
+              style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 40px', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+              {saving ? '保存中...' : '保存する'}
+            </button>
+            {saved && <span style={{ fontSize: 14, color: '#388e3c', fontWeight: 600 }}>✓ 保存しました</span>}
+          </>
+        )}
+        {isLocked && editMode && (
+          <>
+            <button onClick={submitChangeRequest} disabled={saving}
+              style={{ background: '#1565c0', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 40px', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+              {saving ? '送信中...' : '変更申請を送信する'}
+            </button>
+            <button onClick={cancelEdit} style={{ background: '#f5f5f5', color: '#555', border: 'none', borderRadius: 10, padding: '14px 24px', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+              キャンセル
+            </button>
+            {saved && <span style={{ fontSize: 14, color: '#388e3c', fontWeight: 600 }}>✓ 変更申請を送信しました</span>}
+          </>
         )}
       </div>
     </div>
