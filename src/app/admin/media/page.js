@@ -9,6 +9,8 @@ export default function AdminMediaPage() {
   const [heroVideo, setHeroVideo] = useState('')
   const [heroVideo2, setHeroVideo2] = useState('')
   const [missionBg, setMissionBg] = useState('')
+  const [recruitImages, setRecruitImages] = useState([])
+  const [recruitVideo, setRecruitVideo] = useState('')
   const [uploading, setUploading] = useState(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [saving, setSaving] = useState(false)
@@ -21,6 +23,8 @@ export default function AdminMediaPage() {
       setHeroVideo(data.hero_video || '')
       setHeroVideo2(data.hero_video_2 || '')
       setMissionBg(data.mission_bg || '')
+      setRecruitImages(JSON.parse(data.recruit_bg_images || '[]'))
+      setRecruitVideo(data.recruit_bg_video || '')
     })
   }, [])
 
@@ -99,6 +103,8 @@ export default function AdminMediaPage() {
         hero_video: heroVideo,
         hero_video_2: heroVideo2,
         mission_bg: missionBg,
+        recruit_bg_images: JSON.stringify(recruitImages),
+        recruit_bg_video: recruitVideo,
       }),
     })
     setSaving(false)
@@ -205,6 +211,13 @@ export default function AdminMediaPage() {
 
         <Section title="ヒーロー下の動画②" desc="動画①のさらに下に表示されます">
           <VideoSection value={heroVideo2} onChange={setHeroVideo2} uploadKey="hero_video_2" label="動画をアップロード" />
+        </Section>
+
+        <Section title="モデル募集セクション背景（写真 or 動画）" desc="複数枚の写真か動画を設定できます。設定するとテキストに被らないよう暗いオーバーレイが自動でかかります">
+          <ImageGrid images={recruitImages} onRemove={i => setRecruitImages(imgs => imgs.filter((_, idx) => idx !== i))}
+            uploadKey="recruit_bg" onAdd={f => { setUploading('recruit_bg'); setUploadProgress(0); const path = `site/recruit-${Date.now()}.${f.name.split('.').pop()}`; uploadWithProgress(f, path).then(url => { setRecruitImages(imgs => [...imgs, url]); setUploading(null); setUploadProgress(0) }).catch(e => { alert(e); setUploading(null) }) }} label="写真を追加" aspect="16/9" />
+          <div style={{ margin: '16px 0 8px', fontWeight: 600, fontSize: 13, color: '#555' }}>または動画</div>
+          <VideoSection value={recruitVideo} onChange={setRecruitVideo} uploadKey="recruit_video" label="動画をアップロード" />
         </Section>
 
         <Section title="Missionセクション背景画像" desc="「Every flower deserves to bloom.」セクションの背景に使用されます">
