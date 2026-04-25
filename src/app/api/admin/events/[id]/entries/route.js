@@ -130,6 +130,36 @@ export async function POST(req, { params }) {
     return Response.json({ entry: { ...entry, booking_slots: slots || [] } })
   }
 
+  if (body.action === 'reset_all_slots') {
+    const { eventType, templates, eventData } = body
+    const { data: entries } = await supabase.from('event_entries').select('id, model_id').eq('event_id', id)
+    if (!entries?.length) return Response.json({ ok: true })
+
+    const entryIds = entries.map(e => e.id)
+    await supabase.from('booking_slots').delete().in('event_entry_id', entryIds)
+
+    const { data: allModels } = await supabase.from('models').select('id, studio_price, street_price')
+    const isStudioType = eventType === 'studio' || eventType === 'irregular'
+    const studioFee = parseInt(eventData?.studio_fee) || 2000
+
+    for (const entry of entries) {
+      const model = allModels?.find(m => m.id === entry.model_id)
+      if (!model) continue
+      const basePrice = isStudioType
+        ? (parseInt(model.studio_price || 0) + studioFee)
+        : parseInt(model.street_price || 0)
+      const slotsToInsert = templates.map(slot => ({
+        event_entry_id: entry.id, slot_label: slot.label, slot_order: slot.order,
+        start_time: new Date(`${eventData.event_date}T${slot.start}:00+09:00`).toISOString(),
+        end_time: new Date(`${eventData.event_date}T${slot.end}:00+09:00`).toISOString(),
+        price: (isStudioType && slot.order === 0) ? (get0buPrice(parseInt(model.studio_price || 0)) + studioFee) : basePrice,
+        max_reservations: 1, is_reserved: false,
+      }))
+      await supabase.from('booking_slots').insert(slotsToInsert)
+    }
+    return Response.json({ ok: true })
+  }
+
   if (body.action === 'recalculate_prices') {
     const { entryId } = body
     const { data: entry } = await supabase.from('event_entries').select('model_id, event_id').eq('id', entryId).single()

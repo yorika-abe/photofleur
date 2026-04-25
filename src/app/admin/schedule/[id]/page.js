@@ -93,12 +93,19 @@ export default function EventEditPage() {
 
   function updateField(key, value) {
     if (key === 'event_type') {
-      resetSlotTemplates(value)
+      const newTemplates = (value === 'street' ? STREET_SLOTS : STUDIO_SLOTS).map(s => ({ ...s }))
+      setSlotTemplates(newTemplates)
       fetch('/api/admin/events', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, event_type: value }),
       })
+      const hasSlots = entries.some(e => (e.booking_slots || []).length > 0)
+      if (hasSlots && confirm('開催形式を変更しました。登録済みの予約枠を新しい形式にリセットしますか？\n（既存の予約枠はすべて削除されます）')) {
+        resetAllSlots(value, newTemplates)
+      }
+      setEvent(prev => ({ ...prev, event_type: value }))
+      return
     }
     setEvent(prev => {
       const updated = { ...prev, [key]: value }
@@ -268,6 +275,15 @@ export default function EventEditPage() {
     setEntries(prev => prev.map(e => e.id === entryId ? {
       ...e, booking_slots: e.booking_slots.map(s => s.id === slotId ? { ...s, max_reservations: val } : s)
     } : e))
+  }
+
+  async function resetAllSlots(eventType, templates) {
+    await fetch(`/api/admin/events/${id}/entries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reset_all_slots', eventType, templates, eventData: event }),
+    })
+    await load()
   }
 
   async function recalculatePrices(entryId) {
