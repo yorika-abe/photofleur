@@ -42,6 +42,8 @@ export default function EventEditPage() {
   const [newProduct, setNewProduct] = useState({ name: '', image: '', description: '', price: 0, stock: 1, options: [] })
   const [uploadingProductImg, setUploadingProductImg] = useState(false)
   const [productImgProgress, setProductImgProgress] = useState(0)
+  const [recalculating, setRecalculating] = useState(null) // entryId
+  const [recalcDone, setRecalcDone] = useState(null) // entryId
 
 
   useEffect(() => { load() }, [id])
@@ -269,12 +271,17 @@ export default function EventEditPage() {
   }
 
   async function recalculatePrices(entryId) {
+    setRecalculating(entryId)
+    setRecalcDone(null)
     await fetch(`/api/admin/events/${id}/entries`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'recalculate_prices', entryId, event }),
     })
     await load()
+    setRecalculating(null)
+    setRecalcDone(entryId)
+    setTimeout(() => setRecalcDone(null), 3000)
   }
 
   async function uploadProductImage(file) {
@@ -836,9 +843,9 @@ export default function EventEditPage() {
                     <span style={{ fontWeight: 700, fontSize: 16, color: '#2f2244' }}>{model?.name}</span>
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <button onClick={() => recalculatePrices(entry.id)}
-                      style={{ background: '#e3f2fd', color: '#1565c0', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 12 }}>
-                      料金再計算
+                    <button onClick={() => recalculatePrices(entry.id)} disabled={recalculating === entry.id}
+                      style={{ background: recalcDone === entry.id ? '#e8f5e9' : '#e3f2fd', color: recalcDone === entry.id ? '#2e7d32' : '#1565c0', border: `1px solid ${recalcDone === entry.id ? '#a5d6a7' : '#90caf9'}`, borderRadius: 6, padding: '4px 10px', cursor: recalculating === entry.id ? 'wait' : 'pointer', fontSize: 12, fontWeight: 600, transition: 'all 0.2s' }}>
+                      {recalculating === entry.id ? '計算中...' : recalcDone === entry.id ? '✓ 更新済み' : '料金再計算'}
                     </button>
                     <button onClick={() => removeModelFromEvent(entry.id)}
                       style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 12 }}>
