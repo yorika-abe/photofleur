@@ -128,6 +128,24 @@ export async function POST(req, { params }) {
     return Response.json({ entry: { ...entry, booking_slots: slots || [] } })
   }
 
+  if (body.action === 'recalculate_prices') {
+    const { entryId, event } = body
+    const { data: entry } = await supabase.from('event_entries').select('model_id').eq('id', entryId).single()
+    if (!entry) return Response.json({ error: 'Entry not found' }, { status: 404 })
+    const { data: model } = await supabase.from('models').select('studio_price, street_price').eq('id', entry.model_id).single()
+    const { data: slots } = await supabase.from('booking_slots').select('id, slot_order').eq('event_entry_id', entryId)
+    const isStudioType = event.event_type === 'studio' || event.event_type === 'irregular'
+    const studioFee = parseInt(event.studio_fee) || 2000
+    const basePrice = isStudioType
+      ? (parseInt(model?.studio_price || 0) + studioFee)
+      : parseInt(model?.street_price || 0)
+    for (const slot of slots || []) {
+      const price = (isStudioType && slot.slot_order === 0) ? get0buPrice(parseInt(model?.studio_price || 0)) : basePrice
+      await supabase.from('booking_slots').update({ price }).eq('id', slot.id)
+    }
+    return Response.json({ ok: true })
+  }
+
   return Response.json({ error: 'Unknown action' }, { status: 400 })
 }
 

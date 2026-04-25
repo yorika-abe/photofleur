@@ -268,6 +268,15 @@ export default function EventEditPage() {
     } : e))
   }
 
+  async function recalculatePrices(entryId) {
+    await fetch(`/api/admin/events/${id}/entries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'recalculate_prices', entryId, event }),
+    })
+    await load()
+  }
+
   async function uploadProductImage(file) {
     setUploadingProductImg(true)
     setProductImgProgress(0)
@@ -826,10 +835,16 @@ export default function EventEditPage() {
                     {model?.image && <img src={model.image} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />}
                     <span style={{ fontWeight: 700, fontSize: 16, color: '#2f2244' }}>{model?.name}</span>
                   </div>
-                  <button onClick={() => removeModelFromEvent(entry.id)}
-                    style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 12 }}>
-                    削除
-                  </button>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button onClick={() => recalculatePrices(entry.id)}
+                      style={{ background: '#e3f2fd', color: '#1565c0', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 12 }}>
+                      料金再計算
+                    </button>
+                    <button onClick={() => removeModelFromEvent(entry.id)}
+                      style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 12 }}>
+                      削除
+                    </button>
+                  </div>
                 </div>
 
                 {/* 予約済みスロット */}
