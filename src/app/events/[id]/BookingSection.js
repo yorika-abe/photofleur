@@ -53,7 +53,8 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
     : []
 
   const availableSlots = modalSlots.filter(s => !s.fullyBooked)
-  const basePrice = availableSlots[0]?.price || 0
+  const selectedSlot = availableSlots.find(s => s.id === selectedSlotId)
+  const displayPrice = selectedSlot?.price ?? availableSlots[0]?.price ?? 0
 
   return (
     <>
@@ -115,7 +116,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
               </div>
 
               <div style={{ fontSize: 22, fontWeight: 700, color: '#1a3560' }}>
-                ¥{basePrice.toLocaleString()}
+                ¥{displayPrice.toLocaleString()}
               </div>
 
               <div>
