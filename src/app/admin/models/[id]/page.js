@@ -29,9 +29,11 @@ export default function AdminModelEditPage() {
     is_staff: false, price_tier: '',
   })
   const [portfolioImages, setPortfolioImages] = useState([])
+  const [privateInfo, setPrivateInfo] = useState(null)
 
   useEffect(() => {
     if (isNew) return
+    fetch(`/api/admin/models/${id}/private-info`).then(r => r.json()).then(d => setPrivateInfo(d || {}))
     fetch(`/api/admin/model/${id}`)
       .then(r => r.json())
       .then(model => {
@@ -319,6 +321,43 @@ export default function AdminModelEditPage() {
                 {linkLoading ? '検索中...' : '紐付ける'}
               </button>
             </div>
+          </section>
+        )}
+
+        {/* 非公開登録情報 */}
+        {!isNew && privateInfo !== null && (
+          <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 6 }}>🔒 非公開登録情報</h2>
+            <p style={{ fontSize: 12, color: '#aaa', marginBottom: 16, marginTop: 0 }}>モデル本人が入力した非公開情報です。ホームページには表示されません。</p>
+            {Object.keys(privateInfo).filter(k => !['id','model_id','created_at','updated_at'].includes(k)).length === 0 ? (
+              <p style={{ fontSize: 13, color: '#aaa' }}>まだ入力されていません。</p>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+                {[
+                  { key: 'real_name', label: '本名' },
+                  { key: 'address', label: '住所' },
+                  { key: 'station', label: '最寄り駅' },
+                  { key: 'phone', label: '電話番号' },
+                  { key: 'email', label: 'メールアドレス' },
+                  { key: 'agency', label: '事務所名' },
+                  { key: 'school_company', label: '学校・会社名' },
+                  { key: 'guardian_name', label: '保護者名' },
+                ].map(({ key, label }) => privateInfo[key] ? (
+                  <div key={key} style={{ background: '#f8fbff', borderRadius: 8, padding: '10px 14px' }}>
+                    <div style={{ fontSize: 11, color: '#999', marginBottom: 2 }}>{label}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#1a3560' }}>{privateInfo[key]}</div>
+                  </div>
+                ) : null)}
+                {privateInfo.contract_agreed_at && (
+                  <div style={{ background: '#e8f5e9', borderRadius: 8, padding: '10px 14px' }}>
+                    <div style={{ fontSize: 11, color: '#999', marginBottom: 2 }}>業務委託契約同意日</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#388e3c' }}>
+                      ✅ {new Date(privateInfo.contract_agreed_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
         )}
 
