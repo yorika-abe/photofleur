@@ -620,7 +620,7 @@ export default function EventEditPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>予約受付枠の設定</h3>
-                <span style={{ fontSize: 11, background: event.event_type === 'studio' ? '#e3f2fd' : '#e8f5e9', color: event.event_type === 'studio' ? '#1565c0' : '#388e3c', borderRadius: 4, padding: '2px 8px', fontWeight: 700 }}>
+                <span style={{ fontSize: 11, background: event.event_type === 'studio' ? '#fce4ec' : event.event_type === 'street' ? '#e0f7fa' : '#e8eaf6', color: event.event_type === 'studio' ? '#c2185b' : event.event_type === 'street' ? '#0097a7' : '#1a3560', borderRadius: 4, padding: '2px 8px', fontWeight: 700 }}>
                   {event.event_type === 'studio' ? 'スタジオ' : event.event_type === 'street' ? 'ストリート' : '不定期'}
                 </span>
               </div>
