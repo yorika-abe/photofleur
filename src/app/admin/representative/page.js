@@ -1,7 +1,30 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+
+function RichToolbar() {
+  function exec(cmd, value) {
+    document.execCommand(cmd, false, value ?? null)
+  }
+  const btn = (label, cmd, value, title) => (
+    <button
+      type="button"
+      title={title}
+      onMouseDown={e => { e.preventDefault(); exec(cmd, value) }}
+      style={{ background: 'none', border: '1px solid #ddd', borderRadius: 5, padding: '3px 9px', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#333', minWidth: 30 }}
+    >{label}</button>
+  )
+  return (
+    <div style={{ display: 'flex', gap: 4, padding: '6px 8px', background: '#f5f5f5', border: '1px solid #ddd', borderBottom: 'none', borderRadius: '8px 8px 0 0', flexWrap: 'wrap' }}>
+      {btn('B', 'bold', undefined, '太文字')}
+      {btn(<u>U</u>, 'underline', undefined, '下線')}
+      {btn(<em>I</em>, 'italic', undefined, '斜体')}
+      <div style={{ width: 1, background: '#ddd', margin: '0 4px' }} />
+      {btn('≡', 'insertUnorderedList', undefined, '箇条書き')}
+    </div>
+  )
+}
 
 export default function AdminRepresentativePage() {
   const [form, setForm] = useState({ photo: '', role: '', name: '', message: '', model_id: '' })
@@ -10,6 +33,8 @@ export default function AdminRepresentativePage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const editorRef = useRef(null)
+  const initialized = useRef(false)
 
   useEffect(() => {
     fetch('/api/admin/site-settings').then(r => r.json()).then(data => {
@@ -25,6 +50,13 @@ export default function AdminRepresentativePage() {
       setModels((models || []).filter(m => m.status === 'active'))
     })
   }, [])
+
+  useEffect(() => {
+    if (editorRef.current && form.message && !initialized.current) {
+      editorRef.current.innerHTML = form.message
+      initialized.current = true
+    }
+  }, [form.message])
 
   function uploadWithProgress(file, path) {
     return new Promise((resolve, reject) => {
@@ -60,6 +92,7 @@ export default function AdminRepresentativePage() {
 
   async function save() {
     setSaving(true)
+    const message = editorRef.current?.innerHTML || form.message
     await fetch('/api/admin/site-settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -67,10 +100,11 @@ export default function AdminRepresentativePage() {
         rep_photo: form.photo,
         rep_role: form.role,
         rep_name: form.name,
-        rep_message: form.message,
+        rep_message: message,
         rep_model_id: form.model_id,
       }),
     })
+    setForm(f => ({ ...f, message }))
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
@@ -78,16 +112,12 @@ export default function AdminRepresentativePage() {
 
   const inp = { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }
 
+  const previewText = form.message?.replace(/<[^>]+>/g, '') || ''
+
   return (
     <div style={{ maxWidth: 700, margin: '0 auto', padding: '40px 20px' }}>
       <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
       <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: '16px 0 28px' }}>代表メッセージ管理</h1>
-
-      {saved && (
-        <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 8, padding: '12px 16px', marginBottom: 24, fontSize: 13, color: '#388e3c' }}>
-          保存しました
-        </div>
-      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
@@ -139,9 +169,15 @@ export default function AdminRepresentativePage() {
             </div>
             <div>
               <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 6, color: '#444' }}>メッセージ</label>
-              <textarea style={{ ...inp, minHeight: 200, resize: 'vertical', lineHeight: 1.8 }}
-                value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
-                placeholder="ホームページに表示するメッセージを入力してください。最初の80文字ほどがプレビューとして表示され、「続きを読む」で全文が展開されます。" />
+              <RichToolbar />
+              <div
+                ref={editorRef}
+                contentEditable
+                suppressContentEditableWarning
+                onInput={e => setForm(f => ({ ...f, message: e.currentTarget.innerHTML }))}
+                style={{ ...inp, minHeight: 200, resize: 'vertical', lineHeight: 1.8, outline: 'none', borderRadius: '0 0 8px 8px', overflowY: 'auto', cursor: 'text' }}
+              />
+              <p style={{ fontSize: 11, color: '#aaa', margin: '4px 0 0' }}>最初の80文字ほどがプレビューとして表示され、「続きを読む」で全文が展開されます</p>
             </div>
           </div>
         </div>
@@ -167,10 +203,10 @@ export default function AdminRepresentativePage() {
               <div>
                 {form.role && <div style={{ fontSize: 11, color: '#5bbfd6', fontWeight: 600, letterSpacing: '0.1em', marginBottom: 2 }}>{form.role}</div>}
                 {form.name && <div style={{ fontSize: 18, fontWeight: 700, color: '#0d1f3a', marginBottom: 8 }}>{form.name}</div>}
-                {form.message && (
+                {previewText && (
                   <p style={{ fontSize: 13, color: '#555', lineHeight: 1.9, margin: 0 }}>
-                    {form.message.slice(0, 80)}{form.message.length > 80 ? '...' : ''}
-                    {form.message.length > 80 && <span style={{ color: '#5bbfd6', fontSize: 12, marginLeft: 8, cursor: 'pointer' }}>続きを読む</span>}
+                    {previewText.slice(0, 80)}{previewText.length > 80 ? '...' : ''}
+                    {previewText.length > 80 && <span style={{ color: '#5bbfd6', fontSize: 12, marginLeft: 8 }}>続きを読む</span>}
                   </p>
                 )}
               </div>
@@ -180,10 +216,17 @@ export default function AdminRepresentativePage() {
 
       </div>
 
-      <button onClick={save} disabled={saving}
-        style={{ marginTop: 24, background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 48px', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
-        {saving ? '保存中...' : '保存する'}
-      </button>
+      <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
+        <button onClick={save} disabled={saving}
+          style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 48px', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+          {saving ? '保存中...' : '保存する'}
+        </button>
+        {saved && (
+          <span style={{ fontSize: 14, color: '#388e3c', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+            ✓ 保存しました
+          </span>
+        )}
+      </div>
     </div>
   )
 }

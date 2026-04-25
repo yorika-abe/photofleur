@@ -7,8 +7,8 @@ const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
 export default function RepMessage({ photo, role, name, message, modelId }) {
   const [expanded, setExpanded] = useState(false)
-  const preview = message?.slice(0, 100) || ''
-  const hasMore = message?.length > 100
+  const textContent = message?.replace(/<[^>]+>/g, '') || ''
+  const hasMore = textContent.length > 100
 
   return (
     <section style={{ background: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
@@ -36,9 +36,13 @@ export default function RepMessage({ photo, role, name, message, modelId }) {
 
             {message && (
               <>
-                <p style={{ fontSize: 14, color: '#555', lineHeight: 2, margin: '0 0 12px', whiteSpace: 'pre-wrap' }}>
-                  {expanded ? message : (hasMore ? preview + '…' : message)}
-                </p>
+                <div
+                  style={{
+                    fontSize: 14, color: '#555', lineHeight: 2, margin: '0 0 12px',
+                    ...(!expanded && hasMore ? { display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : {}),
+                  }}
+                  dangerouslySetInnerHTML={{ __html: message }}
+                />
                 {hasMore && (
                   <button onClick={() => setExpanded(e => !e)}
                     style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 13, color: '#5bbfd6', fontWeight: 600, letterSpacing: '0.05em', textDecoration: 'underline', textUnderlineOffset: 3 }}>
