@@ -19,6 +19,7 @@ export async function POST(req, { params }) {
     price: parseInt(body.price) || 0,
     stock: parseInt(body.stock) || 1,
     display_order: parseInt(body.display_order) || 0,
+    available_slots: body.available_slots?.length ? body.available_slots : null,
   }).select().single()
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json(data)

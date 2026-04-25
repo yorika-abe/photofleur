@@ -49,6 +49,13 @@ export default async function EventDetailPage({ params }) {
 
   const entries = (entriesRaw || []).map(e => ({ ...e, models: modelMap[e.model_id] || null }))
 
+  const { data: products } = await supabase
+    .from('event_products')
+    .select('id, name, image, description, price, stock, available_slots')
+    .eq('event_id', id)
+    .order('display_order')
+    .order('created_at')
+
   const [{ data: allSlots }, { data: bookingCounts }] = await Promise.all([
     entryIds.length
       ? supabase.from('booking_slots').select('id, slot_label, start_time, price, is_reserved, max_reservations, slot_order, event_entry_id').in('event_entry_id', entryIds).order('slot_order', { ascending: true })
@@ -163,6 +170,39 @@ export default async function EventDetailPage({ params }) {
             {event.gallery_images.map((url, i) => (
               <div key={i} style={{ aspectRatio: '1', borderRadius: 10, overflow: 'hidden' }}>
                 <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Products */}
+      {products && products.length > 0 && (
+        <div style={{ marginBottom: 40 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a3560', marginBottom: 16 }}>予約商品</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
+            {products.map(p => (
+              <div key={p.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e5e5', overflow: 'hidden' }}>
+                {p.image && (
+                  <div style={{ aspectRatio: '4/3', overflow: 'hidden' }}>
+                    <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                )}
+                <div style={{ padding: '14px 16px' }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560', marginBottom: 4 }}>{p.name}</div>
+                  {p.available_slots?.length > 0 && (
+                    <div style={{ fontSize: 11, color: '#5bbfd6', fontWeight: 600, marginBottom: 6 }}>
+                      🕐 {p.available_slots.join(' / ')}
+                    </div>
+                  )}
+                  {p.description && (
+                    <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6, marginBottom: 8 }}>{p.description}</div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: '#1a3560' }}>¥{(p.price || 0).toLocaleString()}</span>
+                    <span style={{ fontSize: 11, color: '#999' }}>在庫 {p.stock}</span>
+                  </div>
+                </div>
               </div>
             ))}
           </div>

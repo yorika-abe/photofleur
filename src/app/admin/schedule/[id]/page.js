@@ -39,7 +39,9 @@ export default function EventEditPage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [products, setProducts] = useState([])
   const [modelsSubTab, setModelsSubTab] = useState('models')
-  const [newProduct, setNewProduct] = useState({ name: '', image: '', description: '', price: 0, stock: 1 })
+  const [newProduct, setNewProduct] = useState({ name: '', image: '', description: '', price: 0, stock: 1, available_slots: [] })
+  const [uploadingProductImg, setUploadingProductImg] = useState(false)
+  const [productImgProgress, setProductImgProgress] = useState(0)
 
 
   useEffect(() => { load() }, [id])
@@ -259,6 +261,18 @@ export default function EventEditPage() {
     } : e))
   }
 
+  async function uploadProductImage(file) {
+    setUploadingProductImg(true)
+    setProductImgProgress(0)
+    const path = `events/${id}/product-${Date.now()}.${file.name.split('.').pop()}`
+    try {
+      const url = await uploadWithProgress(file, path)
+      setNewProduct(p => ({ ...p, image: url }))
+    } catch (e) { alert('アップロードエラー: ' + e) }
+    setUploadingProductImg(false)
+    setProductImgProgress(0)
+  }
+
   async function addProduct() {
     if (!newProduct.name.trim()) { alert('商品名を入力してください'); return }
     const res = await fetch(`/api/admin/events/${id}/products`, {
@@ -268,7 +282,9 @@ export default function EventEditPage() {
     const data = await res.json()
     if (data.id) {
       setProducts(prev => [...prev, data])
-      setNewProduct({ name: '', image: '', description: '', price: 0, stock: 1 })
+      setNewProduct({ name: '', image: '', description: '', price: 0, stock: 1, available_slots: [] })
+    } else if (data.error) {
+      alert('エラー: ' + data.error)
     }
   }
 
@@ -663,14 +679,46 @@ export default function EventEditPage() {
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
                         <div>
-                          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>画像URL</label>
-                          <input value={newProduct.image} onChange={e => setNewProduct(p => ({ ...p, image: e.target.value }))}
-                            style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }} placeholder="https://..." />
+                          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>画像</label>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            {newProduct.image && (
+                              <div style={{ position: 'relative' }}>
+                                <img src={newProduct.image} alt="" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6, border: '1px solid #ddd' }} />
+                                <button type="button" onClick={() => setNewProduct(p => ({ ...p, image: '' }))}
+                                  style={{ position: 'absolute', top: -6, right: -6, background: '#e53935', color: '#fff', border: 'none', borderRadius: '50%', width: 16, height: 16, cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>×</button>
+                              </div>
+                            )}
+                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: uploadingProductImg ? '#ccc' : '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 12px', cursor: uploadingProductImg ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600 }}>
+                              📷 {uploadingProductImg ? `${productImgProgress}%` : 'アップロード'}
+                              <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingProductImg}
+                                onChange={e => e.target.files?.[0] && uploadProductImage(e.target.files[0])} />
+                            </label>
+                          </div>
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>在庫数</label>
                           <input type="number" min="1" value={newProduct.stock} onChange={e => setNewProduct(p => ({ ...p, stock: e.target.value }))}
                             style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }} />
+                        </div>
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 6 }}>利用可能時間枠（複数選択可）</label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {currentSlots.filter(s => s.order !== 0).map(s => {
+                            const checked = newProduct.available_slots.includes(s.label)
+                            return (
+                              <label key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 4, background: checked ? '#1a3560' : '#f5f5f5', color: checked ? '#fff' : '#555', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 600, border: `1px solid ${checked ? '#1a3560' : '#ddd'}` }}>
+                                <input type="checkbox" style={{ display: 'none' }} checked={checked}
+                                  onChange={e => setNewProduct(p => ({
+                                    ...p,
+                                    available_slots: e.target.checked
+                                      ? [...p.available_slots, s.label]
+                                      : p.available_slots.filter(l => l !== s.label)
+                                  }))} />
+                                {s.label}
+                              </label>
+                            )
+                          })}
                         </div>
                       </div>
                       <div>
@@ -694,6 +742,9 @@ export default function EventEditPage() {
                           {p.image && <img src={p.image} style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontWeight: 700, fontSize: 13, color: '#1a3560' }}>{p.name}</div>
+                            {p.available_slots?.length > 0 && (
+                              <div style={{ fontSize: 10, color: '#5bbfd6', marginTop: 2 }}>🕐 {p.available_slots.join(' / ')}</div>
+                            )}
                             {p.description && <div style={{ fontSize: 11, color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description}</div>}
                           </div>
                           <div style={{ fontSize: 13, fontWeight: 700, color: '#333', whiteSpace: 'nowrap' }}>¥{(p.price || 0).toLocaleString()}</div>
