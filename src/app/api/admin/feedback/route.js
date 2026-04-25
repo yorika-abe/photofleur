@@ -24,7 +24,11 @@ export async function PATCH(req) {
   const user = await requireAdmin(server, admin)
   if (!user) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { id, is_read } = await req.json()
-  await admin.from('feedbacks').update({ is_read }).eq('id', id)
+  const { id, is_read, all_read } = await req.json()
+  if (all_read) {
+    await admin.from('feedbacks').update({ is_read: true }).eq('is_read', false)
+  } else {
+    await admin.from('feedbacks').update({ is_read }).eq('id', id)
+  }
   return Response.json({ ok: true })
 }

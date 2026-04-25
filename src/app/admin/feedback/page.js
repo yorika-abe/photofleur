@@ -26,6 +26,15 @@ export default function AdminFeedbackPage() {
     setFeedbacks(f => f.map(x => x.id === id ? { ...x, is_read } : x))
   }
 
+  async function markAllRead() {
+    await fetch('/api/admin/feedback', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ all_read: true }),
+    })
+    setFeedbacks(f => f.map(x => ({ ...x, is_read: true })))
+  }
+
   const unread = (feedbacks || []).filter(f => !f.is_read).length
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>読み込み中...</div>
@@ -39,6 +48,12 @@ export default function AdminFeedbackPage() {
           {unread > 0 && <span style={{ marginLeft: 10, background: '#e53935', color: '#fff', borderRadius: 12, padding: '2px 10px', fontSize: 14, fontWeight: 700 }}>{unread}</span>}
         </h1>
         <div style={{ display: 'flex', gap: 10 }}>
+          {unread > 0 && (
+            <button onClick={markAllRead}
+              style={{ fontSize: 13, color: '#fff', background: '#1a3560', border: 'none', borderRadius: 8, padding: '7px 14px', fontWeight: 600, cursor: 'pointer' }}>
+              まとめて既読にする
+            </button>
+          )}
           <a href="/feedback" target="_blank"
             style={{ fontSize: 13, color: '#1a3560', textDecoration: 'none', border: '1px solid #1a3560', borderRadius: 8, padding: '7px 14px', fontWeight: 600 }}>
             入力画面を確認 →
