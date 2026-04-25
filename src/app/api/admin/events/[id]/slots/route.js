@@ -14,10 +14,11 @@ export async function POST(req) {
   const { data: entry } = await supabase.from('event_entries').select('model_id').eq('id', entryId).single()
   const { data: model } = entry ? await supabase.from('models').select('studio_price, street_price').eq('id', entry.model_id).single() : { data: null }
   const isStudioType = event.event_type === 'studio' || event.event_type === 'irregular'
+  const studioFee = parseInt(event.studio_fee) || 2000
   const basePrice = isStudioType
-    ? (parseInt(model?.studio_price || 0) + (parseInt(event.studio_fee) || 2000))
+    ? (parseInt(model?.studio_price || 0) + studioFee)
     : parseInt(model?.street_price || 0)
-  const price = (isStudioType && slot.order === 0) ? get0buPrice(parseInt(model?.studio_price || 0)) : basePrice
+  const price = (isStudioType && slot.order === 0) ? (get0buPrice(parseInt(model?.studio_price || 0)) + studioFee) : basePrice
 
   const { data } = await supabase.from('booking_slots').insert({
     event_entry_id: entryId, slot_label: slot.label, slot_order: slot.order,

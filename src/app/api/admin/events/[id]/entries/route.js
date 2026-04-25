@@ -67,8 +67,9 @@ export async function POST(req, { params }) {
       if (!entry) continue
 
       const isStudioType = event.event_type === 'studio' || event.event_type === 'irregular'
+      const studioFee = parseInt(event.studio_fee) || 2000
       const basePrice = isStudioType
-        ? (parseInt(model.studio_price || 0) + parseInt(event.studio_fee) || 2000)
+        ? (parseInt(model.studio_price || 0) + studioFee)
         : parseInt(model.street_price || 0)
 
       const targetSlots = filterSlotsByShift(templateSlots, shift)
@@ -78,7 +79,7 @@ export async function POST(req, { params }) {
         event_entry_id: entry.id, slot_label: slot.label, slot_order: slot.order,
         start_time: new Date(`${event.event_date}T${slot.start}:00+09:00`).toISOString(),
         end_time: new Date(`${event.event_date}T${slot.end}:00+09:00`).toISOString(),
-        price: (isStudioType && slot.order === 0) ? get0buPrice(parseInt(model.studio_price || 0)) : basePrice,
+        price: (isStudioType && slot.order === 0) ? (get0buPrice(parseInt(model.studio_price || 0)) + studioFee) : basePrice,
         max_reservations: 1, is_reserved: false,
       }))
       await supabase.from('booking_slots').insert(slotsToInsert)
@@ -97,8 +98,9 @@ export async function POST(req, { params }) {
 
     const { data: model } = await supabase.from('models').select('studio_price, street_price').eq('id', modelId).single()
     const isStudioType = event.event_type === 'studio' || event.event_type === 'irregular'
+    const studioFee = parseInt(event.studio_fee) || 2000
     const basePrice = isStudioType
-      ? (parseInt(model?.studio_price || 0) + parseInt(event.studio_fee) || 2000)
+      ? (parseInt(model?.studio_price || 0) + studioFee)
       : parseInt(model?.street_price || 0)
 
     const { data: shift } = await supabase
@@ -118,7 +120,7 @@ export async function POST(req, { params }) {
       event_entry_id: entry.id, slot_label: slot.label, slot_order: slot.order,
       start_time: new Date(`${event.event_date}T${slot.start}:00+09:00`).toISOString(),
       end_time: new Date(`${event.event_date}T${slot.end}:00+09:00`).toISOString(),
-      price: (isStudioType && slot.order === 0) ? get0buPrice(parseInt(model?.studio_price || 0)) : basePrice,
+      price: (isStudioType && slot.order === 0) ? (get0buPrice(parseInt(model?.studio_price || 0)) + studioFee) : basePrice,
       max_reservations: 1, is_reserved: false,
     }))
     const { data: slots } = await supabase
@@ -129,18 +131,21 @@ export async function POST(req, { params }) {
   }
 
   if (body.action === 'recalculate_prices') {
-    const { entryId, event } = body
-    const { data: entry } = await supabase.from('event_entries').select('model_id').eq('id', entryId).single()
+    const { entryId } = body
+    const { data: entry } = await supabase.from('event_entries').select('model_id, event_id').eq('id', entryId).single()
     if (!entry) return Response.json({ error: 'Entry not found' }, { status: 404 })
-    const { data: model } = await supabase.from('models').select('studio_price, street_price').eq('id', entry.model_id).single()
-    const { data: slots } = await supabase.from('booking_slots').select('id, slot_order').eq('event_entry_id', entryId)
-    const isStudioType = event.event_type === 'studio' || event.event_type === 'irregular'
-    const studioFee = parseInt(event.studio_fee) || 2000
+    const [{ data: model }, { data: ev }, { data: slots }] = await Promise.all([
+      supabase.from('models').select('studio_price, street_price').eq('id', entry.model_id).single(),
+      supabase.from('events').select('event_type, studio_fee').eq('id', entry.event_id).single(),
+      supabase.from('booking_slots').select('id, slot_order').eq('event_entry_id', entryId),
+    ])
+    const isStudioType = ev?.event_type === 'studio' || ev?.event_type === 'irregular'
+    const studioFee = parseInt(ev?.studio_fee) || 2000
     const basePrice = isStudioType
       ? (parseInt(model?.studio_price || 0) + studioFee)
       : parseInt(model?.street_price || 0)
     for (const slot of slots || []) {
-      const price = (isStudioType && slot.slot_order === 0) ? get0buPrice(parseInt(model?.studio_price || 0)) : basePrice
+      const price = (isStudioType && slot.slot_order === 0) ? (get0buPrice(parseInt(model?.studio_price || 0)) + studioFee) : basePrice
       await supabase.from('booking_slots').update({ price }).eq('id', slot.id)
     }
     return Response.json({ ok: true })
