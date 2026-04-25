@@ -50,6 +50,9 @@ export default async function SchedulePage() {
             {eventsWithEntries.map(ev => {
               const date = formatDate(ev.event_date)
               const isStreet = ev.event_type === 'street'
+              const isStudio = ev.event_type === 'studio'
+              const tagBg = isStreet ? 'rgba(0,151,167,0.85)' : isStudio ? 'rgba(194,24,91,0.85)' : 'rgba(26,53,96,0.85)'
+              const cardBg = isStreet ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : isStudio ? 'linear-gradient(160deg,#f4d6e8,#e8b8d0)' : 'linear-gradient(160deg,#c5cae9,#9fa8da)'
               const modelList = (ev.event_entries || []).map(e => e.models).filter(Boolean)
 
               return (
@@ -57,13 +60,13 @@ export default async function SchedulePage() {
                   <div className="sched-card" style={{ background: '#fff', borderRadius: 4, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', transition: 'box-shadow 0.3s ease, transform 0.3s ease' }}>
 
                     {/* 画像エリア */}
-                    <div style={{ position: 'relative', aspectRatio: '4/3', background: isStreet ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : 'linear-gradient(160deg,#f4d6e8,#e8b8d0)', overflow: 'hidden' }}>
+                    <div style={{ position: 'relative', aspectRatio: '4/3', background: cardBg, overflow: 'hidden' }}>
                       {ev.main_image && (
                         <img src={ev.main_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }} className="sched-img" />
                       )}
                       <div style={{ position: 'absolute', top: 12, left: 12 }}>
-                        <span style={{ fontSize: 10, letterSpacing: '0.15em', color: '#fff', textTransform: 'uppercase', background: isStreet ? 'rgba(91,191,214,0.85)' : 'rgba(244,160,190,0.85)', padding: '4px 10px', borderRadius: 2, fontWeight: 600 }}>
-                          {isStreet ? 'Street' : ev.event_type === 'studio' ? 'Studio' : 'Special'}
+                        <span style={{ fontSize: 10, letterSpacing: '0.15em', color: '#fff', textTransform: 'uppercase', background: tagBg, padding: '4px 10px', borderRadius: 2, fontWeight: 600 }}>
+                          {isStreet ? 'Street' : isStudio ? 'Studio' : 'Special'}
                         </span>
                       </div>
                     </div>

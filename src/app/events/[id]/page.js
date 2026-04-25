@@ -91,8 +91,8 @@ export default async function EventDetailPage({ params }) {
     }
   }
 
-  const typeLabel = event.event_type === 'street' ? 'ストリート撮影' : event.event_type === 'studio' ? 'スタジオ撮影' : '撮影会'
-  const typeColor = event.event_type === 'street' ? { bg: '#e8f5e9', color: '#388e3c' } : event.event_type === 'studio' ? { bg: '#e8eaf6', color: '#3949ab' } : { bg: '#fff3e0', color: '#e65100' }
+  const typeLabel = event.event_type === 'street' ? 'ストリート撮影' : event.event_type === 'studio' ? 'スタジオ撮影' : '不定期撮影'
+  const typeColor = event.event_type === 'street' ? { bg: '#e0f7fa', color: '#0097a7' } : event.event_type === 'studio' ? { bg: '#fce4ec', color: '#c2185b' } : { bg: '#e8eaf6', color: '#1a3560' }
   const now = new Date()
   const bookingOpen = event.booking_open_at ? new Date(event.booking_open_at) <= now : true
 

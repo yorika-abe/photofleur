@@ -126,7 +126,7 @@ export default function AdminSchedulePage() {
         {events.length === 0 && !loadError ? <p style={{ color: '#999' }}>イベントはありません。</p> : events.map(ev => {
           const models = ev.event_entries?.map(e => e.models).filter(Boolean) || []
           const typeLabel = ev.event_type === 'street' ? 'ストリート' : ev.event_type === 'studio' ? 'スタジオ' : '不定期'
-          const typeColor = ev.event_type === 'street' ? { bg: '#e8f5e9', color: '#388e3c' } : ev.event_type === 'studio' ? { bg: '#e8eaf6', color: '#3949ab' } : { bg: '#fff3e0', color: '#e65100' }
+          const typeColor = ev.event_type === 'street' ? { bg: '#e0f7fa', color: '#0097a7' } : ev.event_type === 'studio' ? { bg: '#fce4ec', color: '#c2185b' } : { bg: '#e8eaf6', color: '#1a3560' }
           const isActive = ev.status === 'active'
 
           return (
