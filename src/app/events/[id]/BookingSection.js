@@ -30,7 +30,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
 
   const validEntries = (entries || []).filter(e => {
     if (!e.models) return false
-    const slots = (slotsByEntry[e.id] || []).filter(s => s.slot_order !== 0)
+    const slots = (slotsByEntry[e.id] || [])
     return slots.length > 0
   })
 
@@ -40,7 +40,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
 
   // モーダル内のスロット情報
   const modalSlots = modal
-    ? (slotsByEntry[modal.id] || []).filter(s => s.slot_order !== 0).map(slot => {
+    ? (slotsByEntry[modal.id] || []).map(slot => {
         const indoor = indoorCountBySlot[slot.id] || 0
         const maxIndoor = slot.max_reservations || 1
         const totalBookings = (bookingCounts || []).filter(b => b.slot_id === slot.id).length
