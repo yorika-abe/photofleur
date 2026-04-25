@@ -15,8 +15,8 @@ export async function GET(req) {
   )
 
   const now = new Date()
-  // 過去24時間以内に end_time が来たスロットを対象にする
-  const oneHourAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+  // 過去1時間以内に end_time が来たスロットを対象にする
+  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString()
   const nowIso = now.toISOString()
 
   // end_time が過去1時間以内に終わったスロットを取得

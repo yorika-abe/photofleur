@@ -1,0 +1,14 @@
+name: Thanks Mail Cron
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  send-thanks-mail:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Thanks Mail
+        run: |
+          curl -sf "https://photofleur.vercel.app/api/cron-send-thanks-mail?secret=${{ secrets.CRON_SECRET }}" || true
