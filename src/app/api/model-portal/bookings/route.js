@@ -72,8 +72,9 @@ export async function GET(req) {
   const { data: bookings } = slotIds.length
     ? await admin
         .from('bookings')
-        .select('slot_id, last_name, first_name, sns_url')
+        .select('slot_id, last_name, first_name, sns_url, cancelled_at')
         .in('slot_id', slotIds)
+        .is('cancelled_at', null)
     : { data: [] }
 
   const bookingsBySlot = {}

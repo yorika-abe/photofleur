@@ -34,7 +34,7 @@ export default function AdminBookingsPage() {
     setLoading(true)
     const { data } = await supabase
       .from('bookings')
-      .select('id, name, last_name, first_name, last_name_kana, first_name_kana, email, phone, sns_url, is_outdoor, final_price, qr_token, marketing_consent, created_at, slot_id')
+      .select('id, name, last_name, first_name, last_name_kana, first_name_kana, email, phone, sns_url, is_outdoor, final_price, qr_token, marketing_consent, created_at, slot_id, cancelled_at')
       .order('created_at', { ascending: false })
 
     if (!data) { setLoading(false); return }
@@ -88,7 +88,8 @@ export default function AdminBookingsPage() {
     })
     setCancelling(null)
     if (!res.ok) { alert('エラーが発生しました'); return }
-    setToast('キャンセルメールを発送しました。返金、キャンセル料の対応に移ってください。')
+    setToast('キャンセルメールを発送しました。返金、キャンセル料、予約在庫の対応に移ってください。')
+    setBookings(prev => prev.map(bk => bk.id === b.id ? { ...bk, cancelled_at: new Date().toISOString() } : bk))
     setTimeout(() => setToast(null), 6000)
   }
 
@@ -162,14 +163,18 @@ export default function AdminBookingsPage() {
           {filtered.map(b => {
             const isExpanded = expanded === b.id
             const price = b.final_price || b.slot?.price || 0
+            const isCancelled = !!b.cancelled_at
             return (
-              <div key={b.id} style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', overflow: 'hidden' }}>
+              <div key={b.id} style={{ background: isCancelled ? '#fafafa' : '#fff', borderRadius: 12, border: isCancelled ? '1px solid #ffcdd2' : '1px solid #e5e5e5', overflow: 'hidden', opacity: isCancelled ? 0.7 : 1 }}>
                 {/* Main row */}
                 <div
                   onClick={() => setExpanded(isExpanded ? null : b.id)}
                   style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: 140 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: '#2f2244' }}>{b.name || `${b.last_name} ${b.first_name}`}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: isCancelled ? '#999' : '#2f2244' }}>{b.name || `${b.last_name} ${b.first_name}`}</span>
+                      {isCancelled && <span style={{ background: '#ffcdd2', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>キャンセル済</span>}
+                    </div>
                     <div style={{ fontSize: 12, color: '#888' }}>{b.email}</div>
                   </div>
                   <div style={{ fontSize: 13, color: '#555', minWidth: 120 }}>
@@ -225,12 +230,16 @@ export default function AdminBookingsPage() {
                       ) : <div style={{ fontSize: 12, color: '#ccc' }}>QRなし</div>}
                       <div style={{ fontSize: 11, color: '#aaa', marginTop: 8 }}>予約日：{new Date(b.created_at).toLocaleDateString('ja-JP')}</div>
                       {b.marketing_consent && <div style={{ fontSize: 11, color: '#388e3c', marginTop: 4 }}>✓ メルマガ同意</div>}
-                      <button
-                        onClick={() => cancelBooking(b)}
-                        disabled={cancelling === b.id}
-                        style={{ marginTop: 16, background: cancelling === b.id ? '#ccc' : '#c62828', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', cursor: cancelling === b.id ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {cancelling === b.id ? '送信中...' : '予約キャンセル・メール送信'}
-                      </button>
+                      {isCancelled ? (
+                        <div style={{ marginTop: 16, fontSize: 13, color: '#c62828', fontWeight: 600 }}>✓ キャンセル済み（{new Date(b.cancelled_at).toLocaleDateString('ja-JP')}）</div>
+                      ) : (
+                        <button
+                          onClick={() => cancelBooking(b)}
+                          disabled={cancelling === b.id}
+                          style={{ marginTop: 16, background: cancelling === b.id ? '#ccc' : '#c62828', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', cursor: cancelling === b.id ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13 }}>
+                          {cancelling === b.id ? '送信中...' : '予約キャンセル・メール送信'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}

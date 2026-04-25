@@ -102,5 +102,7 @@ export async function POST(req) {
 
   if (error) return Response.json({ error: String(error) }, { status: 500 })
 
+  await admin.from('bookings').update({ cancelled_at: new Date().toISOString() }).eq('id', booking_id)
+
   return Response.json({ ok: true })
 }

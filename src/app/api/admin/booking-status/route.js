@@ -42,8 +42,9 @@ export async function GET() {
   const { data: bookings } = slotIds.length
     ? await supabase
         .from('bookings')
-        .select('slot_id, last_name, first_name, payment_method')
+        .select('slot_id, last_name, first_name, payment_method, cancelled_at')
         .in('slot_id', slotIds)
+        .is('cancelled_at', null)
     : { data: [] }
 
   const bookingBySlot = {}
