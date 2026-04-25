@@ -247,7 +247,7 @@ export default async function Home() {
               <div key={item.num} className="how-item" style={{ background: '#fff', padding: '40px 28px' }}>
                 <div style={{ ...serif, fontSize: 'clamp(32px, 5vw, 64px)', fontWeight: 300, color: '#d6ecf5', lineHeight: 1, marginBottom: 16 }}>{item.num}</div>
                 <p style={{ fontSize: 10, letterSpacing: '0.15em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 6, fontWeight: 600 }}>{item.en}</p>
-                <h3 className="how-title" style={{ ...serif, fontSize: 'clamp(13px, 1.5vw, 17px)', fontWeight: 600, color: '#0d1f3a', marginBottom: 8, marginTop: 0 }}>{item.ja}</h3>
+                <h3 className="how-title" style={{ ...serif, fontSize: 'clamp(10px, 1.1vw, 15px)', fontWeight: 600, color: '#0d1f3a', marginBottom: 8, marginTop: 0, whiteSpace: 'nowrap' }}>{item.ja}</h3>
                 <p className="how-desc" style={{ fontSize: 13, color: '#667', lineHeight: 1.7, margin: 0 }}>{item.desc}</p>
               </div>
             ))}
@@ -334,6 +334,7 @@ export default async function Home() {
         @media (max-width: 600px) { .how-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 640px) { .how-item { padding: 20px 14px !important; } }
         @media (max-width: 640px) { .how-desc { font-size: 11px !important; } }
+        @media (max-width: 600px) { .how-title { font-size: 13px !important; } }
       `}</style>
     </div>
   )
