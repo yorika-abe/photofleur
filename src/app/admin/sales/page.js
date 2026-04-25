@@ -111,8 +111,11 @@ export default function AdminSalesPage() {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
-      <Link href="/admin" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#2f2244', margin: '8px 0 28px' }}>売上管理</h1>
+      <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
+      <div style={{ display: 'flex', gap: 0, margin: '14px 0 28px', borderBottom: '2px solid #e5e5e5' }}>
+        <Link href="/admin/booking-status" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>予約状況</Link>
+        <div style={{ padding: '10px 24px', fontWeight: 700, fontSize: 15, color: '#1a3560', borderBottom: '2px solid #1a3560', marginBottom: -2, cursor: 'default' }}>売上管理</div>
+      </div>
 
       {/* KPI cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 32 }}>
