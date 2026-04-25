@@ -6,16 +6,21 @@ import Link from 'next/link'
 const REQUIRED_FIELDS = ['real_name', 'address', 'station', 'phone', 'email']
 const EMPTY_FORM = { real_name: '', address: '', station: '', agency: '', phone: '', email: '', school_company: '', guardian_name: '' }
 
-function ContractModal({ form, onClose, onAgree }) {
-  const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
-  const [scrolled, setScrolled] = useState(false)
+function ContractModal({ form, onClose, onAgree, readOnly, agreedAt }) {
+  const today = agreedAt
+    ? new Date(agreedAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
+    : new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
+  const [scrolled, setScrolled] = useState(readOnly)
   const [checked, setChecked] = useState(false)
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 680, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ padding: '20px 24px', borderBottom: '1px solid #e5e5e5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1a3560' }}>業務委託契約書・肖像権使用同意書</h2>
+          <div>
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1a3560' }}>業務委託契約書・肖像権使用同意書</h2>
+            {readOnly && <div style={{ fontSize: 12, color: '#388e3c', fontWeight: 600, marginTop: 4 }}>✅ 締結済み・閲覧専用</div>}
+          </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#888' }}>×</button>
         </div>
         <div
@@ -42,20 +47,28 @@ function ContractModal({ form, onClose, onAgree }) {
           <p>署名：{form.real_name}<br />日付：{today}</p>
         </div>
         <div style={{ padding: '16px 24px', borderTop: '1px solid #e5e5e5', background: '#f8fbff' }}>
-          {!scrolled && <p style={{ fontSize: 12, color: '#e65100', margin: '0 0 12px', fontWeight: 600 }}>↓ 最後までスクロールすると同意できます</p>}
-          {scrolled && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1a3560' }}>
-              <input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer' }} />
-              上記の業務委託契約書および肖像権使用同意書に同意します
-            </label>
-          )}
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button onClick={onClose} style={{ flex: 1, background: '#f5f5f5', color: '#555', border: 'none', borderRadius: 8, padding: '12px', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>キャンセル</button>
-            <button onClick={() => checked && onAgree()} disabled={!checked}
-              style={{ flex: 2, background: checked ? '#1a3560' : '#ccc', color: '#fff', border: 'none', borderRadius: 8, padding: '12px', cursor: checked ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: 14 }}>
-              同意して締結する
+          {readOnly ? (
+            <button onClick={onClose} style={{ width: '100%', background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '13px', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+              閉じる
             </button>
-          </div>
+          ) : (
+            <>
+              {!scrolled && <p style={{ fontSize: 12, color: '#e65100', margin: '0 0 12px', fontWeight: 600 }}>↓ 最後までスクロールすると同意できます</p>}
+              {scrolled && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1a3560' }}>
+                  <input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer' }} />
+                  上記の業務委託契約書および肖像権使用同意書に同意します
+                </label>
+              )}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={onClose} style={{ flex: 1, background: '#f5f5f5', color: '#555', border: 'none', borderRadius: 8, padding: '12px', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>キャンセル</button>
+                <button onClick={() => checked && onAgree()} disabled={!checked}
+                  style={{ flex: 2, background: checked ? '#1a3560' : '#ccc', color: '#fff', border: 'none', borderRadius: 8, padding: '12px', cursor: checked ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: 14 }}>
+                  同意して締結する
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -89,7 +102,7 @@ export default function PrivateInfoPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [showContract, setShowContract] = useState(false)
+  const [showContract, setShowContract] = useState(null) // null | 'view' | 'agree'
   const [editMode, setEditMode] = useState(false)
 
   useEffect(() => {
@@ -165,7 +178,7 @@ export default function PrivateInfoPage() {
 
   return (
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '40px 20px' }}>
-      {showContract && <ContractModal form={form} onClose={() => setShowContract(false)} onAgree={handleAgree} />}
+      {showContract && <ContractModal form={form} onClose={() => setShowContract(null)} onAgree={handleAgree} readOnly={showContract === 'view'} agreedAt={contractAgreedAt} />}
 
       <Link href="/model-portal" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← モデルポータル</Link>
       <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: '16px 0 6px' }}>非公開登録情報</h1>
@@ -222,14 +235,18 @@ export default function PrivateInfoPage() {
         <div style={{ background: '#fff', border: contractAgreedAt ? '2px solid #a5d6a7' : '1px solid #d6ecf5', borderRadius: 14, padding: '24px' }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 12 }}>業務委託契約・肖像権使用同意</h2>
           {contractAgreedAt ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: '#e8f5e9', borderRadius: 10, padding: '16px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: '#e8f5e9', borderRadius: 10, padding: '16px 20px', flexWrap: 'wrap' }}>
               <span style={{ fontSize: 36 }}>✅</span>
-              <div>
+              <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700, color: '#2e7d32', fontSize: 16 }}>契約締結済み</div>
                 <div style={{ fontSize: 12, color: '#555', marginTop: 4 }}>
                   締結日：{new Date(contractAgreedAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
+              <button onClick={() => setShowContract('view')}
+                style={{ background: '#fff', color: '#2e7d32', border: '1px solid #a5d6a7', borderRadius: 8, padding: '8px 18px', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                契約書を確認する →
+              </button>
             </div>
           ) : (
             <>
@@ -237,7 +254,7 @@ export default function PrivateInfoPage() {
                 業務委託契約書および肖像権使用同意書への同意が必要です。<br />
                 <strong>必須情報をすべて入力してから</strong>同意画面をお開きください。
               </p>
-              <button onClick={() => canAgree ? setShowContract(true) : null} disabled={!canAgree}
+              <button onClick={() => canAgree ? setShowContract('agree') : null} disabled={!canAgree}
                 style={{ background: canAgree ? '#1a3560' : '#ccc', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 24px', fontWeight: 700, fontSize: 14, cursor: canAgree ? 'pointer' : 'not-allowed' }}>
                 契約書・同意書を確認して締結する
               </button>
