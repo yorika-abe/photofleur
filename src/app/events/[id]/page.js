@@ -80,6 +80,17 @@ export default async function EventDetailPage({ params }) {
     }
   }
 
+  // スタジオ定員チェック用：同じ時間帯ラベルの屋内予約合計
+  const slotMap = {}
+  for (const s of allSlots || []) slotMap[s.id] = s
+  const indoorCountByLabel = {}
+  for (const b of bookingCounts || []) {
+    if (!b.is_outdoor) {
+      const slot = slotMap[b.slot_id]
+      if (slot) indoorCountByLabel[slot.slot_label] = (indoorCountByLabel[slot.slot_label] || 0) + 1
+    }
+  }
+
   const typeLabel = event.event_type === 'street' ? 'ストリート撮影' : event.event_type === 'studio' ? 'スタジオ撮影' : '撮影会'
   const typeColor = event.event_type === 'street' ? { bg: '#e8f5e9', color: '#388e3c' } : event.event_type === 'studio' ? { bg: '#e8eaf6', color: '#3949ab' } : { bg: '#fff3e0', color: '#e65100' }
   const now = new Date()
@@ -215,6 +226,9 @@ export default async function EventDetailPage({ params }) {
         entries={entries}
         slotsByEntry={slotsByEntry}
         indoorCountBySlot={indoorCountBySlot}
+        indoorCountByLabel={indoorCountByLabel}
+        studioCapacity={event.studio_capacity || null}
+        eventType={event.event_type}
         bookingCounts={bookingCounts || []}
         bookingOpen={bookingOpen}
         bookingOpenAt={event.booking_open_at}

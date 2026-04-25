@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-export default function BookingSection({ entries, slotsByEntry, indoorCountBySlot, bookingCounts, bookingOpen, bookingOpenAt }) {
+export default function BookingSection({ entries, slotsByEntry, indoorCountBySlot, indoorCountByLabel, studioCapacity, eventType, bookingCounts, bookingOpen, bookingOpenAt }) {
   const [modal, setModal] = useState(null) // entry
   const [selectedSlotId, setSelectedSlotId] = useState('')
 
@@ -41,11 +41,13 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
   // モーダル内のスロット情報
   const modalSlots = modal
     ? (slotsByEntry[modal.id] || []).map(slot => {
-        const indoor = indoorCountBySlot[slot.id] || 0
-        const maxIndoor = slot.max_reservations || 1
         const totalBookings = (bookingCounts || []).filter(b => b.slot_id === slot.id).length
-        const indoorFull = indoor >= maxIndoor
-        const fullyBooked = slot.is_reserved && indoorFull && totalBookings >= maxIndoor * 2
+        // スタジオ：同時間帯の全モデル合計屋内予約数 vs スタジオ定員
+        // その他：表示しない
+        const indoorFull = eventType === 'studio' && studioCapacity
+          ? (indoorCountByLabel[slot.slot_label] || 0) >= studioCapacity
+          : false
+        const fullyBooked = slot.is_reserved && totalBookings >= (slot.max_reservations || 1)
         return { ...slot, indoorFull, fullyBooked }
       })
     : []
