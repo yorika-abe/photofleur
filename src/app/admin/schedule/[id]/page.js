@@ -63,7 +63,7 @@ export default function EventEditPage() {
       let savedTemplates = null
       try { savedTemplates = ev?.slot_templates ? JSON.parse(ev.slot_templates) : null } catch {}
       if (!savedTemplates) {
-        savedTemplates = (ev?.event_type === 'studio' ? STUDIO_SLOTS : STREET_SLOTS).map(s => ({ ...s }))
+        savedTemplates = (ev?.event_type === 'street' ? STREET_SLOTS : STUDIO_SLOTS).map(s => ({ ...s }))
       }
       setSlotTemplates(savedTemplates)
     } catch (e) {
@@ -86,7 +86,7 @@ export default function EventEditPage() {
   }
 
   function resetSlotTemplates(eventType) {
-    setSlotTemplates((eventType === 'studio' ? STUDIO_SLOTS : STREET_SLOTS).map(s => ({ ...s })))
+    setSlotTemplates((eventType === 'street' ? STREET_SLOTS : STUDIO_SLOTS).map(s => ({ ...s })))
   }
 
   function updateField(key, value) {
@@ -326,7 +326,7 @@ export default function EventEditPage() {
   const inp = { width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }
   const label = { display: 'block', fontWeight: 600, fontSize: 12, marginBottom: 5, color: '#555' }
   const entryModelIds = entries.map(e => e.model_id)
-  const currentSlots = slotTemplates || (event.event_type === 'studio' ? STUDIO_SLOTS : STREET_SLOTS)
+  const currentSlots = slotTemplates || (event.event_type === 'street' ? STREET_SLOTS : STUDIO_SLOTS)
 
   function updateSlotTemplate(idx, key, value) {
     setSlotTemplates(prev => {

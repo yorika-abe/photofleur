@@ -15,7 +15,7 @@ export async function POST(req) {
   const { data: model } = entry ? await supabase.from('models').select('studio_price, street_price').eq('id', entry.model_id).single() : { data: null }
   const isStudioType = event.event_type === 'studio' || event.event_type === 'irregular'
   const basePrice = isStudioType
-    ? (parseInt(model?.studio_price || 0) + parseInt(event.studio_fee || 0))
+    ? (parseInt(model?.studio_price || 0) + (parseInt(event.studio_fee) || 2000))
     : parseInt(model?.street_price || 0)
   const price = (isStudioType && slot.order === 0) ? get0buPrice(parseInt(model?.studio_price || 0)) : basePrice
 

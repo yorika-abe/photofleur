@@ -68,7 +68,7 @@ export async function POST(req, { params }) {
 
       const isStudioType = event.event_type === 'studio' || event.event_type === 'irregular'
       const basePrice = isStudioType
-        ? (parseInt(model.studio_price || 0) + parseInt(event.studio_fee || 0))
+        ? (parseInt(model.studio_price || 0) + parseInt(event.studio_fee) || 2000)
         : parseInt(model.street_price || 0)
 
       const targetSlots = filterSlotsByShift(templateSlots, shift)
@@ -98,7 +98,7 @@ export async function POST(req, { params }) {
     const { data: model } = await supabase.from('models').select('studio_price, street_price').eq('id', modelId).single()
     const isStudioType = event.event_type === 'studio' || event.event_type === 'irregular'
     const basePrice = isStudioType
-      ? (parseInt(model?.studio_price || 0) + parseInt(event.studio_fee || 0))
+      ? (parseInt(model?.studio_price || 0) + parseInt(event.studio_fee) || 2000)
       : parseInt(model?.street_price || 0)
 
     const { data: shift } = await supabase
