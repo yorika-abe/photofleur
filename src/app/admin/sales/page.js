@@ -22,6 +22,7 @@ export default function AdminSalesPage() {
     const { data: bookings } = await supabase
       .from('bookings')
       .select('id, name, email, final_price, is_outdoor, created_at, slot_id')
+      .is('cancelled_at', null)
       .order('created_at', { ascending: false })
 
     if (!bookings) { setLoading(false); return }
