@@ -174,7 +174,7 @@ export default async function Home() {
               <div>
                 <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>Schedule</p>
                 <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>
-                  直近の撮影会
+                  開催予定の撮影会
                 </h2>
               </div>
               <Link href="/schedule" style={{ ...serif, color: '#5bbfd6', fontSize: 13, letterSpacing: '0.15em', textDecoration: 'none', textTransform: 'uppercase', borderBottom: '1px solid #5bbfd6', paddingBottom: 2 }}>
