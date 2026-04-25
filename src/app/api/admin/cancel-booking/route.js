@@ -84,7 +84,7 @@ export async function POST(req) {
 
   const { data: booking } = await admin
     .from('bookings')
-    .select('id, email, name, last_name, first_name')
+    .select('id, email, name, last_name, first_name, slot_id')
     .eq('id', booking_id)
     .single()
 
@@ -103,6 +103,10 @@ export async function POST(req) {
   if (error) return Response.json({ error: String(error) }, { status: 500 })
 
   await admin.from('bookings').update({ cancelled_at: new Date().toISOString() }).eq('id', booking_id)
+
+  if (booking.slot_id) {
+    await admin.from('booking_slots').update({ is_reserved: false }).eq('id', booking.slot_id)
+  }
 
   return Response.json({ ok: true })
 }
