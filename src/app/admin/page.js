@@ -38,7 +38,7 @@ export default async function AdminPage() {
           { href: '/admin/booking-status', label: '予約状況', icon: '📊' },
           { href: '/admin/sales', label: '売上管理', icon: '💰' },
           { href: '/admin/models', label: 'モデル管理', icon: '👤', badge: pendingModels ?? 0 },
-          { href: '/admin/schedule', label: 'イベント作成', icon: '📅' },
+          { href: '/admin/schedule', label: 'イベント作成', icon: '📍' },
           { href: '/admin/shifts', label: 'シフト承認', icon: '🗓️', badge: pendingShifts ?? 0 },
           { href: '/admin/shift-requests', label: 'シフト指定日管理', icon: '📆' },
           { href: '/admin/coupons', label: 'クーポン管理', icon: '🎟️' },
