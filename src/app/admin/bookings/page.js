@@ -17,6 +17,8 @@ export default function AdminBookingsPage() {
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [expanded, setExpanded] = useState(null)
+  const [cancelling, setCancelling] = useState(null)
+  const [toast, setToast] = useState(null)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -75,6 +77,21 @@ export default function AdminBookingsPage() {
     setLoading(false)
   }
 
+  async function cancelBooking(b) {
+    const name = b.name || `${b.last_name} ${b.first_name}`
+    if (!confirm(`${name} 様の予約をキャンセルしてメールを送信しますか？`)) return
+    setCancelling(b.id)
+    const res = await fetch('/api/admin/cancel-booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ booking_id: b.id }),
+    })
+    setCancelling(null)
+    if (!res.ok) { alert('エラーが発生しました'); return }
+    setToast('キャンセルメールを発送しました。返金、キャンセル料の対応に移ってください。')
+    setTimeout(() => setToast(null), 6000)
+  }
+
   const today = new Date().toISOString().split('T')[0]
 
   const filtered = bookings.filter(b => {
@@ -95,6 +112,13 @@ export default function AdminBookingsPage() {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
+
+      {toast && (
+        <div style={{ position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)', background: '#1b5e20', color: '#fff', borderRadius: 10, padding: '14px 24px', fontWeight: 600, fontSize: 14, zIndex: 9999, boxShadow: '0 4px 20px rgba(0,0,0,0.2)', maxWidth: 480, textAlign: 'center', lineHeight: 1.6 }}>
+          {toast}
+        </div>
+      )}
+
       <Link href="/admin" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
       <h1 style={{ fontSize: 24, fontWeight: 700, color: '#2f2244', margin: '8px 0 24px' }}>予約管理</h1>
 
@@ -201,6 +225,12 @@ export default function AdminBookingsPage() {
                       ) : <div style={{ fontSize: 12, color: '#ccc' }}>QRなし</div>}
                       <div style={{ fontSize: 11, color: '#aaa', marginTop: 8 }}>予約日：{new Date(b.created_at).toLocaleDateString('ja-JP')}</div>
                       {b.marketing_consent && <div style={{ fontSize: 11, color: '#388e3c', marginTop: 4 }}>✓ メルマガ同意</div>}
+                      <button
+                        onClick={() => cancelBooking(b)}
+                        disabled={cancelling === b.id}
+                        style={{ marginTop: 16, background: cancelling === b.id ? '#ccc' : '#c62828', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', cursor: cancelling === b.id ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {cancelling === b.id ? '送信中...' : '予約キャンセル・メール送信'}
+                      </button>
                     </div>
                   </div>
                 )}
