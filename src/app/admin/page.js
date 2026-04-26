@@ -51,6 +51,7 @@ export default async function AdminPage() {
           { href: '/admin/representative', label: '代表メッセージ', icon: '✉️' },
           { href: '/admin/users', label: 'ユーザー権限管理', icon: '🔑' },
           { href: '/admin/private-info', label: '非公開登録情報', icon: '🔒', badge: pendingPrivateInfo ?? 0 },
+          { href: '/admin/photos', label: 'ご提供写真', icon: '📸' },
         ].map(link => (
           <Link key={link.href} href={link.href} style={{ textDecoration: 'none' }}>
             <div style={{ background: '#1a3560', color: '#fff', borderRadius: 12, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
