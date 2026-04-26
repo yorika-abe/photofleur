@@ -2,10 +2,11 @@ import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/sup
 
 export async function GET() {
   const admin = await createSupabaseAdminClient()
-  const { data } = await admin
+  const { data, error } = await admin
     .from('contributed_photos')
     .select('*')
     .order('created_at', { ascending: false })
+  if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json(data || [])
 }
 

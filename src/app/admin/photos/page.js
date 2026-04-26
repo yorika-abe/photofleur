@@ -14,11 +14,14 @@ export default function AdminPhotosPage() {
   const [models, setModels] = useState([])
   const [loading, setLoading] = useState(true)
 
+  const [fetchError, setFetchError] = useState(null)
+
   useEffect(() => {
     Promise.all([
       fetch('/api/customer/contributed-photos').then(r => r.json()),
       fetch('/api/admin/models').then(r => r.json()).then(d => d.models || []).catch(() => []),
     ]).then(([p, m]) => {
+      if (p?.error) { setFetchError(p.error); setLoading(false); return }
       setPhotos(Array.isArray(p) ? p : [])
       setModels(Array.isArray(m) ? m : [])
       setLoading(false)
@@ -28,6 +31,7 @@ export default function AdminPhotosPage() {
   const modelMap = Object.fromEntries(models.map(m => [m.id, m.name]))
 
   if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#aaa' }}>読み込み中...</div>
+  if (fetchError) return <div style={{ padding: 60, textAlign: 'center', color: '#e53935' }}>エラー: {fetchError}</div>
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px' }}>

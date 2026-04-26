@@ -188,6 +188,7 @@ export default function ModelPortalHome() {
             { href: '/model-portal/shifts/extra', icon: '➕', label: '追加エントリー・変更申請', desc: '締め切り後の参加・変更申請' },
             { href: '/model-portal/blog', icon: '📝', label: 'ブログ', desc: '記事を書く' },
             { href: '/model-portal/private-info', icon: '🔒', label: '非公開登録情報', desc: '住所・連絡先・契約同意' },
+            { href: '/model-portal/photos', icon: '📸', label: 'ご提供写真', desc: '提供いただいた写真を確認' },
           ]).map(item => (
             <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
               <div style={{ background: '#fff', borderRadius: 12, padding: '20px', border: '1px solid #d6ecf5', transition: 'box-shadow 0.2s', position: 'relative' }}>
