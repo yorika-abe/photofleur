@@ -3,6 +3,17 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
+async function downloadPhoto(url) {
+  const res = await fetch(url)
+  const blob = await res.blob()
+  const ext = blob.type.split('/')[1] || 'jpg'
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = `photo_${Date.now()}.${ext}`
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
+
 function formatDateTime(str) {
   if (!str) return ''
   const d = new Date(str)
@@ -67,10 +78,10 @@ export default function AdminPhotosPage() {
                     <a href={p.sns_url} target="_blank" rel="noopener noreferrer" style={{ color: '#1a3560' }}>{p.sns_url}</a>
                   </div>
                 )}
-                <a href={p.photo_url} download target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'block', textAlign: 'center', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '8px 0', fontSize: 13, fontWeight: 700 }}>
+                <button onClick={() => downloadPhoto(p.photo_url)}
+                  style={{ display: 'block', width: '100%', textAlign: 'center', background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                   ダウンロード
-                </a>
+                </button>
               </div>
             </div>
           ))}
