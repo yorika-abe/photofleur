@@ -23,7 +23,8 @@ export async function POST(req) {
 
   const urls = []
   for (const file of files) {
-    const path = `contributed/${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name}`
+    const ext = file.name.split('.').pop().toLowerCase() || 'jpg'
+    const path = `contributed/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
     const arrayBuffer = await file.arrayBuffer()
     const { error } = await admin.storage.from('images').upload(path, arrayBuffer, { contentType: file.type, upsert: true })
     if (error) return Response.json({ error: error.message }, { status: 500 })
