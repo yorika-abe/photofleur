@@ -117,6 +117,12 @@ export default function MyPage() {
 
   const inp = { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }
   const recentBookings = bookings.slice(0, 3)
+  const profileComplete = !!(form.last_name && form.first_name && form.last_name_kana && form.first_name_kana && form.phone && form.sns_url)
+  const profileIncompleteNotice = (
+    <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: '14px 18px', fontSize: 13, color: '#795548' }}>
+      ⚠️ 上の<strong>登録情報をすべて入力して保存</strong>してからご利用いただけます。（姓・名・フリガナ・電話番号・SNS URLが必要です）
+    </div>
+  )
 
   if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#aaa' }}>読み込み中...</div>
 
@@ -168,20 +174,22 @@ export default function MyPage() {
           <li>その他ご意見</li>
         </ul>
         <p style={{ fontSize: 11, color: '#bbb', margin: '0 0 14px' }}>※送信専用ですので、返答が必要なものは公式LINEよりお願いいたします。</p>
-        {feedbackDone && (
-          <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 8, padding: '10px 16px', marginBottom: 12, fontSize: 13, color: '#388e3c' }}>
-            ありがとうございます！送信されました。
-          </div>
-        )}
-        <form onSubmit={submitFeedback}>
-          <textarea value={feedbackContent} onChange={e => setFeedbackContent(e.target.value)}
-            placeholder="ご自由にお書きください..."
-            style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', minHeight: 90, resize: 'vertical', marginBottom: 12 }} />
-          <button type="submit" disabled={feedbackSending || !feedbackContent.trim()}
-            style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: (!feedbackContent.trim() || feedbackSending) ? 0.6 : 1 }}>
-            {feedbackSending ? '送信中...' : '送信する'}
-          </button>
-        </form>
+        {!profileComplete ? profileIncompleteNotice : (<>
+          {feedbackDone && (
+            <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 8, padding: '10px 16px', marginBottom: 12, fontSize: 13, color: '#388e3c' }}>
+              ありがとうございます！送信されました。
+            </div>
+          )}
+          <form onSubmit={submitFeedback}>
+            <textarea value={feedbackContent} onChange={e => setFeedbackContent(e.target.value)}
+              placeholder="ご自由にお書きください..."
+              style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', minHeight: 90, resize: 'vertical', marginBottom: 12 }} />
+            <button type="submit" disabled={feedbackSending || !feedbackContent.trim()}
+              style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: (!feedbackContent.trim() || feedbackSending) ? 0.6 : 1 }}>
+              {feedbackSending ? '送信中...' : '送信する'}
+            </button>
+          </form>
+        </>)}
       </section>
 
       {/* 写真提供 */}
@@ -193,6 +201,7 @@ export default function MyPage() {
         </p>
         <p style={{ fontSize: 12, color: '#888', marginBottom: 20 }}>よろしくお願いいたします。</p>
 
+        {!profileComplete ? profileIncompleteNotice : (<>
         {uploadDone && (
           <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#388e3c' }}>
             ありがとうございます！写真を受け取りました。
@@ -229,6 +238,7 @@ export default function MyPage() {
             {uploading ? 'アップロード中...' : '送信する'}
           </button>
         </form>
+        </>)}
       </section>
 
       {/* 予約履歴（直近3件） */}
