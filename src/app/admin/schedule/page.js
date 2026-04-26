@@ -128,16 +128,21 @@ export default function AdminSchedulePage() {
           const typeLabel = ev.event_type === 'street' ? 'ストリート' : ev.event_type === 'studio' ? 'スタジオ' : '不定期'
           const typeColor = ev.event_type === 'street' ? { bg: '#e0f7fa', color: '#0097a7' } : ev.event_type === 'studio' ? { bg: '#fce4ec', color: '#c2185b' } : { bg: '#e8eaf6', color: '#1a3560' }
           const isActive = ev.status === 'active'
+          const isPast = ev.event_date < new Date().toISOString().split('T')[0]
 
           return (
-            <div key={ev.id} style={{ background: '#fff', borderRadius: 12, padding: '16px 20px', border: '1px solid #e5e5e5' }}>
+            <div key={ev.id} style={{ background: '#fff', borderRadius: 12, padding: '16px 20px', border: '1px solid #e5e5e5', opacity: isPast ? 0.75 : 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6, flexWrap: 'wrap' }}>
                     <span style={{ background: typeColor.bg, color: typeColor.color, borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{typeLabel}</span>
-                    <span style={{ background: isActive ? '#e8f5e9' : '#f5f5f5', color: isActive ? '#388e3c' : '#999', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
-                      {isActive ? '表示中' : '非表示'}
-                    </span>
+                    {isPast ? (
+                      <span style={{ background: '#eeeeee', color: '#777', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>開催終了</span>
+                    ) : (
+                      <span style={{ background: isActive ? '#e8f5e9' : '#f5f5f5', color: isActive ? '#388e3c' : '#999', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
+                        {isActive ? '表示中' : '非表示'}
+                      </span>
+                    )}
                     <span style={{ fontWeight: 700, fontSize: 17, color: '#2f2244' }}>{formatDate(ev.event_date)}</span>
                   </div>
                   <div style={{ fontSize: 14, color: '#333', fontWeight: 600 }}>{ev.title || ev.location_name}</div>
