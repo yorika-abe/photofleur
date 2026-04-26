@@ -11,13 +11,25 @@ function formatDate(dateStr) {
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`
 }
 
+const typeColors = {
+  street: { bg: '#e0f7fa', color: '#0097a7', label: 'ストリート' },
+  studio: { bg: '#fce4ec', color: '#c2185b', label: 'スタジオ' },
+  irregular: { bg: '#e8eaf6', color: '#1a3560', label: '不定期' },
+}
+
 export default function MyPage() {
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState('')
   const [bookings, setBookings] = useState([])
+  const [models, setModels] = useState([])
   const [form, setForm] = useState({ last_name: '', first_name: '', last_name_kana: '', first_name_kana: '', phone: '', sns_url: '' })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [photoFiles, setPhotoFiles] = useState([])
+  const [photoModelIds, setPhotoModelIds] = useState([])
+  const [photoSnsUrl, setPhotoSnsUrl] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [uploadDone, setUploadDone] = useState(false)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -29,15 +41,17 @@ export default function MyPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.href = '/login?redirect=/my'; return }
 
-      const [profileRes, bookingsRes] = await Promise.all([
+      const [profileRes, bookingsRes, modelsRes] = await Promise.all([
         fetch('/api/customer/profile'),
         fetch('/api/customer/bookings'),
+        fetch('/api/admin/models').then(r => r.json()).catch(() => ({ models: [] })),
       ])
       const { profile, email: userEmail } = await profileRes.json()
       const { bookings } = await bookingsRes.json()
 
       setEmail(userEmail || user.email || '')
       setBookings(bookings || [])
+      setModels(modelsRes.models || [])
       if (profile) {
         setForm({
           last_name: profile.last_name || '',
@@ -66,7 +80,29 @@ export default function MyPage() {
     setTimeout(() => setSaved(false), 3000)
   }
 
+  async function uploadPhotos(e) {
+    e.preventDefault()
+    if (photoFiles.length === 0) return
+    setUploading(true)
+    const fd = new FormData()
+    for (const f of photoFiles) fd.append('files', f)
+    fd.append('model_ids', JSON.stringify(photoModelIds))
+    fd.append('sns_url', photoSnsUrl)
+    await fetch('/api/customer/contributed-photos', { method: 'POST', body: fd })
+    setUploading(false)
+    setUploadDone(true)
+    setPhotoFiles([])
+    setPhotoModelIds([])
+    setPhotoSnsUrl('')
+    setTimeout(() => setUploadDone(false), 4000)
+  }
+
+  function toggleModel(id) {
+    setPhotoModelIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
   const inp = { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }
+  const recentBookings = bookings.slice(0, 3)
 
   if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#aaa' }}>読み込み中...</div>
 
@@ -75,17 +111,13 @@ export default function MyPage() {
       <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a3560', marginBottom: 4 }}>マイページ</h1>
       <p style={{ color: '#888', fontSize: 13, marginBottom: 32 }}>{email}</p>
 
-      {/* Profile form */}
-      <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #d6ecf5', marginBottom: 32 }}>
-        <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 20 }}>登録情報</h2>
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -12 }}>予約フォームに自動入力されます</p>
-
+      {/* 登録情報 */}
+      <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #d6ecf5', marginBottom: 24 }}>
+        <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 4 }}>登録情報</h2>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>予約フォームに自動入力されます</p>
         {saved && (
-          <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#388e3c' }}>
-            保存しました
-          </div>
+          <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#388e3c' }}>保存しました</div>
         )}
-
         <form onSubmit={save}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <div><label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#555' }}>姓</label><input style={inp} value={form.last_name} onChange={e => setForm(f => ({ ...f, last_name: e.target.value }))} placeholder="山田" /></div>
@@ -109,43 +141,128 @@ export default function MyPage() {
         </form>
       </section>
 
-      {/* Booking history */}
+      {/* 意見箱 */}
+      <section style={{ background: '#f8fbff', borderRadius: 14, padding: '24px', border: '1px solid #d6ecf5', marginBottom: 24 }}>
+        <p style={{ fontSize: 14, color: '#333', lineHeight: 1.9, margin: '0 0 12px' }}>
+          PhotoFleurでは日々改善・改良を重ね邁進しております。<br />
+          下記のようなご意見がございましたら、ぜひお聞かせください。
+        </p>
+        <ul style={{ fontSize: 13, color: '#555', lineHeight: 2.2, paddingLeft: 20, margin: '0 0 12px' }}>
+          <li>PhotoFleurで開催したいイベント</li>
+          <li>おすすめの撮影場所</li>
+          <li>撮影会のシステム的な問題・改善点</li>
+          <li>その他ご意見</li>
+        </ul>
+        <p style={{ fontSize: 12, color: '#aaa', margin: '0 0 16px' }}>
+          ※送信専用ですので、返答が必要なものは公式LINEよりお願いいたします。
+        </p>
+        <Link href="/feedback"
+          style={{ display: 'inline-block', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '12px 28px', fontSize: 14, fontWeight: 700 }}>
+          📮 ご意見箱はこちら
+        </Link>
+      </section>
+
+      {/* 写真提供 */}
+      <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #d6ecf5', marginBottom: 24 }}>
+        <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 8 }}>📸 撮影データのご提供</h2>
+        <p style={{ fontSize: 13, color: '#555', lineHeight: 1.9, marginBottom: 4 }}>
+          所属モデルのとっておきの写真を集めています！<br />
+          ホームページや撮影会内で使用しても良いお写真のご提供にご協力いただけましたら幸いです。
+        </p>
+        <p style={{ fontSize: 12, color: '#888', marginBottom: 20 }}>よろしくお願いいたします。</p>
+
+        {uploadDone && (
+          <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#388e3c' }}>
+            ありがとうございます！写真を受け取りました。
+          </div>
+        )}
+
+        <form onSubmit={uploadPhotos}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: '#555' }}>写真を選択（複数可）</label>
+            <input type="file" accept="image/*" multiple onChange={e => setPhotoFiles(Array.from(e.target.files))}
+              style={{ fontSize: 13, color: '#555' }} />
+            {photoFiles.length > 0 && <p style={{ fontSize: 12, color: '#888', marginTop: 4 }}>{photoFiles.length}枚選択中</p>}
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#555' }}>写っているモデル（複数選択可）</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {models.filter(m => m.status === 'active').map(m => (
+                <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, background: photoModelIds.includes(m.id) ? '#e8eaf6' : '#f5f5f5', borderRadius: 20, padding: '6px 14px', border: photoModelIds.includes(m.id) ? '1px solid #1a3560' : '1px solid #e0e0e0' }}>
+                  <input type="checkbox" checked={photoModelIds.includes(m.id)} onChange={() => toggleModel(m.id)} style={{ display: 'none' }} />
+                  {m.image && <img src={m.image} style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />}
+                  <span style={{ color: photoModelIds.includes(m.id) ? '#1a3560' : '#555', fontWeight: photoModelIds.includes(m.id) ? 700 : 400 }}>{m.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: '#555' }}>SNS URL（クレジット表記用・任意）</label>
+            <input style={inp} value={photoSnsUrl} onChange={e => setPhotoSnsUrl(e.target.value)} placeholder="https://instagram.com/..." />
+          </div>
+
+          <button type="submit" disabled={uploading || photoFiles.length === 0}
+            style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 28px', fontWeight: 700, fontSize: 14, cursor: photoFiles.length === 0 ? 'not-allowed' : 'pointer', opacity: (uploading || photoFiles.length === 0) ? 0.6 : 1 }}>
+            {uploading ? 'アップロード中...' : '送信する'}
+          </button>
+        </form>
+      </section>
+
+      {/* 予約履歴（直近3件） */}
       <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #d6ecf5' }}>
-        <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 20 }}>予約履歴</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a3560', margin: 0 }}>予約履歴</h2>
+          {bookings.length > 3 && (
+            <Link href="/my/bookings" style={{ fontSize: 13, color: '#1a3560', fontWeight: 600, textDecoration: 'none' }}>
+              すべて見る（{bookings.length}件） →
+            </Link>
+          )}
+        </div>
         {bookings.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '32px 0', color: '#bbb' }}>
             <p style={{ marginBottom: 16 }}>まだ予約履歴がありません。</p>
             <Link href="/schedule" style={{ color: '#1a3560', fontWeight: 600, fontSize: 14 }}>スケジュールを見る →</Link>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {bookings.map(b => {
-              const typeLabel = b.event_type === 'street' ? 'ストリート' : b.event_type === 'studio' ? 'スタジオ' : ''
-              const typeColor = b.event_type === 'street' ? { bg: '#e8f5e9', color: '#388e3c' } : { bg: '#e8eaf6', color: '#3949ab' }
-              const isPaid = b.payment_method === 'card'
-              return (
-                <div key={b.id} style={{ padding: '14px 16px', borderRadius: 10, border: '1px solid #e8f4fb', background: '#f8fbff' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                        {typeLabel && <span style={{ fontSize: 11, background: typeColor.bg, color: typeColor.color, borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>{typeLabel}</span>}
-                        <span style={{ fontWeight: 700, fontSize: 15, color: '#1a3560' }}>{formatDate(b.event_date)}</span>
-                        <span style={{ fontSize: 13, color: '#555' }}>{b.slot_label}</span>
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {recentBookings.map(b => {
+                const tc = typeColors[b.event_type] || { bg: '#f5f5f5', color: '#888', label: '' }
+                const isPaid = b.payment_method === 'card'
+                return (
+                  <div key={b.id} style={{ padding: '14px 16px', borderRadius: 10, border: '1px solid #e0ecf8', background: '#f8fbff' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                          {tc.label && <span style={{ fontSize: 11, background: tc.bg, color: tc.color, borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>{tc.label}</span>}
+                          <span style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>{formatDate(b.event_date)}</span>
+                        </div>
+                        {b.event_title && <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 2 }}>{b.event_title}</div>}
+                        {b.location_name && <div style={{ fontSize: 12, color: '#888', marginBottom: 2 }}>{b.location_name}</div>}
+                        <div style={{ fontSize: 13, color: '#555', marginBottom: 2 }}>{b.slot_label}</div>
+                        {b.model_name && <div style={{ fontSize: 12, color: '#888' }}>モデル：{b.model_name}</div>}
                       </div>
-                      {b.model_name && <div style={{ fontSize: 13, color: '#888' }}>モデル：{b.model_name}</div>}
-                      {b.location_name && <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{b.location_name}</div>}
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: 700, color: '#1a3560', fontSize: 15 }}>¥{(b.final_price || 0).toLocaleString()}</div>
-                      <div style={{ fontSize: 12, color: isPaid ? '#388e3c' : '#e65100', marginTop: 2 }}>
-                        {isPaid ? '💳 カード済み' : '💴 現金払い'}
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontWeight: 700, color: '#1a3560', fontSize: 15 }}>¥{(b.final_price || 0).toLocaleString()}</div>
+                        <div style={{ fontSize: 12, color: isPaid ? '#0097a7' : '#e65100', marginTop: 2 }}>
+                          {isPaid ? '💳 カード払い' : '💴 現金払い'}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+            {bookings.length > 3 && (
+              <div style={{ textAlign: 'center', marginTop: 16 }}>
+                <Link href="/my/bookings" style={{ fontSize: 13, color: '#1a3560', fontWeight: 600, textDecoration: 'none', borderBottom: '1px solid #1a3560', paddingBottom: 2 }}>
+                  すべての予約履歴を見る（{bookings.length}件） →
+                </Link>
+              </div>
+            )}
+          </>
         )}
       </section>
     </div>

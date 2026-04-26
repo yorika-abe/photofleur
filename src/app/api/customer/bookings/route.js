@@ -17,7 +17,7 @@ export async function GET() {
   const slotIds = bookings.map(b => b.slot_id).filter(Boolean)
   const { data: slots } = await admin
     .from('booking_slots')
-    .select('id, slot_label, event_entry_id')
+    .select('id, slot_label, event_entry_id, start_time, end_time, slot_order')
     .in('id', slotIds)
 
   const entryIds = (slots || []).map(s => s.event_entry_id).filter(Boolean)
@@ -27,7 +27,7 @@ export async function GET() {
 
   const eventIds = (entries || []).map(e => e.event_id).filter(Boolean)
   const { data: events } = eventIds.length
-    ? await admin.from('events').select('id, event_date, event_type, location_name').in('id', eventIds)
+    ? await admin.from('events').select('id, event_date, event_type, location_name, title').in('id', eventIds)
     : { data: [] }
 
   const slotMap = Object.fromEntries((slots || []).map(s => [s.id, s]))
@@ -41,9 +41,11 @@ export async function GET() {
     return {
       ...b,
       slot_label: slot?.slot_label || '',
+      slot_order: slot?.slot_order ?? null,
       model_name: entry?.models?.name || '',
       event_date: event?.event_date || '',
       event_type: event?.event_type || '',
+      event_title: event?.title || '',
       location_name: event?.location_name || '',
     }
   })
