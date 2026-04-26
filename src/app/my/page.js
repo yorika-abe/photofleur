@@ -27,9 +27,11 @@ export default function MyPage() {
   const [saved, setSaved] = useState(false)
   const [photoFiles, setPhotoFiles] = useState([])
   const [photoModelIds, setPhotoModelIds] = useState([])
-  const [photoSnsUrl, setPhotoSnsUrl] = useState('')
   const [uploading, setUploading] = useState(false)
   const [uploadDone, setUploadDone] = useState(false)
+  const [feedbackContent, setFeedbackContent] = useState('')
+  const [feedbackSending, setFeedbackSending] = useState(false)
+  const [feedbackDone, setFeedbackDone] = useState(false)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -87,14 +89,26 @@ export default function MyPage() {
     const fd = new FormData()
     for (const f of photoFiles) fd.append('files', f)
     fd.append('model_ids', JSON.stringify(photoModelIds))
-    fd.append('sns_url', photoSnsUrl)
+    fd.append('sns_url', form.sns_url || '')
     await fetch('/api/customer/contributed-photos', { method: 'POST', body: fd })
     setUploading(false)
     setUploadDone(true)
     setPhotoFiles([])
     setPhotoModelIds([])
-    setPhotoSnsUrl('')
     setTimeout(() => setUploadDone(false), 4000)
+  }
+
+  async function submitFeedback(e) {
+    e.preventDefault()
+    if (!feedbackContent.trim()) return
+    setFeedbackSending(true)
+    const res = await fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: feedbackContent }),
+    })
+    setFeedbackSending(false)
+    if (res.ok) { setFeedbackDone(true); setFeedbackContent(''); setTimeout(() => setFeedbackDone(false), 4000) }
   }
 
   function toggleModel(id) {
@@ -143,23 +157,31 @@ export default function MyPage() {
 
       {/* 意見箱 */}
       <section style={{ background: '#f8fbff', borderRadius: 14, padding: '24px', border: '1px solid #d6ecf5', marginBottom: 24 }}>
-        <p style={{ fontSize: 14, color: '#333', lineHeight: 1.9, margin: '0 0 12px' }}>
-          PhotoFleurでは日々改善・改良を重ね邁進しております。<br />
-          下記のようなご意見がございましたら、ぜひお聞かせください。
+        <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 8 }}>📮 ご意見箱</h2>
+        <p style={{ fontSize: 13, color: '#555', lineHeight: 1.8, margin: '0 0 8px' }}>
+          PhotoFleurでは日々改善・改良を重ね邁進しております。ご意見をお聞かせください。
         </p>
-        <ul style={{ fontSize: 13, color: '#555', lineHeight: 2.2, paddingLeft: 20, margin: '0 0 12px' }}>
+        <ul style={{ fontSize: 12, color: '#888', lineHeight: 2, paddingLeft: 18, margin: '0 0 8px' }}>
           <li>PhotoFleurで開催したいイベント</li>
           <li>おすすめの撮影場所</li>
           <li>撮影会のシステム的な問題・改善点</li>
           <li>その他ご意見</li>
         </ul>
-        <p style={{ fontSize: 12, color: '#aaa', margin: '0 0 16px' }}>
-          ※送信専用ですので、返答が必要なものは公式LINEよりお願いいたします。
-        </p>
-        <Link href="/feedback"
-          style={{ display: 'inline-block', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '12px 28px', fontSize: 14, fontWeight: 700 }}>
-          📮 ご意見箱はこちら
-        </Link>
+        <p style={{ fontSize: 11, color: '#bbb', margin: '0 0 14px' }}>※送信専用ですので、返答が必要なものは公式LINEよりお願いいたします。</p>
+        {feedbackDone && (
+          <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 8, padding: '10px 16px', marginBottom: 12, fontSize: 13, color: '#388e3c' }}>
+            ありがとうございます！送信されました。
+          </div>
+        )}
+        <form onSubmit={submitFeedback}>
+          <textarea value={feedbackContent} onChange={e => setFeedbackContent(e.target.value)}
+            placeholder="ご自由にお書きください..."
+            style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', minHeight: 90, resize: 'vertical', marginBottom: 12 }} />
+          <button type="submit" disabled={feedbackSending || !feedbackContent.trim()}
+            style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: (!feedbackContent.trim() || feedbackSending) ? 0.6 : 1 }}>
+            {feedbackSending ? '送信中...' : '送信する'}
+          </button>
+        </form>
       </section>
 
       {/* 写真提供 */}
@@ -198,10 +220,9 @@ export default function MyPage() {
             </div>
           </div>
 
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: '#555' }}>SNS URL（クレジット表記用・任意）</label>
-            <input style={inp} value={photoSnsUrl} onChange={e => setPhotoSnsUrl(e.target.value)} placeholder="https://instagram.com/..." />
-          </div>
+          {form.sns_url && (
+            <p style={{ fontSize: 12, color: '#888', margin: '0 0 16px' }}>クレジット表記：登録済みSNS URL（{form.sns_url}）を使用します</p>
+          )}
 
           <button type="submit" disabled={uploading || photoFiles.length === 0}
             style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 28px', fontWeight: 700, fontSize: 14, cursor: photoFiles.length === 0 ? 'not-allowed' : 'pointer', opacity: (uploading || photoFiles.length === 0) ? 0.6 : 1 }}>

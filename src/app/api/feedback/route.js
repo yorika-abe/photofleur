@@ -10,21 +10,17 @@ export async function POST(req) {
 
   const admin = await createSupabaseAdminClient()
 
-  // 直近の予約からSNS URLを取得
-  const { data: latestBooking } = await admin
-    .from('bookings')
+  const { data: profile } = await admin
+    .from('user_profiles')
     .select('sns_url')
-    .eq('user_id', user.id)
-    .not('sns_url', 'is', null)
-    .order('created_at', { ascending: false })
-    .limit(1)
+    .eq('id', user.id)
     .single()
 
   const { error } = await admin.from('feedbacks').insert({
     user_id: user.id,
     user_email: user.email,
     content: content.trim(),
-    sns_url: latestBooking?.sns_url || null,
+    sns_url: profile?.sns_url || null,
   })
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
