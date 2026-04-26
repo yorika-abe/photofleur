@@ -94,8 +94,13 @@ export default function MyPage() {
     for (const f of photoFiles) fd.append('files', f)
     fd.append('model_ids', JSON.stringify(photoModelIds))
     fd.append('sns_url', form.sns_url || '')
-    await fetch('/api/customer/contributed-photos', { method: 'POST', body: fd })
+    const res = await fetch('/api/customer/contributed-photos', { method: 'POST', body: fd })
+    const json = await res.json()
     setUploading(false)
+    if (!res.ok || json.error) {
+      alert('アップロードに失敗しました: ' + (json.error || res.status))
+      return
+    }
     setUploadDone(true)
     setPhotoFiles([])
     setPhotoModelIds([])
