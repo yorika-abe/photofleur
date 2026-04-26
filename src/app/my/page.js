@@ -221,13 +221,17 @@ export default function MyPage() {
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: '#555' }}>写真を選択（複数可）</label>
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', background: '#e0f2fe', color: '#0369a1', border: '2px dashed #0369a1', borderRadius: 10, padding: '12px 20px', fontSize: 14, fontWeight: 600 }}>
-              📁 ファイルを選択する
-              <input type="file" accept="image/*" multiple onChange={e => setPhotoFiles(Array.from(e.target.files))} style={{ display: 'none' }} />
+              📁 ファイルを追加する
+              <input type="file" accept="image/*" multiple onChange={e => setPhotoFiles(prev => [...prev, ...Array.from(e.target.files)])} style={{ display: 'none' }} />
             </label>
-            {photoFiles.length > 0
-              ? <p style={{ fontSize: 13, color: '#0369a1', marginTop: 8, fontWeight: 600 }}>✅ {photoFiles.length}枚選択中</p>
-              : <p style={{ fontSize: 12, color: '#aaa', marginTop: 6 }}>選択されていません</p>
-            }
+            {photoFiles.length > 0 ? (
+              <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <p style={{ fontSize: 13, color: '#0369a1', fontWeight: 600, margin: 0 }}>✅ {photoFiles.length}枚選択中</p>
+                <button type="button" onClick={() => setPhotoFiles([])} style={{ fontSize: 12, color: '#e53935', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>✕ クリア</button>
+              </div>
+            ) : (
+              <p style={{ fontSize: 12, color: '#aaa', marginTop: 6 }}>選択されていません（複数回タップして追加できます）</p>
+            )}
           </div>
 
           <div style={{ marginBottom: 16 }}>
