@@ -133,6 +133,12 @@ export default function AdminSchedulePage() {
           return (
             <div key={ev.id} style={{ background: '#fff', borderRadius: 12, padding: '16px 20px', border: '1px solid #e5e5e5', opacity: isPast ? 0.75 : 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 14, flex: 1, minWidth: 0 }}>
+                  {ev.main_image && (
+                    <div style={{ flexShrink: 0, width: 72, height: 72, borderRadius: 8, overflow: 'hidden', background: '#f0f4fb' }}>
+                      <img src={ev.main_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  )}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6, flexWrap: 'wrap' }}>
                     <span style={{ background: typeColor.bg, color: typeColor.color, borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{typeLabel}</span>
@@ -157,6 +163,7 @@ export default function AdminSchedulePage() {
                       ))}
                     </div>
                   )}
+                </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                   <button onClick={() => toggleStatus(ev)}
