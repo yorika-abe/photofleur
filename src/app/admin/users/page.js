@@ -33,6 +33,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('all')
   const [changing, setChanging] = useState(null)
+  const [search, setSearch] = useState('')
 
   useEffect(() => { load() }, [])
 
@@ -62,10 +63,13 @@ export default function UsersPage() {
 
   const filtered = users.filter(u => {
     const roles = u.roles || []
-    if (tab === 'all') return true
-    if (tab === 'admin') return roles.includes('admin')
-    if (tab === 'model') return roles.includes('model')
-    if (tab === 'photographer') return !roles.includes('admin') && !roles.includes('model')
+    if (tab === 'admin' && !roles.includes('admin')) return false
+    if (tab === 'model' && !roles.includes('model')) return false
+    if (tab === 'photographer' && (roles.includes('admin') || roles.includes('model'))) return false
+    if (search) {
+      const q = search.toLowerCase()
+      return (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)
+    }
     return true
   })
 
@@ -80,11 +84,18 @@ export default function UsersPage() {
       <Link href="/admin" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
       <h1 style={{ fontSize: 24, fontWeight: 700, color: '#2f2244', margin: '8px 0 24px' }}>ユーザー権限管理</h1>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={tabStyle(t.key)}>{t.label}</button>
         ))}
       </div>
+      <input
+        type="text"
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="名前・メールアドレスで検索"
+        style={{ width: '100%', padding: '10px 14px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, marginBottom: 20, boxSizing: 'border-box' }}
+      />
 
       {loading ? (
         <p style={{ color: '#999' }}>読み込み中...</p>
