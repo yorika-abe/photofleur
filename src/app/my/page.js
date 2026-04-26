@@ -215,9 +215,14 @@ export default function MyPage() {
         <form onSubmit={uploadPhotos}>
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: '#555' }}>写真を選択（複数可）</label>
-            <input type="file" accept="image/*" multiple onChange={e => setPhotoFiles(Array.from(e.target.files))}
-              style={{ fontSize: 13, color: '#555' }} />
-            {photoFiles.length > 0 && <p style={{ fontSize: 12, color: '#888', marginTop: 4 }}>{photoFiles.length}枚選択中</p>}
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', background: '#e0f2fe', color: '#0369a1', border: '2px dashed #0369a1', borderRadius: 10, padding: '12px 20px', fontSize: 14, fontWeight: 600 }}>
+              📁 ファイルを選択する
+              <input type="file" accept="image/*" multiple onChange={e => setPhotoFiles(Array.from(e.target.files))} style={{ display: 'none' }} />
+            </label>
+            {photoFiles.length > 0
+              ? <p style={{ fontSize: 13, color: '#0369a1', marginTop: 8, fontWeight: 600 }}>✅ {photoFiles.length}枚選択中</p>
+              : <p style={{ fontSize: 12, color: '#aaa', marginTop: 6 }}>選択されていません</p>
+            }
           </div>
 
           <div style={{ marginBottom: 16 }}>
