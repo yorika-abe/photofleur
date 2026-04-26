@@ -11,6 +11,7 @@ export default async function AdminPage() {
   const today = new Date().toISOString().split('T')[0]
   const cookieStore = await cookies()
   const lastViewed = cookieStore.get('bookings_last_viewed')?.value
+  const lastViewedPhotos = cookieStore.get('photos_last_viewed')?.value
 
   const [
     { count: pendingShifts },
@@ -18,6 +19,7 @@ export default async function AdminPage() {
     { count: newBookings },
     { count: pendingPrivateInfo },
     { count: unreadFeedback },
+    { count: newPhotos },
   ] = await Promise.all([
     supabase.from('model_shifts').select('*', { count: 'exact', head: true }).eq('status', 'pending_approval').gte('event_date', today),
     supabase.from('models').select('*', { count: 'exact', head: true }).not('pending_data', 'is', null),
@@ -26,6 +28,9 @@ export default async function AdminPage() {
       : supabase.from('bookings').select('*', { count: 'exact', head: true }),
     supabase.from('model_private_info').select('*', { count: 'exact', head: true }).not('pending_changes', 'is', null),
     supabase.from('feedbacks').select('*', { count: 'exact', head: true }).eq('is_read', false),
+    lastViewedPhotos
+      ? supabase.from('contributed_photos').select('*', { count: 'exact', head: true }).gt('created_at', lastViewedPhotos)
+      : supabase.from('contributed_photos').select('*', { count: 'exact', head: true }),
   ])
 
   return (
@@ -51,7 +56,7 @@ export default async function AdminPage() {
           { href: '/admin/representative', label: '代表メッセージ', icon: '✉️' },
           { href: '/admin/users', label: 'ユーザー権限管理', icon: '🔑' },
           { href: '/admin/private-info', label: '非公開登録情報', icon: '🔒', badge: pendingPrivateInfo ?? 0 },
-          { href: '/admin/photos', label: 'ご提供写真', icon: '📸' },
+          { href: '/admin/photos', label: 'ご提供写真', icon: '📸', badge: newPhotos ?? 0 },
         ].map(link => (
           <Link key={link.href} href={link.href} style={{ textDecoration: 'none' }}>
             <div style={{ background: '#1a3560', color: '#fff', borderRadius: 12, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>

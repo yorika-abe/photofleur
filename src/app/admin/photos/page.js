@@ -13,10 +13,13 @@ export default function AdminPhotosPage() {
   const [photos, setPhotos] = useState([])
   const [models, setModels] = useState([])
   const [loading, setLoading] = useState(true)
-
   const [fetchError, setFetchError] = useState(null)
+  const [expanded, setExpanded] = useState(null)
 
   useEffect(() => {
+    // Mark as viewed
+    document.cookie = `photos_last_viewed=${new Date().toISOString()};path=/;max-age=${60 * 60 * 24 * 365}`
+
     Promise.all([
       fetch('/api/customer/contributed-photos').then(r => r.json()),
       fetch('/api/admin/models').then(r => r.json()).then(d => d.models || []).catch(() => []),
@@ -44,19 +47,24 @@ export default function AdminPhotosPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
           {photos.map(p => (
             <div key={p.id} style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', overflow: 'hidden' }}>
-              <div style={{ aspectRatio: '4/3', background: '#f0f4fb', overflow: 'hidden' }}>
+              <div style={{ aspectRatio: '4/3', background: '#f0f4fb', overflow: 'hidden', cursor: 'pointer' }}
+                onClick={() => setExpanded(p)}>
                 <img src={p.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div style={{ padding: '12px 14px' }}>
-                <div style={{ fontSize: 11, color: '#999', marginBottom: 6 }}>{formatDateTime(p.created_at)}</div>
+                <div style={{ fontSize: 11, color: '#999', marginBottom: 8 }}>{formatDateTime(p.created_at)}</div>
+                <div style={{ fontSize: 12, color: '#555', marginBottom: 4 }}>
+                  <span style={{ color: '#999' }}>カメラマン：</span>{p.user_name || p.user_email}
+                </div>
                 {p.model_ids?.length > 0 && (
-                  <div style={{ fontSize: 12, color: '#555', marginBottom: 6 }}>
-                    モデル：{p.model_ids.map(id => modelMap[id] || id).join('、')}
+                  <div style={{ fontSize: 12, color: '#555', marginBottom: 4 }}>
+                    <span style={{ color: '#999' }}>モデル：</span>{p.model_ids.map(id => modelMap[id] || id).join('、')}
                   </div>
                 )}
                 {p.sns_url && (
-                  <div style={{ fontSize: 12, marginBottom: 10 }}>
-                    <a href={p.sns_url} target="_blank" rel="noopener noreferrer" style={{ color: '#1a3560', wordBreak: 'break-all' }}>{p.sns_url}</a>
+                  <div style={{ fontSize: 12, marginBottom: 10, wordBreak: 'break-all' }}>
+                    <span style={{ color: '#999' }}>SNS：</span>
+                    <a href={p.sns_url} target="_blank" rel="noopener noreferrer" style={{ color: '#1a3560' }}>{p.sns_url}</a>
                   </div>
                 )}
                 <a href={p.photo_url} download target="_blank" rel="noopener noreferrer"
@@ -66,6 +74,18 @@ export default function AdminPhotosPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {expanded && (
+        <div onClick={() => setExpanded(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <img src={expanded.photo_url} alt=""
+            style={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain', borderRadius: 8 }}
+            onClick={e => e.stopPropagation()} />
+          <button onClick={() => setExpanded(null)}
+            style={{ position: 'absolute', top: 20, right: 24, background: 'none', border: 'none', color: '#fff', fontSize: 32, cursor: 'pointer', lineHeight: 1 }}>✕</button>
         </div>
       )}
     </div>
