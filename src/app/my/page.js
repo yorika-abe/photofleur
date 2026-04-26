@@ -25,6 +25,7 @@ export default function MyPage() {
   const [form, setForm] = useState({ last_name: '', first_name: '', last_name_kana: '', first_name_kana: '', phone: '', sns_url: '' })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [savedProfile, setSavedProfile] = useState({})
   const [photoFiles, setPhotoFiles] = useState([])
   const [photoModelIds, setPhotoModelIds] = useState([])
   const [uploading, setUploading] = useState(false)
@@ -55,14 +56,16 @@ export default function MyPage() {
       setBookings(bookings || [])
       setModels(modelsRes.models || [])
       if (profile) {
-        setForm({
+        const p = {
           last_name: profile.last_name || '',
           first_name: profile.first_name || '',
           last_name_kana: profile.last_name_kana || '',
           first_name_kana: profile.first_name_kana || '',
           phone: profile.phone || '',
           sns_url: profile.sns_url || '',
-        })
+        }
+        setForm(p)
+        setSavedProfile(p)
       }
       setLoading(false)
     }
@@ -79,6 +82,7 @@ export default function MyPage() {
     })
     setSaving(false)
     setSaved(true)
+    setSavedProfile(form)
     setTimeout(() => setSaved(false), 3000)
   }
 
@@ -117,10 +121,10 @@ export default function MyPage() {
 
   const inp = { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }
   const recentBookings = bookings.slice(0, 3)
-  const profileComplete = !!(form.last_name && form.first_name && form.last_name_kana && form.first_name_kana && form.phone && form.sns_url)
+  const profileComplete = !!(savedProfile.last_name && savedProfile.first_name && savedProfile.last_name_kana && savedProfile.first_name_kana && savedProfile.phone && savedProfile.sns_url)
   const profileIncompleteNotice = (
     <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: '14px 18px', fontSize: 13, color: '#795548' }}>
-      ⚠️ 上の<strong>登録情報をすべて入力して保存</strong>してからご利用いただけます。（姓・名・フリガナ・電話番号・SNS URLが必要です）
+      ⚠️ マイページ上の登録情報を全てご記入ください。
     </div>
   )
 
