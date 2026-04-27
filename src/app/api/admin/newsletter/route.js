@@ -30,8 +30,8 @@ export async function POST(req) {
   const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
   if (!roles.includes('admin')) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { subject, body } = await req.json()
-  if (!subject?.trim() || !body?.trim()) return Response.json({ error: 'subject and body required' }, { status: 400 })
+  const { subject, html } = await req.json()
+  if (!subject?.trim() || !html?.trim()) return Response.json({ error: 'subject and html required' }, { status: 400 })
 
   const { data } = await admin
     .from('bookings')
@@ -42,25 +42,6 @@ export async function POST(req) {
   if (emails.length === 0) return Response.json({ error: '送信先がいません' }, { status: 400 })
 
   const resend = new Resend(process.env.RESEND_API_KEY)
-
-  const htmlBody = body
-    .split('\n')
-    .map(line => line === '' ? '<br>' : `<p style="margin:0 0 12px;font-size:14px;line-height:1.8;color:#333;">${line}</p>`)
-    .join('')
-
-  const html = `
-    <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;">
-      <div style="background:#1a3560;padding:28px 32px;text-align:center;">
-        <span style="color:#fff;font-size:22px;font-weight:700;letter-spacing:0.05em;">PhotoFleur</span>
-      </div>
-      <div style="padding:32px;">
-        ${htmlBody}
-      </div>
-      <div style="background:#f5f5f5;padding:20px 32px;font-size:12px;color:#888;text-align:center;">
-        PhotoFleur | このメールは撮影会予約時にメルマガを希望されたお客様にお送りしています。
-      </div>
-    </div>
-  `
 
   let sent = 0
   let failed = 0

@@ -1,15 +1,19 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 
+const EmailEditor = dynamic(() => import('react-email-editor'), { ssr: false })
+
 export default function NewsletterPage() {
-  const [subscriberCount, setSubscriberCount] = useState(null)
+  const editorRef = useRef(null)
   const [subject, setSubject] = useState('')
-  const [body, setBody] = useState('')
+  const [subscriberCount, setSubscriberCount] = useState(null)
   const [sending, setSending] = useState(false)
   const [result, setResult] = useState(null)
   const [confirmed, setConfirmed] = useState(false)
+  const [editorReady, setEditorReady] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/newsletter').then(r => r.json()).then(d => {
@@ -17,95 +21,103 @@ export default function NewsletterPage() {
     })
   }, [])
 
-  async function send() {
-    setSending(true)
-    setResult(null)
-    const res = await fetch('/api/admin/newsletter', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subject, body }),
-    })
-    const json = await res.json()
-    setSending(false)
-    setConfirmed(false)
-    if (!res.ok) setResult({ error: json.error })
-    else setResult({ ok: true, sent: json.sent, failed: json.failed, total: json.total })
+  function handleConfirm() {
+    if (!subject.trim()) { alert('件名を入力してください'); return }
+    setConfirmed(true)
   }
 
-  const canSend = subject.trim() && body.trim() && subscriberCount > 0
+  function handleSend() {
+    if (!editorRef.current?.editor) return
+    setSending(true)
+    setResult(null)
+    editorRef.current.editor.exportHtml(async ({ html }) => {
+      const res = await fetch('/api/admin/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject, html }),
+      })
+      const json = await res.json()
+      setSending(false)
+      setConfirmed(false)
+      if (!res.ok) setResult({ error: json.error })
+      else setResult({ ok: true, sent: json.sent, failed: json.failed })
+    })
+  }
 
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto', padding: '32px 20px' }}>
-      <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1a3560', margin: '8px 0 8px' }}>📧 メルマガ配信</h1>
-      <p style={{ fontSize: 13, color: '#888', marginBottom: 28 }}>
-        メルマガ同意済みのカメラマン：
-        <strong style={{ color: subscriberCount === null ? '#aaa' : '#1a3560' }}>
-          {subscriberCount === null ? '読み込み中...' : `${subscriberCount}名`}
-        </strong>
-      </p>
+    <div style={{ minHeight: '100vh', background: '#f5f7fb' }}>
+      {/* Header bar */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #e0e8f0', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 16, position: 'sticky', top: 0, zIndex: 100 }}>
+        <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none', flexShrink: 0 }}>← 管理画面</Link>
+        <span style={{ fontSize: 16, fontWeight: 700, color: '#1a3560' }}>📧 メルマガ配信</span>
+        <span style={{ fontSize: 12, color: '#888' }}>
+          同意済み：<strong style={{ color: '#1a3560' }}>{subscriberCount === null ? '...' : `${subscriberCount}名`}</strong>
+        </span>
+        <div style={{ flex: 1 }} />
 
-      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #d6ecf5', padding: 28 }}>
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>件名</label>
-          <input
-            value={subject}
-            onChange={e => setSubject(e.target.value)}
-            placeholder="メールの件名"
-            style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: 24 }}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>本文</label>
-          <textarea
-            value={body}
-            onChange={e => setBody(e.target.value)}
-            placeholder="メール本文を入力してください。改行はそのまま反映されます。"
-            rows={12}
-            style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.7 }}
-          />
-        </div>
+        <input
+          value={subject}
+          onChange={e => setSubject(e.target.value)}
+          placeholder="件名を入力"
+          style={{ width: 280, padding: '8px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 14 }}
+        />
 
         {!confirmed ? (
           <button
-            onClick={() => setConfirmed(true)}
-            disabled={!canSend}
-            style={{ background: canSend ? '#1a3560' : '#ccc', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: canSend ? 'pointer' : 'not-allowed' }}>
-            送信内容を確認する
+            onClick={handleConfirm}
+            disabled={!editorReady || !subject.trim()}
+            style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 22px', fontSize: 14, fontWeight: 700, cursor: (!editorReady || !subject.trim()) ? 'not-allowed' : 'pointer', opacity: (!editorReady || !subject.trim()) ? 0.5 : 1 }}>
+            送信確認
           </button>
         ) : (
-          <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: '16px 20px', marginTop: 4 }}>
-            <p style={{ fontSize: 14, color: '#795548', margin: '0 0 12px', fontWeight: 600 }}>
-              {subscriberCount}名に送信します。よろしいですか？
-            </p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={send}
-                disabled={sending}
-                style={{ background: '#e53935', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 700, cursor: sending ? 'not-allowed' : 'pointer', opacity: sending ? 0.6 : 1 }}>
-                {sending ? '送信中...' : '送信する'}
-              </button>
-              <button
-                onClick={() => setConfirmed(false)}
-                style={{ background: '#eee', color: '#555', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 14, cursor: 'pointer' }}>
-                キャンセル
-              </button>
-            </div>
-          </div>
-        )}
-
-        {result && (
-          <div style={{ marginTop: 16, padding: '14px 18px', borderRadius: 10, background: result.error ? '#ffebee' : '#e8f5e9', border: `1px solid ${result.error ? '#ffcdd2' : '#c8e6c9'}` }}>
-            {result.error
-              ? <p style={{ color: '#e53935', margin: 0, fontSize: 14 }}>エラー: {result.error}</p>
-              : <p style={{ color: '#388e3c', margin: 0, fontSize: 14, fontWeight: 600 }}>
-                  ✅ 送信完了：{result.sent}件成功 {result.failed > 0 && `/ ${result.failed}件失敗`}
-                </p>
-            }
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: 13, color: '#795548', fontWeight: 600 }}>{subscriberCount}名に送信</span>
+            <button
+              onClick={handleSend}
+              disabled={sending}
+              style={{ background: '#e53935', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 22px', fontSize: 14, fontWeight: 700, cursor: sending ? 'not-allowed' : 'pointer', opacity: sending ? 0.6 : 1 }}>
+              {sending ? '送信中...' : '送信する'}
+            </button>
+            <button
+              onClick={() => setConfirmed(false)}
+              style={{ background: '#eee', color: '#555', border: 'none', borderRadius: 8, padding: '9px 16px', fontSize: 13, cursor: 'pointer' }}>
+              戻る
+            </button>
           </div>
         )}
       </div>
+
+      {result && (
+        <div style={{ padding: '10px 24px', background: result.error ? '#ffebee' : '#e8f5e9', borderBottom: `1px solid ${result.error ? '#ffcdd2' : '#c8e6c9'}`, fontSize: 14 }}>
+          {result.error
+            ? <span style={{ color: '#e53935' }}>エラー: {result.error}</span>
+            : <span style={{ color: '#388e3c', fontWeight: 600 }}>✅ 送信完了：{result.sent}件成功{result.failed > 0 ? ` / ${result.failed}件失敗` : ''}</span>
+          }
+        </div>
+      )}
+
+      {/* Unlayer editor */}
+      <EmailEditor
+        ref={editorRef}
+        minHeight="calc(100vh - 57px)"
+        onReady={() => setEditorReady(true)}
+        options={{
+          locale: 'ja-JP',
+          features: { stockImages: { enabled: false } },
+          tools: {
+            image: { enabled: true },
+            video: { enabled: true },
+            social: { enabled: true },
+            divider: { enabled: true },
+            button: { enabled: true },
+            text: { enabled: true },
+          },
+          appearance: {
+            theme: 'light',
+            panels: { tools: { dock: 'left' } },
+          },
+        }}
+      />
     </div>
   )
 }
