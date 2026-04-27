@@ -21,6 +21,17 @@ export default function NewsletterPage() {
     })
   }, [])
 
+  function handleImageUpload(file, done) {
+    const fd = new FormData()
+    fd.append('file', file.attachments[0])
+    fetch('/api/admin/upload-image', { method: 'POST', body: fd })
+      .then(r => r.json())
+      .then(({ url, error }) => {
+        if (error) { alert('画像アップロード失敗: ' + error); return }
+        done({ progress: 100, url })
+      })
+  }
+
   function handleConfirm() {
     if (!subject.trim()) { alert('件名を入力してください'); return }
     setConfirmed(true)
@@ -100,7 +111,10 @@ export default function NewsletterPage() {
       <EmailEditor
         ref={editorRef}
         minHeight="calc(100vh - 57px)"
-        onReady={() => setEditorReady(true)}
+        onReady={() => {
+          setEditorReady(true)
+          editorRef.current.editor.registerCallback('image', handleImageUpload)
+        }}
         options={{
           locale: 'ja-JP',
           translations: {
