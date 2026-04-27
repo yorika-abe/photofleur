@@ -24,6 +24,7 @@ function formatDateTime(str) {
 export default function ModelPhotosPage() {
   const [photos, setPhotos] = useState([])
   const [loading, setLoading] = useState(true)
+  const [expanded, setExpanded] = useState(null)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -51,7 +52,7 @@ export default function ModelPhotosPage() {
   if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#aaa' }}>読み込み中...</div>
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 16px' }}>
+    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 16px' }}>
       <Link href="/model-portal" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← モデルポータル</Link>
       <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: '12px 0 24px' }}>📸 ご提供いただいた写真</h1>
 
@@ -60,24 +61,38 @@ export default function ModelPhotosPage() {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
           {photos.map(p => (
-            <div key={p.id} style={{ background: '#fff', borderRadius: 12, border: '1px solid #e0ecf8', overflow: 'hidden' }}>
-              <div style={{ aspectRatio: '4/3', background: '#f0f4fb', overflow: 'hidden' }}>
+            <div key={p.id} style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', overflow: 'hidden' }}>
+              <div style={{ aspectRatio: '4/3', background: '#f0f4fb', overflow: 'hidden', cursor: 'pointer' }}
+                onClick={() => setExpanded(p)}>
                 <img src={p.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <div style={{ padding: '12px 14px' }}>
-                <div style={{ fontSize: 11, color: '#aaa', marginBottom: 8 }}>{formatDateTime(p.created_at)}</div>
+                <div style={{ fontSize: 11, color: '#999', marginBottom: 8 }}>{formatDateTime(p.created_at)}</div>
                 {p.sns_url && (
-                  <div style={{ fontSize: 12, marginBottom: 10 }}>
-                    <a href={p.sns_url} target="_blank" rel="noopener noreferrer" style={{ color: '#1a3560', wordBreak: 'break-all' }}>{p.sns_url}</a>
+                  <div style={{ fontSize: 12, marginBottom: 6, wordBreak: 'break-all' }}>
+                    <span style={{ color: '#999' }}>SNS：</span>
+                    <a href={p.sns_url} target="_blank" rel="noopener noreferrer" style={{ color: '#1a3560' }}>{p.sns_url}</a>
                   </div>
                 )}
                 <button onClick={() => downloadPhoto(p.photo_url)}
-                  style={{ display: 'block', width: '100%', textAlign: 'center', background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                  style={{ display: 'block', width: '100%', textAlign: 'center', background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer', marginTop: 8 }}>
                   ダウンロード
                 </button>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {expanded && (
+        <div onClick={() => setExpanded(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <img src={expanded.photo_url} alt=""
+            style={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain', borderRadius: 8 }}
+            onClick={e => e.stopPropagation()} />
+          <button onClick={() => setExpanded(null)}
+            style={{ position: 'absolute', top: 20, right: 24, background: 'none', border: 'none', color: '#fff', fontSize: 32, cursor: 'pointer', lineHeight: 1 }}>✕</button>
         </div>
       )}
     </div>
