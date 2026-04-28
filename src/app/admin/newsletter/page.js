@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 
 const BLOCK_TYPES = [
@@ -93,11 +93,62 @@ ${footer}
 </body></html>`
 }
 
-function BlockPreview({ block, selected, onClick, onUp, onDown, onDelete, isFirst, isLast }) {
+function ResizableImage({ data, onResize }) {
+  const containerRef = useRef(null)
+
+  const startDrag = useCallback((e, dir) => {
+    e.stopPropagation()
+    e.preventDefault()
+    const startX = e.clientX
+    const startY = e.clientY
+    const startW = containerRef.current?.offsetWidth || 300
+    const startH = containerRef.current?.offsetHeight || 200
+
+    const onMove = (ev) => {
+      const dx = ev.clientX - startX
+      const dy = ev.clientY - startY
+      if (dir === 'right' || dir === 'corner') onResize('width', `${Math.max(60, startW + dx)}px`)
+      if (dir === 'bottom' || dir === 'corner') onResize('height', `${Math.max(40, startH + dy)}px`)
+    }
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }, [onResize])
+
+  if (!data.url) return <div style={{ background: '#f0f4fb', height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: 13, borderRadius: 4 }}>画像未選択</div>
+
+  const w = data.width && data.width !== '100%' ? data.width : '100%'
+  const h = data.height && data.height !== 'auto' ? data.height : 'auto'
+  const effects = { borderRadius: `${data.borderRadius || 0}px`, opacity: (data.opacity ?? 100) / 100, boxShadow: data.shadow ? '0 4px 16px rgba(0,0,0,0.2)' : 'none', filter: data.grayscale ? 'grayscale(100%)' : 'none' }
+  const handle = { position: 'absolute', background: '#1a3560', borderRadius: 2 }
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative', display: 'inline-block', width: w, maxWidth: '100%', margin: '0 auto' }}>
+      <img src={data.url} alt={data.alt || ''} style={{ width: '100%', height: h, objectFit: h === 'auto' ? 'fill' : 'cover', display: 'block', ...effects }} />
+      {/* Right handle */}
+      <div onMouseDown={e => startDrag(e, 'right')} style={{ ...handle, width: 8, height: 40, top: '50%', right: -4, transform: 'translateY(-50%)', cursor: 'ew-resize' }} />
+      {/* Bottom handle */}
+      <div onMouseDown={e => startDrag(e, 'bottom')} style={{ ...handle, width: 40, height: 8, bottom: -4, left: '50%', transform: 'translateX(-50%)', cursor: 'ns-resize' }} />
+      {/* Corner handle */}
+      <div onMouseDown={e => startDrag(e, 'corner')} style={{ ...handle, width: 12, height: 12, bottom: -4, right: -4, cursor: 'nwse-resize' }} />
+      <div style={{ position: 'absolute', bottom: 4, left: 4, fontSize: 10, color: 'rgba(255,255,255,0.8)', background: 'rgba(0,0,0,0.4)', borderRadius: 3, padding: '1px 5px', pointerEvents: 'none' }}>
+        {w} × {h}
+      </div>
+    </div>
+  )
+}
+
+function BlockPreview({ block, selected, onClick, onUp, onDown, onDelete, onResize, isFirst, isLast }) {
   return (
     <div onClick={onClick} style={{ position: 'relative', cursor: 'pointer', outline: selected ? '2px solid #1a3560' : '2px solid transparent', borderRadius: 4, marginBottom: 2 }}>
-      <div style={{ padding: '8px', background: selected ? '#f0f5ff' : 'transparent' }}>
-        <div dangerouslySetInnerHTML={{ __html: blockToHtml(block) }} style={{ pointerEvents: 'none' }} />
+      <div style={{ padding: '8px', background: selected ? '#f0f5ff' : 'transparent', textAlign: 'center' }}>
+        {selected && block.type === 'image'
+          ? <ResizableImage data={block.data} onResize={(key, val) => onResize(key, val)} />
+          : <div dangerouslySetInnerHTML={{ __html: blockToHtml(block) }} style={{ pointerEvents: 'none' }} />
+        }
       </div>
       {selected && (
         <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: 4, right: 4, display: 'flex', gap: 4 }}>
@@ -449,6 +500,7 @@ export default function NewsletterPage() {
                   onUp={() => moveBlock(block.id, -1)}
                   onDown={() => moveBlock(block.id, 1)}
                   onDelete={() => deleteBlock(block.id)}
+                  onResize={(key, val) => updateBlock(block.id, { ...block.data, [key]: val })}
                   isFirst={idx === 0} isLast={idx === blocks.length - 1} />
               ))}
             </div>
