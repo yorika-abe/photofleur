@@ -15,7 +15,7 @@ const BLOCK_TYPES = [
 const DEFAULTS = {
   heading: { text: '見出しテキスト', size: 26, align: 'center', color: '#1a3560' },
   text: { text: '本文テキストを入力してください。', size: 14, align: 'left', color: '#333333' },
-  image: { url: '', alt: '', link: '' },
+  image: { url: '', alt: '', link: '', width: '100%', height: 'auto' },
   button: { label: 'ボタン', url: '', bgColor: '#1a3560', textColor: '#ffffff', align: 'center' },
   divider: { color: '#e0e0e0', thickness: 1 },
   spacer: { height: 24 },
@@ -31,8 +31,10 @@ function blockToHtml(b) {
   if (type === 'heading') return `<h2 style="font-size:${data.size}px;color:${data.color};text-align:${data.align};margin:0 0 16px;font-weight:700;line-height:1.4;">${data.text}</h2>`
   if (type === 'text') return `<p style="font-size:${data.size}px;color:${data.color};text-align:${data.align};line-height:1.8;margin:0 0 16px;white-space:pre-wrap;">${data.text}</p>`
   if (type === 'image') {
-    if (!data.url) return '<div style="background:#f0f4fb;height:120px;display:flex;align-items:center;justify-content:center;margin:0 0 16px;border-radius:4px;color:#aaa;font-size:13px;">画像URL未設定</div>'
-    const img = `<img src="${data.url}" alt="${data.alt}" style="max-width:100%;display:block;margin:0 auto;" />`
+    if (!data.url) return '<div style="background:#f0f4fb;height:120px;display:flex;align-items:center;justify-content:center;margin:0 0 16px;border-radius:4px;color:#aaa;font-size:13px;">画像未選択</div>'
+    const wStyle = data.width && data.width !== '100%' ? `width:${data.width};` : 'max-width:100%;'
+    const hStyle = data.height && data.height !== 'auto' ? `height:${data.height};object-fit:cover;` : ''
+    const img = `<img src="${data.url}" alt="${data.alt}" style="${wStyle}${hStyle}display:block;margin:0 auto;" />`
     return `<div style="margin:0 0 16px;text-align:center;">${data.link ? `<a href="${data.link}" style="display:inline-block;">${img}</a>` : img}</div>`
   }
   if (type === 'button') return `<div style="text-align:${data.align};margin:0 0 16px;"><a href="${data.url || '#'}" style="display:inline-block;background:${data.bgColor};color:${data.textColor};text-decoration:none;border-radius:8px;padding:12px 32px;font-size:15px;font-weight:700;">${data.label}</a></div>`
@@ -124,20 +126,30 @@ function BlockEditor({ block, onChange }) {
       {type === 'image' && <>
         <div>
           <label style={lbl}>画像をアップロード</label>
-          <input type="file" accept="image/*" onChange={async e => {
-            const file = e.target.files[0]
-            if (!file) return
-            const fd = new FormData()
-            fd.append('file', file)
-            const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd })
-            const json = await res.json()
-            if (json.url) set('url', json.url)
-            else alert('アップロード失敗: ' + json.error)
-          }} style={{ fontSize: 13 }} />
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', background: '#e0f2fe', color: '#0369a1', border: '2px dashed #0369a1', borderRadius: 8, padding: '10px 16px', fontSize: 13, fontWeight: 600 }}>
+            📁 ファイルを選択
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => {
+              const file = e.target.files[0]
+              if (!file) return
+              const fd = new FormData()
+              fd.append('file', file)
+              const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd })
+              const json = await res.json()
+              if (json.url) set('url', json.url)
+              else alert('アップロード失敗: ' + json.error)
+            }} />
+          </label>
+          {data.url && <p style={{ fontSize: 11, color: '#388e3c', marginTop: 6 }}>✅ アップロード済み</p>}
         </div>
-        <div>
-          <label style={lbl}>または画像URL</label>
-          <input value={data.url} onChange={e => set('url', e.target.value)} placeholder="https://..." style={inp} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div>
+            <label style={lbl}>横幅</label>
+            <input value={data.width} onChange={e => set('width', e.target.value)} placeholder="100% または 300px" style={inp} />
+          </div>
+          <div>
+            <label style={lbl}>縦幅</label>
+            <input value={data.height} onChange={e => set('height', e.target.value)} placeholder="auto または 200px" style={inp} />
+          </div>
         </div>
         <div>
           <label style={lbl}>リンク先URL（任意）</label>
