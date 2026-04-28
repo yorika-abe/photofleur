@@ -12,10 +12,22 @@ const BLOCK_TYPES = [
   { type: 'spacer', label: '余白', icon: '↕' },
 ]
 
+const FONTS = [
+  { label: 'Arial（標準）', value: 'Arial, sans-serif' },
+  { label: 'Helvetica', value: "'Helvetica Neue', Helvetica, sans-serif" },
+  { label: 'Georgia（明朝）', value: 'Georgia, serif' },
+  { label: 'Verdana', value: 'Verdana, sans-serif' },
+  { label: 'Trebuchet MS', value: "'Trebuchet MS', sans-serif" },
+  { label: 'Courier New（等幅）', value: "'Courier New', monospace" },
+  { label: 'メイリオ', value: 'Meiryo, sans-serif' },
+  { label: 'ヒラギノ角ゴ', value: "'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif" },
+  { label: '游ゴシック', value: "'Yu Gothic', YuGothic, sans-serif" },
+]
+
 const DEFAULTS = {
-  heading: { text: '見出しテキスト', size: 26, align: 'center', color: '#1a3560' },
-  text: { text: '本文テキストを入力してください。', size: 14, align: 'left', color: '#333333' },
-  image: { url: '', alt: '', link: '', width: '100%', height: 'auto' },
+  heading: { text: '見出しテキスト', size: 26, align: 'center', color: '#1a3560', font: 'Arial, sans-serif', bold: true, italic: false, shadow: false, letterSpacing: 0 },
+  text: { text: '本文テキストを入力してください。', size: 14, align: 'left', color: '#333333', font: 'Arial, sans-serif', bold: false, italic: false, shadow: false, letterSpacing: 0, lineHeight: 1.8 },
+  image: { url: '', alt: '', link: '', width: '100%', height: 'auto', borderRadius: 0, opacity: 100, shadow: false, grayscale: false },
   button: { label: 'ボタン', url: '', bgColor: '#1a3560', textColor: '#ffffff', align: 'center' },
   divider: { color: '#e0e0e0', thickness: 1 },
   spacer: { height: 24 },
@@ -28,13 +40,35 @@ function newBlock(type) {
 
 function blockToHtml(b) {
   const { type, data } = b
-  if (type === 'heading') return `<h2 style="font-size:${data.size}px;color:${data.color};text-align:${data.align};margin:0 0 16px;font-weight:700;line-height:1.4;">${data.text}</h2>`
-  if (type === 'text') return `<p style="font-size:${data.size}px;color:${data.color};text-align:${data.align};line-height:1.8;margin:0 0 16px;white-space:pre-wrap;">${data.text}</p>`
+  if (type === 'heading' || type === 'text') {
+    const tag = type === 'heading' ? 'h2' : 'p'
+    const shadow = data.shadow ? 'text-shadow:1px 1px 4px rgba(0,0,0,0.3);' : ''
+    const style = [
+      `font-size:${data.size}px`,
+      `color:${data.color}`,
+      `text-align:${data.align}`,
+      `font-family:${data.font || 'Arial, sans-serif'}`,
+      `font-weight:${data.bold ? '700' : '400'}`,
+      `font-style:${data.italic ? 'italic' : 'normal'}`,
+      `letter-spacing:${data.letterSpacing || 0}px`,
+      `line-height:${data.lineHeight || (type === 'heading' ? 1.4 : 1.8)}`,
+      `margin:0 0 16px`,
+      `white-space:pre-wrap`,
+      shadow,
+    ].filter(Boolean).join(';')
+    return `<${tag} style="${style}">${data.text}</${tag}>`
+  }
   if (type === 'image') {
     if (!data.url) return '<div style="background:#f0f4fb;height:120px;display:flex;align-items:center;justify-content:center;margin:0 0 16px;border-radius:4px;color:#aaa;font-size:13px;">画像未選択</div>'
     const wStyle = data.width && data.width !== '100%' ? `width:${data.width};` : 'max-width:100%;'
     const hStyle = data.height && data.height !== 'auto' ? `height:${data.height};object-fit:cover;` : ''
-    const img = `<img src="${data.url}" alt="${data.alt}" style="${wStyle}${hStyle}display:block;margin:0 auto;" />`
+    const effects = [
+      `border-radius:${data.borderRadius || 0}px`,
+      `opacity:${(data.opacity ?? 100) / 100}`,
+      data.shadow ? 'box-shadow:0 4px 16px rgba(0,0,0,0.2)' : '',
+      data.grayscale ? 'filter:grayscale(100%)' : '',
+    ].filter(Boolean).join(';')
+    const img = `<img src="${data.url}" alt="${data.alt || ''}" style="${wStyle}${hStyle}display:block;margin:0 auto;${effects}" />`
     return `<div style="margin:0 0 16px;text-align:center;">${data.link ? `<a href="${data.link}" style="display:inline-block;">${img}</a>` : img}</div>`
   }
   if (type === 'button') return `<div style="text-align:${data.align};margin:0 0 16px;"><a href="${data.url || '#'}" style="display:inline-block;background:${data.bgColor};color:${data.textColor};text-decoration:none;border-radius:8px;padding:12px 32px;font-size:15px;font-weight:700;">${data.label}</a></div>`
@@ -43,30 +77,27 @@ function blockToHtml(b) {
   return ''
 }
 
-function generateHtml(blocks) {
+function generateHtml(blocks, header, footer) {
   return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f5f5;font-family:'Helvetica Neue',Arial,sans-serif;">
 <div style="max-width:600px;margin:0 auto;background:#fff;">
-<div style="background:#1a3560;padding:24px 32px;text-align:center;">
-<span style="color:#fff;font-size:20px;font-weight:700;letter-spacing:0.05em;">PhotoFleur</span>
+<div style="background:${header.bgColor};padding:24px 32px;text-align:center;">
+<span style="color:${header.textColor};font-size:${header.fontSize}px;font-weight:700;letter-spacing:0.05em;">${header.text}</span>
 </div>
 <div style="padding:32px;">
 ${blocks.map(blockToHtml).join('\n')}
 </div>
 <div style="background:#f5f5f5;padding:16px 32px;font-size:11px;color:#999;text-align:center;">
-PhotoFleur｜このメールは予約時にメルマガを希望されたお客様にお送りしています。
+${footer}
 </div>
 </div>
 </body></html>`
 }
 
 function BlockPreview({ block, selected, onClick, onUp, onDown, onDelete, isFirst, isLast }) {
-  const el = (
-    <div dangerouslySetInnerHTML={{ __html: blockToHtml(block) }} style={{ pointerEvents: 'none' }} />
-  )
   return (
     <div onClick={onClick} style={{ position: 'relative', cursor: 'pointer', outline: selected ? '2px solid #1a3560' : '2px solid transparent', borderRadius: 4, marginBottom: 2 }}>
-      <div style={{ padding: '8px 8px', background: selected ? '#f0f5ff' : 'transparent', transition: 'background 0.15s' }}>
-        {el}
+      <div style={{ padding: '8px', background: selected ? '#f0f5ff' : 'transparent' }}>
+        <div dangerouslySetInnerHTML={{ __html: blockToHtml(block) }} style={{ pointerEvents: 'none' }} />
       </div>
       {selected && (
         <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: 4, right: 4, display: 'flex', gap: 4 }}>
@@ -82,15 +113,54 @@ function BlockPreview({ block, selected, onClick, onUp, onDown, onDelete, isFirs
 const ctrlBtn = { padding: '2px 7px', fontSize: 11, border: 'none', borderRadius: 4, background: '#1a3560', color: '#fff', cursor: 'pointer' }
 const inp = { width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }
 const lbl = { display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 4 }
+const section = { borderTop: '1px solid #f0f0f0', paddingTop: 12, marginTop: 4 }
+const checkRow = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }
 
-function BlockEditor({ block, onChange }) {
-  if (!block) return <div style={{ padding: 20, color: '#aaa', fontSize: 13 }}>ブロックを選択してください</div>
+function RightPanel({ selectedId, block, onBlockChange, header, onHeaderChange, footer, onFooterChange }) {
+  if (selectedId === 'header') {
+    return (
+      <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#1a3560' }}>ヘッダーの設定</div>
+        <div>
+          <label style={lbl}>ロゴ・タイトル文字</label>
+          <input value={header.text} onChange={e => onHeaderChange({ ...header, text: e.target.value })} style={inp} />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div>
+            <label style={lbl}>背景色</label>
+            <input type="color" value={header.bgColor} onChange={e => onHeaderChange({ ...header, bgColor: e.target.value })} style={{ ...inp, padding: 2, height: 36 }} />
+          </div>
+          <div>
+            <label style={lbl}>文字色</label>
+            <input type="color" value={header.textColor} onChange={e => onHeaderChange({ ...header, textColor: e.target.value })} style={{ ...inp, padding: 2, height: 36 }} />
+          </div>
+        </div>
+        <div>
+          <label style={lbl}>文字サイズ(px)</label>
+          <input type="number" value={header.fontSize} onChange={e => onHeaderChange({ ...header, fontSize: Number(e.target.value) })} style={inp} />
+        </div>
+      </div>
+    )
+  }
+  if (selectedId === 'footer') {
+    return (
+      <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#1a3560' }}>フッターの設定</div>
+        <div>
+          <label style={lbl}>フッターテキスト</label>
+          <textarea value={footer} onChange={e => onFooterChange(e.target.value)} rows={4} style={{ ...inp, resize: 'vertical' }} />
+        </div>
+      </div>
+    )
+  }
+  if (!block) return <div style={{ padding: 20, color: '#aaa', fontSize: 13 }}>ブロックを選択してください<br /><span style={{ fontSize: 11, marginTop: 8, display: 'block' }}>ヘッダーやフッターをクリックすると設定できます</span></div>
+
   const { type, data } = block
-  const set = (key, val) => onChange({ ...data, [key]: val })
+  const set = (key, val) => onBlockChange({ ...data, [key]: val })
 
   return (
     <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', marginBottom: 4 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#1a3560' }}>
         {BLOCK_TYPES.find(b => b.type === type)?.label} の設定
       </div>
 
@@ -99,6 +169,12 @@ function BlockEditor({ block, onChange }) {
           <label style={lbl}>{type === 'heading' ? '見出しテキスト' : '本文'}</label>
           <textarea value={data.text} onChange={e => set('text', e.target.value)} rows={type === 'text' ? 6 : 2}
             style={{ ...inp, resize: 'vertical', lineHeight: 1.6 }} />
+        </div>
+        <div>
+          <label style={lbl}>フォント</label>
+          <select value={data.font || 'Arial, sans-serif'} onChange={e => set('font', e.target.value)} style={inp}>
+            {FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+          </select>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div>
@@ -110,6 +186,18 @@ function BlockEditor({ block, onChange }) {
             <input type="color" value={data.color} onChange={e => set('color', e.target.value)} style={{ ...inp, padding: 2, height: 36 }} />
           </div>
         </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div>
+            <label style={lbl}>字間(px)</label>
+            <input type="number" value={data.letterSpacing || 0} onChange={e => set('letterSpacing', Number(e.target.value))} min={-2} max={20} style={inp} />
+          </div>
+          {type === 'text' && (
+            <div>
+              <label style={lbl}>行間</label>
+              <input type="number" value={data.lineHeight || 1.8} step={0.1} onChange={e => set('lineHeight', Number(e.target.value))} min={1} max={4} style={inp} />
+            </div>
+          )}
+        </div>
         <div>
           <label style={lbl}>揃え</label>
           <div style={{ display: 'flex', gap: 6 }}>
@@ -119,6 +207,14 @@ function BlockEditor({ block, onChange }) {
                 {a === 'left' ? '左' : a === 'center' ? '中央' : '右'}
               </button>
             ))}
+          </div>
+        </div>
+        <div style={section}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#999', marginBottom: 10 }}>エフェクト</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <label style={checkRow}><input type="checkbox" checked={!!data.bold} onChange={e => set('bold', e.target.checked)} /> 太字</label>
+            <label style={checkRow}><input type="checkbox" checked={!!data.italic} onChange={e => set('italic', e.target.checked)} /> 斜体</label>
+            <label style={checkRow}><input type="checkbox" checked={!!data.shadow} onChange={e => set('shadow', e.target.checked)} /> 文字に影をつける</label>
           </div>
         </div>
       </>}
@@ -144,20 +240,31 @@ function BlockEditor({ block, onChange }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div>
             <label style={lbl}>横幅</label>
-            <input value={data.width} onChange={e => set('width', e.target.value)} placeholder="100% または 300px" style={inp} />
+            <input value={data.width} onChange={e => set('width', e.target.value)} placeholder="100% or 300px" style={inp} />
           </div>
           <div>
             <label style={lbl}>縦幅</label>
-            <input value={data.height} onChange={e => set('height', e.target.value)} placeholder="auto または 200px" style={inp} />
+            <input value={data.height} onChange={e => set('height', e.target.value)} placeholder="auto or 200px" style={inp} />
           </div>
         </div>
         <div>
           <label style={lbl}>リンク先URL（任意）</label>
           <input value={data.link} onChange={e => set('link', e.target.value)} placeholder="https://..." style={inp} />
         </div>
-        <div>
-          <label style={lbl}>代替テキスト</label>
-          <input value={data.alt} onChange={e => set('alt', e.target.value)} style={inp} />
+        <div style={section}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#999', marginBottom: 10 }}>エフェクト</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div>
+              <label style={lbl}>角丸(px)</label>
+              <input type="number" value={data.borderRadius || 0} onChange={e => set('borderRadius', Number(e.target.value))} min={0} max={100} style={inp} />
+            </div>
+            <div>
+              <label style={lbl}>透明度 {data.opacity ?? 100}%</label>
+              <input type="range" value={data.opacity ?? 100} onChange={e => set('opacity', Number(e.target.value))} min={0} max={100} style={{ width: '100%' }} />
+            </div>
+            <label style={checkRow}><input type="checkbox" checked={!!data.shadow} onChange={e => set('shadow', e.target.checked)} /> ドロップシャドウ</label>
+            <label style={checkRow}><input type="checkbox" checked={!!data.grayscale} onChange={e => set('grayscale', e.target.checked)} /> グレースケール</label>
+          </div>
         </div>
       </>}
 
@@ -193,7 +300,7 @@ function BlockEditor({ block, onChange }) {
         </div>
       </>}
 
-      {type === 'divider' && <>
+      {type === 'divider' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div>
             <label style={lbl}>線の色</label>
@@ -204,7 +311,7 @@ function BlockEditor({ block, onChange }) {
             <input type="number" value={data.thickness} onChange={e => set('thickness', Number(e.target.value))} min={1} max={8} style={inp} />
           </div>
         </div>
-      </>}
+      )}
 
       {type === 'spacer' && (
         <div>
@@ -219,6 +326,8 @@ function BlockEditor({ block, onChange }) {
 export default function NewsletterPage() {
   const [blocks, setBlocks] = useState([newBlock('heading'), newBlock('text')])
   const [selectedId, setSelectedId] = useState(null)
+  const [header, setHeader] = useState({ bgColor: '#1a3560', text: 'PhotoFleur', textColor: '#ffffff', fontSize: 20 })
+  const [footer, setFooter] = useState('PhotoFleur｜このメールはメルマガを希望されたカメラマン様にお送りしています。')
   const [subject, setSubject] = useState('')
   const [subscriberCount, setSubscriberCount] = useState(null)
   const [sending, setSending] = useState(false)
@@ -238,21 +347,18 @@ export default function NewsletterPage() {
     setBlocks(prev => [...prev, b])
     setSelectedId(b.id)
   }
-
   function updateBlock(id, data) {
     setBlocks(prev => prev.map(b => b.id === id ? { ...b, data } : b))
   }
-
   function moveBlock(id, dir) {
     setBlocks(prev => {
       const idx = prev.findIndex(b => b.id === id)
       if ((dir === -1 && idx === 0) || (dir === 1 && idx === prev.length - 1)) return prev
-      const next = [...prev]
-      ;[next[idx], next[idx + dir]] = [next[idx + dir], next[idx]]
+      const next = [...prev];
+      [next[idx], next[idx + dir]] = [next[idx + dir], next[idx]]
       return next
     })
   }
-
   function deleteBlock(id) {
     setBlocks(prev => prev.filter(b => b.id !== id))
     setSelectedId(null)
@@ -261,7 +367,7 @@ export default function NewsletterPage() {
   async function handleSend() {
     setSending(true)
     setResult(null)
-    const html = generateHtml(blocks)
+    const html = generateHtml(blocks, header, footer)
     const res = await fetch('/api/admin/newsletter', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -276,7 +382,7 @@ export default function NewsletterPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f5f7fb' }}>
-      {/* Header */}
+      {/* Top bar */}
       <div style={{ background: '#fff', borderBottom: '1px solid #e0e8f0', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
         <span style={{ fontWeight: 700, color: '#1a3560', fontSize: 15 }}>📧 メルマガ配信</span>
@@ -313,57 +419,57 @@ export default function NewsletterPage() {
         </div>
       )}
 
-      {/* Main */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Left: Block palette */}
-        <div style={{ width: 130, background: '#fff', borderRight: '1px solid #e0e8f0', padding: '16px 10px', overflowY: 'auto', flexShrink: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#999', marginBottom: 10, letterSpacing: '0.05em' }}>ブロック追加</div>
+        {/* Left: palette */}
+        <div style={{ width: 120, background: '#fff', borderRight: '1px solid #e0e8f0', padding: '16px 8px', overflowY: 'auto', flexShrink: 0 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#999', marginBottom: 10, letterSpacing: '0.05em' }}>ブロック追加</div>
           {BLOCK_TYPES.map(bt => (
             <button key={bt.type} onClick={() => addBlock(bt.type)}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '12px 8px', marginBottom: 8, border: '1px solid #e0e8f0', borderRadius: 10, background: '#f8fbff', cursor: 'pointer', fontSize: 11, color: '#1a3560', fontWeight: 600, gap: 4 }}>
-              <span style={{ fontSize: 20 }}>{bt.icon}</span>
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '10px 6px', marginBottom: 6, border: '1px solid #e0e8f0', borderRadius: 10, background: '#f8fbff', cursor: 'pointer', fontSize: 10, color: '#1a3560', fontWeight: 600, gap: 4 }}>
+              <span style={{ fontSize: 18 }}>{bt.icon}</span>
               {bt.label}
             </button>
           ))}
         </div>
 
-        {/* Center: Preview */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 16px', background: '#f0f4fb' }}>
+        {/* Center: preview */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 16px', background: '#f0f4fb' }} onClick={() => setSelectedId(null)}>
           <div style={{ maxWidth: 600, margin: '0 auto', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', borderRadius: 8, overflow: 'hidden' }}>
-            {/* Email header preview */}
-            <div style={{ background: '#1a3560', padding: '20px 32px', textAlign: 'center' }}>
-              <span style={{ color: '#fff', fontSize: 18, fontWeight: 700, letterSpacing: '0.05em' }}>PhotoFleur</span>
+            <div onClick={e => { e.stopPropagation(); setSelectedId('header') }}
+              style={{ background: header.bgColor, padding: '20px 32px', textAlign: 'center', cursor: 'pointer', outline: selectedId === 'header' ? '2px solid #5bbfd6' : 'none' }}>
+              <span style={{ color: header.textColor, fontSize: header.fontSize, fontWeight: 700, letterSpacing: '0.05em' }}>{header.text}</span>
+              {selectedId === 'header' && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>クリックして編集</div>}
             </div>
-            <div style={{ padding: '24px 32px' }}>
+            <div style={{ padding: '24px 32px' }} onClick={e => e.stopPropagation()}>
               {blocks.length === 0 ? (
-                <div style={{ textAlign: 'center', color: '#ccc', padding: '40px 0', fontSize: 14 }}>
-                  左のパネルからブロックを追加してください
-                </div>
+                <div style={{ textAlign: 'center', color: '#ccc', padding: '40px 0', fontSize: 14 }}>左のパネルからブロックを追加してください</div>
               ) : blocks.map((block, idx) => (
-                <BlockPreview
-                  key={block.id}
-                  block={block}
-                  selected={block.id === selectedId}
+                <BlockPreview key={block.id} block={block} selected={block.id === selectedId}
                   onClick={() => setSelectedId(block.id)}
                   onUp={() => moveBlock(block.id, -1)}
                   onDown={() => moveBlock(block.id, 1)}
                   onDelete={() => deleteBlock(block.id)}
-                  isFirst={idx === 0}
-                  isLast={idx === blocks.length - 1}
-                />
+                  isFirst={idx === 0} isLast={idx === blocks.length - 1} />
               ))}
             </div>
-            <div style={{ background: '#f5f5f5', padding: '14px 32px', fontSize: 11, color: '#999', textAlign: 'center' }}>
-              PhotoFleur｜このメールは予約時にメルマガを希望されたお客様にお送りしています。
+            <div onClick={e => { e.stopPropagation(); setSelectedId('footer') }}
+              style={{ background: '#f5f5f5', padding: '14px 32px', fontSize: 11, color: '#999', textAlign: 'center', cursor: 'pointer', outline: selectedId === 'footer' ? '2px solid #5bbfd6' : 'none' }}>
+              {footer}
+              {selectedId === 'footer' && <div style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>クリックして編集</div>}
             </div>
           </div>
         </div>
 
-        {/* Right: Block editor */}
-        <div style={{ width: 260, background: '#fff', borderLeft: '1px solid #e0e8f0', overflowY: 'auto', flexShrink: 0 }}>
-          <BlockEditor
+        {/* Right: editor panel */}
+        <div style={{ width: 270, background: '#fff', borderLeft: '1px solid #e0e8f0', overflowY: 'auto', flexShrink: 0 }}>
+          <RightPanel
+            selectedId={selectedId}
             block={selectedBlock}
-            onChange={data => selectedBlock && updateBlock(selectedBlock.id, data)}
+            onBlockChange={data => selectedBlock && updateBlock(selectedBlock.id, data)}
+            header={header}
+            onHeaderChange={setHeader}
+            footer={footer}
+            onFooterChange={setFooter}
           />
         </div>
       </div>
