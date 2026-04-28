@@ -55,7 +55,12 @@ let _id = 1
 const uid = () => _id++
 const newBlock = (type) => ({ id: uid(), type, data: { ...DEFAULTS[type] } })
 const newCell = (block = null) => ({ id: uid(), block })
-const newRow = (type) => ({ id: uid(), cells: [newCell(newBlock(type))], colWidths: [100] })
+const newRow = (type) => ({
+  id: uid(),
+  cells: [newCell(newBlock(type))],
+  colWidths: [100],
+  bg: { color: '', imageUrl: '' },
+})
 
 function blockToHtml(b) {
   const { type, data } = b
@@ -65,7 +70,8 @@ function blockToHtml(b) {
     const style = [
       `font-size:${data.size}px`, `color:${data.color}`, `text-align:${data.align}`,
       `font-family:${data.font || 'Arial, sans-serif'}`,
-      `font-weight:${data.bold ? '700' : '400'}`, `font-style:${data.italic ? 'italic' : 'normal'}`,
+      `font-weight:${data.bold ? '700' : '400'}`,
+      `font-style:${data.italic ? 'italic' : 'normal'}`,
       `letter-spacing:${data.letterSpacing || 0}px`,
       `line-height:${data.lineHeight || (type === 'heading' ? 1.4 : 1.8)}`,
       `margin:0 0 16px`, `white-space:pre-wrap`, shadow,
@@ -73,7 +79,7 @@ function blockToHtml(b) {
     return `<${tag} style="${style}">${data.text}</${tag}>`
   }
   if (type === 'image') {
-    if (!data.url) return '<div style="background:#f0f4fb;height:120px;display:flex;align-items:center;justify-content:center;margin:0 0 16px;border-radius:4px;color:#aaa;font-size:13px;">画像未選択</div>'
+    if (!data.url) return '<div style="background:#f0f4fb;height:120px;margin:0 0 16px;border-radius:4px;"></div>'
     const wStyle = data.width && data.width !== '100%' ? `width:${data.width};` : 'max-width:100%;'
     const hStyle = data.height && data.height !== 'auto' ? `height:${data.height};object-fit:cover;` : ''
     const effects = [`border-radius:${data.borderRadius || 0}px`, `opacity:${(data.opacity ?? 100) / 100}`, data.shadow ? 'box-shadow:0 4px 16px rgba(0,0,0,0.2)' : '', data.grayscale ? 'filter:grayscale(100%)' : ''].filter(Boolean).join(';')
@@ -86,12 +92,24 @@ function blockToHtml(b) {
   return ''
 }
 
+function rowBgStyle(bg) {
+  if (!bg) return ''
+  if (bg.imageUrl) return `background:url('${bg.imageUrl}') center/cover no-repeat;`
+  if (bg.color) return `background:${bg.color};`
+  return ''
+}
+
 function rowToHtml(row) {
-  if (row.cells.length === 1) return row.cells[0].block ? blockToHtml(row.cells[0].block) : ''
+  const bg = rowBgStyle(row.bg)
+  const wrapStyle = `padding:8px;${bg}`
+  if (row.cells.length === 1) {
+    const inner = row.cells[0].block ? blockToHtml(row.cells[0].block) : ''
+    return bg ? `<div style="${wrapStyle}">${inner}</div>` : inner
+  }
   const cols = row.cells.map((c, i) =>
-    `<td width="${Math.round(row.colWidths[i])}%" style="vertical-align:top;padding:0 6px;">${c.block ? blockToHtml(c.block) : ''}</td>`
+    `<td width="${Math.round(row.colWidths[i])}%" style="vertical-align:top;padding:6px;">${c.block ? blockToHtml(c.block) : ''}</td>`
   ).join('')
-  return `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="table-layout:fixed;margin:0 0 8px;"><tr>${cols}</tr></table>`
+  return `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="table-layout:fixed;margin:0 0 8px;${bg}"><tr>${cols}</tr></table>`
 }
 
 function generateHtml(rows, header, footer) {
@@ -100,7 +118,7 @@ function generateHtml(rows, header, footer) {
 <div style="background:${header.bgColor};padding:24px 32px;text-align:center;">
 <span style="color:${header.textColor};font-size:${header.fontSize}px;font-weight:700;letter-spacing:0.05em;">${header.text}</span>
 </div>
-<div style="padding:32px;">
+<div style="padding:24px 32px;">
 ${rows.map(rowToHtml).join('\n')}
 </div>
 <div style="background:#f5f5f5;padding:16px 32px;font-size:11px;color:#999;text-align:center;">
@@ -113,8 +131,7 @@ ${footer}
 function ResizableImage({ data, onResize }) {
   const containerRef = useRef(null)
   const startDrag = useCallback((e, dir) => {
-    e.stopPropagation()
-    e.preventDefault()
+    e.stopPropagation(); e.preventDefault()
     const startX = e.clientX, startY = e.clientY
     const startW = containerRef.current?.offsetWidth || 300
     const startH = containerRef.current?.offsetHeight || 200
@@ -125,8 +142,7 @@ function ResizableImage({ data, onResize }) {
       else if (dir === 'bottom') onResize({ height: `${Math.max(40, startH + dy)}px` })
     }
     const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
+    document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
   }, [onResize])
 
   if (!data.url) return <div style={{ background: '#f0f4fb', height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: 13, borderRadius: 4 }}>画像未選択</div>
@@ -145,35 +161,45 @@ function ResizableImage({ data, onResize }) {
   )
 }
 
-// Draggable column divider
-function ColDivider({ onUpdateWidths, rowWidths, divIdx, containerRef }) {
+function ColDivider({ divIdx, rowWidths, containerRef, onUpdateWidths }) {
   const handleMouseDown = (e) => {
     e.preventDefault()
     const startX = e.clientX
     const startWidths = [...rowWidths]
     const containerWidth = containerRef.current?.offsetWidth || 500
-
     const onMove = (ev) => {
-      const dx = ev.clientX - startX
-      const dpct = (dx / containerWidth) * 100
-      const newWidths = [...startWidths]
-      newWidths[divIdx] = Math.max(10, startWidths[divIdx] + dpct)
-      newWidths[divIdx + 1] = Math.max(10, startWidths[divIdx + 1] - dpct)
-      // normalize so sum stays 100
-      const total = newWidths.reduce((a, b) => a + b, 0)
-      onUpdateWidths(newWidths.map(w => (w / total) * 100))
+      const dpct = ((ev.clientX - startX) / containerWidth) * 100
+      const nw = [...startWidths]
+      nw[divIdx] = Math.max(10, startWidths[divIdx] + dpct)
+      nw[divIdx + 1] = Math.max(10, startWidths[divIdx + 1] - dpct)
+      const total = nw.reduce((a, b) => a + b, 0)
+      onUpdateWidths(nw.map(w => (w / total) * 100))
     }
     const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
+    document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
   }
-
   return (
-    <div
-      onMouseDown={handleMouseDown}
-      title="ドラッグして列幅を調整"
+    <div onMouseDown={handleMouseDown} title="ドラッグで幅を調整"
       style={{ width: 10, flexShrink: 0, cursor: 'col-resize', display: 'flex', alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch' }}>
-      <div style={{ width: 3, height: '80%', minHeight: 20, background: '#d0d8e8', borderRadius: 2 }} />
+      <div style={{ width: 3, height: '70%', minHeight: 20, background: '#c8d4e8', borderRadius: 2 }} />
+    </div>
+  )
+}
+
+// Empty cell: shows block type picker
+function EmptyCell({ onAdd }) {
+  return (
+    <div style={{ padding: 10, minHeight: 80 }}>
+      <div style={{ fontSize: 10, color: '#bbb', marginBottom: 6, textAlign: 'center' }}>ブロックを追加</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5 }}>
+        {BLOCK_TYPES.map(bt => (
+          <button key={bt.type} onClick={e => { e.stopPropagation(); onAdd(bt.type) }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '6px 2px', border: '1px solid #e0e8f0', borderRadius: 7, background: '#f8fbff', cursor: 'pointer', fontSize: 9, color: '#1a3560', fontWeight: 600, gap: 2 }}>
+            <span style={{ fontSize: 14 }}>{bt.icon}</span>
+            {bt.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -184,8 +210,8 @@ const lbl = { display: 'block', fontSize: 11, fontWeight: 600, color: '#666', ma
 const section = { borderTop: '1px solid #f0f0f0', paddingTop: 12, marginTop: 4 }
 const checkRow = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }
 
-function RightPanel({ selectedId, block, onBlockChange, onDeleteBlock, header, onHeaderChange, footer, onFooterChange }) {
-  if (selectedId === 'header') {
+function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRowBgChange, header, onHeaderChange, footer, onFooterChange }) {
+  if (selection === 'header') {
     return (
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#1a3560' }}>ヘッダーの設定</div>
@@ -198,7 +224,7 @@ function RightPanel({ selectedId, block, onBlockChange, onDeleteBlock, header, o
       </div>
     )
   }
-  if (selectedId === 'footer') {
+  if (selection === 'footer') {
     return (
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#1a3560' }}>フッターの設定</div>
@@ -206,7 +232,47 @@ function RightPanel({ selectedId, block, onBlockChange, onDeleteBlock, header, o
       </div>
     )
   }
-  if (!block) return <div style={{ padding: 20, color: '#aaa', fontSize: 13 }}>ブロックを選択してください<br /><span style={{ fontSize: 11, marginTop: 8, display: 'block' }}>ヘッダーやフッターをクリックすると設定できます</span></div>
+  if (selection?.kind === 'row' && row) {
+    const bg = row.bg || { color: '', imageUrl: '' }
+    return (
+      <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#1a3560' }}>行の背景設定</div>
+        <div>
+          <label style={lbl}>背景色</label>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input type="color" value={bg.color || '#ffffff'} onChange={e => onRowBgChange({ ...bg, color: e.target.value, imageUrl: '' })} style={{ ...inp, padding: 2, height: 36, flex: 1 }} />
+            {bg.color && <button onClick={() => onRowBgChange({ ...bg, color: '' })} style={{ ...ctrlBtn, background: '#aaa', whiteSpace: 'nowrap' }}>解除</button>}
+          </div>
+        </div>
+        <div>
+          <label style={lbl}>背景画像をアップロード</label>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', background: '#e0f2fe', color: '#0369a1', border: '2px dashed #0369a1', borderRadius: 8, padding: '10px 16px', fontSize: 13, fontWeight: 600 }}>
+            📁 ファイルを選択
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => {
+              const file = e.target.files[0]; if (!file) return
+              const fd = new FormData(); fd.append('file', file)
+              const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd })
+              const json = await res.json()
+              if (json.url) onRowBgChange({ ...bg, imageUrl: json.url, color: '' })
+              else alert('アップロード失敗: ' + json.error)
+            }} />
+          </label>
+          {bg.imageUrl && (
+            <div style={{ marginTop: 8 }}>
+              <img src={bg.imageUrl} alt="" style={{ width: '100%', height: 60, objectFit: 'cover', borderRadius: 6 }} />
+              <button onClick={() => onRowBgChange({ ...bg, imageUrl: '' })} style={{ ...ctrlBtn, background: '#aaa', marginTop: 6, width: '100%' }}>画像を解除</button>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+  if (!block) return (
+    <div style={{ padding: 20, color: '#aaa', fontSize: 13 }}>
+      ブロックを選択してください
+      <br /><span style={{ fontSize: 11, marginTop: 8, display: 'block' }}>ヘッダー・フッター・行の余白部分をクリックすると設定できます</span>
+    </div>
+  )
 
   const { type, data } = block
   const set = (key, val) => onBlockChange({ ...data, [key]: val })
@@ -264,8 +330,8 @@ function RightPanel({ selectedId, block, onBlockChange, onDeleteBlock, header, o
             }} /></label>
           {data.url && <p style={{ fontSize: 11, color: '#388e3c', marginTop: 6 }}>✅ アップロード済み</p>}</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <div><label style={lbl}>横幅</label><input value={data.width} onChange={e => set('width', e.target.value)} placeholder="100% or 300px" style={inp} /></div>
-          <div><label style={lbl}>縦幅</label><input value={data.height} onChange={e => set('height', e.target.value)} placeholder="auto or 200px" style={inp} /></div>
+          <div><label style={lbl}>横幅</label><input value={data.width} onChange={e => set('width', e.target.value)} placeholder="100%" style={inp} /></div>
+          <div><label style={lbl}>縦幅</label><input value={data.height} onChange={e => set('height', e.target.value)} placeholder="auto" style={inp} /></div>
         </div>
         <div><label style={lbl}>リンク先URL（任意）</label><input value={data.link} onChange={e => set('link', e.target.value)} placeholder="https://..." style={inp} /></div>
         <div style={section}>
@@ -308,7 +374,8 @@ function RightPanel({ selectedId, block, onBlockChange, onDeleteBlock, header, o
 
 export default function NewsletterPage() {
   const [rows, setRows] = useState(() => [newRow('heading'), newRow('text')])
-  const [selectedBlockId, setSelectedBlockId] = useState(null) // number | 'header' | 'footer'
+  // selection: null | 'header' | 'footer' | { kind:'block', blockId } | { kind:'row', rowId }
+  const [selection, setSelection] = useState(null)
   const [header, setHeader] = useState({ bgColor: '#1a3560', text: 'PhotoFleur', textColor: '#ffffff', fontSize: 20 })
   const [footer, setFooter] = useState('PhotoFleur｜このメールはメルマガを希望されたカメラマン様にお送りしています。')
   const [subject, setSubject] = useState('')
@@ -322,27 +389,25 @@ export default function NewsletterPage() {
       if (d.count !== undefined) setSubscriberCount(d.count)
     })
     const link = document.createElement('link')
-    link.rel = 'stylesheet'
-    link.href = GOOGLE_FONTS_URL
+    link.rel = 'stylesheet'; link.href = GOOGLE_FONTS_URL
     document.head.appendChild(link)
     return () => document.head.removeChild(link)
   }, [])
 
-  // Find selected block
   const selectedBlock = (() => {
-    if (typeof selectedBlockId !== 'number') return null
-    for (const row of rows) {
-      for (const cell of row.cells) {
-        if (cell.block?.id === selectedBlockId) return cell.block
-      }
-    }
+    if (selection?.kind !== 'block') return null
+    for (const row of rows)
+      for (const cell of row.cells)
+        if (cell.block?.id === selection.blockId) return cell.block
     return null
   })()
+
+  const selectedRow = selection?.kind === 'row' ? rows.find(r => r.id === selection.rowId) ?? null : null
 
   function addRow(type) {
     const r = newRow(type)
     setRows(prev => [...prev, r])
-    setSelectedBlockId(r.cells[0].block.id)
+    setSelection({ kind: 'block', blockId: r.cells[0].block.id })
   }
 
   function moveRow(rowId, dir) {
@@ -357,22 +422,43 @@ export default function NewsletterPage() {
 
   function deleteRow(rowId) {
     setRows(prev => prev.filter(r => r.id !== rowId))
-    setSelectedBlockId(null)
+    setSelection(null)
   }
 
-  function setRowCols(rowId, n) {
+  function addCol(rowId) {
     setRows(prev => prev.map(r => {
-      if (r.id !== rowId) return r
-      const cells = [...r.cells]
-      while (cells.length < n) cells.push(newCell(null))
-      while (cells.length > n) cells.pop()
-      const defaultWidths = n === 1 ? [100] : n === 2 ? [50, 50] : [34, 33, 33]
-      return { ...r, cells, colWidths: defaultWidths }
+      if (r.id !== rowId || r.cells.length >= 3) return r
+      const newCells = [...r.cells, newCell(null)]
+      const n = newCells.length
+      const equal = 100 / n
+      return { ...r, cells: newCells, colWidths: newCells.map(() => equal) }
+    }))
+  }
+
+  function removeCol(rowId) {
+    setRows(prev => prev.map(r => {
+      if (r.id !== rowId || r.cells.length <= 1) return r
+      const newCells = r.cells.slice(0, -1)
+      const n = newCells.length
+      return { ...r, cells: newCells, colWidths: newCells.map(() => 100 / n) }
     }))
   }
 
   function updateRowWidths(rowId, newWidths) {
     setRows(prev => prev.map(r => r.id !== rowId ? r : { ...r, colWidths: newWidths }))
+  }
+
+  function updateRowBg(rowId, bg) {
+    setRows(prev => prev.map(r => r.id !== rowId ? r : { ...r, bg }))
+  }
+
+  function addBlockToCell(rowId, cellId, type) {
+    const block = newBlock(type)
+    setRows(prev => prev.map(r => r.id !== rowId ? r : {
+      ...r,
+      cells: r.cells.map(c => c.id !== cellId ? c : { ...c, block })
+    }))
+    setSelection({ kind: 'block', blockId: block.id })
   }
 
   function updateBlock(blockId, data) {
@@ -383,17 +469,17 @@ export default function NewsletterPage() {
   }
 
   function deleteSelectedBlock() {
-    if (typeof selectedBlockId !== 'number') return
+    if (selection?.kind !== 'block') return
+    const blockId = selection.blockId
     setRows(prev => prev.map(r => ({
       ...r,
-      cells: r.cells.map(c => c.block?.id === selectedBlockId ? { ...c, block: null } : c)
+      cells: r.cells.map(c => c.block?.id === blockId ? { ...c, block: null } : c)
     })))
-    setSelectedBlockId(null)
+    setSelection(null)
   }
 
   async function handleSend() {
-    setSending(true)
-    setResult(null)
+    setSending(true); setResult(null)
     const html = generateHtml(rows, header, footer)
     const res = await fetch('/api/admin/newsletter', {
       method: 'POST',
@@ -401,8 +487,7 @@ export default function NewsletterPage() {
       body: JSON.stringify({ subject, html }),
     })
     const json = await res.json()
-    setSending(false)
-    setConfirmed(false)
+    setSending(false); setConfirmed(false)
     if (!res.ok) setResult({ error: json.error })
     else setResult({ ok: true, sent: json.sent, failed: json.failed })
   }
@@ -430,10 +515,7 @@ export default function NewsletterPage() {
               style={{ background: '#e53935', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 700, cursor: sending ? 'not-allowed' : 'pointer', opacity: sending ? 0.6 : 1 }}>
               {sending ? '送信中...' : '送信する'}
             </button>
-            <button onClick={() => setConfirmed(false)}
-              style={{ background: '#eee', color: '#555', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 13, cursor: 'pointer' }}>
-              戻る
-            </button>
+            <button onClick={() => setConfirmed(false)} style={{ background: '#eee', color: '#555', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 13, cursor: 'pointer' }}>戻る</button>
           </div>
         )}
       </div>
@@ -460,13 +542,13 @@ export default function NewsletterPage() {
         </div>
 
         {/* Center: canvas */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 16px', background: '#f0f4fb' }} onClick={() => setSelectedBlockId(null)}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 16px', background: '#f0f4fb' }} onClick={() => setSelection(null)}>
           <div style={{ maxWidth: 620, margin: '0 auto', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', borderRadius: 8, overflow: 'hidden' }}>
             {/* Header */}
-            <div onClick={e => { e.stopPropagation(); setSelectedBlockId('header') }}
-              style={{ background: header.bgColor, padding: '20px 32px', textAlign: 'center', cursor: 'pointer', outline: selectedBlockId === 'header' ? '2px solid #5bbfd6' : 'none' }}>
+            <div onClick={e => { e.stopPropagation(); setSelection('header') }}
+              style={{ background: header.bgColor, padding: '20px 32px', textAlign: 'center', cursor: 'pointer', outline: selection === 'header' ? '2px solid #5bbfd6' : 'none' }}>
               <span style={{ color: header.textColor, fontSize: header.fontSize, fontWeight: 700, letterSpacing: '0.05em' }}>{header.text}</span>
-              {selectedBlockId === 'header' && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>クリックして編集</div>}
+              {selection === 'header' && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>クリックして編集</div>}
             </div>
 
             {/* Rows */}
@@ -480,22 +562,25 @@ export default function NewsletterPage() {
                   row={row}
                   isFirst={rowIdx === 0}
                   isLast={rowIdx === rows.length - 1}
-                  selectedBlockId={selectedBlockId}
-                  onSelectBlock={setSelectedBlockId}
+                  selection={selection}
+                  onSelectBlock={blockId => setSelection({ kind: 'block', blockId })}
+                  onSelectRow={() => setSelection({ kind: 'row', rowId: row.id })}
                   onUpdateBlock={updateBlock}
+                  onAddBlockToCell={addBlockToCell}
                   onMoveRow={moveRow}
                   onDeleteRow={deleteRow}
-                  onSetCols={setRowCols}
+                  onAddCol={addCol}
+                  onRemoveCol={removeCol}
                   onUpdateWidths={updateRowWidths}
                 />
               ))}
             </div>
 
             {/* Footer */}
-            <div onClick={e => { e.stopPropagation(); setSelectedBlockId('footer') }}
-              style={{ background: '#f5f5f5', padding: '14px 32px', fontSize: 11, color: '#999', textAlign: 'center', cursor: 'pointer', outline: selectedBlockId === 'footer' ? '2px solid #5bbfd6' : 'none' }}>
+            <div onClick={e => { e.stopPropagation(); setSelection('footer') }}
+              style={{ background: '#f5f5f5', padding: '14px 32px', fontSize: 11, color: '#999', textAlign: 'center', cursor: 'pointer', outline: selection === 'footer' ? '2px solid #5bbfd6' : 'none' }}>
               {footer}
-              {selectedBlockId === 'footer' && <div style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>クリックして編集</div>}
+              {selection === 'footer' && <div style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>クリックして編集</div>}
             </div>
           </div>
         </div>
@@ -503,10 +588,12 @@ export default function NewsletterPage() {
         {/* Right: editor panel */}
         <div style={{ width: 270, background: '#fff', borderLeft: '1px solid #e0e8f0', overflowY: 'auto', flexShrink: 0 }}>
           <RightPanel
-            selectedId={selectedBlockId}
+            selection={selection}
             block={selectedBlock}
+            row={selectedRow}
             onBlockChange={data => selectedBlock && updateBlock(selectedBlock.id, data)}
             onDeleteBlock={deleteSelectedBlock}
+            onRowBgChange={bg => selectedRow && updateRowBg(selectedRow.id, bg)}
             header={header}
             onHeaderChange={setHeader}
             footer={footer}
@@ -518,57 +605,70 @@ export default function NewsletterPage() {
   )
 }
 
-function RowView({ row, isFirst, isLast, selectedBlockId, onSelectBlock, onUpdateBlock, onMoveRow, onDeleteRow, onSetCols, onUpdateWidths }) {
+function RowView({ row, isFirst, isLast, selection, onSelectBlock, onSelectRow, onUpdateBlock, onAddBlockToCell, onMoveRow, onDeleteRow, onAddCol, onRemoveCol, onUpdateWidths }) {
   const containerRef = useRef(null)
+  const isRowSelected = selection?.kind === 'row' && selection.rowId === row.id
+
+  const bgStyle = (() => {
+    const bg = row.bg
+    if (!bg) return {}
+    if (bg.imageUrl) return { backgroundImage: `url('${bg.imageUrl}')`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    if (bg.color) return { background: bg.color }
+    return {}
+  })()
 
   return (
-    <div style={{ marginBottom: 6 }}>
-      {/* Column count selector */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-        <span style={{ fontSize: 9, color: '#bbb', fontWeight: 600 }}>列：</span>
-        {[1, 2, 3].map(n => (
-          <button key={n} onClick={() => onSetCols(row.id, n)}
-            style={{ padding: '1px 7px', fontSize: 10, border: '1px solid #ddd', borderRadius: 4, background: row.cells.length === n ? '#1a3560' : '#f5f5f5', color: row.cells.length === n ? '#fff' : '#888', cursor: 'pointer', fontWeight: row.cells.length === n ? 700 : 400 }}>
-            {n}列
+    <div style={{ marginBottom: 8 }}>
+      {/* Row toolbar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
+        {/* Column controls */}
+        {row.cells.length > 1 && (
+          <button onClick={() => onRemoveCol(row.id)}
+            style={{ padding: '1px 8px', fontSize: 10, border: '1px solid #e0d0d0', borderRadius: 4, background: '#fff5f5', color: '#c62828', cursor: 'pointer' }}>
+            − 列削除
           </button>
-        ))}
+        )}
+        {row.cells.length < 3 && (
+          <button onClick={() => onAddCol(row.id)}
+            style={{ padding: '1px 8px', fontSize: 10, border: '1px solid #d0e0d0', borderRadius: 4, background: '#f5fff5', color: '#2e7d32', cursor: 'pointer', fontWeight: 600 }}>
+            ＋ 列追加
+          </button>
+        )}
+        {/* Background button */}
+        <button onClick={e => { e.stopPropagation(); onSelectRow() }}
+          title="背景を設定"
+          style={{ padding: '1px 8px', fontSize: 10, border: `1px solid ${isRowSelected ? '#1a3560' : '#ddd'}`, borderRadius: 4, background: isRowSelected ? '#e8f0ff' : '#f8f8f8', color: isRowSelected ? '#1a3560' : '#888', cursor: 'pointer' }}>
+          🎨 背景
+        </button>
         <div style={{ flex: 1 }} />
         <button onClick={() => onMoveRow(row.id, -1)} disabled={isFirst} style={{ ...ctrlBtn, opacity: isFirst ? 0.3 : 1 }}>▲</button>
         <button onClick={() => onMoveRow(row.id, 1)} disabled={isLast} style={{ ...ctrlBtn, opacity: isLast ? 0.3 : 1 }}>▼</button>
         <button onClick={() => onDeleteRow(row.id)} style={{ ...ctrlBtn, background: '#e53935' }}>✕</button>
       </div>
 
-      {/* Cells + dividers */}
-      <div ref={containerRef} style={{ display: 'flex', alignItems: 'stretch', border: '1px solid #e8eef5', borderRadius: 6, overflow: 'hidden', minHeight: 60 }}>
+      {/* Cells */}
+      <div ref={containerRef}
+        style={{ display: 'flex', alignItems: 'stretch', border: `2px solid ${isRowSelected ? '#5bbfd6' : '#e8eef5'}`, borderRadius: 8, overflow: 'hidden', minHeight: 70, ...bgStyle }}>
         {row.cells.map((cell, ci) => {
-          const isSelected = cell.block?.id === selectedBlockId
+          const isBlockSelected = cell.block?.id === selection?.blockId
           return (
             <div key={cell.id} style={{ display: 'flex', alignItems: 'stretch', width: `${row.colWidths[ci]}%`, minWidth: 0, flexShrink: 0 }}>
-              {/* Cell content */}
-              <div style={{ flex: 1, minWidth: 0 }}
-                onClick={e => { e.stopPropagation(); if (cell.block) onSelectBlock(cell.block.id) }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 {cell.block ? (
-                  <div style={{ outline: isSelected ? '2px solid #1a3560' : 'none', borderRadius: 4, padding: 8, background: isSelected ? '#f0f5ff' : 'transparent', cursor: 'pointer', height: '100%', boxSizing: 'border-box' }}>
-                    {isSelected && cell.block.type === 'image'
+                  <div
+                    onClick={e => { e.stopPropagation(); onSelectBlock(cell.block.id) }}
+                    style={{ outline: isBlockSelected ? '2px solid #1a3560' : 'none', outlineOffset: -2, borderRadius: 4, padding: 8, background: isBlockSelected ? 'rgba(240,245,255,0.9)' : 'transparent', cursor: 'pointer', height: '100%', boxSizing: 'border-box' }}>
+                    {isBlockSelected && cell.block.type === 'image'
                       ? <ResizableImage data={cell.block.data} onResize={updates => onUpdateBlock(cell.block.id, { ...cell.block.data, ...updates })} />
                       : <div dangerouslySetInnerHTML={{ __html: blockToHtml(cell.block) }} style={{ pointerEvents: 'none' }} />
                     }
                   </div>
                 ) : (
-                  <div style={{ height: '100%', minHeight: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ddd', fontSize: 11, background: '#fafafa' }}>
-                    空のセル
-                  </div>
+                  <EmptyCell onAdd={(type) => onAddBlockToCell(row.id, cell.id, type)} />
                 )}
               </div>
-
-              {/* Column divider (between cells) */}
               {ci < row.cells.length - 1 && (
-                <ColDivider
-                  divIdx={ci}
-                  rowWidths={row.colWidths}
-                  containerRef={containerRef}
-                  onUpdateWidths={(w) => onUpdateWidths(row.id, w)}
-                />
+                <ColDivider divIdx={ci} rowWidths={row.colWidths} containerRef={containerRef} onUpdateWidths={w => onUpdateWidths(row.id, w)} />
               )}
             </div>
           )
