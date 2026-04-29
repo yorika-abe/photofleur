@@ -106,6 +106,60 @@ function restoreRowsFromDb(rows) {
   }))
 }
 
+function makeBlock(type, dataOverride = {}) {
+  return { id: uid(), type, data: { ...DEFAULTS[type], ...dataOverride } }
+}
+
+function makeRow(type, dataOverride = {}, bg = { color: '', imageUrl: '' }) {
+  const block = makeBlock(type, dataOverride)
+  return { id: uid(), cells: [{ id: uid(), block }], colWidths: [100], bg }
+}
+
+function getDefaultRows(templateId) {
+  switch (templateId) {
+    case 'booking-confirmation':
+      return [
+        makeRow('text', { text: '{{customer_name}} 様\n\nこの度はPhoto Fleurにご予約いただき、誠にありがとうございます。\n以下の内容でご予約を受け付けました。', size: 15, lineHeight: 1.9 }),
+        makeRow('text', { text: 'モデル名：{{model_name}}\n開催日：{{event_date}}\n予約時間：{{slot_label}}\n料金：{{price}}', size: 15, lineHeight: 1.8, paddingTop: 16, paddingBottom: 16, paddingLeft: 20, paddingRight: 20 }),
+        makeRow('text', { text: '{{qr_block}}', align: 'center', size: 14 }),
+        makeRow('text', { text: '{{location_block}}', size: 14 }),
+        makeRow('text', { text: '{{rules_block}}', size: 13, color: '#555' }),
+        makeRow('divider', { color: '#e5e5e5' }),
+        makeRow('text', { text: 'ご不明点がございましたら、公式LINEよりご連絡ください。\nhttps://lin.ee/7XLB4St\n\nモデルの体調不良などにより、こちらからキャンセルさせていただく可能性がございます。ご了承ください。', size: 13, color: '#555', lineHeight: 2 }),
+      ]
+    case 'day-before-reminder':
+      return [
+        makeRow('heading', { text: '明日の撮影会のご案内', size: 24 }),
+        makeRow('text', { text: '{{customer_name}} 様\n\n明日はご予約いただいている撮影日です。\n以下の内容をご確認のうえ、当日お気をつけてお越しください。', size: 15, lineHeight: 1.9 }),
+        makeRow('text', { text: 'モデル名：{{model_name}}\n開催日：{{event_date}}\n予約時間：{{slot_label}}', size: 15, lineHeight: 1.8, paddingTop: 16, paddingBottom: 16, paddingLeft: 20, paddingRight: 20 }),
+        makeRow('text', { text: '{{qr_block}}', align: 'center', size: 14 }),
+        makeRow('text', { text: '{{location_block}}', size: 14 }),
+        makeRow('divider', { color: '#e5e5e5' }),
+        makeRow('text', { text: 'ご不明点がございましたら、公式LINEよりご連絡ください。\nhttps://lin.ee/7XLB4St', size: 13, color: '#555', lineHeight: 2 }),
+      ]
+    case 'thanks-mail':
+      return [
+        makeRow('heading', { text: 'ご来場ありがとうございました', size: 22 }),
+        makeRow('text', { text: 'この度はPhotoFleur撮影会にお越しいただき\n誠にありがとうございました。', size: 15, lineHeight: 2 }),
+        makeRow('divider', { color: '#f0f0f0' }),
+        makeRow('text', { text: 'PhotoFleurでは日々改善・改良を重ね邁進しております。\n下記のようなご意見がございましたら、ぜひお聞かせください。\n\n・PhotoFleurで開催したいイベント\n・おすすめの撮影場所\n・撮影会のシステム的な問題・改善点\n・その他ご意見', size: 14, color: '#555', lineHeight: 2.2 }),
+        makeRow('button', { label: '📮 ご意見箱はこちら', url: '{{feedback_url}}', bgColor: '#1a3560', textColor: '#fff' }),
+        makeRow('divider', { color: '#f0f0f0' }),
+        makeRow('text', { text: '公式LINEより最新の情報やクーポンを発信しております。\n是非ご登録よろしくお願いいたします。\n\n公式LINE 🔗 https://lin.ee/VgTzmhe', size: 14, color: '#555', lineHeight: 2 }),
+      ]
+    case 'cancellation':
+      return [
+        makeRow('heading', { text: 'ご予約がキャンセルされました', color: '#c62828', size: 24 }),
+        makeRow('text', { text: '{{customer_name}} 様\n\nこの度はphotofleur撮影会をご予約いただき誠にありがとうございました。\n本メールにてご予約はキャンセルとさせていただきます。', size: 15, lineHeight: 1.9 }),
+        makeRow('text', { text: 'こちら都合でキャンセルとなり返金のある方はクレジットカード宛に返金させていただきますのでご確認ください。\n\nキャンセル料が発生する方に関しましては別途ご連絡させていただきます。', size: 14, color: '#444', lineHeight: 1.9 }),
+        makeRow('divider', { color: '#e5e5e5' }),
+        makeRow('text', { text: '公式LINE🔗 https://lin.ee/VgTzmhe\n公式Instagram🔗 @photofleur.official\n公式X🔗 @photofleur_', size: 14, color: '#555', lineHeight: 2 }),
+      ]
+    default:
+      return []
+  }
+}
+
 function boxWrap(data, inner) {
   const pt = data.paddingTop ?? 8, pb = data.paddingBottom ?? 8
   const pl = data.paddingLeft ?? 8, pr = data.paddingRight ?? 8
@@ -527,7 +581,7 @@ export default function NewsletterPage() {
           setSubject('')
           setFooter('PhotoFleur｜このメールはメルマガを希望されたカメラマン様にお送りしています。')
         } else {
-          setRows([])
+          setRows(getDefaultRows(tmplId))
           setSubject(def?.defaultSubject || '')
           setFooter('PhotoFleur｜撮影会予約サービス')
         }
