@@ -37,18 +37,25 @@ export default function AdminRepresentativePage() {
   const initialized = useRef(false)
 
   useEffect(() => {
-    fetch('/api/admin/site-settings').then(r => r.json()).then(data => {
-      setForm({
-        photo: data.rep_photo || '',
-        role: data.rep_role || '',
-        name: data.rep_name || '',
-        message: data.rep_message || '',
-        model_id: data.rep_model_id || '',
+    fetch('/api/admin/site-settings')
+      .then(r => r.json())
+      .then(data => {
+        setForm({
+          photo: data.rep_photo || '',
+          role: data.rep_role || '',
+          name: data.rep_name || '',
+          message: data.rep_message || '',
+          model_id: data.rep_model_id || '',
+        })
       })
-    })
-    fetch('/api/admin/models').then(r => r.json()).then(({ models }) => {
-      setModels((models || []).filter(m => m.status === 'active'))
-    })
+      .catch(() => {})
+    fetch('/api/admin/models')
+      .then(r => r.json())
+      .then(data => {
+        const list = Array.isArray(data) ? data : (data?.models || [])
+        setModels(list.filter(m => m.status === 'active'))
+      })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -92,22 +99,28 @@ export default function AdminRepresentativePage() {
 
   async function save() {
     setSaving(true)
-    const message = editorRef.current?.innerHTML || form.message
-    await fetch('/api/admin/site-settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        rep_photo: form.photo,
-        rep_role: form.role,
-        rep_name: form.name,
-        rep_message: message,
-        rep_model_id: form.model_id,
-      }),
-    })
-    setForm(f => ({ ...f, message }))
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+    try {
+      const message = editorRef.current?.innerHTML || form.message
+      const res = await fetch('/api/admin/site-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rep_photo: form.photo,
+          rep_role: form.role,
+          rep_name: form.name,
+          rep_message: message,
+          rep_model_id: form.model_id,
+        }),
+      })
+      if (!res.ok) throw new Error('保存に失敗しました')
+      setForm(f => ({ ...f, message }))
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch (e) {
+      alert('保存エラー: ' + e.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const inp = { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }
