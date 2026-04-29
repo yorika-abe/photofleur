@@ -63,13 +63,19 @@ export default function AdminSchedulePage() {
   }
 
   async function deleteEvent(id) {
-    if (!confirm('このイベントを削除しますか？関連する予約枠・予約も削除されます。')) return
-    await fetch('/api/admin/events', {
+    if (!confirm('このイベントを削除しますか？')) return
+    const res = await fetch('/api/admin/events', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
     })
-    setEvents(prev => prev.filter(e => e.id !== id))
+    const json = await res.json()
+    if (json.archived) {
+      alert(`予約履歴が ${json.bookingCount} 件あるため、完全削除ではなく非表示にしました。\n予約履歴・メルマガ対象はそのまま保持されます。`)
+      setEvents(prev => prev.filter(e => e.id !== id))
+    } else {
+      setEvents(prev => prev.filter(e => e.id !== id))
+    }
   }
 
   const inp = { width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }
