@@ -48,7 +48,7 @@ export default function AdminSchedulePage() {
         event_type: form.event_type,
         title: form.title || null,
         location_name: form.location_name,
-        status: 'draft',
+        status: 'active',
       }),
     })
     const data = await res.json()
@@ -216,12 +216,8 @@ export default function AdminSchedulePage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6, flexWrap: 'wrap' }}>
                       <span style={{ background: typeColor.bg, color: typeColor.color, borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{typeLabel}</span>
-                      {isPast ? (
+                      {isPast && (
                         <span style={{ background: '#eeeeee', color: '#777', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>開催終了</span>
-                      ) : (
-                        <span style={{ background: isActive ? '#e8f5e9' : '#f5f5f5', color: isActive ? '#388e3c' : '#999', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
-                          {isActive ? '表示中' : '非表示'}
-                        </span>
                       )}
                       <span style={{ fontWeight: 700, fontSize: 17, color: '#2f2244' }}>{formatDate(ev.event_date)}</span>
                     </div>
@@ -259,8 +255,9 @@ export default function AdminSchedulePage() {
                   ) : (
                     <>
                       <button onClick={() => toggleStatus(ev)}
-                        style={{ background: isActive ? '#fff3e0' : '#e8f5e9', color: isActive ? '#e65100' : '#388e3c', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-                        {isActive ? '非表示にする' : '表示する'}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1.5px solid', borderColor: isActive ? '#388e3c' : '#ccc', borderRadius: 20, padding: '5px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: isActive ? '#388e3c' : '#aaa' }}>
+                        <span style={{ width: 10, height: 10, borderRadius: '50%', background: isActive ? '#388e3c' : '#ccc', display: 'inline-block' }} />
+                        {isActive ? '表示中' : '非表示'}
                       </button>
                       <Link href={`/admin/schedule/${ev.id}`}
                         style={{ background: '#2f2244', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 600 }}>

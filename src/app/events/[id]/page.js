@@ -116,50 +116,58 @@ export default async function EventDetailPage({ params }) {
         </h1>
         {event.subtitle && <p style={{ fontSize: 15, color: '#666', margin: '0 0 16px' }}>{event.subtitle}</p>}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginTop: 16 }}>
-          {event.location_name && (
-            <div>
-              <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>場所</div>
-              <div style={{ fontWeight: 600, color: '#333', fontSize: 14 }}>{event.location_name}</div>
-            </div>
-          )}
-          {event.meeting_place && (
-            <div>
-              <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>集合場所</div>
-              <div style={{ fontWeight: 600, color: '#333', fontSize: 14 }}>
-                {event.event_type === 'street' ? '確定メールに記載' : event.meeting_place}
+        {(() => {
+          const mapAddr = event.address || event.location_name
+          const embedUrl = mapAddr ? `https://maps.google.com/maps?q=${encodeURIComponent(mapAddr)}&output=embed&hl=ja` : null
+          const mapsLink = event.map_address || (mapAddr ? `https://maps.google.com/maps?q=${encodeURIComponent(mapAddr)}` : null)
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: embedUrl ? '1fr 1fr' : '1fr', gap: 20, marginTop: 20, alignItems: 'start' }}>
+              {embedUrl && (
+                <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e5e5', height: 220 }}>
+                  <iframe
+                    src={embedUrl}
+                    width="100%" height="220" style={{ border: 0, display: 'block' }}
+                    allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {event.location_name && (
+                  <div>
+                    <div style={{ fontSize: 12, color: '#999', marginBottom: 2 }}>📍 開催場所</div>
+                    <div style={{ fontWeight: 600, color: '#333', fontSize: 14 }}>{event.location_name}</div>
+                    {event.address && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{event.address}</div>}
+                  </div>
+                )}
+                {event.meeting_place && (
+                  <div>
+                    <div style={{ fontSize: 12, color: '#999', marginBottom: 2 }}>集合場所</div>
+                    <div style={{ fontWeight: 600, color: '#333', fontSize: 14 }}>
+                      {event.event_type === 'street' ? '確定メールに記載' : event.meeting_place}
+                    </div>
+                  </div>
+                )}
+                {mapsLink && (
+                  <a href={mapsLink} target="_blank" rel="noopener noreferrer"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#1a3560', fontWeight: 600, fontSize: 13, textDecoration: 'none', background: '#f8fbff', padding: '8px 14px', borderRadius: 8, width: 'fit-content' }}>
+                    🗺️ Google Mapsで見る
+                  </a>
+                )}
+                {event.studio_url && (
+                  <a href={event.studio_url} target="_blank" rel="noopener noreferrer"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#3949ab', fontSize: 13, textDecoration: 'none', fontWeight: 600 }}>
+                    🏢 スタジオ詳細を見る →
+                  </a>
+                )}
+                {event.access_note && (
+                  <div style={{ background: '#f8fbff', borderRadius: 8, padding: '12px', fontSize: 13, color: '#555', lineHeight: 1.8 }}>
+                    <strong>アクセス：</strong>{event.access_note}
+                  </div>
+                )}
               </div>
             </div>
-          )}
-          {event.meeting_address && event.event_type !== 'street' && (
-            <div>
-              <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>住所</div>
-              <div style={{ fontWeight: 600, color: '#333', fontSize: 14 }}>{event.meeting_address}</div>
-            </div>
-          )}
-          {event.meeting_map_url && event.event_type !== 'street' && (
-            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-              <a href={event.meeting_map_url} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#1a3560', fontWeight: 600, fontSize: 14, textDecoration: 'none', background: '#f8fbff', padding: '8px 14px', borderRadius: 8 }}>
-                📍 Google Mapsで見る
-              </a>
-            </div>
-          )}
-        </div>
-
-        {event.event_type === 'studio' && event.studio_url && (
-          <div style={{ marginTop: 12 }}>
-            <a href={event.studio_url} target="_blank" rel="noopener noreferrer" style={{ color: '#3949ab', fontSize: 13, textDecoration: 'none' }}>
-              🏢 スタジオ詳細を見る →
-            </a>
-          </div>
-        )}
-
-        {event.access_note && (
-          <div style={{ marginTop: 16, background: '#f8fbff', borderRadius: 8, padding: '14px', fontSize: 13, color: '#555', lineHeight: 1.8 }}>
-            <strong>アクセス：</strong>{event.access_note}
-          </div>
-        )}
+          )
+        })()}
       </div>
 
       {/* Street notice */}
@@ -182,6 +190,26 @@ export default async function EventDetailPage({ params }) {
               <div key={i} style={{ aspectRatio: '1', borderRadius: 10, overflow: 'hidden' }}>
                 <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Entry Models */}
+      {entries.filter(e => e.models).length > 0 && (
+        <div style={{ marginBottom: 40 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a3560', marginBottom: 20 }}>エントリーモデル</h2>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {[...new Map(entries.filter(e => e.models).map(e => [e.model_id, e])).values()].map(e => (
+              <Link key={e.model_id} href={`/models/${e.model_id}`} style={{ textDecoration: 'none', textAlign: 'center' }}>
+                <div style={{ width: 90, height: 110, borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%', overflow: 'hidden', margin: '0 auto 8px', border: '2px solid #e5e5e5' }}>
+                  {e.models.image
+                    ? <img src={e.models.image} alt={e.models.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : <div style={{ width: '100%', height: '100%', background: '#f0f4fb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>👤</div>
+                  }
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#1a3560' }}>{e.models.name}</div>
+              </Link>
             ))}
           </div>
         </div>
