@@ -10,24 +10,29 @@ function formatDate(d) {
   return `${date.getMonth() + 1}/${date.getDate()}（${days[date.getDay()]}）`
 }
 
+const TODAY = new Date().toISOString().split('T')[0]
+
 export default function AdminSchedulePage() {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [tab, setTab] = useState('upcoming')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ event_date: '', event_type: 'street', title: '', location_name: '' })
   const [saving, setSaving] = useState(false)
+  const [reusing, setReusing] = useState(null)
 
   useEffect(() => { load() }, [])
 
   async function load() {
     const res = await fetch('/api/admin/events')
     const data = await res.json()
-    if (!Array.isArray(data)) {
+    const list = Array.isArray(data) ? data : (Array.isArray(data?.events) ? data.events : null)
+    if (!list) {
       setLoadError(data.error || JSON.stringify(data))
       setEvents([])
     } else {
-      setEvents(data)
+      setEvents(list)
     }
     setLoading(false)
   }
@@ -47,8 +52,9 @@ export default function AdminSchedulePage() {
       }),
     })
     const data = await res.json()
-    if (data.error) { alert('エラー: ' + data.error); setSaving(false); return }
-    window.location.href = `/admin/schedule/${data.id}`
+    const created = data.event || data
+    if (created.error || !created.id) { alert('エラー: ' + (created.error || 'unknown')); setSaving(false); return }
+    window.location.href = `/admin/schedule/${created.id}`
     setSaving(false)
   }
 
@@ -72,20 +78,60 @@ export default function AdminSchedulePage() {
     const json = await res.json()
     if (json.archived) {
       alert(`予約履歴が ${json.bookingCount} 件あるため、完全削除ではなく非表示にしました。\n予約履歴・メルマガ対象はそのまま保持されます。`)
-      setEvents(prev => prev.filter(e => e.id !== id))
-    } else {
-      setEvents(prev => prev.filter(e => e.id !== id))
     }
+    setEvents(prev => prev.filter(e => e.id !== id))
+  }
+
+  async function reuseEvent(ev) {
+    if (!confirm(`「${ev.title || ev.location_name}」の内容をコピーして新規作成しますか？\n開催日・予約受付・モデルは引き継がれません。`)) return
+    setReusing(ev.id)
+    const res = await fetch('/api/admin/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event_type: ev.event_type,
+        title: ev.title,
+        location_name: ev.location_name,
+        address: ev.address,
+        map_address: ev.map_address,
+        access_note: ev.access_note,
+        studio_url: ev.studio_url,
+        studio_capacity: ev.studio_capacity,
+        studio_fee: ev.studio_fee,
+        meeting_place: ev.meeting_place,
+        meeting_address: ev.meeting_address,
+        meeting_map_url: ev.meeting_map_url,
+        baggage_storage: ev.baggage_storage,
+        model_assembly_offset_minutes: ev.model_assembly_offset_minutes,
+        model_extra_note: ev.model_extra_note,
+        model_lunch_note: ev.model_lunch_note,
+        studio_rules: ev.studio_rules,
+        slot_templates: ev.slot_templates,
+        main_image: ev.main_image,
+        status: 'draft',
+        booking_open_at: null,
+      }),
+    })
+    const data = await res.json()
+    const created = data.event || data
+    setReusing(null)
+    if (created.error || !created.id) { alert('エラー: ' + (created.error || 'unknown')); return }
+    window.location.href = `/admin/schedule/${created.id}`
   }
 
   const inp = { width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }
+
+  const upcoming = events.filter(ev => ev.event_date >= TODAY || !ev.event_date)
+  const past = events.filter(ev => ev.event_date && ev.event_date < TODAY)
+
+  const tabEvents = tab === 'upcoming' ? upcoming : past
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>読み込み中...</div>
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 16px' }}>
       <Link href="/admin" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0 24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0 20px' }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: '#2f2244', margin: 0 }}>スケジュール管理</h1>
         <button onClick={() => setShowForm(!showForm)}
           style={{ background: '#2f2244', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
@@ -128,16 +174,38 @@ export default function AdminSchedulePage() {
 
       {loadError && <div style={{ background: '#fce4ec', border: '1px solid #ef9a9a', borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#c62828' }}>エラー: {loadError}</div>}
 
+      {/* タブ */}
+      <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #e5e5e5' }}>
+        {[
+          { key: 'upcoming', label: '開催予定', count: upcoming.length },
+          { key: 'past', label: '開催終了', count: past.length },
+        ].map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)}
+            style={{
+              background: 'none', border: 'none', borderBottom: tab === t.key ? '2px solid #2f2244' : '2px solid transparent',
+              marginBottom: -2, padding: '10px 20px', cursor: 'pointer', fontWeight: tab === t.key ? 700 : 500,
+              fontSize: 14, color: tab === t.key ? '#2f2244' : '#999', display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+            {t.label}
+            <span style={{ background: tab === t.key ? '#2f2244' : '#ddd', color: tab === t.key ? '#fff' : '#777', borderRadius: 10, padding: '1px 7px', fontSize: 11 }}>
+              {t.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {events.length === 0 && !loadError ? <p style={{ color: '#999' }}>イベントはありません。</p> : events.map(ev => {
+        {tabEvents.length === 0 ? (
+          <p style={{ color: '#999' }}>{tab === 'upcoming' ? '開催予定のイベントはありません。' : '開催終了したイベントはありません。'}</p>
+        ) : tabEvents.map(ev => {
           const models = ev.event_entries?.map(e => e.models).filter(Boolean) || []
           const typeLabel = ev.event_type === 'street' ? 'ストリート' : ev.event_type === 'studio' ? 'スタジオ' : '不定期'
           const typeColor = ev.event_type === 'street' ? { bg: '#e0f7fa', color: '#0097a7' } : ev.event_type === 'studio' ? { bg: '#fce4ec', color: '#c2185b' } : { bg: '#e8eaf6', color: '#1a3560' }
           const isActive = ev.status === 'active'
-          const isPast = ev.event_date < new Date().toISOString().split('T')[0]
+          const isPast = tab === 'past'
 
           return (
-            <div key={ev.id} style={{ background: '#fff', borderRadius: 12, padding: '16px 20px', border: '1px solid #e5e5e5', opacity: isPast ? 0.75 : 1 }}>
+            <div key={ev.id} style={{ background: '#fff', borderRadius: 12, padding: '16px 20px', border: '1px solid #e5e5e5', opacity: isPast ? 0.85 : 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', gap: 14, flex: 1, minWidth: 0 }}>
                   {ev.main_image && (
@@ -145,45 +213,65 @@ export default function AdminSchedulePage() {
                       <img src={ev.main_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
                   )}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6, flexWrap: 'wrap' }}>
-                    <span style={{ background: typeColor.bg, color: typeColor.color, borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{typeLabel}</span>
-                    {isPast ? (
-                      <span style={{ background: '#eeeeee', color: '#777', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>開催終了</span>
-                    ) : (
-                      <span style={{ background: isActive ? '#e8f5e9' : '#f5f5f5', color: isActive ? '#388e3c' : '#999', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
-                        {isActive ? '表示中' : '非表示'}
-                      </span>
-                    )}
-                    <span style={{ fontWeight: 700, fontSize: 17, color: '#2f2244' }}>{formatDate(ev.event_date)}</span>
-                  </div>
-                  <div style={{ fontSize: 14, color: '#333', fontWeight: 600 }}>{ev.title || ev.location_name}</div>
-                  <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{ev.location_name}</div>
-                  {models.length > 0 && (
-                    <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                      {models.map((m, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#f8f5ff', borderRadius: 20, padding: '3px 10px 3px 4px' }}>
-                          {m.image && <img src={m.image} style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />}
-                          <span style={{ fontSize: 12, color: '#2f2244', fontWeight: 600 }}>{m.name}</span>
-                        </div>
-                      ))}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6, flexWrap: 'wrap' }}>
+                      <span style={{ background: typeColor.bg, color: typeColor.color, borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{typeLabel}</span>
+                      {isPast ? (
+                        <span style={{ background: '#eeeeee', color: '#777', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>開催終了</span>
+                      ) : (
+                        <span style={{ background: isActive ? '#e8f5e9' : '#f5f5f5', color: isActive ? '#388e3c' : '#999', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
+                          {isActive ? '表示中' : '非表示'}
+                        </span>
+                      )}
+                      <span style={{ fontWeight: 700, fontSize: 17, color: '#2f2244' }}>{formatDate(ev.event_date)}</span>
                     </div>
+                    <div style={{ fontSize: 14, color: '#333', fontWeight: 600 }}>{ev.title || ev.location_name}</div>
+                    <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{ev.location_name}</div>
+                    {models.length > 0 && (
+                      <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                        {models.map((m, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#f8f5ff', borderRadius: 20, padding: '3px 10px 3px 4px' }}>
+                            {m.image && <img src={m.image} style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />}
+                            <span style={{ fontSize: 12, color: '#2f2244', fontWeight: 600 }}>{m.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  {isPast ? (
+                    <>
+                      <button onClick={() => reuseEvent(ev)} disabled={reusing === ev.id}
+                        style={{ background: '#e8f0fe', color: '#1a3560', border: 'none', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                        {reusing === ev.id ? '作成中...' : '再使用する'}
+                      </button>
+                      <Link href={`/admin/schedule/${ev.id}`}
+                        style={{ background: '#f5f5f5', color: '#555', textDecoration: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 600 }}>
+                        編集
+                      </Link>
+                      <button onClick={() => deleteEvent(ev.id)}
+                        style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                        削除
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => toggleStatus(ev)}
+                        style={{ background: isActive ? '#fff3e0' : '#e8f5e9', color: isActive ? '#e65100' : '#388e3c', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                        {isActive ? '非表示にする' : '表示する'}
+                      </button>
+                      <Link href={`/admin/schedule/${ev.id}`}
+                        style={{ background: '#2f2244', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 600 }}>
+                        編集
+                      </Link>
+                      <button onClick={() => deleteEvent(ev.id)}
+                        style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                        削除
+                      </button>
+                    </>
                   )}
-                </div>
-                </div>
-                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                  <button onClick={() => toggleStatus(ev)}
-                    style={{ background: isActive ? '#fff3e0' : '#e8f5e9', color: isActive ? '#e65100' : '#388e3c', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-                    {isActive ? '非表示にする' : '表示する'}
-                  </button>
-                  <Link href={`/admin/schedule/${ev.id}`}
-                    style={{ background: '#2f2244', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 600 }}>
-                    編集
-                  </Link>
-                  <button onClick={() => deleteEvent(ev.id)}
-                    style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-                    削除
-                  </button>
                 </div>
               </div>
             </div>
