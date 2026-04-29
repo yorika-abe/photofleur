@@ -32,7 +32,7 @@ export async function GET() {
 
   const { data: slots } = await supabase
     .from('booking_slots')
-    .select('id, slot_label, slot_order, event_entry_id')
+    .select('id, slot_label, slot_order, event_entry_id, price')
     .in('event_entry_id', entryIds)
     .neq('slot_order', 0)
     .order('slot_order', { ascending: true })
