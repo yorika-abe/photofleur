@@ -16,6 +16,7 @@ export default function AdminBookingsPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
+  const [eventFilter, setEventFilter] = useState('')
   const [expanded, setExpanded] = useState(null)
   const [cancelling, setCancelling] = useState(null)
   const [toast, setToast] = useState(null)
@@ -95,6 +96,15 @@ export default function AdminBookingsPage() {
 
   const today = new Date().toISOString().split('T')[0]
 
+  // ユニークなイベント一覧（開催日順）
+  const uniqueEvents = Object.values(
+    bookings.reduce((acc, b) => {
+      const eid = b.event?.id || b.event?.event_date
+      if (eid && !acc[eid]) acc[eid] = b.event
+      return acc
+    }, {})
+  ).sort((a, b) => (b.event_date || '').localeCompare(a.event_date || ''))
+
   const filtered = bookings.filter(b => {
     const matchFilter =
       filter === 'all' ? true :
@@ -102,10 +112,12 @@ export default function AdminBookingsPage() {
       filter === 'past' ? (b.event?.event_date < today) :
       filter === 'outdoor' ? b.is_outdoor : true
 
+    const matchEvent = !eventFilter || b.event?.event_date === eventFilter
+
     const q = search.toLowerCase()
     const matchSearch = !q || [b.name, b.email, b.phone, b.model?.name, b.event?.event_date].some(v => v?.toLowerCase().includes(q))
 
-    return matchFilter && matchSearch
+    return matchFilter && matchEvent && matchSearch
   })
 
   const totalRevenue = filtered.reduce((sum, b) => sum + (b.final_price || b.slot?.price || 0), 0)
@@ -151,6 +163,15 @@ export default function AdminBookingsPage() {
             </button>
           ))}
         </div>
+        <select value={eventFilter} onChange={e => setEventFilter(e.target.value)}
+          style={{ padding: '7px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, color: eventFilter ? '#2f2244' : '#999', minWidth: 180 }}>
+          <option value="">開催日・イベントで絞る</option>
+          {uniqueEvents.map(ev => (
+            <option key={ev.event_date} value={ev.event_date}>
+              {formatDate(ev.event_date)}{ev.location_name ? `　${ev.location_name}` : ''}
+            </option>
+          ))}
+        </select>
         <input
           value={search} onChange={e => setSearch(e.target.value)}
           placeholder="名前・メール・モデル名で検索"
