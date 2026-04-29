@@ -120,9 +120,6 @@ export default function AdminBookingsPage() {
     return matchFilter && matchEvent && matchSearch
   })
 
-  const totalRevenue = filtered.reduce((sum, b) => sum + (b.final_price || b.slot?.price || 0), 0)
-  const outdoorCount = filtered.filter(b => b.is_outdoor).length
-
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
 
@@ -139,19 +136,6 @@ export default function AdminBookingsPage() {
         <Link href="/admin/sales" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>売上管理</Link>
       </div>
 
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
-        {[
-          { label: '予約件数', value: `${filtered.length}件`, color: '#2f2244' },
-          { label: '売上合計', value: `¥${totalRevenue.toLocaleString()}`, color: '#388e3c' },
-          { label: '屋外撮影', value: `${outdoorCount}件`, color: '#e65100' },
-        ].map(s => (
-          <div key={s.label} style={{ background: '#fff', borderRadius: 10, padding: '16px', border: '1px solid #e5e5e5', textAlign: 'center' }}>
-            <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>{s.label}</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: s.color }}>{s.value}</div>
-          </div>
-        ))}
-      </div>
 
       {/* Filters */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
