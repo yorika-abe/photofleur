@@ -541,6 +541,8 @@ export default function NewsletterPage() {
   const [activeTemplateId, setActiveTemplateId] = useState('newsletter')
   const [saving, setSaving] = useState(false)
   const [templateLoading, setTemplateLoading] = useState(false)
+  const [savedNewsletters, setSavedNewsletters] = useState([])
+  const [savingNew, setSavingNew] = useState(false)
 
   const activeTemplDef = TEMPLATE_DEFS.find(t => t.id === activeTemplateId)
   const isNewsletter = activeTemplateId === 'newsletter'
@@ -549,11 +551,58 @@ export default function NewsletterPage() {
     fetch('/api/admin/newsletter').then(r => r.json()).then(d => {
       if (d.count !== undefined) setSubscriberCount(d.count)
     })
+    loadSavedNewsletters()
     const link = document.createElement('link')
     link.rel = 'stylesheet'; link.href = GOOGLE_FONTS_URL
     document.head.appendChild(link)
     return () => document.head.removeChild(link)
   }, [])
+
+  async function loadSavedNewsletters() {
+    const res = await fetch('/api/admin/newsletter-templates')
+    const json = await res.json()
+    setSavedNewsletters(json.templates || [])
+  }
+
+  async function saveAsNewTemplate() {
+    const name = window.prompt('このデザインの名前を入力してください')
+    if (!name?.trim()) return
+    setSavingNew(true)
+    try {
+      const res = await fetch('/api/admin/newsletter-templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, subject, rows_json: rows, header_json: header, footer }),
+      })
+      const json = await res.json()
+      if (!res.ok) setResult({ error: json.error || '保存に失敗しました' })
+      else { setResult({ savedNew: name }); loadSavedNewsletters() }
+    } catch { setResult({ error: 'ネットワークエラー' }) }
+    finally { setSavingNew(false) }
+  }
+
+  async function loadSavedTemplate(id) {
+    setTemplateLoading(true)
+    try {
+      const res = await fetch(`/api/admin/email-templates/${id}`)
+      const json = await res.json()
+      if (json.template) {
+        const t = json.template
+        setRows(t.rows_json?.length > 0 ? restoreRowsFromDb(t.rows_json) : [newRow('heading'), newRow('text')])
+        if (t.header_json && Object.keys(t.header_json).length > 0) setHeader(t.header_json)
+        if (t.footer) setFooter(t.footer)
+        if (t.subject) setSubject(t.subject)
+        setSelection(null)
+        setResult({ loadedName: t.name })
+      }
+    } finally { setTemplateLoading(false) }
+  }
+
+  async function deleteSavedTemplate(id, name) {
+    if (!window.confirm(`「${name}」を削除しますか？`)) return
+    await fetch(`/api/admin/newsletter-templates/${id}`, { method: 'DELETE' })
+    loadSavedNewsletters()
+  }
 
   async function switchTemplate(tmplId) {
     if (tmplId === activeTemplateId) return
@@ -733,11 +782,17 @@ export default function NewsletterPage() {
           style={{ width: 280, padding: '7px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 13 }} />
         {isNewsletter ? (
           !confirmed ? (
-            <button onClick={() => { if (!subject.trim()) { alert('件名を入力してください'); return } setConfirmed(true) }}
-              disabled={!subject.trim() || rows.length === 0}
-              style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (!subject.trim() || rows.length === 0) ? 0.5 : 1 }}>
-              送信確認
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={saveAsNewTemplate} disabled={savingNew || rows.length === 0}
+                style={{ background: '#fff', color: '#f5a623', border: '1.5px solid #f5a623', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: rows.length === 0 ? 0.4 : 1 }}>
+                {savingNew ? '保存中...' : '⭐ お気に入り保存'}
+              </button>
+              <button onClick={() => { if (!subject.trim()) { alert('件名を入力してください'); return } setConfirmed(true) }}
+                disabled={!subject.trim() || rows.length === 0}
+                style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (!subject.trim() || rows.length === 0) ? 0.5 : 1 }}>
+                送信確認
+              </button>
+            </div>
           ) : (
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <span style={{ fontSize: 12, color: '#795548', fontWeight: 600 }}>{subscriberCount}名に送信します</span>
@@ -762,6 +817,10 @@ export default function NewsletterPage() {
             ? <span style={{ color: '#e53935' }}>エラー: {result.error}</span>
             : result.saved
             ? <span style={{ color: '#388e3c', fontWeight: 600 }}>✅ テンプレートを保存しました</span>
+            : result.savedNew
+            ? <span style={{ color: '#f5a623', fontWeight: 600 }}>⭐ 「{result.savedNew}」をお気に入りに保存しました</span>
+            : result.loadedName
+            ? <span style={{ color: '#1a3560', fontWeight: 600 }}>📂 「{result.loadedName}」を読み込みました</span>
             : <span style={{ color: '#388e3c', fontWeight: 600 }}>✅ 送信完了：{result.sent}件成功{result.failed > 0 ? ` / ${result.failed}件失敗` : ''}</span>}
         </div>
       )}
@@ -777,6 +836,26 @@ export default function NewsletterPage() {
               {tmpl.name}
             </button>
           ))}
+          {isNewsletter && (
+            <div style={{ borderTop: '1px solid #f0f0f0', marginTop: 12, paddingTop: 12 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#f5a623', marginBottom: 8, letterSpacing: '0.05em' }}>⭐ お気に入り</div>
+              {savedNewsletters.length === 0 && (
+                <div style={{ fontSize: 9, color: '#ccc', textAlign: 'center', padding: '8px 0' }}>保存済みなし</div>
+              )}
+              {savedNewsletters.map(t => (
+                <div key={t.id} style={{ marginBottom: 5, border: '1px solid #ffe0a0', borderRadius: 7, overflow: 'hidden', background: '#fffdf5' }}>
+                  <button onClick={() => loadSavedTemplate(t.id)}
+                    style={{ width: '100%', padding: '6px 8px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 9, color: '#1a3560', fontWeight: 600, textAlign: 'left', lineHeight: 1.4 }}>
+                    📄 {t.name}
+                  </button>
+                  <button onClick={() => deleteSavedTemplate(t.id, t.name)}
+                    style={{ width: '100%', padding: '3px 8px', background: '#fff5f5', border: 'none', borderTop: '1px solid #ffe0a0', cursor: 'pointer', fontSize: 9, color: '#e53935' }}>
+                    削除
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <div style={{ borderTop: '1px solid #f0f0f0', marginTop: 12, paddingTop: 12 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#999', marginBottom: 8, letterSpacing: '0.05em' }}>ブロック追加</div>
             {BLOCK_TYPES.map(bt => (
