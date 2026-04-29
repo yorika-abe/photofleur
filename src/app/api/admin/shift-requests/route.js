@@ -12,6 +12,11 @@ async function checkAdmin(admin) {
 
 export async function GET() {
   const admin = await createSupabaseAdminClient()
+  const today = new Date().toISOString().split('T')[0]
+
+  // 過去の指定日を自動削除
+  await admin.from('shift_request_dates').delete().lt('request_date', today)
+
   const { data, error } = await admin
     .from('shift_request_dates')
     .select('*')

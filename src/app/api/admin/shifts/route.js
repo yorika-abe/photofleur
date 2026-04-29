@@ -138,7 +138,13 @@ export async function GET(req) {
     .select('*, models(id, name, image)')
     .order('event_date', { ascending: true })
 
-  if (status && status !== 'all') query = query.eq('status', status)
+  const today = new Date().toISOString().split('T')[0]
+  if (status === 'ended') {
+    query = query.lt('event_date', today)
+  } else {
+    query = query.gte('event_date', today)
+    if (status) query = query.eq('status', status)
+  }
 
   const { data, error } = await query
   if (error) return Response.json({ error: error.message }, { status: 500 })

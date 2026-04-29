@@ -60,7 +60,7 @@ export default function AdminShiftsPage() {
     ['pending_approval', '承認待ち'],
     ['submitted', '提出済み'],
     ['rejected', '却下'],
-    ['all', '全て'],
+    ['ended', '開催終了'],
   ]
 
   return (
@@ -118,27 +118,29 @@ export default function AdminShiftsPage() {
                     {shift.notes && <p style={{ fontSize: 12, color: '#888', margin: 0 }}>{shift.notes}</p>}
                   </div>
 
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-                    {isPending ? (
-                      <>
-                        <button onClick={() => updateStatus(shift.id, 'submitted')} disabled={isUpdating}
-                          style={{ padding: '7px 18px', background: '#0097a7', color: '#fff', border: 'none', borderRadius: 7, fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: isUpdating ? 0.6 : 1 }}>
-                          {isUpdating ? '処理中...' : '承認する'}
-                        </button>
-                        <button onClick={() => updateStatus(shift.id, 'rejected')} disabled={isUpdating}
-                          style={{ padding: '7px 14px', background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 7, fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: isUpdating ? 0.6 : 1 }}>
-                          却下
-                        </button>
-                      </>
-                    ) : (
-                      <select value={shift.status} onChange={e => updateStatus(shift.id, e.target.value)} disabled={isUpdating}
-                        style={{ padding: '5px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, cursor: 'pointer', opacity: isUpdating ? 0.6 : 1 }}>
-                        <option value="submitted">提出済み</option>
-                        <option value="pending_approval">承認待ち</option>
-                        <option value="rejected">却下</option>
-                      </select>
-                    )}
-                  </div>
+                  {filter !== 'ended' && (
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+                      {isPending ? (
+                        <>
+                          <button onClick={() => updateStatus(shift.id, 'submitted')} disabled={isUpdating}
+                            style={{ padding: '7px 18px', background: '#0097a7', color: '#fff', border: 'none', borderRadius: 7, fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: isUpdating ? 0.6 : 1 }}>
+                            {isUpdating ? '処理中...' : '承認する'}
+                          </button>
+                          <button onClick={() => updateStatus(shift.id, 'rejected')} disabled={isUpdating}
+                            style={{ padding: '7px 14px', background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 7, fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: isUpdating ? 0.6 : 1 }}>
+                            却下
+                          </button>
+                        </>
+                      ) : (
+                        <select value={shift.status} onChange={e => updateStatus(shift.id, e.target.value)} disabled={isUpdating}
+                          style={{ padding: '5px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, cursor: 'pointer', opacity: isUpdating ? 0.6 : 1 }}>
+                          <option value="submitted">提出済み</option>
+                          <option value="pending_approval">承認待ち</option>
+                          <option value="rejected">却下</option>
+                        </select>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )
