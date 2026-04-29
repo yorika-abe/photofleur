@@ -97,6 +97,7 @@ export default function ShiftRequestsPage() {
   const [saving, setSaving] = useState(false)
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
+  const [listFilter, setListFilter] = useState('active')
 
   async function load() {
     const res = await fetch('/api/admin/shift-requests')
@@ -293,41 +294,66 @@ export default function ShiftRequestsPage() {
       {/* 登録済みリスト */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>読み込み中...</div>
-      ) : requests.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#bbb' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📅</div>
-          <p>まだシフト指定日が登録されていません</p>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {requests.map(r => {
-            const isPast = r.request_date < new Date().toISOString().split('T')[0]
-            const tc = TYPE_CONFIG[r.event_type] || TYPE_CONFIG.both
-            return (
-              <div key={r.id} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, opacity: isPast ? 0.5 : 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: tc.color, flexShrink: 0 }} />
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>{formatDate(r.request_date)}</span>
-                      <span style={{ fontSize: 11, background: tc.bg, color: tc.color, borderRadius: 4, padding: '2px 7px', fontWeight: 700 }}>
-                        {r.event_type === 'street' ? 'ストリート' : r.event_type === 'studio' ? 'スタジオ' : '両方'}
-                      </span>
-                      {isPast && <span style={{ fontSize: 10, color: '#ccc' }}>過去</span>}
-                    </div>
-                    {r.deadline && <div style={{ fontSize: 11, color: '#aaa' }}>締め切り：{formatDate(r.deadline)}</div>}
-                    {r.notes && <div style={{ fontSize: 12, color: '#666' }}>{r.notes}</div>}
-                  </div>
-                </div>
-                <button onClick={() => deleteRequest(r.id)}
-                  style={{ background: 'none', border: '1px solid #eee', color: '#e53935', borderRadius: 8, padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                  削除
+      ) : (() => {
+        const todayStr = new Date().toISOString().split('T')[0]
+        const active = requests.filter(r => !r.deadline || r.deadline >= todayStr)
+        const closed = requests.filter(r => r.deadline && r.deadline < todayStr)
+        const displayed = listFilter === 'active' ? active : closed
+
+        return (
+          <>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+              {[
+                { key: 'active', label: `募集中（${active.length}件）` },
+                { key: 'closed', label: `締め切り済み（${closed.length}件）` },
+              ].map(f => (
+                <button key={f.key} onClick={() => setListFilter(f.key)}
+                  style={{ padding: '7px 18px', borderRadius: 20, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13,
+                    background: listFilter === f.key ? '#1a3560' : '#f0f0f0',
+                    color: listFilter === f.key ? '#fff' : '#555' }}>
+                  {f.label}
                 </button>
+              ))}
+            </div>
+
+            {displayed.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '60px 20px', color: '#bbb' }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>📅</div>
+                <p>{listFilter === 'active' ? 'まだシフト指定日が登録されていません' : '締め切り済みの指定日はありません'}</p>
               </div>
-            )
-          })}
-        </div>
-      )}
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {displayed.map(r => {
+                  const tc = TYPE_CONFIG[r.event_type] || TYPE_CONFIG.both
+                  const isClosed = r.deadline && r.deadline < todayStr
+                  return (
+                    <div key={r.id} style={{ background: '#fff', border: `1px solid ${isClosed ? '#e0e0e0' : '#e5e5e5'}`, borderRadius: 12, padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, opacity: isClosed ? 0.6 : 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: isClosed ? '#bbb' : tc.color, flexShrink: 0 }} />
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>{formatDate(r.request_date)}</span>
+                            <span style={{ fontSize: 11, background: tc.bg, color: tc.color, borderRadius: 4, padding: '2px 7px', fontWeight: 700 }}>
+                              {r.event_type === 'street' ? 'ストリート' : r.event_type === 'studio' ? 'スタジオ' : '両方'}
+                            </span>
+                            {isClosed && <span style={{ fontSize: 11, background: '#f5f5f5', color: '#999', borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>締め切り済み</span>}
+                          </div>
+                          {r.deadline && <div style={{ fontSize: 11, color: isClosed ? '#e53935' : '#aaa', marginTop: 2 }}>締め切り：{formatDate(r.deadline)}</div>}
+                          {r.notes && <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>{r.notes}</div>}
+                        </div>
+                      </div>
+                      <button onClick={() => deleteRequest(r.id)}
+                        style={{ background: 'none', border: '1px solid #eee', color: '#e53935', borderRadius: 8, padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        削除
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </>
+        )
+      })()}
     </div>
   )
 }

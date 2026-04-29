@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 const STUDIO_SLOTS = [
@@ -30,9 +30,10 @@ export default function EventEditPage() {
   const [entries, setEntries] = useState([])
   const [shifts, setShifts] = useState([])
   const [slotTemplates, setSlotTemplates] = useState(null) // カスタム予約枠テンプレート
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [saved] = useState(false)
   const [activeTab, setActiveTab] = useState('basic')
   const [autoAdding, setAutoAdding] = useState(false)
   const [uploading, setUploading] = useState(null)
@@ -160,8 +161,7 @@ export default function EventEditPage() {
     })
     setSaving(false)
     if (res.ok) {
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      router.push('/admin/schedule')
     }
   }
 
@@ -556,7 +556,11 @@ export default function EventEditPage() {
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={label}>住所</label>
-              <input type="text" value={event.address || ''} onChange={e => updateField('address', e.target.value)} style={inp} placeholder="〒171-0021 東京都豊島区西池袋3丁目3-9" />
+              <input type="text" value={event.address || ''} onChange={e => {
+                const addr = e.target.value
+                updateField('address', addr)
+                if (addr) updateField('map_address', `https://maps.google.com/maps?q=${encodeURIComponent(addr)}`)
+              }} style={inp} placeholder="〒171-0021 東京都豊島区西池袋3丁目3-9" />
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={label}>Google Maps URL</label>
@@ -577,7 +581,11 @@ export default function EventEditPage() {
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={label}>集合場所 住所</label>
-              <input type="text" value={event.meeting_address || ''} onChange={e => updateField('meeting_address', e.target.value)} style={inp} placeholder="〒150-0043 東京都渋谷区道玄坂2..." />
+              <input type="text" value={event.meeting_address || ''} onChange={e => {
+                const addr = e.target.value
+                updateField('meeting_address', addr)
+                if (addr) updateField('meeting_map_url', `https://maps.google.com/maps?q=${encodeURIComponent(addr)}`)
+              }} style={inp} placeholder="〒150-0043 東京都渋谷区道玄坂2..." />
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={label}>集合場所 Google Maps URL</label>

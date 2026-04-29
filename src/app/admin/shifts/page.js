@@ -29,8 +29,10 @@ export default function AdminShiftsPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('pending_approval')
   const [updating, setUpdating] = useState({})
+  const [modelFilter, setModelFilter] = useState('')
+  const [dateFilter, setDateFilter] = useState('')
 
-  useEffect(() => { load() }, [filter])
+  useEffect(() => { load(); setModelFilter(''); setDateFilter('') }, [filter])
 
   async function load() {
     setLoading(true)
@@ -80,13 +82,38 @@ export default function AdminShiftsPage() {
         ))}
       </div>
 
+      {(filter === 'submitted' || filter === 'ended') && !loading && shifts.length > 0 && (() => {
+        const models = [...new Map(shifts.map(s => [s.models?.name, s.models?.name])).entries()].map(([v]) => v).filter(Boolean).sort()
+        const dates = [...new Set(shifts.map(s => s.event_date).filter(Boolean))].sort()
+        const sel = { padding: '7px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, cursor: 'pointer', background: '#fff' }
+        return (
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+            <select value={modelFilter} onChange={e => setModelFilter(e.target.value)} style={sel}>
+              <option value="">モデル：すべて</option>
+              {models.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <select value={dateFilter} onChange={e => setDateFilter(e.target.value)} style={sel}>
+              <option value="">日付：すべて</option>
+              {dates.map(d => <option key={d} value={d}>{formatDate(d)}</option>)}
+            </select>
+          </div>
+        )
+      })()}
+
       {loading ? (
         <p style={{ color: '#999' }}>読み込み中...</p>
       ) : shifts.length === 0 ? (
         <p style={{ color: '#999' }}>該当するシフトはありません。</p>
-      ) : (
+      ) : (() => {
+        const displayed = shifts.filter(s =>
+          (!modelFilter || s.models?.name === modelFilter) &&
+          (!dateFilter || s.event_date === dateFilter)
+        )
+        return displayed.length === 0 ? (
+          <p style={{ color: '#999' }}>該当するシフトはありません。</p>
+        ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {shifts.map(shift => {
+          {displayed.map(shift => {
             const sc = STATUS_COLORS[shift.status] || STATUS_COLORS.submitted
             const isPending = shift.status === 'pending_approval'
             const isUpdating = !!updating[shift.id]
@@ -146,7 +173,8 @@ export default function AdminShiftsPage() {
             )
           })}
         </div>
-      )}
+        )
+      })()}
     </div>
   )
 }
