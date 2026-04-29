@@ -127,11 +127,18 @@ export default function ExtraEntryPage() {
 
   return (
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 16px' }}>
-      <div style={{ marginBottom: 24 }}>
-        <Link href="/model-portal" style={{ fontSize: 13, color: '#0097a7', textDecoration: 'none' }}>← ポータルトップ</Link>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: '8px 0 4px' }}>追加エントリー・変更申請</h1>
-        <p style={{ fontSize: 13, color: '#888', margin: 0 }}>締め切り後の参加申請・内容変更です。承認が必要です。</p>
+      <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #e5e5e5' }}>
+        {[
+          { key: 'submit', label: 'シフト提出', href: '/model-portal/shifts' },
+          { key: 'extra', label: '追加・変更申請', href: '/model-portal/shifts/extra' },
+          { key: 'history', label: '提出履歴', href: '/model-portal/shifts/history' },
+        ].map(tab => tab.key === 'extra' ? (
+          <div key={tab.key} style={{ padding: '10px 18px', fontWeight: 700, fontSize: 14, color: '#1a1a2e', borderBottom: '2px solid #1a1a2e', marginBottom: -2, cursor: 'default' }}>{tab.label}</div>
+        ) : (
+          <Link key={tab.key} href={tab.href} style={{ padding: '10px 18px', fontWeight: 600, fontSize: 14, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>{tab.label}</Link>
+        ))}
       </div>
+      <p style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>締め切り後の参加申請・内容変更です。承認が必要です。</p>
 
       {dates.length === 0 && (
         <div style={{ textAlign: 'center', padding: '48px 20px', color: '#bbb', background: '#fafafa', borderRadius: 14 }}>

@@ -134,30 +134,33 @@ export default function ShiftHistoryPage() {
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>読み込み中...</div>
 
-  const futureShifts = shifts.filter(s => s.event_date >= today)
   const pastShifts = shifts.filter(s => s.event_date < today)
 
   return (
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div>
-          <Link href="/model-portal/shifts" style={{ fontSize: 13, color: '#0097a7', textDecoration: 'none' }}>← シフト提出</Link>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', marginBottom: 4, marginTop: 6 }}>提出済みシフト</h1>
-        </div>
+      <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid #e5e5e5' }}>
+        {[
+          { key: 'submit', label: 'シフト提出', href: '/model-portal/shifts' },
+          { key: 'extra', label: '追加・変更申請', href: '/model-portal/shifts/extra' },
+          { key: 'history', label: '提出履歴', href: '/model-portal/shifts/history' },
+        ].map(tab => tab.key === 'history' ? (
+          <div key={tab.key} style={{ padding: '10px 18px', fontWeight: 700, fontSize: 14, color: '#1a1a2e', borderBottom: '2px solid #1a1a2e', marginBottom: -2, cursor: 'default' }}>{tab.label}</div>
+        ) : (
+          <Link key={tab.key} href={tab.href} style={{ padding: '10px 18px', fontWeight: 600, fontSize: 14, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>{tab.label}</Link>
+        ))}
       </div>
 
-      {shifts.length === 0 && (
+      {pastShifts.length === 0 && (
         <div style={{ textAlign: 'center', padding: '48px 20px', color: '#bbb', background: '#fafafa', borderRadius: 14 }}>
           <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
-          <p style={{ margin: 0, fontSize: 14 }}>提出済みのシフトはありません</p>
+          <p style={{ margin: 0, fontSize: 14 }}>過去の提出履歴はありません</p>
         </div>
       )}
 
-      {futureShifts.length > 0 && (
+      {pastShifts.length > 0 && (
         <div style={{ marginBottom: 32 }}>
-          <p style={{ fontSize: 12, fontWeight: 600, color: '#0097a7', letterSpacing: '0.1em', marginBottom: 10 }}>今後の予定</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {futureShifts.map(shift => {
+            {pastShifts.map(shift => {
               const { label, dow, dowIdx } = fmtDate(shift.event_date)
               const isWeekend = dowIdx === 0 || dowIdx === 6
               const tc = TYPE_COLORS[shift.event_type] || TYPE_COLORS.both
@@ -273,34 +276,6 @@ export default function ShiftHistoryPage() {
         </div>
       )}
 
-      {pastShifts.length > 0 && (
-        <div>
-          <p style={{ fontSize: 12, fontWeight: 600, color: '#bbb', letterSpacing: '0.1em', marginBottom: 10 }}>過去の提出履歴</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {pastShifts.map(shift => {
-              const { label, dow, dowIdx } = fmtDate(shift.event_date)
-              const unavail = isUnavailable(shift)
-              const isAllDay = !unavail && shift.available_from === '00:00' && shift.available_until === '00:00'
-              const sc = STATUS_COLORS[shift.status] || STATUS_COLORS.submitted
-              return (
-                <div key={shift.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f9f9f9', borderRadius: 8, padding: '9px 14px', opacity: 0.65 }}>
-                  <span style={{ fontSize: 13, color: dowIdx === 0 ? '#e53935' : dowIdx === 6 ? '#1565c0' : '#555', fontWeight: 600 }}>
-                    {label}（{dow}）
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 12, color: unavail ? '#555' : '#aaa' }}>
-                      {unavail ? '不参加' : isAllDay ? '終日' : `${shift.available_from}〜${shift.available_until}`}
-                    </span>
-                    <span style={{ fontSize: 11, background: sc.bg, color: sc.color, borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>
-                      {STATUS_LABELS[shift.status] || shift.status}
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

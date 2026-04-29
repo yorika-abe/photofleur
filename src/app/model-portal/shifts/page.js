@@ -151,15 +151,19 @@ export default function ModelShiftsPage() {
 
   return (
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', marginBottom: 4 }}>シフト提出</h1>
-          {model && <p style={{ color: '#888', fontSize: 13, margin: 0 }}>{model.name} さんの出演可能時間を登録してください。</p>}
-        </div>
-        <Link href="/model-portal/shifts/extra"
-          style={{ fontSize: 13, color: '#0097a7', textDecoration: 'none', fontWeight: 600, background: '#e0f7fa', borderRadius: 8, padding: '7px 14px', whiteSpace: 'nowrap' }}>
-          追加エントリー・変更申請 →
-        </Link>
+      <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid #e5e5e5' }}>
+        {[
+          { key: 'submit', label: 'シフト提出', href: '/model-portal/shifts' },
+          { key: 'extra', label: '追加・変更申請', href: '/model-portal/shifts/extra' },
+          { key: 'history', label: '提出履歴', href: '/model-portal/shifts/history' },
+        ].map(tab => tab.key === 'submit' ? (
+          <div key={tab.key} style={{ padding: '10px 18px', fontWeight: 700, fontSize: 14, color: '#1a1a2e', borderBottom: '2px solid #1a1a2e', marginBottom: -2, cursor: 'default' }}>{tab.label}</div>
+        ) : (
+          <Link key={tab.key} href={tab.href} style={{ padding: '10px 18px', fontWeight: 600, fontSize: 14, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>{tab.label}</Link>
+        ))}
+      </div>
+      <div style={{ marginBottom: 20 }}>
+        {model && <p style={{ color: '#888', fontSize: 13, margin: 0 }}>{model.name} さんの出演可能時間を登録してください。</p>}
       </div>
 
       {!model && (
