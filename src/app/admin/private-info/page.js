@@ -146,14 +146,16 @@ export default function AdminPrivateInfoPage() {
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 20px' }}>
       <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, margin: '16px 0 28px' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: 0 }}>🔒 非公開登録情報</h1>
-        {pendingCount > 0 && (
-          <span style={{ background: '#e53935', color: '#fff', borderRadius: 12, padding: '2px 12px', fontSize: 13, fontWeight: 700 }}>
-            変更申請 {pendingCount}件
-          </span>
-        )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0 0' }}>
+        <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e5e5e5', flex: 1 }}>
+          <Link href="/admin/models" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>モデル管理</Link>
+          <div style={{ padding: '10px 24px', fontWeight: 700, fontSize: 15, color: '#1a3560', borderBottom: '2px solid #1a3560', marginBottom: -2, cursor: 'default', display: 'flex', alignItems: 'center', gap: 8 }}>
+            非公開登録情報
+            {pendingCount > 0 && <span style={{ background: '#e53935', color: '#fff', borderRadius: 10, padding: '1px 8px', fontSize: 12, fontWeight: 700 }}>{pendingCount}</span>}
+          </div>
+        </div>
       </div>
+      <div style={{ marginBottom: 28 }} />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {models.map(m => (
