@@ -89,7 +89,8 @@ function CompleteContent() {
         </div>
 
         <p style={{ color: '#555', lineHeight: 1.8, marginBottom: 24, textAlign: 'center' }}>
-          ご予約を受け付けました。確認メールをお送りしましたのでご確認ください。
+          ご予約を受け付けました。<br />
+          確認メールをお送りしましたのでご確認ください。
         </p>
 
         {/* Booking details */}
@@ -112,17 +113,13 @@ function CompleteContent() {
         {/* QR Code */}
         {qrImageUrl && (
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <div style={{ fontSize: 13, color: '#888', marginBottom: 10 }}>当日受付時にこのQRコードをご提示ください</div>
+            <div style={{ fontSize: 13, color: '#888', marginBottom: 4 }}>当日受付時にこのQRコードをご提示ください</div>
+            <div style={{ fontSize: 12, color: '#aaa', marginBottom: 10 }}>確定メール・前日告知メールにも添付してあります。</div>
             <img src={qrImageUrl} alt="受付QRコード" style={{ width: 160, height: 160, border: '1px solid #e5e5e5', borderRadius: 8 }} />
           </div>
         )}
 
         <div style={{ fontSize: 13, color: '#666', lineHeight: 1.9, marginBottom: 28 }}>
-          {event?.event_type === 'street' ? (
-            <p>※ストリート撮影の集合場所は、開催3日前にメールでご案内します。</p>
-          ) : (
-            <p>※当日の詳細は、開催前日までにメールでご案内します。</p>
-          )}
           <p>※ご不明点は公式LINEよりお問い合わせください。</p>
         </div>
 
