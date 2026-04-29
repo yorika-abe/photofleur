@@ -179,7 +179,11 @@ export default function ShiftRequestsPage() {
   return (
     <div style={{ maxWidth: 860, margin: '0 auto', padding: '32px 20px' }}>
       <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '12px 0 28px' }}>
+      <div style={{ display: 'flex', gap: 0, margin: '8px 0 0', borderBottom: '2px solid #e5e5e5' }}>
+        <Link href="/admin/shifts" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>シフト承認</Link>
+        <div style={{ padding: '10px 24px', fontWeight: 700, fontSize: 15, color: '#1a3560', borderBottom: '2px solid #1a3560', marginBottom: -2, cursor: 'default' }}>シフト指定日管理</div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px 0 28px' }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1a3560', margin: 0 }}>シフト提出指定日の管理</h1>
           <p style={{ fontSize: 13, color: '#888', margin: '6px 0 0' }}>モデルにシフト提出を求める日付を登録します</p>

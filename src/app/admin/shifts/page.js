@@ -66,7 +66,10 @@ export default function AdminShiftsPage() {
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 16px' }}>
       <Link href="/admin" style={{ color: '#1a1a2e', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1a1a2e', margin: '8px 0 24px' }}>シフト管理・承認</h1>
+      <div style={{ display: 'flex', gap: 0, margin: '8px 0 24px', borderBottom: '2px solid #e5e5e5' }}>
+        <div style={{ padding: '10px 24px', fontWeight: 700, fontSize: 15, color: '#1a1a2e', borderBottom: '2px solid #1a1a2e', marginBottom: -2, cursor: 'default' }}>シフト承認</div>
+        <Link href="/admin/shift-requests" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>シフト指定日管理</Link>
+      </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
         {filters.map(([key, label]) => (
