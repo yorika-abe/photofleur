@@ -56,7 +56,13 @@ export default function EventEditPage() {
       const { event: ev, models: mods, entries: entriesWithSlots, shifts: shiftData } = await res.json()
       let galleryImages = []
       try { galleryImages = JSON.parse(ev?.gallery_images || '[]') } catch {}
-      setEvent({ ...(ev || {}), gallery_images: galleryImages })
+      let bookingOpenAtJST = ''
+      if (ev?.booking_open_at) {
+        const d = new Date(ev.booking_open_at)
+        const jst = new Date(d.getTime() + 9 * 60 * 60 * 1000)
+        bookingOpenAtJST = jst.toISOString().slice(0, 16)
+      }
+      setEvent({ ...(ev || {}), gallery_images: galleryImages, booking_open_at: bookingOpenAtJST })
       setModels(mods || [])
       setEntries(entriesWithSlots || [])
       setShifts(shiftData || [])
@@ -146,7 +152,7 @@ export default function EventEditPage() {
         studio_fee: event.studio_fee != null ? parseInt(event.studio_fee) : 2000,
         main_image: event.main_image,
         gallery_images: JSON.stringify(event.gallery_images || []),
-        booking_open_at: event.booking_open_at || null,
+        booking_open_at: event.booking_open_at ? new Date(event.booking_open_at + ':00+09:00').toISOString() : null,
         meeting_place: event.meeting_place,
         meeting_address: event.meeting_address,
         meeting_map_url: event.meeting_map_url,
