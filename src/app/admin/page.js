@@ -41,7 +41,7 @@ export default async function AdminPage() {
       {/* Quick links */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 48 }}>
         {[
-          { href: '/admin/booking-status', label: '予約・売上管理', icon: '📋', badge: newBookings ?? 0 },
+          { href: '/admin/bookings', label: '予約・売上管理', icon: '📋', badge: newBookings ?? 0 },
           { href: '/admin/models', label: 'モデル管理', icon: '👤', badge: pendingModels ?? 0 },
           { href: '/admin/schedule', label: 'イベント作成', icon: '📍' },
           { href: '/admin/shifts', label: 'シフト管理', icon: '🗓️', badge: pendingShifts ?? 0 },
