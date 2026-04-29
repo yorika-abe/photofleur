@@ -42,13 +42,15 @@ const FONTS = [
   { label: 'Courier New（等幅）', value: "'Courier New', monospace" },
 ]
 
+const BOX_DEFAULTS = { minHeight: 0, paddingTop: 8, paddingBottom: 8, paddingLeft: 8, paddingRight: 8 }
+
 const DEFAULTS = {
-  heading: { text: '見出しテキスト', size: 26, align: 'center', color: '#1a3560', font: 'Arial, sans-serif', bold: true, italic: false, shadow: false, letterSpacing: 0 },
-  text: { text: '本文テキストを入力してください。', size: 14, align: 'left', color: '#333333', font: 'Arial, sans-serif', bold: false, italic: false, shadow: false, letterSpacing: 0, lineHeight: 1.8 },
-  image: { url: '', alt: '', link: '', width: '100%', height: 'auto', borderRadius: 0, opacity: 100, shadow: false, grayscale: false },
-  button: { label: 'ボタン', url: '', bgColor: '#1a3560', textColor: '#ffffff', align: 'center' },
-  divider: { color: '#e0e0e0', thickness: 1 },
-  spacer: { height: 24 },
+  heading: { text: '見出しテキスト', size: 26, align: 'center', color: '#1a3560', font: 'Arial, sans-serif', bold: true, italic: false, shadow: false, letterSpacing: 0, ...BOX_DEFAULTS },
+  text: { text: '本文テキストを入力してください。', size: 14, align: 'left', color: '#333333', font: 'Arial, sans-serif', bold: false, italic: false, shadow: false, letterSpacing: 0, lineHeight: 1.8, ...BOX_DEFAULTS },
+  image: { url: '', alt: '', link: '', width: '100%', height: 'auto', borderRadius: 0, opacity: 100, shadow: false, grayscale: false, ...BOX_DEFAULTS },
+  button: { label: 'ボタン', url: '', bgColor: '#1a3560', textColor: '#ffffff', align: 'center', ...BOX_DEFAULTS },
+  divider: { color: '#e0e0e0', thickness: 1, ...BOX_DEFAULTS },
+  spacer: { height: 24, ...BOX_DEFAULTS },
 }
 
 let _id = 1
@@ -62,6 +64,14 @@ const newRow = (type) => ({
   bg: { color: '', imageUrl: '' },
 })
 
+function boxWrap(data, inner) {
+  const pt = data.paddingTop ?? 8, pb = data.paddingBottom ?? 8
+  const pl = data.paddingLeft ?? 8, pr = data.paddingRight ?? 8
+  const mh = data.minHeight || 0
+  const style = `padding:${pt}px ${pr}px ${pb}px ${pl}px;${mh ? `min-height:${mh}px;` : ''}box-sizing:border-box;`
+  return `<div style="${style}">${inner}</div>`
+}
+
 function blockToHtml(b) {
   const { type, data } = b
   if (type === 'heading' || type === 'text') {
@@ -74,20 +84,20 @@ function blockToHtml(b) {
       `font-style:${data.italic ? 'italic' : 'normal'}`,
       `letter-spacing:${data.letterSpacing || 0}px`,
       `line-height:${data.lineHeight || (type === 'heading' ? 1.4 : 1.8)}`,
-      `margin:0 0 16px`, `white-space:pre-wrap`, shadow,
+      `margin:0`, `white-space:pre-wrap`, shadow,
     ].filter(Boolean).join(';')
-    return `<${tag} style="${style}">${data.text}</${tag}>`
+    return boxWrap(data, `<${tag} style="${style}">${data.text}</${tag}>`)
   }
   if (type === 'image') {
-    if (!data.url) return '<div style="background:#f0f4fb;height:120px;margin:0 0 16px;border-radius:4px;"></div>'
+    if (!data.url) return boxWrap(data, '<div style="background:#f0f4fb;height:80px;border-radius:4px;"></div>')
     const wStyle = data.width && data.width !== '100%' ? `width:${data.width};` : 'max-width:100%;'
     const hStyle = data.height && data.height !== 'auto' ? `height:${data.height};object-fit:cover;` : ''
     const effects = [`border-radius:${data.borderRadius || 0}px`, `opacity:${(data.opacity ?? 100) / 100}`, data.shadow ? 'box-shadow:0 4px 16px rgba(0,0,0,0.2)' : '', data.grayscale ? 'filter:grayscale(100%)' : ''].filter(Boolean).join(';')
     const img = `<img src="${data.url}" alt="${data.alt || ''}" style="${wStyle}${hStyle}display:block;margin:0 auto;${effects}" />`
-    return `<div style="margin:0 0 16px;text-align:center;">${data.link ? `<a href="${data.link}" style="display:inline-block;">${img}</a>` : img}</div>`
+    return boxWrap(data, `<div style="text-align:center;">${data.link ? `<a href="${data.link}" style="display:inline-block;">${img}</a>` : img}</div>`)
   }
-  if (type === 'button') return `<div style="text-align:${data.align};margin:0 0 16px;"><a href="${data.url || '#'}" style="display:inline-block;background:${data.bgColor};color:${data.textColor};text-decoration:none;border-radius:8px;padding:12px 32px;font-size:15px;font-weight:700;">${data.label}</a></div>`
-  if (type === 'divider') return `<hr style="border:none;border-top:${data.thickness}px solid ${data.color};margin:8px 0 16px;" />`
+  if (type === 'button') return boxWrap(data, `<div style="text-align:${data.align};"><a href="${data.url || '#'}" style="display:inline-block;background:${data.bgColor};color:${data.textColor};text-decoration:none;border-radius:8px;padding:12px 32px;font-size:15px;font-weight:700;">${data.label}</a></div>`)
+  if (type === 'divider') return boxWrap(data, `<hr style="border:none;border-top:${data.thickness}px solid ${data.color};margin:0;" />`)
   if (type === 'spacer') return `<div style="height:${data.height}px;"></div>`
   return ''
 }
@@ -182,6 +192,28 @@ function ColDivider({ divIdx, rowWidths, containerRef, onUpdateWidths }) {
     <div onMouseDown={handleMouseDown} title="ドラッグで幅を調整"
       style={{ width: 10, flexShrink: 0, cursor: 'col-resize', display: 'flex', alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch' }}>
       <div style={{ width: 3, height: '70%', minHeight: 20, background: '#c8d4e8', borderRadius: 2 }} />
+    </div>
+  )
+}
+
+// Bottom drag handle to resize block min-height
+function BlockResizeHandle({ block, onUpdateBlock }) {
+  const handleMouseDown = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const startY = e.clientY
+    const startH = block.data.minHeight || 0
+    const onMove = (ev) => {
+      const dy = ev.clientY - startY
+      onUpdateBlock(block.id, { ...block.data, minHeight: Math.max(0, startH + dy) })
+    }
+    const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
+    document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
+  }
+  return (
+    <div onMouseDown={handleMouseDown} title="ドラッグして高さを調整"
+      style={{ height: 10, cursor: 'ns-resize', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <div style={{ width: '40%', height: 3, background: '#1a3560', borderRadius: 2, opacity: 0.5 }} />
     </div>
   )
 }
@@ -368,6 +400,22 @@ function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRow
 
       {type === 'spacer' && (
         <div><label style={lbl}>高さ(px)</label><input type="number" value={data.height} onChange={e => set('height', Number(e.target.value))} min={8} max={120} style={inp} /></div>)}
+
+      {type !== 'spacer' && (
+        <div style={section}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#999', marginBottom: 10 }}>ボックスサイズ</div>
+          <div style={{ marginBottom: 10 }}>
+            <label style={lbl}>最小高さ(px) ／ 下端ドラッグでも変更可</label>
+            <input type="number" value={data.minHeight || 0} onChange={e => set('minHeight', Number(e.target.value))} min={0} max={800} style={inp} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div><label style={lbl}>上余白(px)</label><input type="number" value={data.paddingTop ?? 8} onChange={e => set('paddingTop', Number(e.target.value))} min={0} max={120} style={inp} /></div>
+            <div><label style={lbl}>下余白(px)</label><input type="number" value={data.paddingBottom ?? 8} onChange={e => set('paddingBottom', Number(e.target.value))} min={0} max={120} style={inp} /></div>
+            <div><label style={lbl}>左余白(px)</label><input type="number" value={data.paddingLeft ?? 8} onChange={e => set('paddingLeft', Number(e.target.value))} min={0} max={120} style={inp} /></div>
+            <div><label style={lbl}>右余白(px)</label><input type="number" value={data.paddingRight ?? 8} onChange={e => set('paddingRight', Number(e.target.value))} min={0} max={120} style={inp} /></div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -653,16 +701,21 @@ function RowView({ row, isFirst, isLast, selection, onSelectBlock, onSelectRow, 
           const isBlockSelected = cell.block?.id === selection?.blockId
           return (
             <div key={cell.id} style={{ display: 'flex', alignItems: 'stretch', width: `${row.colWidths[ci]}%`, minWidth: 0, flexShrink: 0 }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                 {cell.block ? (
-                  <div
-                    onClick={e => { e.stopPropagation(); onSelectBlock(cell.block.id) }}
-                    style={{ outline: isBlockSelected ? '2px solid #1a3560' : 'none', outlineOffset: -2, borderRadius: 4, padding: 8, background: isBlockSelected ? 'rgba(240,245,255,0.9)' : 'transparent', cursor: 'pointer', height: '100%', boxSizing: 'border-box' }}>
-                    {isBlockSelected && cell.block.type === 'image'
-                      ? <ResizableImage data={cell.block.data} onResize={updates => onUpdateBlock(cell.block.id, { ...cell.block.data, ...updates })} />
-                      : <div dangerouslySetInnerHTML={{ __html: blockToHtml(cell.block) }} style={{ pointerEvents: 'none' }} />
-                    }
-                  </div>
+                  <>
+                    <div
+                      onClick={e => { e.stopPropagation(); onSelectBlock(cell.block.id) }}
+                      style={{ outline: isBlockSelected ? '2px solid #1a3560' : 'none', outlineOffset: -2, borderRadius: 4, background: isBlockSelected ? 'rgba(240,245,255,0.9)' : 'transparent', cursor: 'pointer', flex: 1 }}>
+                      {isBlockSelected && cell.block.type === 'image'
+                        ? <div style={{ padding: 8 }}><ResizableImage data={cell.block.data} onResize={updates => onUpdateBlock(cell.block.id, { ...cell.block.data, ...updates })} /></div>
+                        : <div dangerouslySetInnerHTML={{ __html: blockToHtml(cell.block) }} style={{ pointerEvents: 'none' }} />
+                      }
+                    </div>
+                    {isBlockSelected && (
+                      <BlockResizeHandle block={cell.block} onUpdateBlock={onUpdateBlock} />
+                    )}
+                  </>
                 ) : (
                   <EmptyCell onAdd={(type) => onAddBlockToCell(row.id, cell.id, type)} />
                 )}
