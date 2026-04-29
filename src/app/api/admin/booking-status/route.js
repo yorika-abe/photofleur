@@ -4,12 +4,14 @@ const TIER_ORDER = { staff: 0, '12000': 1, '9900': 2, '8900': 3 }
 
 export async function GET() {
   const supabase = await createSupabaseAdminClient()
-  const today = new Date().toISOString().split('T')[0]
+  const pastDate = new Date()
+  pastDate.setDate(pastDate.getDate() - 90)
+  const since = pastDate.toISOString().split('T')[0]
 
   const { data: events } = await supabase
     .from('events')
     .select('id, event_date, event_type, title, location_name')
-    .gte('event_date', today)
+    .gte('event_date', since)
     .order('event_date', { ascending: true })
 
   if (!events || events.length === 0) return Response.json({ events: [] })

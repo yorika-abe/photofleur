@@ -29,49 +29,115 @@ function durationKey(label) {
   return mins < 55 ? '45' : mins < 75 ? '60' : '90'
 }
 
+function loadSavedIds() {
+  try { return new Set(JSON.parse(localStorage.getItem('pf_saved_events_list') || '[]')) } catch { return new Set() }
+}
+
 export default function AdminBookingStatusPage() {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
-  const [selectedIdx, setSelectedIdx] = useState(0)
+  const [selectedEventId, setSelectedEventId] = useState(null)
   const [fees, setFees] = useState(DEFAULT_FEES)
   const [editFees, setEditFees] = useState(false)
   const [costs, setCosts] = useState({ lunchCount: 0, lunchRate: 1000, studioCost: 0 })
+  const [savedIds, setSavedIds] = useState(new Set())
+
+  const todayStr = new Date().toISOString().split('T')[0]
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('pf_fees')
-      if (saved) setFees(JSON.parse(saved))
-    } catch {}
+    const ids = loadSavedIds()
+    setSavedIds(ids)
     fetch('/api/admin/booking-status')
       .then(r => r.json())
-      .then(({ events }) => { setData(events || []); setLoading(false) })
+      .then(({ events }) => {
+        const items = events || []
+        setData(items)
+        const visible = items.filter(item => !(item.event.event_date < todayStr && ids.has(item.event.id)))
+        const firstFuture = visible.find(item => item.event.event_date >= todayStr)
+        setSelectedEventId((firstFuture || visible[0])?.event.id || null)
+        setLoading(false)
+      })
   }, [])
 
   useEffect(() => {
-    if (!data[selectedIdx]) return
-    const eventId = data[selectedIdx].event.id
+    if (!selectedEventId) return
     try {
-      const saved = localStorage.getItem(`pf_costs_${eventId}`)
+      const savedFees = localStorage.getItem(`pf_fees_${selectedEventId}`)
+      setFees(savedFees ? JSON.parse(savedFees) : DEFAULT_FEES)
+    } catch { setFees(DEFAULT_FEES) }
+    try {
+      const saved = localStorage.getItem(`pf_costs_${selectedEventId}`)
       setCosts(saved ? JSON.parse(saved) : { lunchCount: 0, lunchRate: 1000, studioCost: 0 })
-    } catch {
-      setCosts({ lunchCount: 0, lunchRate: 1000, studioCost: 0 })
-    }
-  }, [selectedIdx, data])
+    } catch { setCosts({ lunchCount: 0, lunchRate: 1000, studioCost: 0 }) }
+  }, [selectedEventId])
 
   function updateFee(tier, dur, value) {
     const next = { ...fees, [tier]: { ...fees[tier], [dur]: Number(value) || 0 } }
     setFees(next)
-    localStorage.setItem('pf_fees', JSON.stringify(next))
+    if (selectedEventId) localStorage.setItem(`pf_fees_${selectedEventId}`, JSON.stringify(next))
   }
 
   function updateCost(key, value) {
     const next = { ...costs, [key]: Number(value) || 0 }
     setCosts(next)
-    const eventId = data[selectedIdx]?.event.id
-    if (eventId) localStorage.setItem(`pf_costs_${eventId}`, JSON.stringify(next))
+    if (selectedEventId) localStorage.setItem(`pf_costs_${selectedEventId}`, JSON.stringify(next))
+  }
+
+  function handleSave(currentItem, revenue, labor, lunchTotal, grossProfit) {
+    if (!currentItem) return
+    if (!window.confirm(`${formatDate(currentItem.event.event_date)} の記録を保存して予約状況から削除しますか？`)) return
+
+    const eventId = currentItem.event.id
+    const record = {
+      eventId,
+      eventDate: currentItem.event.event_date,
+      eventTitle: currentItem.event.title,
+      eventType: currentItem.event.event_type,
+      locationName: currentItem.event.location_name,
+      revenue,
+      labor,
+      lunchTotal,
+      lunchCount: costs.lunchCount || 0,
+      lunchRate: costs.lunchRate || 0,
+      studioCost: costs.studioCost || 0,
+      grossProfit,
+      savedAt: new Date().toISOString(),
+      timeSlots: currentItem.timeSlots,
+      rows: currentItem.rows.map(row => ({
+        modelName: row.model.name,
+        tier: row.model.price_tier,
+        cells: Object.fromEntries(
+          Object.entries(row.cells).map(([label, cell]) => [
+            label,
+            cell?.booking
+              ? { booked: true, name: cell.booking.last_name, method: cell.booking.payment_method }
+              : (cell ? { booked: false } : null)
+          ])
+        )
+      }))
+    }
+
+    try {
+      const list = JSON.parse(localStorage.getItem('pf_saved_events_list') || '[]')
+      if (!list.includes(eventId)) list.push(eventId)
+      localStorage.setItem('pf_saved_events_list', JSON.stringify(list))
+      localStorage.setItem(`pf_saved_event_${eventId}`, JSON.stringify(record))
+    } catch {}
+
+    const newSavedIds = new Set([...savedIds, eventId])
+    setSavedIds(newSavedIds)
+    const newVisible = data.filter(item => !(item.event.event_date < todayStr && newSavedIds.has(item.event.id)))
+    const next = newVisible.find(item => item.event.id !== eventId)
+    setSelectedEventId(next?.event.id || null)
   }
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>読み込み中...</div>
+
+  const visibleData = data.filter(item => !(item.event.event_date < todayStr && savedIds.has(item.event.id)))
+  const futureItems = visibleData.filter(item => item.event.event_date >= todayStr)
+  const pastItems = visibleData.filter(item => item.event.event_date < todayStr)
+  const currentItem = visibleData.find(item => item.event.id === selectedEventId) || null
+  const isPastEvent = currentItem ? currentItem.event.event_date < todayStr : false
 
   return (
     <div style={{ maxWidth: '100%', margin: '0 auto', padding: '24px 16px' }}>
@@ -82,41 +148,55 @@ export default function AdminBookingStatusPage() {
         <Link href="/admin/sales" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>売上管理</Link>
       </div>
 
-      {data.length === 0 ? (
-        <p style={{ color: '#999' }}>開催予定のイベントはありません。</p>
+      {visibleData.length === 0 ? (
+        <p style={{ color: '#999' }}>表示するイベントはありません。</p>
       ) : (
         <>
           {/* Event tabs */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-            {data.map((item, i) => {
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20, alignItems: 'center' }}>
+            {futureItems.map(item => {
               const isStreet = item.event.event_type === 'street'
-              const active = selectedIdx === i
+              const active = selectedEventId === item.event.id
               return (
-                <button key={item.event.id} onClick={() => setSelectedIdx(i)}
+                <button key={item.event.id} onClick={() => setSelectedEventId(item.event.id)}
                   style={{ padding: '8px 16px', borderRadius: 20, border: `2px solid ${active ? (isStreet ? '#388e3c' : '#3949ab') : '#e5e5e5'}`, cursor: 'pointer', fontWeight: 600, fontSize: 13, background: active ? (isStreet ? '#e8f5e9' : '#e8eaf6') : '#fff', color: active ? (isStreet ? '#388e3c' : '#3949ab') : '#666' }}>
                   {formatDate(item.event.event_date)}
                   <span style={{ marginLeft: 6, fontSize: 11 }}>{isStreet ? 'ストリート' : 'スタジオ'}</span>
                 </button>
               )
             })}
+            {pastItems.length > 0 && (
+              <>
+                {futureItems.length > 0 && <span style={{ color: '#ccc', fontSize: 18, margin: '0 4px' }}>|</span>}
+                {pastItems.map(item => {
+                  const active = selectedEventId === item.event.id
+                  return (
+                    <button key={item.event.id} onClick={() => setSelectedEventId(item.event.id)}
+                      style={{ padding: '8px 16px', borderRadius: 20, border: `2px solid ${active ? '#e53935' : '#ffcdd2'}`, cursor: 'pointer', fontWeight: 600, fontSize: 13, background: active ? '#ffebee' : '#fff5f5', color: active ? '#c62828' : '#e53935', display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ fontSize: 11 }}>⚠️</span>
+                      {formatDate(item.event.event_date)}
+                      <span style={{ fontSize: 10, background: '#e53935', color: '#fff', borderRadius: 3, padding: '1px 5px', marginLeft: 2 }}>要対応</span>
+                    </button>
+                  )
+                })}
+              </>
+            )}
           </div>
 
-          {(() => {
-            const current = data[selectedIdx]
-            if (!current) return null
-            if (current.rows.length === 0) return <p style={{ color: '#999' }}>出演モデルがいません。</p>
-
+          {!currentItem ? (
+            <p style={{ color: '#999' }}>イベントを選択してください。</p>
+          ) : currentItem.rows.length === 0 ? (
+            <p style={{ color: '#999' }}>出演モデルがいません。</p>
+          ) : (() => {
             let prevTier = null
 
-            // 売上・人件費 計算
             let revenue = 0, labor = 0
-            for (const row of current.rows) {
+            for (const row of currentItem.rows) {
               for (const [label, cell] of Object.entries(row.cells)) {
                 if (!cell?.booking) continue
                 revenue += cell.price || 0
                 if (row.model.price_tier !== 'staff') {
-                  const dur = durationKey(label)
-                  labor += fees[row.model.price_tier]?.[dur] || 0
+                  labor += fees[row.model.price_tier]?.[durationKey(label)] || 0
                 }
               }
             }
@@ -127,6 +207,16 @@ export default function AdminBookingStatusPage() {
 
             return (
               <>
+                {/* 過去イベント警告バナー */}
+                {isPastEvent && (
+                  <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 18 }}>⚠️</span>
+                    <span style={{ fontSize: 13, color: '#795548', fontWeight: 600 }}>
+                      この開催日は終了しています。経費を確認して「記録を保存」してください。
+                    </span>
+                  </div>
+                )}
+
                 {/* 予約グリッド */}
                 <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid #ddd' }}>
                   <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 13 }}>
@@ -134,13 +224,13 @@ export default function AdminBookingStatusPage() {
                       <tr style={{ background: '#1a3560', color: '#fff' }}>
                         <th style={{ padding: '10px 14px', textAlign: 'left', whiteSpace: 'nowrap', minWidth: 110, position: 'sticky', left: 0, background: '#1a3560', zIndex: 1 }}>モデル</th>
                         <th style={{ padding: '10px 8px', textAlign: 'center', whiteSpace: 'nowrap', fontSize: 11, fontWeight: 400, minWidth: 54 }}>区分</th>
-                        {current.timeSlots.map(label => (
+                        {currentItem.timeSlots.map(label => (
                           <th key={label} style={{ padding: '10px 8px', textAlign: 'center', whiteSpace: 'nowrap', minWidth: 105, fontWeight: 600, fontSize: 12 }}>{label}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {current.rows.map((row, rowIdx) => {
+                      {currentItem.rows.map((row, rowIdx) => {
                         const tier = TIER_META[row.model.price_tier]
                         const isNewGroup = row.model.price_tier !== prevTier
                         prevTier = row.model.price_tier
@@ -153,7 +243,7 @@ export default function AdminBookingStatusPage() {
                             <td style={{ padding: '6px', textAlign: 'center' }}>
                               {tier && <span style={{ fontSize: 10, background: tier.bg, color: tier.color, borderRadius: 3, padding: '2px 5px', fontWeight: 700 }}>{tier.label}</span>}
                             </td>
-                            {current.timeSlots.map(label => {
+                            {currentItem.timeSlots.map(label => {
                               const cell = row.cells[label]
                               if (!cell) return <td key={label} style={{ padding: '8px', textAlign: 'center', background: '#f0f0f0' }}>—</td>
                               const booking = cell.booking
@@ -231,23 +321,20 @@ export default function AdminBookingStatusPage() {
                 </div>
 
                 {/* 利益管理 */}
-                <div style={{ marginTop: 16, marginBottom: 32, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, padding: '16px 20px' }}>
+                <div style={{ marginTop: 16, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, padding: '16px 20px' }}>
                   <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>利益管理</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
 
-                    {/* 売上 */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
                       <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>売上</span>
                       <span style={{ fontSize: 16, fontWeight: 700, color: '#388e3c' }}>¥{revenue.toLocaleString()}</span>
                     </div>
 
-                    {/* 人件費 */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
                       <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>人件費（モデル報酬）</span>
                       <span style={{ fontSize: 15, fontWeight: 700, color: '#c62828' }}>−¥{labor.toLocaleString()}</span>
                     </div>
 
-                    {/* お昼代 */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0f0f0', flexWrap: 'wrap', gap: 8 }}>
                       <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>お昼代</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
@@ -263,7 +350,6 @@ export default function AdminBookingStatusPage() {
                       </div>
                     </div>
 
-                    {/* スタジオ代・衣装代 */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '2px solid #ddd', flexWrap: 'wrap', gap: 8 }}>
                       <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>スタジオ代・衣装代</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
@@ -275,7 +361,6 @@ export default function AdminBookingStatusPage() {
                       </div>
                     </div>
 
-                    {/* 粗利益 */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12 }}>
                       <span style={{ fontSize: 15, fontWeight: 700, color: '#1a3560' }}>粗利益</span>
                       <span style={{ fontSize: 22, fontWeight: 700, color: grossProfit >= 0 ? '#388e3c' : '#c62828' }}>
@@ -284,6 +369,18 @@ export default function AdminBookingStatusPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* 保存ボタン（過去イベントのみ） */}
+                {isPastEvent && (
+                  <div style={{ marginTop: 16, marginBottom: 32, display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={() => handleSave(currentItem, revenue, labor, lunchTotal, grossProfit)}
+                      style={{ background: '#c62828', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 32px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                      記録を保存して予約状況から削除
+                    </button>
+                  </div>
+                )}
+                {!isPastEvent && <div style={{ marginBottom: 32 }} />}
               </>
             )
           })()}
