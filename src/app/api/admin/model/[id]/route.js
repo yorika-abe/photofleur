@@ -13,6 +13,32 @@ export async function PUT(req, { params }) {
   const { id } = await params
   const body = await req.json()
   const supabase = await createSupabaseAdminClient()
+
+  // 現在の画像URLを取得して、更新・削除されたものをストレージから消す
+  const { data: current } = await supabase.from('models').select('image, portfolio_images').eq('id', id).single()
+  if (current) {
+    const base = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/`
+    const toDelete = []
+
+    // プロフィール画像が変わった場合
+    if (current.image && current.image !== body.image && current.image.startsWith(base)) {
+      toDelete.push(current.image.replace(base, ''))
+    }
+
+    // ポートフォリオから削除された画像
+    const oldPf = current.portfolio_images || []
+    const newPf = body.portfolio_images || []
+    for (const url of oldPf) {
+      if (!newPf.includes(url) && url.startsWith(base)) {
+        toDelete.push(url.replace(base, ''))
+      }
+    }
+
+    if (toDelete.length > 0) {
+      await supabase.storage.from('images').remove(toDelete)
+    }
+  }
+
   const { error } = await supabase.from('models').update(body).eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json({ ok: true })
