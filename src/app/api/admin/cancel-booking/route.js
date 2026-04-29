@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
+import { renderEmailTemplate } from '@/lib/email-render'
 
 async function checkAdmin(admin) {
   const server = await createSupabaseServerClient()
@@ -93,11 +94,12 @@ export async function POST(req) {
   const customerName = booking.name || `${booking.last_name || ''} ${booking.first_name || ''}`.trim() || '様'
 
   const resend = new Resend(process.env.RESEND_API_KEY)
+  const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName })
   const { error } = await resend.emails.send({
     from: 'Photo Fleur運営 <onboarding@resend.dev>',
     to: booking.email,
-    subject: '【PhotoFleur】ご予約キャンセルのお知らせ',
-    html: buildCancelHtml({ customerName }),
+    subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
+    html: templateResult?.html ?? buildCancelHtml({ customerName }),
   })
 
   if (error) return Response.json({ error: String(error) }, { status: 500 })

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { generateHtml, substituteVars } from '@/lib/email-render'
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://photofleur.vercel.app'
 
@@ -47,7 +48,13 @@ export async function GET(req) {
   const resend = new Resend(process.env.RESEND_API_KEY)
   const feedbackUrl = `${BASE_URL}/feedback`
 
-  const html = `
+  const { data: tmpl } = await supabase
+    .from('email_templates')
+    .select('subject, rows_json, header_json, footer')
+    .eq('id', 'thanks-mail')
+    .single()
+
+  const fallbackHtml = `
 <div style="margin:0;padding:0;background:#f5f5f7;font-family:Arial,sans-serif;color:#2f2244;">
   <div style="max-width:600px;margin:0 auto;padding:32px 16px;">
     <div style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.08);">
@@ -106,13 +113,26 @@ export async function GET(req) {
   </div>
 </div>`
 
+  const tmplBaseHtml = tmpl
+    ? generateHtml(
+        tmpl.rows_json || [],
+        tmpl.header_json || { bgColor: '#1a3560', text: 'PhotoFleur', textColor: '#ffffff', fontSize: 20 },
+        tmpl.footer || ''
+      )
+    : null
+
   let sent = 0
   for (const booking of bookings) {
     if (!booking.email) continue
+    const vars = { customer_name: booking.name || 'お客様', feedback_url: feedbackUrl }
+    const html = tmplBaseHtml ? substituteVars(tmplBaseHtml, vars) : fallbackHtml
+    const subject = tmpl?.subject
+      ? substituteVars(tmpl.subject, vars)
+      : 'この度はPhotoFleur撮影会にご来場いただきありがとうございました'
     const result = await resend.emails.send({
       from: 'Photo Fleur運営 <onboarding@resend.dev>',
       to: booking.email,
-      subject: 'この度はPhotoFleur撮影会にご来場いただきありがとうございました',
+      subject,
       html,
     })
     if (!result.error) {

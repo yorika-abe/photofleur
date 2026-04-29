@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
+import { renderEmailTemplate } from '@/lib/email-render'
 
 function formatDate(dateString) {
   if (!dateString) return ''
@@ -83,7 +84,20 @@ export async function POST(req) {
       ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(verifyUrl)}`
       : null
 
-    const html = `
+    const qrBlock = qrImageUrl
+      ? `<div style="text-align:center;margin-bottom:24px;"><p style="font-size:14px;color:#555;margin:0 0 12px;">当日受付時にこのQRコードをご提示ください</p><img src="${qrImageUrl}" alt="受付QRコード" style="width:160px;height:160px;border:1px solid #e5e5e5;border-radius:8px;"/></div>`
+      : ''
+
+    const templateResult = await renderEmailTemplate(supabase, 'day-before-reminder', {
+      customer_name: customerName,
+      model_name: modelName,
+      event_date: eventDate,
+      slot_label: slotLabel,
+      qr_block: qrBlock,
+      location_block: buildLocationBlock(event),
+    })
+
+    const html = templateResult?.html ?? `
       <div style="margin:0; padding:0; background:#f5f5f7; font-family:Arial, sans-serif; color:#2f2244;">
         <div style="max-width:640px; margin:0 auto; padding:32px 16px;">
           <div style="background:#ffffff; border-radius:24px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.08);">
@@ -107,12 +121,7 @@ export async function POST(req) {
                 <p style="margin:0; font-size:16px; line-height:1.8;"><strong>料金：</strong>¥${Number(displayPrice).toLocaleString()}${isOutdoor ? '（屋外撮影・スタジオ料金割引適用済み）' : ''}</p>
               </div>
 
-              ${qrImageUrl ? `
-              <div style="text-align:center; margin-bottom:24px;">
-                <p style="font-size:14px; color:#555; margin:0 0 12px;">当日受付時にこのQRコードをご提示ください</p>
-                <img src="${qrImageUrl}" alt="受付QRコード" style="width:160px; height:160px; border:1px solid #e5e5e5; border-radius:8px;"/>
-              </div>` : ''}
-
+              ${qrBlock}
               ${buildLocationBlock(event)}
               ${buildRulesBlock(event)}
 
@@ -129,10 +138,12 @@ export async function POST(req) {
       </div>
     `
 
+    const emailSubject = templateResult?.subject || `【Photo Fleur】明日（${eventDate}）のご案内`
+
     const data = await resend.emails.send({
       from: 'Photo Fleur運営 <onboarding@resend.dev>',
       to: email,
-      subject: `【Photo Fleur】明日（${eventDate}）のご案内`,
+      subject: emailSubject,
       html,
     })
 

@@ -12,6 +12,36 @@ const BLOCK_TYPES = [
   { type: 'spacer', label: '余白', icon: '↕' },
 ]
 
+const TEMPLATE_DEFS = [
+  { id: 'newsletter', name: 'メルマガ', icon: '📧', isBroadcast: true, vars: [] },
+  { id: 'booking-confirmation', name: '予約完了', icon: '✅',
+    defaultSubject: '【PhotoFleur】ご予約確定のお知らせ',
+    vars: [
+      { key: 'customer_name', desc: 'お客様名' },
+      { key: 'model_name', desc: 'モデル名' },
+      { key: 'event_date', desc: '開催日' },
+      { key: 'slot_label', desc: '予約時間' },
+      { key: 'price', desc: '料金' },
+    ] },
+  { id: 'day-before-reminder', name: '前日リマインド', icon: '⏰',
+    defaultSubject: '【PhotoFleur】明日の撮影会のご案内',
+    vars: [
+      { key: 'customer_name', desc: 'お客様名' },
+      { key: 'model_name', desc: 'モデル名' },
+      { key: 'event_date', desc: '開催日' },
+      { key: 'slot_label', desc: '予約時間' },
+    ] },
+  { id: 'thanks-mail', name: 'サンクス', icon: '🙏',
+    defaultSubject: '【PhotoFleur】ご来場ありがとうございました',
+    vars: [
+      { key: 'customer_name', desc: 'お客様名' },
+      { key: 'feedback_url', desc: 'ご意見箱URL' },
+    ] },
+  { id: 'cancellation', name: 'キャンセル', icon: '❌',
+    defaultSubject: '【PhotoFleur】ご予約のキャンセルについて',
+    vars: [{ key: 'customer_name', desc: 'お客様名' }] },
+]
+
 const GOOGLE_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Montserrat:wght@300;400;600;700&family=Dancing+Script:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Josefin+Sans:wght@300;400;600&family=EB+Garamond:ital,wght@0,400;1,400&family=Noto+Sans+JP:wght@300;400;700&family=Noto+Serif+JP:wght@300;400;700&family=M+PLUS+Rounded+1c:wght@300;400;700&family=Zen+Kaku+Gothic+New:wght@300;400;700&family=Shippori+Mincho:wght@400;700&display=swap'
 
 const FONTS = [
@@ -63,6 +93,18 @@ const newRow = (type) => ({
   colWidths: [100],
   bg: { color: '', imageUrl: '' },
 })
+
+function restoreRowsFromDb(rows) {
+  return rows.map(row => ({
+    ...row,
+    id: uid(),
+    cells: row.cells.map(cell => ({
+      ...cell,
+      id: uid(),
+      block: cell.block ? { ...cell.block, id: uid() } : null,
+    })),
+  }))
+}
 
 function boxWrap(data, inner) {
   const pt = data.paddingTop ?? 8, pb = data.paddingBottom ?? 8
@@ -196,7 +238,6 @@ function ColDivider({ divIdx, rowWidths, containerRef, onUpdateWidths }) {
   )
 }
 
-// Bottom drag handle to resize block min-height
 function BlockResizeHandle({ block, onUpdateBlock }) {
   const handleMouseDown = (e) => {
     e.preventDefault()
@@ -218,7 +259,6 @@ function BlockResizeHandle({ block, onUpdateBlock }) {
   )
 }
 
-// Empty cell: shows block type picker
 function EmptyCell({ onAdd }) {
   return (
     <div style={{ padding: 10, minHeight: 80 }}>
@@ -242,7 +282,7 @@ const lbl = { display: 'block', fontSize: 11, fontWeight: 600, color: '#666', ma
 const section = { borderTop: '1px solid #f0f0f0', paddingTop: 12, marginTop: 4 }
 const checkRow = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }
 
-function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRowBgChange, header, onHeaderChange, footer, onFooterChange }) {
+function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRowBgChange, header, onHeaderChange, footer, onFooterChange, templateVars = [] }) {
   if (selection === 'header') {
     return (
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -300,9 +340,23 @@ function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRow
     )
   }
   if (!block) return (
-    <div style={{ padding: 20, color: '#aaa', fontSize: 13 }}>
-      ブロックを選択してください
-      <br /><span style={{ fontSize: 11, marginTop: 8, display: 'block' }}>ヘッダー・フッター・行の余白部分をクリックすると設定できます</span>
+    <div style={{ padding: 16, color: '#aaa', fontSize: 13 }}>
+      <div>ブロックを選択してください</div>
+      <span style={{ fontSize: 11, marginTop: 8, display: 'block' }}>ヘッダー・フッター・行の余白部分をクリックすると設定できます</span>
+      {templateVars.length > 0 && (
+        <div style={{ marginTop: 20, background: '#f0f7ff', borderRadius: 8, padding: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#1a3560', marginBottom: 10 }}>使用できる変数</div>
+          {templateVars.map(v => (
+            <div key={v.key} style={{ marginBottom: 8 }}>
+              <code style={{ background: '#e0eeff', color: '#1a3560', padding: '2px 6px', borderRadius: 4, fontSize: 11, userSelect: 'all', display: 'inline-block' }}>
+                {`{{${v.key}}}`}
+              </code>
+              <span style={{ fontSize: 11, color: '#555', marginLeft: 6 }}>{v.desc}</span>
+            </div>
+          ))}
+          <div style={{ fontSize: 10, color: '#bbb', marginTop: 8 }}>テキストブロックにそのまま入力すると送信時に自動で置換されます</div>
+        </div>
+      )}
     </div>
   )
 
@@ -422,7 +476,6 @@ function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRow
 
 export default function NewsletterPage() {
   const [rows, setRows] = useState(() => [newRow('heading'), newRow('text')])
-  // selection: null | 'header' | 'footer' | { kind:'block', blockId } | { kind:'row', rowId }
   const [selection, setSelection] = useState(null)
   const [header, setHeader] = useState({ bgColor: '#1a3560', text: 'PhotoFleur', textColor: '#ffffff', fontSize: 20 })
   const [footer, setFooter] = useState('PhotoFleur｜このメールはメルマガを希望されたカメラマン様にお送りしています。')
@@ -431,6 +484,12 @@ export default function NewsletterPage() {
   const [sending, setSending] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
   const [result, setResult] = useState(null)
+  const [activeTemplateId, setActiveTemplateId] = useState('newsletter')
+  const [saving, setSaving] = useState(false)
+  const [templateLoading, setTemplateLoading] = useState(false)
+
+  const activeTemplDef = TEMPLATE_DEFS.find(t => t.id === activeTemplateId)
+  const isNewsletter = activeTemplateId === 'newsletter'
 
   useEffect(() => {
     fetch('/api/admin/newsletter').then(r => r.json()).then(d => {
@@ -441,6 +500,72 @@ export default function NewsletterPage() {
     document.head.appendChild(link)
     return () => document.head.removeChild(link)
   }, [])
+
+  async function switchTemplate(tmplId) {
+    if (tmplId === activeTemplateId) return
+    setActiveTemplateId(tmplId)
+    setSelection(null)
+    setResult(null)
+    setConfirmed(false)
+    setTemplateLoading(true)
+    try {
+      const res = await fetch(`/api/admin/email-templates/${tmplId}`)
+      const json = await res.json()
+      if (json.template) {
+        const t = json.template
+        setRows(t.rows_json?.length > 0 ? restoreRowsFromDb(t.rows_json) : [])
+        setHeader(t.header_json && Object.keys(t.header_json).length > 0
+          ? t.header_json
+          : { bgColor: '#1a3560', text: 'PhotoFleur', textColor: '#ffffff', fontSize: 20 })
+        setFooter(t.footer || '')
+        setSubject(t.subject || TEMPLATE_DEFS.find(d => d.id === tmplId)?.defaultSubject || '')
+      } else {
+        const def = TEMPLATE_DEFS.find(d => d.id === tmplId)
+        setHeader({ bgColor: '#1a3560', text: 'PhotoFleur', textColor: '#ffffff', fontSize: 20 })
+        if (tmplId === 'newsletter') {
+          setRows([newRow('heading'), newRow('text')])
+          setSubject('')
+          setFooter('PhotoFleur｜このメールはメルマガを希望されたカメラマン様にお送りしています。')
+        } else {
+          setRows([])
+          setSubject(def?.defaultSubject || '')
+          setFooter('PhotoFleur｜撮影会予約サービス')
+        }
+      }
+    } catch {
+      alert('テンプレート読み込みに失敗しました')
+    } finally {
+      setTemplateLoading(false)
+    }
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    setResult(null)
+    try {
+      const res = await fetch(`/api/admin/email-templates/${activeTemplateId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: activeTemplDef?.name || activeTemplateId,
+          subject,
+          rows_json: rows,
+          header_json: header,
+          footer,
+        }),
+      })
+      if (!res.ok) {
+        const j = await res.json()
+        setResult({ error: j.error || '保存に失敗しました' })
+      } else {
+        setResult({ saved: true })
+      }
+    } catch {
+      setResult({ error: 'ネットワークエラー' })
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const selectedBlock = (() => {
     if (selection?.kind !== 'block') return null
@@ -478,8 +603,7 @@ export default function NewsletterPage() {
       if (r.id !== rowId || r.cells.length >= 3) return r
       const newCells = [...r.cells, newCell(null)]
       const n = newCells.length
-      const equal = 100 / n
-      return { ...r, cells: newCells, colWidths: newCells.map(() => equal) }
+      return { ...r, cells: newCells, colWidths: newCells.map(() => 100 / n) }
     }))
   }
 
@@ -545,26 +669,36 @@ export default function NewsletterPage() {
       {/* Top bar */}
       <div style={{ background: '#fff', borderBottom: '1px solid #e0e8f0', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-        <span style={{ fontWeight: 700, color: '#1a3560', fontSize: 15 }}>📧 メルマガ配信</span>
-        <span style={{ fontSize: 12, color: '#888' }}>同意済み：<strong>{subscriberCount ?? '...'}</strong>名</span>
+        <span style={{ fontWeight: 700, color: '#1a3560', fontSize: 15 }}>
+          {activeTemplDef?.icon} {activeTemplDef?.name}
+        </span>
+        {isNewsletter && <span style={{ fontSize: 12, color: '#888' }}>同意済み：<strong>{subscriberCount ?? '...'}</strong>名</span>}
         <div style={{ flex: 1 }} />
-        <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="件名を入力"
-          style={{ width: 260, padding: '7px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 13 }} />
-        {!confirmed ? (
-          <button onClick={() => { if (!subject.trim()) { alert('件名を入力してください'); return } setConfirmed(true) }}
-            disabled={!subject.trim() || rows.length === 0}
-            style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (!subject.trim() || rows.length === 0) ? 0.5 : 1 }}>
-            送信確認
-          </button>
-        ) : (
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span style={{ fontSize: 12, color: '#795548', fontWeight: 600 }}>{subscriberCount}名に送信します</span>
-            <button onClick={handleSend} disabled={sending}
-              style={{ background: '#e53935', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 700, cursor: sending ? 'not-allowed' : 'pointer', opacity: sending ? 0.6 : 1 }}>
-              {sending ? '送信中...' : '送信する'}
+        <input value={subject} onChange={e => setSubject(e.target.value)}
+          placeholder={isNewsletter ? '件名を入力' : '件名'}
+          style={{ width: 280, padding: '7px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 13 }} />
+        {isNewsletter ? (
+          !confirmed ? (
+            <button onClick={() => { if (!subject.trim()) { alert('件名を入力してください'); return } setConfirmed(true) }}
+              disabled={!subject.trim() || rows.length === 0}
+              style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: (!subject.trim() || rows.length === 0) ? 0.5 : 1 }}>
+              送信確認
             </button>
-            <button onClick={() => setConfirmed(false)} style={{ background: '#eee', color: '#555', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 13, cursor: 'pointer' }}>戻る</button>
-          </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: '#795548', fontWeight: 600 }}>{subscriberCount}名に送信します</span>
+              <button onClick={handleSend} disabled={sending}
+                style={{ background: '#e53935', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 700, cursor: sending ? 'not-allowed' : 'pointer', opacity: sending ? 0.6 : 1 }}>
+                {sending ? '送信中...' : '送信する'}
+              </button>
+              <button onClick={() => setConfirmed(false)} style={{ background: '#eee', color: '#555', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 13, cursor: 'pointer' }}>戻る</button>
+            </div>
+          )
+        ) : (
+          <button onClick={handleSave} disabled={saving}
+            style={{ background: '#388e3c', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}>
+            {saving ? '保存中...' : '💾 保存'}
+          </button>
         )}
       </div>
 
@@ -572,65 +706,81 @@ export default function NewsletterPage() {
         <div style={{ padding: '8px 20px', background: result.error ? '#ffebee' : '#e8f5e9', fontSize: 13, borderBottom: '1px solid #ddd' }}>
           {result.error
             ? <span style={{ color: '#e53935' }}>エラー: {result.error}</span>
+            : result.saved
+            ? <span style={{ color: '#388e3c', fontWeight: 600 }}>✅ テンプレートを保存しました</span>
             : <span style={{ color: '#388e3c', fontWeight: 600 }}>✅ 送信完了：{result.sent}件成功{result.failed > 0 ? ` / ${result.failed}件失敗` : ''}</span>}
         </div>
       )}
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Left: palette */}
-        <div style={{ width: 120, background: '#fff', borderRight: '1px solid #e0e8f0', padding: '16px 8px', overflowY: 'auto', flexShrink: 0 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#999', marginBottom: 10, letterSpacing: '0.05em' }}>ブロック追加</div>
-          {BLOCK_TYPES.map(bt => (
-            <button key={bt.type} onClick={() => addRow(bt.type)}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '10px 6px', marginBottom: 6, border: '1px solid #e0e8f0', borderRadius: 10, background: '#f8fbff', cursor: 'pointer', fontSize: 10, color: '#1a3560', fontWeight: 600, gap: 4 }}>
-              <span style={{ fontSize: 18 }}>{bt.icon}</span>
-              {bt.label}
+        {/* Left: template selector + block palette */}
+        <div style={{ width: 130, background: '#fff', borderRight: '1px solid #e0e8f0', padding: '12px 8px', overflowY: 'auto', flexShrink: 0 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#999', marginBottom: 8, letterSpacing: '0.05em' }}>テンプレート</div>
+          {TEMPLATE_DEFS.map(tmpl => (
+            <button key={tmpl.id} onClick={() => switchTemplate(tmpl.id)}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '8px 4px', marginBottom: 4, border: `1px solid ${activeTemplateId === tmpl.id ? '#1a3560' : '#e0e8f0'}`, borderRadius: 8, background: activeTemplateId === tmpl.id ? '#e8f0ff' : '#f8fbff', cursor: 'pointer', fontSize: 9, color: activeTemplateId === tmpl.id ? '#1a3560' : '#666', fontWeight: activeTemplateId === tmpl.id ? 700 : 500, gap: 3, textAlign: 'center', lineHeight: 1.3 }}>
+              <span style={{ fontSize: 16 }}>{tmpl.icon}</span>
+              {tmpl.name}
             </button>
           ))}
+          <div style={{ borderTop: '1px solid #f0f0f0', marginTop: 12, paddingTop: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#999', marginBottom: 8, letterSpacing: '0.05em' }}>ブロック追加</div>
+            {BLOCK_TYPES.map(bt => (
+              <button key={bt.type} onClick={() => addRow(bt.type)}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '8px 6px', marginBottom: 5, border: '1px solid #e0e8f0', borderRadius: 10, background: '#f8fbff', cursor: 'pointer', fontSize: 10, color: '#1a3560', fontWeight: 600, gap: 3 }}>
+                <span style={{ fontSize: 16 }}>{bt.icon}</span>
+                {bt.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Center: canvas */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px 16px', background: '#f0f4fb' }} onClick={() => setSelection(null)}>
-          <div style={{ maxWidth: 620, margin: '0 auto', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', borderRadius: 8, overflow: 'hidden' }}>
-            {/* Header */}
-            <div onClick={e => { e.stopPropagation(); setSelection('header') }}
-              style={{ background: header.bgColor, padding: '20px 32px', textAlign: 'center', cursor: 'pointer', outline: selection === 'header' ? '2px solid #5bbfd6' : 'none' }}>
-              <span style={{ color: header.textColor, fontSize: header.fontSize, fontWeight: 700, letterSpacing: '0.05em' }}>{header.text}</span>
-              {selection === 'header' && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>クリックして編集</div>}
-            </div>
+          {templateLoading ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#aaa', fontSize: 15 }}>読み込み中...</div>
+          ) : (
+            <div style={{ maxWidth: 620, margin: '0 auto', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', borderRadius: 8, overflow: 'hidden' }}>
+              {/* Header */}
+              <div onClick={e => { e.stopPropagation(); setSelection('header') }}
+                style={{ background: header.bgColor, padding: '20px 32px', textAlign: 'center', cursor: 'pointer', outline: selection === 'header' ? '2px solid #5bbfd6' : 'none' }}>
+                <span style={{ color: header.textColor, fontSize: header.fontSize, fontWeight: 700, letterSpacing: '0.05em' }}>{header.text}</span>
+                {selection === 'header' && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>クリックして編集</div>}
+              </div>
 
-            {/* Rows */}
-            <div style={{ padding: '16px 20px' }} onClick={e => e.stopPropagation()}>
-              {rows.length === 0 && (
-                <div style={{ textAlign: 'center', color: '#ccc', padding: '40px 0', fontSize: 14 }}>左のパネルからブロックを追加してください</div>
-              )}
-              {rows.map((row, rowIdx) => (
-                <RowView
-                  key={row.id}
-                  row={row}
-                  isFirst={rowIdx === 0}
-                  isLast={rowIdx === rows.length - 1}
-                  selection={selection}
-                  onSelectBlock={blockId => setSelection({ kind: 'block', blockId })}
-                  onSelectRow={() => setSelection({ kind: 'row', rowId: row.id })}
-                  onUpdateBlock={updateBlock}
-                  onAddBlockToCell={addBlockToCell}
-                  onMoveRow={moveRow}
-                  onDeleteRow={deleteRow}
-                  onAddCol={addCol}
-                  onRemoveCol={removeCol}
-                  onUpdateWidths={updateRowWidths}
-                />
-              ))}
-            </div>
+              {/* Rows */}
+              <div style={{ padding: '16px 20px' }} onClick={e => e.stopPropagation()}>
+                {rows.length === 0 && (
+                  <div style={{ textAlign: 'center', color: '#ccc', padding: '40px 0', fontSize: 14 }}>左のパネルからブロックを追加してください</div>
+                )}
+                {rows.map((row, rowIdx) => (
+                  <RowView
+                    key={row.id}
+                    row={row}
+                    isFirst={rowIdx === 0}
+                    isLast={rowIdx === rows.length - 1}
+                    selection={selection}
+                    onSelectBlock={blockId => setSelection({ kind: 'block', blockId })}
+                    onSelectRow={() => setSelection({ kind: 'row', rowId: row.id })}
+                    onUpdateBlock={updateBlock}
+                    onAddBlockToCell={addBlockToCell}
+                    onMoveRow={moveRow}
+                    onDeleteRow={deleteRow}
+                    onAddCol={addCol}
+                    onRemoveCol={removeCol}
+                    onUpdateWidths={updateRowWidths}
+                  />
+                ))}
+              </div>
 
-            {/* Footer */}
-            <div onClick={e => { e.stopPropagation(); setSelection('footer') }}
-              style={{ background: '#f5f5f5', padding: '14px 32px', fontSize: 11, color: '#999', textAlign: 'center', cursor: 'pointer', outline: selection === 'footer' ? '2px solid #5bbfd6' : 'none' }}>
-              {footer}
-              {selection === 'footer' && <div style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>クリックして編集</div>}
+              {/* Footer */}
+              <div onClick={e => { e.stopPropagation(); setSelection('footer') }}
+                style={{ background: '#f5f5f5', padding: '14px 32px', fontSize: 11, color: '#999', textAlign: 'center', cursor: 'pointer', outline: selection === 'footer' ? '2px solid #5bbfd6' : 'none' }}>
+                {footer}
+                {selection === 'footer' && <div style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>クリックして編集</div>}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Right: editor panel */}
@@ -646,6 +796,7 @@ export default function NewsletterPage() {
             onHeaderChange={setHeader}
             footer={footer}
             onFooterChange={setFooter}
+            templateVars={activeTemplDef?.vars || []}
           />
         </div>
       </div>
@@ -669,7 +820,6 @@ function RowView({ row, isFirst, isLast, selection, onSelectBlock, onSelectRow, 
     <div style={{ marginBottom: 8 }}>
       {/* Row toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
-        {/* Column controls */}
         {row.cells.length > 1 && (
           <button onClick={() => onRemoveCol(row.id)}
             style={{ padding: '1px 8px', fontSize: 10, border: '1px solid #e0d0d0', borderRadius: 4, background: '#fff5f5', color: '#c62828', cursor: 'pointer' }}>
@@ -682,7 +832,6 @@ function RowView({ row, isFirst, isLast, selection, onSelectBlock, onSelectRow, 
             ＋ 列追加
           </button>
         )}
-        {/* Background button */}
         <button onClick={e => { e.stopPropagation(); onSelectRow() }}
           title="背景を設定"
           style={{ padding: '1px 8px', fontSize: 10, border: `1px solid ${isRowSelected ? '#1a3560' : '#ddd'}`, borderRadius: 4, background: isRowSelected ? '#e8f0ff' : '#f8f8f8', color: isRowSelected ? '#1a3560' : '#888', cursor: 'pointer' }}>
