@@ -543,13 +543,17 @@ export default function NewsletterPage() {
   const [templateLoading, setTemplateLoading] = useState(false)
   const [savedNewsletters, setSavedNewsletters] = useState([])
   const [savingNew, setSavingNew] = useState(false)
+  const [filter, setFilter] = useState({ type: 'all' })
+  const [filteredCount, setFilteredCount] = useState(null)
+  const [eventDates, setEventDates] = useState([])
 
   const activeTemplDef = TEMPLATE_DEFS.find(t => t.id === activeTemplateId)
   const isNewsletter = activeTemplateId === 'newsletter'
 
   useEffect(() => {
     fetch('/api/admin/newsletter').then(r => r.json()).then(d => {
-      if (d.count !== undefined) setSubscriberCount(d.count)
+      if (d.count !== undefined) { setSubscriberCount(d.count); setFilteredCount(d.count) }
+      if (d.eventDates) setEventDates(d.eventDates)
     })
     loadSavedNewsletters()
     const link = document.createElement('link')
@@ -557,6 +561,20 @@ export default function NewsletterPage() {
     document.head.appendChild(link)
     return () => document.head.removeChild(link)
   }, [])
+
+  useEffect(() => {
+    if (!isNewsletter) return
+    const params = new URLSearchParams({ filter: filter.type })
+    if (filter.type === 'booking_count_gte') params.set('value', String(filter.value ?? 1))
+    if (filter.type === 'event_date') params.set('date', filter.date || '')
+    setFilteredCount(null)
+    const timer = setTimeout(() => {
+      fetch(`/api/admin/newsletter?${params}`).then(r => r.json()).then(d => {
+        if (d.count !== undefined) setFilteredCount(d.count)
+      })
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [filter, isNewsletter])
 
   async function loadSavedNewsletters() {
     const res = await fetch('/api/admin/newsletter-templates')
@@ -759,7 +777,7 @@ export default function NewsletterPage() {
     const res = await fetch('/api/admin/newsletter', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subject, html }),
+      body: JSON.stringify({ subject, html, filter }),
     })
     const json = await res.json()
     setSending(false); setConfirmed(false)
@@ -795,7 +813,7 @@ export default function NewsletterPage() {
             </div>
           ) : (
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span style={{ fontSize: 12, color: '#795548', fontWeight: 600 }}>{subscriberCount}名に送信します</span>
+              <span style={{ fontSize: 12, color: '#795548', fontWeight: 600 }}>{filteredCount ?? subscriberCount}名に送信します</span>
               <button onClick={handleSend} disabled={sending}
                 style={{ background: '#e53935', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 700, cursor: sending ? 'not-allowed' : 'pointer', opacity: sending ? 0.6 : 1 }}>
                 {sending ? '送信中...' : '送信する'}
@@ -822,6 +840,45 @@ export default function NewsletterPage() {
             : result.loadedName
             ? <span style={{ color: '#1a3560', fontWeight: 600 }}>📂 「{result.loadedName}」を読み込みました</span>
             : <span style={{ color: '#388e3c', fontWeight: 600 }}>✅ 送信完了：{result.sent}件成功{result.failed > 0 ? ` / ${result.failed}件失敗` : ''}</span>}
+        </div>
+      )}
+
+      {isNewsletter && !confirmed && (
+        <div style={{ background: '#f8fbff', borderBottom: '1px solid #e0e8f0', padding: '8px 20px', display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#666', whiteSpace: 'nowrap' }}>配信先を絞る：</span>
+          {[
+            { value: 'all', label: '全員' },
+            { value: 'booking_count_gte', label: '予約N回以上' },
+            { value: 'no_bookings', label: 'まだ来たことない' },
+            { value: 'event_date', label: '特定の開催日に来た' },
+          ].map(opt => (
+            <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              <input type="radio" name="nlfilter" value={opt.value}
+                checked={filter.type === opt.value}
+                onChange={() => setFilter({ type: opt.value, value: filter.value ?? 3, date: filter.date ?? '' })}
+              />
+              {opt.label}
+            </label>
+          ))}
+          {filter.type === 'booking_count_gte' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <input type="number" min={1} max={999} value={filter.value ?? 3}
+                onChange={e => setFilter({ ...filter, value: Number(e.target.value) })}
+                style={{ width: 55, padding: '3px 6px', border: '1px solid #ccc', borderRadius: 5, fontSize: 12 }} />
+              <span style={{ fontSize: 11, color: '#666' }}>回以上</span>
+            </div>
+          )}
+          {filter.type === 'event_date' && (
+            <select value={filter.date || ''}
+              onChange={e => setFilter({ ...filter, date: e.target.value })}
+              style={{ padding: '3px 8px', border: '1px solid #ccc', borderRadius: 5, fontSize: 12 }}>
+              <option value="">開催日を選択</option>
+              {eventDates.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          )}
+          <span style={{ fontSize: 12, color: '#1a3560', fontWeight: 700, marginLeft: 'auto' }}>
+            → {filteredCount === null ? '...' : `${filteredCount}名`} に配信
+          </span>
         </div>
       )}
 
