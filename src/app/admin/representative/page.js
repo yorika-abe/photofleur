@@ -187,7 +187,6 @@ export default function AdminRepresentativePage() {
                 ref={editorRef}
                 contentEditable
                 suppressContentEditableWarning
-                onBlur={e => setForm(f => ({ ...f, message: e.currentTarget.innerHTML }))}
                 style={{ ...inp, minHeight: 200, resize: 'vertical', lineHeight: 1.8, outline: 'none', borderRadius: '0 0 8px 8px', overflowY: 'auto', cursor: 'text' }}
               />
               <p style={{ fontSize: 11, color: '#aaa', margin: '4px 0 0' }}>最初の80文字ほどがプレビューとして表示され、「続きを読む」で全文が展開されます</p>
