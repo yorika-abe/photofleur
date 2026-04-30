@@ -3,13 +3,22 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
+const TABS = [
+  { id: 'home', label: 'HOME' },
+  { id: 'request', label: 'リクエスト撮影' },
+  { id: 'recruit_page', label: 'モデル募集' },
+]
+
 export default function AdminMediaPage() {
+  const [tab, setTab] = useState('home')
   const [heroImages, setHeroImages] = useState([])
   const [heroImagesMobile, setHeroImagesMobile] = useState([])
   const [heroVideo, setHeroVideo] = useState('')
   const [heroVideo2, setHeroVideo2] = useState('')
   const [missionBg, setMissionBg] = useState('')
   const [recruitImages, setRecruitImages] = useState([])
+  const [requestHeroImage, setRequestHeroImage] = useState('')
+  const [recruitHeroImage, setRecruitHeroImage] = useState('')
   const [uploading, setUploading] = useState(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [saving, setSaving] = useState(false)
@@ -23,6 +32,8 @@ export default function AdminMediaPage() {
       setHeroVideo2(data.hero_video_2 || '')
       setMissionBg(data.mission_bg || '')
       setRecruitImages(JSON.parse(data.recruit_bg_images || '[]'))
+      setRequestHeroImage(data.request_hero_image || '')
+      setRecruitHeroImage(data.recruit_hero_image || '')
     })
   }, [])
 
@@ -102,6 +113,8 @@ export default function AdminMediaPage() {
         hero_video_2: heroVideo2,
         mission_bg: missionBg,
         recruit_bg_images: JSON.stringify(recruitImages),
+        request_hero_image: requestHeroImage,
+        recruit_hero_image: recruitHeroImage,
       }),
     })
     setSaving(false)
@@ -109,35 +122,48 @@ export default function AdminMediaPage() {
     setTimeout(() => setSaved(false), 3000)
   }
 
-  const inp = { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }
+  const inp = { width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }
+
+  function ProgressBar({ progress }) {
+    return (
+      <div style={{ marginTop: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888', marginBottom: 3 }}>
+          <span>アップロード中...</span><span>{progress}%</span>
+        </div>
+        <div style={{ background: '#e8f4fb', borderRadius: 99, height: 6, overflow: 'hidden' }}>
+          <div style={{ height: '100%', background: '#1a3560', borderRadius: 99, width: `${progress}%`, transition: 'width 0.2s ease' }} />
+        </div>
+      </div>
+    )
+  }
 
   function MediaGrid({ items, onRemove, uploadKey, onAddImage, onAddVideo, aspect = '16/9' }) {
     const isVid = url => /\.(mp4|mov|webm|ogg)(\?.*)?$/i.test(url)
     return (
       <>
         {items.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10, marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 8, marginBottom: 12 }}>
             {items.map((url, i) => (
-              <div key={i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', aspectRatio: aspect }}>
+              <div key={i} style={{ position: 'relative', borderRadius: 6, overflow: 'hidden', aspectRatio: aspect }}>
                 {isVid(url) ? (
                   <video src={url} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 )}
-                <div style={{ position: 'absolute', top: 4, left: 6, background: 'rgba(0,0,0,0.5)', color: '#fff', borderRadius: 4, padding: '2px 6px', fontSize: 11 }}>{i + 1}{isVid(url) ? ' 🎬' : ''}</div>
+                <div style={{ position: 'absolute', top: 3, left: 4, background: 'rgba(0,0,0,0.5)', color: '#fff', borderRadius: 3, padding: '1px 5px', fontSize: 10 }}>{i + 1}{isVid(url) ? ' 🎬' : ''}</div>
                 <button onClick={() => onRemove(i)}
-                  style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                  style={{ position: 'absolute', top: 3, right: 3, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
               </div>
             ))}
           </div>
         )}
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a3560', color: '#fff', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
             📷 写真を追加
             <input type="file" accept="image/*" multiple style={{ display: 'none' }} disabled={!!uploading}
               onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(f => onAddImage(f)) }} />
           </label>
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#444', color: '#fff', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#444', color: '#fff', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
             🎬 動画を追加
             <input type="file" accept="video/*" style={{ display: 'none' }} disabled={!!uploading}
               onChange={e => e.target.files?.[0] && onAddVideo(e.target.files[0])} />
@@ -152,18 +178,18 @@ export default function AdminMediaPage() {
     return (
       <>
         {images.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10, marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 8, marginBottom: 12 }}>
             {images.map((url, i) => (
-              <div key={i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', aspectRatio: aspect }}>
+              <div key={i} style={{ position: 'relative', borderRadius: 6, overflow: 'hidden', aspectRatio: aspect }}>
                 <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <div style={{ position: 'absolute', top: 4, left: 6, background: 'rgba(0,0,0,0.5)', color: '#fff', borderRadius: 4, padding: '2px 6px', fontSize: 11 }}>{i + 1}枚目</div>
+                <div style={{ position: 'absolute', top: 3, left: 4, background: 'rgba(0,0,0,0.5)', color: '#fff', borderRadius: 3, padding: '1px 5px', fontSize: 10 }}>{i + 1}枚目</div>
                 <button onClick={() => onRemove(i)}
-                  style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                  style={{ position: 'absolute', top: 3, right: 3, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
               </div>
             ))}
           </div>
         )}
-        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a3560', color: '#fff', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
           📷 {label}
           <input type="file" accept="image/*" multiple style={{ display: 'none' }} disabled={!!uploading}
             onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(f => onAdd(f)) }} />
@@ -173,120 +199,146 @@ export default function AdminMediaPage() {
     )
   }
 
+  function SingleImageSection({ value, onChange, uploadKey, label }) {
+    return (
+      <>
+        {value && (
+          <div style={{ marginBottom: 12, position: 'relative', borderRadius: 8, overflow: 'hidden', maxHeight: 140 }}>
+            <img src={value} alt="" style={{ width: '100%', height: 140, objectFit: 'cover' }} />
+            <button onClick={() => onChange('')}
+              style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontSize: 11 }}>削除</button>
+          </div>
+        )}
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+          📷 {label}
+          <input type="file" accept="image/*" style={{ display: 'none' }} disabled={!!uploading}
+            onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], uploadKey, onChange)} />
+        </label>
+        {uploading === uploadKey && <ProgressBar progress={uploadProgress} />}
+        <div style={{ marginTop: 10 }}>
+          <input style={inp} value={value} onChange={e => onChange(e.target.value)} placeholder="またはURLを直接入力" />
+        </div>
+      </>
+    )
+  }
+
   function VideoSection({ value, onChange, uploadKey, label }) {
     const isYoutube = value.includes('youtube') || value.includes('youtu.be')
     return (
       <>
         {value && (
-          <div style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 12 }}>
             {isYoutube ? (
-              <div style={{ position: 'relative', paddingBottom: '56.25%', borderRadius: 10, overflow: 'hidden' }}>
+              <div style={{ position: 'relative', paddingBottom: '56.25%', borderRadius: 8, overflow: 'hidden' }}>
                 <iframe src={toEmbedUrl(value)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen />
               </div>
             ) : (
-              <video src={value} controls style={{ width: '100%', borderRadius: 10, maxHeight: 200 }} />
+              <video src={value} controls style={{ width: '100%', borderRadius: 8, maxHeight: 160 }} />
             )}
             <button onClick={() => onChange('')}
-              style={{ marginTop: 8, background: 'none', border: '1px solid #ddd', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, color: '#888' }}>削除</button>
+              style={{ marginTop: 6, background: 'none', border: '1px solid #ddd', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', fontSize: 11, color: '#888' }}>削除</button>
           </div>
         )}
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a3560', color: '#fff', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
             🎬 {label}
             <input type="file" accept="video/*" style={{ display: 'none' }} disabled={!!uploading}
               onChange={e => e.target.files?.[0] && uploadVideoWithSignedUrl(e.target.files[0], uploadKey, onChange)} />
           </label>
         </div>
         {uploading === uploadKey && <ProgressBar progress={uploadProgress} />}
-        <div style={{ marginTop: 12 }}>
+        <div style={{ marginTop: 10 }}>
           <input style={inp} value={value} onChange={e => onChange(e.target.value)} placeholder="またはYouTube URLを入力" />
         </div>
       </>
     )
   }
 
-  function ProgressBar({ progress }) {
-    return (
-      <div style={{ marginTop: 12 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#888', marginBottom: 4 }}>
-          <span>アップロード中...</span><span>{progress}%</span>
-        </div>
-        <div style={{ background: '#e8f4fb', borderRadius: 99, height: 8, overflow: 'hidden' }}>
-          <div style={{ height: '100%', background: '#1a3560', borderRadius: 99, width: `${progress}%`, transition: 'width 0.2s ease' }} />
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 20px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
+    <div style={{ maxWidth: 760, margin: '0 auto', padding: '28px 20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
         <Link href="/admin" style={{ color: '#888', textDecoration: 'none', fontSize: 13 }}>← 管理画面</Link>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: 0 }}>メディア管理</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1a3560', margin: 0 }}>メディア管理</h1>
       </div>
 
-      {saved && <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 8, padding: '12px 16px', marginBottom: 24, fontSize: 13, color: '#388e3c' }}>保存しました</div>}
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #e8f4fb' }}>
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer', padding: '8px 18px',
+              fontSize: 13, fontWeight: tab === t.id ? 700 : 500,
+              color: tab === t.id ? '#1a3560' : '#888',
+              borderBottom: tab === t.id ? '2px solid #1a3560' : '2px solid transparent',
+              marginBottom: -2,
+            }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-        <Section title="ヒーロー背景画像（PC）" desc="複数枚登録するとフェードで自動切り替えされます（5秒間隔）">
-          <ImageGrid images={heroImages} onRemove={i => setHeroImages(imgs => imgs.filter((_, idx) => idx !== i))}
-            uploadKey="hero_bg" onAdd={f => { setUploading('hero_bg'); setUploadProgress(0); const path = `site/hero-${Date.now()}.${f.name.split('.').pop()}`; uploadWithProgress(f, path).then(url => { setHeroImages(imgs => [...imgs, url]); setUploading(null); setUploadProgress(0) }).catch(e => { alert(e); setUploading(null) }) }} label="画像を追加" />
-        </Section>
+        {/* ── HOME ── */}
+        {tab === 'home' && (
+          <>
+            <Section title="ヒーロー背景画像（PC）" desc="複数枚登録するとフェードで自動切り替えされます（5秒間隔）">
+              <ImageGrid images={heroImages} onRemove={i => setHeroImages(imgs => imgs.filter((_, idx) => idx !== i))}
+                uploadKey="hero_bg" onAdd={f => { setUploading('hero_bg'); setUploadProgress(0); const path = `site/hero-${Date.now()}.${f.name.split('.').pop()}`; uploadWithProgress(f, path).then(url => { setHeroImages(imgs => [...imgs, url]); setUploading(null); setUploadProgress(0) }).catch(e => { alert(e); setUploading(null) }) }} label="画像を追加" />
+            </Section>
 
-        <Section title="ヒーロー背景画像（モバイル）" desc="スマホ用の縦長画像を設定できます。未設定の場合はPC用が使用されます">
-          <ImageGrid images={heroImagesMobile} onRemove={i => setHeroImagesMobile(imgs => imgs.filter((_, idx) => idx !== i))}
-            uploadKey="hero_bg_mobile" onAdd={f => { setUploading('hero_bg_mobile'); setUploadProgress(0); const path = `site/hero-mobile-${Date.now()}.${f.name.split('.').pop()}`; uploadWithProgress(f, path).then(url => { setHeroImagesMobile(imgs => [...imgs, url]); setUploading(null); setUploadProgress(0) }).catch(e => { alert(e); setUploading(null) }) }} label="画像を追加" aspect="9/16" />
-        </Section>
+            <Section title="ヒーロー背景画像（モバイル）" desc="スマホ用の縦長画像。未設定の場合はPC用が使用されます">
+              <ImageGrid images={heroImagesMobile} onRemove={i => setHeroImagesMobile(imgs => imgs.filter((_, idx) => idx !== i))}
+                uploadKey="hero_bg_mobile" onAdd={f => { setUploading('hero_bg_mobile'); setUploadProgress(0); const path = `site/hero-mobile-${Date.now()}.${f.name.split('.').pop()}`; uploadWithProgress(f, path).then(url => { setHeroImagesMobile(imgs => [...imgs, url]); setUploading(null); setUploadProgress(0) }).catch(e => { alert(e); setUploading(null) }) }} label="画像を追加" aspect="9/16" />
+            </Section>
 
-        <Section title="ヒーロー下の動画①" desc="動画ファイルまたはYouTube URLを使用できます">
-          <VideoSection value={heroVideo} onChange={setHeroVideo} uploadKey="hero_video" label="動画をアップロード" />
-        </Section>
+            <Section title="ヒーロー下の動画①">
+              <VideoSection value={heroVideo} onChange={setHeroVideo} uploadKey="hero_video" label="動画をアップロード" />
+            </Section>
 
-        <Section title="ヒーロー下の動画②" desc="動画①のさらに下に表示されます">
-          <VideoSection value={heroVideo2} onChange={setHeroVideo2} uploadKey="hero_video_2" label="動画をアップロード" />
-        </Section>
+            <Section title="ヒーロー下の動画②" desc="動画①のさらに下に表示されます">
+              <VideoSection value={heroVideo2} onChange={setHeroVideo2} uploadKey="hero_video_2" label="動画をアップロード" />
+            </Section>
 
-        <Section title="モデル募集マーキー（写真・動画）" desc="上下のスクロール行に表示される写真・動画です。複数登録でき、上段は左に、下段は右に自動スクロールします">
-          <MediaGrid
-            items={recruitImages}
-            onRemove={i => setRecruitImages(imgs => imgs.filter((_, idx) => idx !== i))}
-            uploadKey="recruit_bg"
-            onAddImage={f => { setUploading('recruit_bg'); setUploadProgress(0); const path = `site/recruit-${Date.now()}.${f.name.split('.').pop()}`; uploadWithProgress(f, path).then(url => { setRecruitImages(imgs => [...imgs, url]); setUploading(null); setUploadProgress(0) }).catch(e => { alert(e); setUploading(null) }) }}
-            onAddVideo={f => uploadVideoWithSignedUrl(f, 'recruit_bg', url => setRecruitImages(imgs => [...imgs, url]))}
-          />
-        </Section>
+            <Section title="モデル募集マーキー（写真・動画）" desc="上下のスクロール行に表示される写真・動画。上段は左に、下段は右に自動スクロール">
+              <MediaGrid
+                items={recruitImages}
+                onRemove={i => setRecruitImages(imgs => imgs.filter((_, idx) => idx !== i))}
+                uploadKey="recruit_bg"
+                onAddImage={f => { setUploading('recruit_bg'); setUploadProgress(0); const path = `site/recruit-${Date.now()}.${f.name.split('.').pop()}`; uploadWithProgress(f, path).then(url => { setRecruitImages(imgs => [...imgs, url]); setUploading(null); setUploadProgress(0) }).catch(e => { alert(e); setUploading(null) }) }}
+                onAddVideo={f => uploadVideoWithSignedUrl(f, 'recruit_bg', url => setRecruitImages(imgs => [...imgs, url]))}
+              />
+            </Section>
 
-        <Section title="Missionセクション背景画像" desc="「Every flower deserves to bloom.」セクションの背景に使用されます">
-          {missionBg && (
-            <div style={{ marginBottom: 16, position: 'relative', borderRadius: 10, overflow: 'hidden', maxHeight: 160 }}>
-              <img src={missionBg} alt="" style={{ width: '100%', height: 160, objectFit: 'cover' }} />
-              <button onClick={() => setMissionBg('')}
-                style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 12 }}>削除</button>
-            </div>
-          )}
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a3560', color: '#fff', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-            📷 画像をアップロード
-            <input type="file" accept="image/*" style={{ display: 'none' }} disabled={!!uploading}
-              onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'mission_bg', setMissionBg)} />
-          </label>
-          {uploading === 'mission_bg' && <ProgressBar progress={uploadProgress} />}
-          <div style={{ marginTop: 12 }}>
-            <input style={inp} value={missionBg} onChange={e => setMissionBg(e.target.value)} placeholder="またはURLを直接入力" />
-          </div>
-        </Section>
+            <Section title="Missionセクション背景画像" desc="「Every flower deserves to bloom.」セクションの背景">
+              <SingleImageSection value={missionBg} onChange={setMissionBg} uploadKey="mission_bg" label="画像をアップロード" />
+            </Section>
+          </>
+        )}
+
+        {/* ── リクエスト撮影 ── */}
+        {tab === 'request' && (
+          <Section title="ヒーロー背景画像" desc="リクエスト撮影ページのヒーローセクション背景に使用されます">
+            <SingleImageSection value={requestHeroImage} onChange={setRequestHeroImage} uploadKey="request_hero" label="画像をアップロード" />
+          </Section>
+        )}
+
+        {/* ── モデル募集 ── */}
+        {tab === 'recruit_page' && (
+          <Section title="ヒーロー背景画像" desc="モデル募集ページのヒーローセクション背景に使用されます">
+            <SingleImageSection value={recruitHeroImage} onChange={setRecruitHeroImage} uploadKey="recruit_hero" label="画像をアップロード" />
+          </Section>
+        )}
 
       </div>
 
-      <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
         <button onClick={save} disabled={saving}
-          style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 36px', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+          style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 28px', fontWeight: 700, fontSize: 14, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
           {saving ? '保存中...' : '保存する'}
         </button>
         {saved && (
-          <span style={{ fontSize: 14, color: '#388e3c', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-            ✓ 保存しました
-          </span>
+          <span style={{ fontSize: 13, color: '#388e3c', fontWeight: 600 }}>✓ 保存しました</span>
         )}
       </div>
     </div>
@@ -295,9 +347,9 @@ export default function AdminMediaPage() {
 
 function Section({ title, desc, children }) {
   return (
-    <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #d6ecf5' }}>
-      <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 4 }}>{title}</h2>
-      <p style={{ fontSize: 12, color: '#aaa', marginBottom: 16, marginTop: 0 }}>{desc}</p>
+    <section style={{ background: '#fff', borderRadius: 10, padding: '16px 18px', border: '1px solid #d6ecf5' }}>
+      <h2 style={{ fontSize: 14, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: desc ? 2 : 12 }}>{title}</h2>
+      {desc && <p style={{ fontSize: 11, color: '#aaa', marginBottom: 12, marginTop: 0 }}>{desc}</p>}
       {children}
     </section>
   )

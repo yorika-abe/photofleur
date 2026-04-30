@@ -20,7 +20,7 @@ export async function GET() {
 
 // 画像URLを含むキー（配列 or 単体）
 const ARRAY_IMAGE_KEYS = ['hero_bg_images', 'hero_bg_images_mobile', 'recruit_bg_images']
-const SINGLE_IMAGE_KEYS = ['hero_video', 'hero_video_2', 'mission_bg', 'recruit_bg_video']
+const SINGLE_IMAGE_KEYS = ['hero_video', 'hero_video_2', 'mission_bg', 'recruit_bg_video', 'request_hero_image', 'recruit_hero_image']
 
 export async function POST(req) {
   const admin = await checkAdmin()

@@ -1,3 +1,5 @@
+import { createSupabaseAdminClient } from '@/lib/supabase-server'
+
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
 const LINE_URL = 'https://lin.ee/VgTzmhe'
@@ -10,13 +12,18 @@ function LineIcon() {
   )
 }
 
-export default function RequestPage() {
+export default async function RequestPage() {
+  const supabase = await createSupabaseAdminClient()
+  const { data } = await supabase.from('site_settings').select('value').eq('key', 'request_hero_image').single()
+  const heroImage = data?.value || ''
+
   return (
     <div style={{ background: '#fff', color: '#1a1228' }}>
 
       {/* ─── HERO ─── */}
-      <section style={{ background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 100%)', color: '#fff', padding: 'clamp(64px, 10vw, 110px) 20px', textAlign: 'center' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      <section style={{ background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 100%)', color: '#fff', padding: 'clamp(64px, 10vw, 110px) 20px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+        {heroImage && <img src={heroImage} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.35 }} />}
+        <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <p style={{ ...serif, fontSize: 11, letterSpacing: '0.4em', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginBottom: 20, fontStyle: 'italic' }}>Request Shooting</p>
           <h1 style={{ ...serif, fontSize: 'clamp(32px, 5.5vw, 64px)', fontWeight: 400, lineHeight: 1.2, margin: '0 0 24px', whiteSpace: 'nowrap' }}>
             📸 リクエスト撮影について
