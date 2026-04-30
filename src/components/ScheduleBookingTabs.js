@@ -44,10 +44,7 @@ export default function ScheduleBookingTabs({ events, entriesByEvent, slotsByEnt
   const displayPrice = selectedSlot ? selectedSlot.price : modalMinPrice
   const showPriceRange = !selectedSlot && !modalAllSamePrice
 
-  const validEntries = activeEntries.filter(e => {
-    const slots = slotsByEntry[e.id] || []
-    return slots.length > 0
-  })
+  const validEntries = activeEntries
 
   return (
     <div style={{ borderTop: '2px solid #f0f0f0', paddingTop: 24 }}>
@@ -97,16 +94,18 @@ export default function ScheduleBookingTabs({ events, entriesByEvent, slotsByEnt
             const cardPrices = slots.map(s => s.price)
             const cardMinPrice = cardPrices.length ? Math.min(...cardPrices) : 0
             const cardAllSame = cardPrices.length > 0 && cardPrices.every(p => p === cardPrices[0])
-            const allFull = slots.length > 0 && slots.every(s => {
+            const noSlots = slots.length === 0
+            const allFull = !noSlots && slots.every(s => {
               const totalBookings = (bookingCounts || []).filter(b => b.slot_id === s.id).length
               return s.is_reserved && totalBookings >= (s.max_reservations || 1)
             })
+            const disabled = noSlots || allFull
 
             return (
               <div key={entry.id}
-                onClick={() => !allFull && openModal(entry)}
-                style={{ cursor: allFull ? 'default' : 'pointer', borderRadius: 14, overflow: 'hidden', border: '1px solid #e0ecf8', background: '#fff', opacity: allFull ? 0.6 : 1, transition: 'transform 0.15s, box-shadow 0.15s' }}
-                onMouseEnter={e => { if (!allFull) { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(26,53,96,0.12)' } }}
+                onClick={() => !disabled && openModal(entry)}
+                style={{ cursor: disabled ? 'default' : 'pointer', borderRadius: 14, overflow: 'hidden', border: '1px solid #e0ecf8', background: '#fff', opacity: disabled ? 0.6 : 1, transition: 'transform 0.15s, box-shadow 0.15s' }}
+                onMouseEnter={e => { if (!disabled) { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(26,53,96,0.12)' } }}
                 onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
               >
                 <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: '#f0f4fb' }}>
@@ -121,6 +120,8 @@ export default function ScheduleBookingTabs({ events, entriesByEvent, slotsByEnt
                   <div style={{ fontSize: 14, color: '#555', fontWeight: 600 }}>
                     {allFull
                       ? <span style={{ color: '#c0a060', fontSize: 13 }}>満枠御礼</span>
+                      : noSlots
+                      ? <span style={{ color: '#bbb', fontSize: 12 }}>準備中</span>
                       : `¥${cardMinPrice.toLocaleString()}${cardAllSame ? '' : '〜'}`}
                   </div>
                 </div>
