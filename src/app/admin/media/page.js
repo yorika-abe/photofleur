@@ -10,7 +10,6 @@ export default function AdminMediaPage() {
   const [heroVideo2, setHeroVideo2] = useState('')
   const [missionBg, setMissionBg] = useState('')
   const [recruitImages, setRecruitImages] = useState([])
-  const [recruitVideo, setRecruitVideo] = useState('')
   const [uploading, setUploading] = useState(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [saving, setSaving] = useState(false)
@@ -24,7 +23,6 @@ export default function AdminMediaPage() {
       setHeroVideo2(data.hero_video_2 || '')
       setMissionBg(data.mission_bg || '')
       setRecruitImages(JSON.parse(data.recruit_bg_images || '[]'))
-      setRecruitVideo(data.recruit_bg_video || '')
     })
   }, [])
 
@@ -104,7 +102,6 @@ export default function AdminMediaPage() {
         hero_video_2: heroVideo2,
         mission_bg: missionBg,
         recruit_bg_images: JSON.stringify(recruitImages),
-        recruit_bg_video: recruitVideo,
       }),
     })
     setSaving(false)
@@ -113,6 +110,43 @@ export default function AdminMediaPage() {
   }
 
   const inp = { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }
+
+  function MediaGrid({ items, onRemove, uploadKey, onAddImage, onAddVideo, aspect = '16/9' }) {
+    const isVid = url => /\.(mp4|mov|webm|ogg)(\?.*)?$/i.test(url)
+    return (
+      <>
+        {items.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10, marginBottom: 16 }}>
+            {items.map((url, i) => (
+              <div key={i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', aspectRatio: aspect }}>
+                {isVid(url) ? (
+                  <video src={url} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                )}
+                <div style={{ position: 'absolute', top: 4, left: 6, background: 'rgba(0,0,0,0.5)', color: '#fff', borderRadius: 4, padding: '2px 6px', fontSize: 11 }}>{i + 1}{isVid(url) ? ' 🎬' : ''}</div>
+                <button onClick={() => onRemove(i)}
+                  style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a3560', color: '#fff', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+            📷 写真を追加
+            <input type="file" accept="image/*" multiple style={{ display: 'none' }} disabled={!!uploading}
+              onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(f => onAddImage(f)) }} />
+          </label>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#444', color: '#fff', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+            🎬 動画を追加
+            <input type="file" accept="video/*" style={{ display: 'none' }} disabled={!!uploading}
+              onChange={e => e.target.files?.[0] && onAddVideo(e.target.files[0])} />
+          </label>
+        </div>
+        {uploading === uploadKey && <ProgressBar progress={uploadProgress} />}
+      </>
+    )
+  }
 
   function ImageGrid({ images, onRemove, uploadKey, onAdd, label, aspect = '3/4' }) {
     return (
@@ -213,11 +247,14 @@ export default function AdminMediaPage() {
           <VideoSection value={heroVideo2} onChange={setHeroVideo2} uploadKey="hero_video_2" label="動画をアップロード" />
         </Section>
 
-        <Section title="モデル募集セクション背景（写真 or 動画）" desc="複数枚の写真か動画を設定できます。設定するとテキストに被らないよう暗いオーバーレイが自動でかかります">
-          <ImageGrid images={recruitImages} onRemove={i => setRecruitImages(imgs => imgs.filter((_, idx) => idx !== i))}
-            uploadKey="recruit_bg" onAdd={f => { setUploading('recruit_bg'); setUploadProgress(0); const path = `site/recruit-${Date.now()}.${f.name.split('.').pop()}`; uploadWithProgress(f, path).then(url => { setRecruitImages(imgs => [...imgs, url]); setUploading(null); setUploadProgress(0) }).catch(e => { alert(e); setUploading(null) }) }} label="写真を追加" aspect="16/9" />
-          <div style={{ margin: '16px 0 8px', fontWeight: 600, fontSize: 13, color: '#555' }}>または動画</div>
-          <VideoSection value={recruitVideo} onChange={setRecruitVideo} uploadKey="recruit_video" label="動画をアップロード" />
+        <Section title="モデル募集マーキー（写真・動画）" desc="上下のスクロール行に表示される写真・動画です。複数登録でき、上段は左に、下段は右に自動スクロールします">
+          <MediaGrid
+            items={recruitImages}
+            onRemove={i => setRecruitImages(imgs => imgs.filter((_, idx) => idx !== i))}
+            uploadKey="recruit_bg"
+            onAddImage={f => { setUploading('recruit_bg'); setUploadProgress(0); const path = `site/recruit-${Date.now()}.${f.name.split('.').pop()}`; uploadWithProgress(f, path).then(url => { setRecruitImages(imgs => [...imgs, url]); setUploading(null); setUploadProgress(0) }).catch(e => { alert(e); setUploading(null) }) }}
+            onAddVideo={f => uploadVideoWithSignedUrl(f, 'recruit_bg', url => setRecruitImages(imgs => [...imgs, url]))}
+          />
         </Section>
 
         <Section title="Missionセクション背景画像" desc="「Every flower deserves to bloom.」セクションの背景に使用されます">

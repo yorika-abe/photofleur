@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 import HeroSlideshow from '@/components/HeroSlideshow'
+import RecruitMarquee from '@/components/RecruitMarquee'
 import ScrollReveal from '@/components/ScrollReveal'
 import ScheduleCarousel from '@/components/ScheduleCarousel'
 import NoticesCarousel from '@/components/NoticesCarousel'
@@ -73,7 +74,6 @@ export default async function Home() {
   const heroVideo2 = siteSettings.hero_video_2 || ''
   const missionBg = siteSettings.mission_bg || ''
   const recruitBgImages = JSON.parse(siteSettings.recruit_bg_images || '[]')
-  const recruitBgVideo = siteSettings.recruit_bg_video || ''
   const repPhoto = siteSettings.rep_photo || ''
   const repRole = siteSettings.rep_role || ''
   const repName = siteSettings.rep_name || ''
@@ -81,7 +81,6 @@ export default async function Home() {
   const repModelId = siteSettings.rep_model_id || ''
   const isYoutube = heroVideo.includes('youtube') || heroVideo.includes('youtu.be')
   const isYoutube2 = heroVideo2.includes('youtube') || heroVideo2.includes('youtu.be')
-  const isRecruitYoutube = recruitBgVideo.includes('youtube') || recruitBgVideo.includes('youtu.be')
 
   return (
     <div style={{ background: '#fff' }}>
@@ -273,48 +272,7 @@ export default async function Home() {
       )}
 
       {/* ─── RECRUIT CTA ─── */}
-      <section style={{ position: 'relative', padding: '120px 20px', overflow: 'hidden', textAlign: 'center' }}>
-        {/* 背景：動画 or 画像スライドショー or グラデーション */}
-        <div style={{ position: 'absolute', inset: 0 }}>
-          {recruitBgVideo ? (
-            isRecruitYoutube ? (
-              <iframe src={toEmbedUrl(recruitBgVideo) + '&autoplay=1&mute=1&loop=1&controls=0&playsinline=1'} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', pointerEvents: 'none' }} allow="autoplay" />
-            ) : (
-              <video src={recruitBgVideo} autoPlay muted loop playsInline style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-            )
-          ) : recruitBgImages.length > 0 ? (
-            <HeroSlideshow images={recruitBgImages} />
-          ) : (
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #fce8f0 0%, #e8f4fb 100%)' }} />
-          )}
-          {/* テキスト可読性のためのオーバーレイ */}
-          {(recruitBgVideo || recruitBgImages.length > 0) && (
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,20,50,0.55)' }} />
-          )}
-        </div>
-
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 640, margin: '0 auto' }}>
-          <p style={{ ...serif, fontSize: 12, letterSpacing: '0.3em', color: (recruitBgVideo || recruitBgImages.length > 0) ? 'rgba(255,255,255,0.7)' : '#f4a0be', textTransform: 'uppercase', marginBottom: 20, fontStyle: 'italic' }}>Join us</p>
-          <h2 style={{ ...serif, fontSize: 'clamp(28px, 5vw, 56px)', fontWeight: 300, color: (recruitBgVideo || recruitBgImages.length > 0) ? '#fff' : '#0d1f3a', lineHeight: 1.3, margin: '0 0 24px' }}>
-            モデルとして<br />
-            <em style={{ color: (recruitBgVideo || recruitBgImages.length > 0) ? '#a8e2f4' : '#5bbfd6' }}>PhotoFleurの一員になりませんか？</em>
-          </h2>
-          <p style={{ fontSize: 15, color: (recruitBgVideo || recruitBgImages.length > 0) ? 'rgba(255,255,255,0.85)' : '#667', lineHeight: 2, marginBottom: 40 }}>
-            完全女性運営によるサポートのもと<br />
-            あなたのモデル活動を全力で応援いたします。<br />
-            経験不問。公式LINEからお気軽にご連絡ください。
-          </p>
-          <Link href="/model-recruit" style={{
-            ...serif, display: 'inline-block', fontSize: 14, letterSpacing: '0.2em',
-            textTransform: 'uppercase', color: '#fff', textDecoration: 'none',
-            background: (recruitBgVideo || recruitBgImages.length > 0) ? 'rgba(255,255,255,0.2)' : '#1a3560',
-            border: '1px solid rgba(255,255,255,0.6)',
-            padding: '16px 48px', borderRadius: 2,
-          }}>
-            詳しく見る →
-          </Link>
-        </div>
-      </section>
+      <RecruitMarquee items={recruitBgImages} />
 
       {/* ─── REPRESENTATIVE MESSAGE ─── */}
       {(repName || repMessage) && (
