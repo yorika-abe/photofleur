@@ -18,10 +18,21 @@ function formatDate(d) {
   return `${date.getMonth() + 1}/${date.getDate()}（${DOW[date.getDay()]}）`
 }
 
-function availabilityLabel(shift) {
-  if (shift.available_slots?.[0]?.unavailable === true) return '不参加'
+function availabilityType(shift) {
+  if (shift.available_slots?.[0]?.unavailable === true) return 'unavailable'
   const isAllDay = shift.available_from === '00:00' && shift.available_until === '00:00'
-  return isAllDay ? '終日参加可' : `${shift.available_from} 〜 ${shift.available_until}`
+  return isAllDay ? 'allday' : 'partial'
+}
+
+const AVAILABILITY_SORT = { allday: 0, partial: 1, unavailable: 2 }
+
+const AVAILABILITY_ICON = { allday: '🟢', partial: '🟢⚠️', unavailable: '❌' }
+
+function availabilityLabel(shift) {
+  const type = availabilityType(shift)
+  if (type === 'unavailable') return '不参加'
+  if (type === 'allday') return '終日参加可'
+  return `${shift.available_from} 〜 ${shift.available_until}`
 }
 
 export default function AdminShiftsPage() {
@@ -105,10 +116,12 @@ export default function AdminShiftsPage() {
       ) : shifts.length === 0 ? (
         <p style={{ color: '#999' }}>該当するシフトはありません。</p>
       ) : (() => {
-        const displayed = shifts.filter(s =>
-          (!modelFilter || s.models?.name === modelFilter) &&
-          (!dateFilter || s.event_date === dateFilter)
-        )
+        const displayed = shifts
+          .filter(s =>
+            (!modelFilter || s.models?.name === modelFilter) &&
+            (!dateFilter || s.event_date === dateFilter)
+          )
+          .sort((a, b) => AVAILABILITY_SORT[availabilityType(a)] - AVAILABILITY_SORT[availabilityType(b)])
         return displayed.length === 0 ? (
           <p style={{ color: '#999' }}>該当するシフトはありません。</p>
         ) : (
@@ -117,8 +130,10 @@ export default function AdminShiftsPage() {
             const sc = STATUS_COLORS[shift.status] || STATUS_COLORS.submitted
             const isPending = shift.status === 'pending_approval'
             const isUpdating = !!updating[shift.id]
+            const avType = availabilityType(shift)
+            const isUnavailable = avType === 'unavailable'
             return (
-              <div key={shift.id} style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', border: isPending ? '1.5px solid #ffe082' : '1px solid #e5e5e5' }}>
+              <div key={shift.id} style={{ background: isUnavailable ? '#f5f5f5' : '#fff', borderRadius: 12, padding: '14px 18px', border: isPending ? '1.5px solid #ffe082' : '1px solid #e5e5e5', opacity: isUnavailable ? 0.6 : 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
@@ -138,8 +153,8 @@ export default function AdminShiftsPage() {
                       </span>
                     </div>
 
-                    <div style={{ fontSize: 13, color: '#333', fontWeight: 600, marginBottom: 6 }}>
-                      {availabilityLabel(shift)}
+                    <div style={{ fontSize: 13, color: isUnavailable ? '#999' : '#333', fontWeight: 600, marginBottom: 6 }}>
+                      {AVAILABILITY_ICON[avType]} {availabilityLabel(shift)}
                     </div>
 
                     {shift.notes && <p style={{ fontSize: 12, color: '#888', margin: 0 }}>{shift.notes}</p>}
