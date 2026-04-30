@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import BookingSection from './BookingSection'
+import GalleryMarquee from './GalleryMarquee'
 
 export const dynamic = 'force-dynamic'
 
@@ -260,13 +261,7 @@ export default async function EventDetailPage({ params }) {
       </div>
 
       {/* Gallery - horizontal scroll, no title */}
-      {event.gallery_images && event.gallery_images.length > 0 && (
-        <div style={{ marginBottom: 40, overflowX: 'auto', display: 'flex', flexWrap: 'nowrap', gap: 8, paddingBottom: 4, WebkitOverflowScrolling: 'touch' }}>
-          {event.gallery_images.map((url, i) => (
-            <img key={i} src={url} alt="" style={{ height: 260, width: 'auto', objectFit: 'cover', borderRadius: 10, flexShrink: 0, display: 'block' }} />
-          ))}
-        </div>
-      )}
+      <GalleryMarquee images={event.gallery_images} />
 
       {/* Products */}
       {products && products.length > 0 && (
