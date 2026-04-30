@@ -57,6 +57,38 @@ export default function AdminMediaPage() {
     })
   }
 
+  async function uploadWithSignedUrl(file, key, onSuccess) {
+    setUploading(key)
+    setUploadProgress(0)
+    const path = `site/${key}-${Date.now()}.${file.name.split('.').pop()}`
+    try {
+      const res = await fetch('/api/admin/upload-signed-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path }),
+      })
+      const { signedUrl, error } = await res.json()
+      if (error) throw error
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.upload.addEventListener('progress', e => {
+          if (e.lengthComputable) setUploadProgress(Math.round(e.loaded / e.total * 100))
+        })
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve()
+          else reject('アップロード失敗: ' + xhr.status)
+        })
+        xhr.addEventListener('error', () => reject('通信エラー'))
+        xhr.open('PUT', signedUrl)
+        xhr.setRequestHeader('Content-Type', file.type)
+        xhr.send(file)
+      })
+      onSuccess(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${path}`)
+    } catch (e) { alert('アップロードエラー: ' + e) }
+    setUploading(null)
+    setUploadProgress(0)
+  }
+
   async function uploadVideoWithSignedUrl(file, key, setter) {
     setUploading(key)
     setUploadProgress(0)
@@ -284,12 +316,12 @@ export default function AdminMediaPage() {
           <>
             <Section title="ヒーロー背景画像（PC）" desc="複数枚登録するとフェードで自動切り替えされます（5秒間隔）">
               <ImageGrid images={heroImages} onRemove={i => setHeroImages(imgs => imgs.filter((_, idx) => idx !== i))}
-                uploadKey="hero_bg" onAdd={f => { setUploading('hero_bg'); setUploadProgress(0); const path = `site/hero-${Date.now()}.${f.name.split('.').pop()}`; uploadWithProgress(f, path).then(url => { setHeroImages(imgs => [...imgs, url]); setUploading(null); setUploadProgress(0) }).catch(e => { alert(e); setUploading(null) }) }} label="画像を追加" />
+                uploadKey="hero_bg" onAdd={f => uploadWithSignedUrl(f, 'hero_bg', url => setHeroImages(imgs => [...imgs, url]))} label="画像を追加" />
             </Section>
 
             <Section title="ヒーロー背景画像（モバイル）" desc="スマホ用の縦長画像。未設定の場合はPC用が使用されます">
               <ImageGrid images={heroImagesMobile} onRemove={i => setHeroImagesMobile(imgs => imgs.filter((_, idx) => idx !== i))}
-                uploadKey="hero_bg_mobile" onAdd={f => { setUploading('hero_bg_mobile'); setUploadProgress(0); const path = `site/hero-mobile-${Date.now()}.${f.name.split('.').pop()}`; uploadWithProgress(f, path).then(url => { setHeroImagesMobile(imgs => [...imgs, url]); setUploading(null); setUploadProgress(0) }).catch(e => { alert(e); setUploading(null) }) }} label="画像を追加" aspect="9/16" />
+                uploadKey="hero_bg_mobile" onAdd={f => uploadWithSignedUrl(f, 'hero_bg_mobile', url => setHeroImagesMobile(imgs => [...imgs, url]))} label="画像を追加" aspect="9/16" />
             </Section>
 
             <Section title="ヒーロー下の動画①">
