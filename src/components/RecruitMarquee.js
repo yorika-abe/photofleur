@@ -8,20 +8,24 @@ function isVideo(url) {
   return /\.(mp4|mov|webm|ogg)(\?.*)?$/i.test(url)
 }
 
+// Fixed height, auto width — no cropping regardless of portrait/landscape
 function MediaItem({ url }) {
+  const ROW_HEIGHT = 220
   return (
-    <div style={{ width: 320, height: 240, flexShrink: 0, borderRadius: 12, overflow: 'hidden' }}>
+    <div style={{ height: ROW_HEIGHT, flexShrink: 0, borderRadius: 10, overflow: 'hidden', background: '#f0f0f0' }}>
       {isVideo(url) ? (
-        <video src={url} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <video src={url} autoPlay muted loop playsInline
+          style={{ height: '100%', width: 'auto', display: 'block' }} />
       ) : (
-        <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src={url} alt=""
+          style={{ height: '100%', width: 'auto', display: 'block' }} />
       )}
     </div>
   )
 }
 
 function MarqueeRow({ items, direction }) {
-  if (items.length === 0) return null
+  if (!items || items.length === 0) return null
   const filled = []
   while (filled.length < 10) filled.push(...items)
   const track = [...filled, ...filled]
@@ -30,7 +34,7 @@ function MarqueeRow({ items, direction }) {
     <div style={{ overflow: 'hidden', width: '100%' }}>
       <div style={{
         display: 'flex',
-        gap: 12,
+        gap: 10,
         width: 'max-content',
         animation: `recruit-marquee-${direction} 30s linear infinite`,
       }}>
@@ -43,59 +47,49 @@ function MarqueeRow({ items, direction }) {
 export default function RecruitMarquee({ items }) {
   const hasItems = items.length > 0
 
-  // Split into two groups so top and bottom show different images
   const topItems = items.filter((_, i) => i % 2 === 0)
   const bottomItems = items.filter((_, i) => i % 2 === 1)
   const actualTop = topItems.length > 0 ? topItems : items
   const actualBottom = bottomItems.length > 0 ? bottomItems : [...items].reverse()
 
   return (
-    <section style={{ background: '#fafcff', overflow: 'hidden' }}>
+    <section style={{ background: '#fafcff', overflow: 'hidden', padding: '48px 0' }}>
 
-      {hasItems && (
-        <div style={{ paddingTop: 60 }}>
-          <MarqueeRow items={actualTop} direction="left" />
-        </div>
-      )}
+      {hasItems && <MarqueeRow items={actualTop} direction="left" />}
 
-      {/* Text block */}
-      <div style={{ textAlign: 'center', padding: hasItems ? '64px 20px' : '120px 20px' }}>
+      {/* Text */}
+      <div style={{ textAlign: 'center', padding: '48px 20px 44px' }}>
         <p style={{
           ...serif, fontSize: 11, letterSpacing: '0.35em', color: '#f4a0be',
-          textTransform: 'uppercase', marginBottom: 16, fontStyle: 'italic',
+          textTransform: 'uppercase', marginBottom: 14, fontStyle: 'italic',
         }}>Join us</p>
 
         <h2 style={{
-          ...serif, fontSize: 'clamp(30px, 5vw, 58px)', fontWeight: 300,
-          color: '#0d1f3a', lineHeight: 1.35, margin: '0 0 20px',
+          ...serif, fontSize: 'clamp(26px, 4vw, 52px)', fontWeight: 300,
+          color: '#0d1f3a', lineHeight: 1.35, margin: '0 0 16px',
         }}>
           モデルとして<br />
           <em style={{ color: '#5bbfd6', fontStyle: 'italic' }}>PhotoFleurの一員になりませんか？</em>
         </h2>
 
-        <div style={{ width: 40, height: 1, background: '#d6ecf5', margin: '0 auto 24px' }} />
+        <div style={{ width: 36, height: 1, background: '#d6ecf5', margin: '0 auto 20px' }} />
 
-        <p style={{ fontSize: 14, color: '#778', lineHeight: 2.1, marginBottom: 36 }}>
+        <p style={{ fontSize: 13, color: '#778', lineHeight: 2, marginBottom: 28 }}>
           完全女性運営によるサポートのもと<br />
           あなたのモデル活動を全力で応援いたします。<br />
           経験不問。公式LINEからお気軽にご連絡ください。
         </p>
 
         <Link href="/model-recruit" style={{
-          ...serif, display: 'inline-block', fontSize: 13, letterSpacing: '0.2em',
+          ...serif, display: 'inline-block', fontSize: 12, letterSpacing: '0.2em',
           textTransform: 'uppercase', color: '#1a3560', textDecoration: 'none',
-          border: '1.5px solid #1a3560', padding: '14px 48px', borderRadius: 2,
-          transition: 'all 0.2s',
+          border: '1.5px solid #1a3560', padding: '12px 44px', borderRadius: 2,
         }}>
           詳しく見る →
         </Link>
       </div>
 
-      {hasItems && (
-        <div style={{ paddingBottom: 60 }}>
-          <MarqueeRow items={actualBottom} direction="right" />
-        </div>
-      )}
+      {hasItems && <MarqueeRow items={actualBottom} direction="right" />}
 
       <style>{`
         @keyframes recruit-marquee-left {
