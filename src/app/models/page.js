@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 
+const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
+
 export const metadata = { title: 'モデル一覧 | PhotoFleur' }
 
 export default async function ModelsPage() {
@@ -12,34 +14,55 @@ export default async function ModelsPage() {
     .order('name', { ascending: true })
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: 'clamp(32px, 5vw, 56px) 20px' }}>
-      <div style={{ marginBottom: 36 }}>
-        <p style={{ fontSize: 11, color: '#888', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>Models</p>
-        <h1 style={{ fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 700, color: '#2f2244', margin: 0 }}>出演モデル一覧</h1>
+    <div style={{ background: '#0d1f3a', minHeight: '100vh' }}>
+
+      {/* Header */}
+      <div style={{ textAlign: 'center', padding: '36px 20px 0' }}>
+        <p style={{ ...serif, fontSize: 11, letterSpacing: '0.3em', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', marginBottom: 8, fontStyle: 'italic' }}>Our</p>
+        <h1 style={{ ...serif, fontSize: 'clamp(52px, 10vw, 96px)', fontWeight: 400, color: '#fff', letterSpacing: '0.18em', margin: 0, lineHeight: 1 }}>
+          MODELS
+        </h1>
+        <div style={{ width: '100%', maxWidth: 600, height: 1, background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent)', margin: '20px auto 0' }} />
       </div>
 
-      {!models || models.length === 0 ? (
-        <p style={{ color: '#999' }}>現在出演モデルの情報はありません。</p>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 20 }}>
-          {models.map(model => (
-            <Link key={model.id} href={`/models/${model.id}`} style={{ textDecoration: 'none' }}>
-              <div style={{ borderRadius: 14, overflow: 'hidden', background: '#fff', border: '1px solid #ece8f5' }}>
-                <div style={{ aspectRatio: '3/4', background: '#e0d8f0', overflow: 'hidden' }}>
-                  {model.image
-                    ? <img src={model.image} alt={model.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>👤</div>
-                  }
+      {/* Grid */}
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 20px 60px' }}>
+        {!models || models.length === 0 ? (
+          <p style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '60px 0' }}>現在出演モデルの情報はありません。</p>
+        ) : (
+          <div className="model-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14 }}>
+            {models.map(model => (
+              <Link key={model.id} href={`/models/${model.id}`} style={{ textDecoration: 'none' }} className="model-card">
+                <div style={{ borderRadius: 10, overflow: 'hidden' }}>
+                  <div style={{ aspectRatio: '3/4', background: '#1a3560', overflow: 'hidden', position: 'relative' }}>
+                    {model.image
+                      ? <img src={model.image} alt={model.name} className="model-img" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.45s ease', display: 'block' }} />
+                      : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: 'rgba(255,255,255,0.2)' }}>👤</div>
+                    }
+                    <div className="model-overlay" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,20,50,0.75) 0%, transparent 55%)', opacity: 0, transition: 'opacity 0.35s ease' }} />
+                    <div className="model-name-overlay" style={{ position: 'absolute', bottom: 10, left: 12, right: 12, opacity: 0, transition: 'opacity 0.35s ease' }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, color: '#fff' }}>{model.name}</div>
+                      {model.name_en && <div style={{ ...serif, fontSize: 11, color: 'rgba(255,255,255,0.6)', fontStyle: 'italic' }}>{model.name_en}</div>}
+                    </div>
+                  </div>
+                  <div className="model-info" style={{ padding: '8px 2px 4px', transition: 'opacity 0.35s ease' }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: 'rgba(255,255,255,0.85)' }}>{model.name}</div>
+                    {model.name_en && <div style={{ ...serif, fontSize: 11, color: 'rgba(255,255,255,0.35)', fontStyle: 'italic' }}>{model.name_en}</div>}
+                  </div>
                 </div>
-                <div style={{ padding: '12px 14px 16px' }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: '#2f2244', marginBottom: 2 }}>{model.name}</div>
-                  {model.name_en && <div style={{ fontSize: 11, color: '#aaa' }}>{model.name_en}</div>}
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        .model-card:hover .model-img { transform: scale(1.06); }
+        .model-card:hover .model-overlay { opacity: 1 !important; }
+        .model-card:hover .model-name-overlay { opacity: 1 !important; }
+        .model-card:hover .model-info { opacity: 0 !important; }
+        @media (max-width: 640px) { .model-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; } }
+      `}</style>
     </div>
   )
 }
