@@ -1,30 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-
-function RichToolbar() {
-  function exec(cmd, value) {
-    document.execCommand(cmd, false, value ?? null)
-  }
-  const btn = (label, cmd, value, title) => (
-    <button
-      type="button"
-      title={title}
-      onMouseDown={e => { e.preventDefault(); exec(cmd, value) }}
-      style={{ background: 'none', border: '1px solid #ddd', borderRadius: 5, padding: '3px 9px', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#333', minWidth: 30 }}
-    >{label}</button>
-  )
-  return (
-    <div style={{ display: 'flex', gap: 4, padding: '6px 8px', background: '#f5f5f5', border: '1px solid #ddd', borderBottom: 'none', borderRadius: '8px 8px 0 0', flexWrap: 'wrap' }}>
-      {btn('B', 'bold', undefined, '太文字')}
-      {btn(<u>U</u>, 'underline', undefined, '下線')}
-      {btn(<em>I</em>, 'italic', undefined, '斜体')}
-      <div style={{ width: 1, background: '#ddd', margin: '0 4px' }} />
-      {btn('≡', 'insertUnorderedList', undefined, '箇条書き')}
-    </div>
-  )
-}
+import RichEditor from '@/components/RichEditor'
 
 export default function AdminRepresentativePage() {
   const [form, setForm] = useState({ photo: '', role: '', name: '', message: '', model_id: '' })
@@ -33,8 +11,6 @@ export default function AdminRepresentativePage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const editorRef = useRef(null)
-  const initialized = useRef(false)
 
   useEffect(() => {
     fetch('/api/admin/site-settings')
@@ -57,13 +33,6 @@ export default function AdminRepresentativePage() {
       })
       .catch(() => {})
   }, [])
-
-  useEffect(() => {
-    if (editorRef.current && form.message && !initialized.current) {
-      editorRef.current.innerHTML = form.message
-      initialized.current = true
-    }
-  }, [form.message])
 
   function uploadWithProgress(file, path) {
     return new Promise((resolve, reject) => {
@@ -100,7 +69,7 @@ export default function AdminRepresentativePage() {
   async function save() {
     setSaving(true)
     try {
-      const message = editorRef.current?.innerHTML || form.message
+      const message = form.message
       const res = await fetch('/api/admin/site-settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -182,12 +151,11 @@ export default function AdminRepresentativePage() {
             </div>
             <div>
               <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 6, color: '#444' }}>メッセージ</label>
-              <RichToolbar />
-              <div
-                ref={editorRef}
-                contentEditable
-                suppressContentEditableWarning
-                style={{ ...inp, minHeight: 200, resize: 'vertical', lineHeight: 1.8, outline: 'none', borderRadius: '0 0 8px 8px', overflowY: 'auto', cursor: 'text' }}
+              <RichEditor
+                value={form.message}
+                onChange={message => setForm(f => ({ ...f, message }))}
+                uploadPath="site"
+                uploadEndpoint="/api/admin/upload"
               />
               <p style={{ fontSize: 11, color: '#aaa', margin: '4px 0 0' }}>最初の80文字ほどがプレビューとして表示され、「続きを読む」で全文が展開されます</p>
             </div>
