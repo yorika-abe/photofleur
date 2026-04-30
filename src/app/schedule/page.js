@@ -139,6 +139,7 @@ export default async function SchedulePage() {
               entriesByEvent={entriesByEvent}
               slotsByEntry={slotsByEntry}
               bookingCounts={bookingCounts || []}
+              indoorCountBySlot={indoorCountBySlot}
               indoorCountByLabel={indoorCountByLabel}
             />
           </div>
