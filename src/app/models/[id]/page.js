@@ -32,12 +32,16 @@ export default async function ModelDetailPage({ params }) {
 
   const { data: upcomingEntries } = await supabase
     .from('event_entries')
-    .select('id, event_id, events(id, event_date, event_type, title, location_name, status)')
+    .select('id, event_id')
     .eq('model_id', id)
 
-  const upcomingEvents = (upcomingEntries || [])
-    .map(e => e.events)
-    .filter(ev => ev && ev.status === 'active' && ev.event_date >= today)
+  const eventIds = [...new Set((upcomingEntries || []).map(e => e.event_id).filter(Boolean))]
+  const { data: eventsData } = eventIds.length > 0
+    ? await supabase.from('events').select('id, event_date, event_type, title, location_name, status').in('id', eventIds)
+    : { data: [] }
+
+  const upcomingEvents = (eventsData || [])
+    .filter(ev => ev.status === 'active' && ev.event_date >= today)
     .sort((a, b) => a.event_date.localeCompare(b.event_date))
     .slice(0, 3)
 
