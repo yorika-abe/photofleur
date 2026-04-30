@@ -15,49 +15,47 @@ export default function RequestPage() {
     <div style={{ background: '#fff', color: '#1a1228' }}>
 
       {/* ─── HERO ─── */}
-      <section style={{ background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 100%)', color: '#fff', padding: 'clamp(80px, 12vw, 130px) 20px', textAlign: 'center' }}>
+      <section style={{ background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 100%)', color: '#fff', padding: 'clamp(48px, 8vw, 80px) 20px', textAlign: 'center' }}>
         <div style={{ maxWidth: 700, margin: '0 auto' }}>
-          <p style={{ ...serif, fontSize: 11, letterSpacing: '0.4em', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginBottom: 20, fontStyle: 'italic' }}>Request Shooting</p>
-          <h1 style={{ ...serif, fontSize: 'clamp(32px, 6vw, 60px)', fontWeight: 400, lineHeight: 1.2, margin: '0 0 24px' }}>
+          <p style={{ ...serif, fontSize: 11, letterSpacing: '0.4em', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginBottom: 16, fontStyle: 'italic' }}>Request Shooting</p>
+          <h1 style={{ ...serif, fontSize: 'clamp(22px, 4vw, 48px)', fontWeight: 400, lineHeight: 1.2, margin: '0 0 20px', whiteSpace: 'nowrap' }}>
             📸 リクエスト撮影について
           </h1>
-          <div style={{ width: 48, height: 1, background: 'rgba(168,226,244,0.5)', margin: '0 auto 28px' }} />
-          <p style={{ fontSize: 'clamp(14px, 2vw, 17px)', lineHeight: 2, color: 'rgba(255,255,255,0.8)', margin: 0 }}>
-            ご希望の<strong style={{ color: '#a8e2f4' }}>モデル・ロケーション・衣装・日時</strong>をもとに、<br />
-            完全オーダーメイドの撮影を承ります。<br />
-            ご希望のシチュエーションで、より自由度の高い撮影をお楽しみいただけます✨
+          <div style={{ width: 48, height: 1, background: 'rgba(168,226,244,0.5)', margin: '0 auto 20px' }} />
+          <p style={{ fontSize: 'clamp(13px, 1.8vw, 16px)', lineHeight: 1.9, color: 'rgba(255,255,255,0.8)', margin: 0 }}>
+            ご希望の<strong style={{ color: '#a8e2f4' }}>モデル・ロケーション・衣装・日時</strong>をもとに、完全オーダーメイドの撮影を承ります。ご希望のシチュエーションで、より自由度の高い撮影をお楽しみいただけます✨
           </p>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 20, marginBottom: 0 }}>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 14, marginBottom: 0 }}>
             ※土曜・日曜・祝日は定期撮影会開催日のため、リクエスト撮影の受付は行っておりません。
           </p>
         </div>
       </section>
 
       {/* ─── CONDITIONS ─── */}
-      <section style={{ background: '#fafcff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+      <section style={{ background: '#fafcff', padding: 'clamp(32px, 5vw, 56px) 20px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Requirements</p>
-            <h2 style={{ ...serif, fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 8, fontWeight: 600 }}>Requirements</p>
+            <h2 style={{ ...serif, fontSize: 'clamp(22px, 3.5vw, 36px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
               💡 ご利用条件
             </h2>
           </div>
-          <p style={{ fontSize: 14, color: '#556070', textAlign: 'center', marginBottom: 36, lineHeight: 1.8 }}>
+          <p style={{ fontSize: 13, color: '#556070', textAlign: 'center', marginBottom: 24, lineHeight: 1.8 }}>
             下記2点の条件を満たしている方のみお申し込み可能です。
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
-            <div style={{ background: '#fff', borderRadius: 12, padding: '32px 28px', border: '1px solid #d6ecf5' }}>
-              <div style={{ ...serif, fontSize: 32, fontWeight: 700, color: '#5bbfd6', marginBottom: 16 }}>①</div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#5bbfd6', letterSpacing: '0.1em', marginBottom: 10 }}>安全管理のための条件</div>
-              <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+            <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #d6ecf5' }}>
+              <div style={{ ...serif, fontSize: 28, fontWeight: 700, color: '#5bbfd6', marginBottom: 10 }}>①</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#5bbfd6', letterSpacing: '0.1em', marginBottom: 8 }}>安全管理のための条件</div>
+              <p style={{ fontSize: 14, lineHeight: 1.9, color: '#3a3050', margin: 0 }}>
                 Photo Fleurの撮影会を<strong>過去に10回以上ご利用</strong>いただいた方。<br />
                 <span style={{ fontSize: 12, color: '#aaa' }}>※規定回数未満の方はリクエスト撮影をご利用いただけません。</span>
               </p>
             </div>
-            <div style={{ background: '#fff', borderRadius: 12, padding: '32px 28px', border: '1px solid #d6ecf5' }}>
-              <div style={{ ...serif, fontSize: 32, fontWeight: 700, color: '#5bbfd6', marginBottom: 16 }}>②</div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#5bbfd6', letterSpacing: '0.1em', marginBottom: 10 }}>モデル指名のための条件</div>
-              <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0 }}>
+            <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #d6ecf5' }}>
+              <div style={{ ...serif, fontSize: 28, fontWeight: 700, color: '#5bbfd6', marginBottom: 10 }}>②</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#5bbfd6', letterSpacing: '0.1em', marginBottom: 8 }}>モデル指名のための条件</div>
+              <p style={{ fontSize: 14, lineHeight: 1.9, color: '#3a3050', margin: 0 }}>
                 お申し込み月に<strong>2枠以上の撮影に参加</strong>しており、かつ<strong>希望モデルを過去に1回以上撮影</strong>したことがある方。
               </p>
             </div>
@@ -66,88 +64,83 @@ export default function RequestPage() {
       </section>
 
       {/* ─── PRICING ─── */}
-      <section style={{ background: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+      <section style={{ background: '#fff', padding: 'clamp(32px, 5vw, 56px) 20px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Pricing</p>
-            <h2 style={{ ...serif, fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 8, fontWeight: 600 }}>Pricing</p>
+            <h2 style={{ ...serif, fontSize: 'clamp(22px, 3.5vw, 36px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
               💰 撮影料金
             </h2>
           </div>
-          <div style={{ background: '#f8fbff', borderRadius: 12, padding: '36px', border: '1px solid #d6ecf5' }}>
-            <div style={{ fontSize: 15, lineHeight: 2.2, color: '#3a3050' }}>
-              <p style={{ margin: '0 0 12px' }}>
-                <strong>基本料金：</strong>通常のモデル撮影料金 ＋ <strong style={{ color: '#1a3560' }}>¥1,000/h（スタッフ同伴料）</strong>
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '16px 0', borderTop: '1px solid #eef4f8', borderBottom: '1px solid #eef4f8', marginBottom: 16 }}>
-                <p style={{ fontSize: 13, color: '#888', margin: 0 }}>※モデルにより追加料金が発生する場合がございます。詳細はお問い合わせください。</p>
-                <p style={{ fontSize: 13, color: '#888', margin: 0 }}>※スタッフおよびモデルの<strong>交通費（実費）</strong>は別途ご負担となります。</p>
-              </div>
-              <p style={{ margin: 0, fontWeight: 600, color: '#1a3560' }}>
-                リクエスト撮影は<strong>2時間以上からの受付</strong>となります。
-              </p>
+          <div style={{ background: '#f8fbff', borderRadius: 12, padding: '24px 28px', border: '1px solid #d6ecf5' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: '#556070', lineHeight: 1.9 }}>
+              <p style={{ margin: 0 }}>※通常のモデル撮影料金はモデルページのスタジオ料金をご参照ください。</p>
+              <p style={{ margin: 0 }}>※モデルにより追加料金が発生する場合がございます。詳細はお問い合わせください。</p>
+              <p style={{ margin: 0 }}>※スタッフおよびモデルの<strong>交通費（実費）</strong>は別途ご負担となります。</p>
+              <p style={{ margin: 0 }}>※当日撮影に際して発生する料金は全てカメラマンさん持ちでお願いいたします。</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* ─── AREA ─── */}
-      <section style={{ background: '#f0f7fb', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+      <section style={{ background: '#f0f7fb', padding: 'clamp(32px, 5vw, 56px) 20px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Area</p>
-            <h2 style={{ ...serif, fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 8, fontWeight: 600 }}>Area</p>
+            <h2 style={{ ...serif, fontSize: 'clamp(22px, 3.5vw, 36px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
               🚃 対応エリア
             </h2>
           </div>
-          <div style={{ background: '#fff', borderRadius: 12, padding: '36px', border: '1px solid #c8e8f5', textAlign: 'center' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
+          <div style={{ background: '#fff', borderRadius: 12, padding: '24px 28px', border: '1px solid #c8e8f5', textAlign: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
               {['東京都', '神奈川県', '千葉県', '埼玉県'].map(area => (
-                <span key={area} style={{ background: '#e8f4fb', color: '#1a3560', fontWeight: 600, fontSize: 14, padding: '8px 20px', borderRadius: 20, border: '1px solid #c8e8f5' }}>{area}</span>
+                <span key={area} style={{ background: '#e8f4fb', color: '#1a3560', fontWeight: 600, fontSize: 13, padding: '6px 18px', borderRadius: 20, border: '1px solid #c8e8f5' }}>{area}</span>
               ))}
             </div>
-            <p style={{ fontSize: 14, color: '#556070', margin: 0, lineHeight: 2 }}>
-              上記以外の地域も、移動距離・拘束時間に応じた割増料金にて対応いたします。<br />
-              詳細はご相談ください。
+            <p style={{ fontSize: 13, color: '#556070', margin: 0, lineHeight: 1.9 }}>
+              上記以外の地域も、移動距離・拘束時間に応じた割増料金にて対応いたします。詳細はご相談ください。
             </p>
           </div>
         </div>
       </section>
 
       {/* ─── FLOW ─── */}
-      <section style={{ background: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+      <section style={{ background: '#fff', padding: 'clamp(32px, 5vw, 56px) 20px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Flow</p>
-            <h2 style={{ ...serif, fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 8, fontWeight: 600 }}>Flow</p>
+            <h2 style={{ ...serif, fontSize: 'clamp(22px, 3.5vw, 36px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
               📅 日程調整の流れ
             </h2>
           </div>
-          <div style={{ background: '#f8fbff', borderRadius: 12, padding: '36px', border: '1px solid #d6ecf5' }}>
-            <p style={{ fontSize: 14, lineHeight: 2.2, color: '#3a3050', margin: 0 }}>
-              開催希望日を<strong>第1〜第3希望</strong>までお知らせください。<br />
-              モデル・スタッフのスケジュールを確認のうえ、<strong>2〜3日以内</strong>に折り返しご連絡させていただきます。
+          <div style={{ background: '#f8fbff', borderRadius: 12, padding: '24px 28px', border: '1px solid #d6ecf5' }}>
+            <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0 }}>
+              開催希望日を<strong>第1〜第3希望</strong>までお知らせください。モデル・スタッフのスケジュールを確認のうえ、折り返しご連絡させていただきます。
             </p>
           </div>
         </div>
       </section>
 
       {/* ─── HOW TO APPLY ─── */}
-      <section style={{ background: '#fafcff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+      <section style={{ background: '#fafcff', padding: 'clamp(32px, 5vw, 56px) 20px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>How to Apply</p>
-            <h2 style={{ ...serif, fontSize: 'clamp(26px, 4vw, 40px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 8, fontWeight: 600 }}>How to Apply</p>
+            <h2 style={{ ...serif, fontSize: 'clamp(22px, 3.5vw, 36px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
               ✉️ お申し込み方法
             </h2>
           </div>
-          <div style={{ background: '#fff', borderRadius: 12, padding: '36px', border: '1px solid #d6ecf5', marginBottom: 32 }}>
-            <p style={{ fontSize: 14, color: '#556070', marginTop: 0, marginBottom: 24 }}>
+          <div style={{ background: '#fff', borderRadius: 12, padding: '24px 28px', border: '1px solid #d6ecf5', marginBottom: 28 }}>
+            <p style={{ fontSize: 14, color: '#556070', marginTop: 0, marginBottom: 6, lineHeight: 1.9 }}>
               以下の内容をご記入のうえ、公式LINEにてご連絡ください。
             </p>
-            <div style={{ background: '#f0f7fb', borderRadius: 8, padding: '20px 24px', marginBottom: 24 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', margin: '0 0 16px' }}>リクエスト撮影の依頼</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
+            <p style={{ fontSize: 12, color: '#aaa', marginTop: 0, marginBottom: 20, lineHeight: 1.7 }}>
+              ※公式ライン追加後リクエスト撮影を選択し、手順に沿ってお進みください。
+            </p>
+            <div style={{ background: '#f0f7fb', borderRadius: 8, padding: '18px 22px' }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', margin: '0 0 14px' }}>リクエスト撮影の依頼</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 0 }}>
                 {[
                   '希望モデル名',
                   'お名前',
@@ -159,7 +152,7 @@ export default function RequestPage() {
                   '集合場所 / 解散場所',
                 ].map((item, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#3a3050', padding: '8px 0', borderBottom: '1px solid #eef4f8' }}>
-                    <span style={{ ...serif, fontSize: 16, color: '#5bbfd6', fontStyle: 'italic', lineHeight: 1, flexShrink: 0 }}>{i + 1}.</span>
+                    <span style={{ ...serif, fontSize: 15, color: '#5bbfd6', fontStyle: 'italic', lineHeight: 1, flexShrink: 0 }}>{i + 1}.</span>
                     {item}
                   </div>
                 ))}
@@ -169,7 +162,7 @@ export default function RequestPage() {
 
           <div style={{ textAlign: 'center' }}>
             <a href={LINE_URL} target="_blank" rel="noopener noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: '#06C755', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '16px 40px', fontWeight: 700, fontSize: 16 }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: '#06C755', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '14px 40px', fontWeight: 700, fontSize: 15 }}>
               <LineIcon />
               LINEで申し込む →
             </a>
@@ -178,14 +171,14 @@ export default function RequestPage() {
       </section>
 
       {/* ─── CLOSING ─── */}
-      <section style={{ background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 100%)', color: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px', textAlign: 'center' }}>
+      <section style={{ background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 100%)', color: '#fff', padding: 'clamp(40px, 6vw, 70px) 20px', textAlign: 'center' }}>
         <div style={{ maxWidth: 640, margin: '0 auto' }}>
-          <div style={{ width: 40, height: 1, background: 'rgba(168,226,244,0.4)', margin: '0 auto 32px' }} />
-          <p style={{ fontSize: 15, lineHeight: 2.2, color: 'rgba(255,255,255,0.85)', margin: 0 }}>
+          <div style={{ width: 40, height: 1, background: 'rgba(168,226,244,0.4)', margin: '0 auto 24px' }} />
+          <p style={{ fontSize: 14, lineHeight: 2, color: 'rgba(255,255,255,0.85)', margin: 0 }}>
             📷 ご希望のロケーションで、あなたの理想を形にする特別撮影。<br />
             モデル・スタッフ一同、心を込めてサポートいたします✨
           </p>
-          <div style={{ width: 40, height: 1, background: 'rgba(168,226,244,0.4)', margin: '32px auto 0' }} />
+          <div style={{ width: 40, height: 1, background: 'rgba(168,226,244,0.4)', margin: '24px auto 0' }} />
         </div>
       </section>
 
