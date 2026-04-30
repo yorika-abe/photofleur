@@ -68,7 +68,6 @@ export default async function SchedulePage() {
               const date = formatDate(ev.event_date)
               const dow = formatDow(ev.event_date)
               const type = ev.event_type || 'special'
-              const modelList = (ev.event_entries || []).map(e => e.models).filter(Boolean)
               const cardBg = !ev.main_image
                 ? (type === 'street' ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : type === 'studio' ? 'linear-gradient(160deg,#f4d6e8,#e8b8d0)' : 'linear-gradient(160deg,#c5cae9,#9fa8da)')
                 : undefined
@@ -81,44 +80,19 @@ export default async function SchedulePage() {
                       <img src={ev.main_image} alt={ev.title || ''} className="sched-img"
                         style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.45s ease', display: 'block' }} />
                     )}
-                    {/* Date badge */}
-                    <div style={{ position: 'absolute', bottom: 8, left: 8 }}>
-                      <span style={{
-                        fontSize: 11, color: '#fff', background: 'rgba(0,0,0,0.55)',
-                        padding: '3px 8px', borderRadius: 3, fontWeight: 600, letterSpacing: '0.05em',
-                      }}>
-                        {date}（{dow}）
-                      </span>
-                    </div>
                   </div>
 
                   {/* Info */}
-                  <div style={{ padding: '0 2px', textAlign: 'center' }}>
-                    <div style={{ ...serif, fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 700, color: '#1a3560', lineHeight: 1, marginBottom: 4, letterSpacing: '0.04em' }}>
-                      {date}
+                  <div style={{ padding: '8px 2px 0', textAlign: 'center' }}>
+                    <div style={{ ...serif, fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 700, color: '#111', lineHeight: 1, marginBottom: 5, letterSpacing: '0.04em' }}>
+                      {date}（{dow}）
                     </div>
                     {ev.location_name && (
-                      <div style={{ fontSize: 11, color: '#888', marginBottom: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
-                        <span>📍</span>{ev.location_name}
+                      <div style={{ fontSize: 13, color: '#111', marginBottom: 6, fontWeight: 500 }}>
+                        {ev.location_name}
                       </div>
                     )}
-                    {ev.title && (
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1a3560', marginBottom: 6, lineHeight: 1.4 }}>{ev.title}</div>
-                    )}
-
-                    {/* Model icons */}
-                    {modelList.length > 0 && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, marginBottom: 6 }}>
-                        {modelList.slice(0, 5).map((m, idx) => (
-                          <div key={idx} style={{ width: 22, height: 22, borderRadius: '50%', border: '1.5px solid #fff', overflow: 'hidden', background: '#e0d8f0', marginLeft: idx > 0 ? -6 : 0, boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}>
-                            {m.image && <img src={m.image} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                          </div>
-                        ))}
-                        {modelList.length > 5 && <span style={{ fontSize: 10, color: '#aaa', marginLeft: 2 }}>+{modelList.length - 5}</span>}
-                      </div>
-                    )}
-
-                    <div style={{ fontSize: 11, color: '#5bbfd6', fontWeight: 600 }}>詳細・予約 →</div>
+                    <div style={{ fontSize: 11, color: '#aaa' }}>詳細・予約 →</div>
                   </div>
                 </Link>
               )
