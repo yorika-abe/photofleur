@@ -85,8 +85,6 @@ export default function ScheduleCarousel({ events }) {
           const date = formatDate(ev.event_date)
           const modelList = (ev.event_entries || []).map(e => e.models).filter(Boolean)
           const isStreet = ev.event_type === 'street'
-          const isStudio = ev.event_type === 'studio'
-          const tagBg = isStreet ? 'rgba(0,151,167,0.75)' : isStudio ? 'rgba(194,24,91,0.75)' : 'rgba(26,53,96,0.75)'
           const isActive = i === activeIndex
 
           return (
@@ -115,11 +113,7 @@ export default function ScheduleCarousel({ events }) {
                     </div>
                 }
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,25,50,0.85) 0%, rgba(10,25,50,0.05) 55%, transparent 100%)' }} />
-                <div style={{ position: 'absolute', top: 14, left: 14 }}>
-                  <span style={{ fontSize: 9, letterSpacing: '0.2em', color: '#fff', textTransform: 'uppercase', background: tagBg, padding: '3px 8px', borderRadius: 2, fontWeight: 600 }}>
-                    {isStreet ? 'Street' : isStudio ? 'Studio' : 'Special'}
-                  </span>
-                </div>
+
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 18px' }}>
                   <div style={{ ...serif, fontSize: 'clamp(26px, 5vw, 38px)', fontWeight: 400, color: '#fff', lineHeight: 1, marginBottom: 8, letterSpacing: '0.02em' }}>
                     {date}
