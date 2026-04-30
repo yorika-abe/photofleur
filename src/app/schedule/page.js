@@ -31,11 +31,21 @@ export default async function SchedulePage() {
     .order('event_date', { ascending: true })
 
   const eventIds = (events || []).map(e => e.id)
-  const { data: entries } = eventIds.length > 0
-    ? await supabase.from('event_entries').select('id, event_id, model_id, models(id, name, name_en, image, street_price, studio_price, twitter_url)').in('event_id', eventIds)
+  const { data: entriesRaw } = eventIds.length > 0
+    ? await supabase.from('event_entries').select('id, event_id, model_id').in('event_id', eventIds)
     : { data: [] }
+
+  const modelIds = [...new Set((entriesRaw || []).map(e => e.model_id).filter(Boolean))]
+  const { data: modelsData } = modelIds.length > 0
+    ? await supabase.from('models').select('id, name, name_en, image, street_price, studio_price, twitter_url').in('id', modelIds)
+    : { data: [] }
+  const modelMap = {}
+  for (const m of modelsData || []) modelMap[m.id] = m
+
+  const entries = (entriesRaw || []).map(e => ({ ...e, models: modelMap[e.model_id] || null }))
+
   const entriesByEvent = {}
-  for (const entry of (entries || [])) {
+  for (const entry of entries) {
     if (!entriesByEvent[entry.event_id]) entriesByEvent[entry.event_id] = []
     entriesByEvent[entry.event_id].push(entry)
   }
