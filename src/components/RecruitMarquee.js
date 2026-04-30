@@ -58,32 +58,30 @@ export default function RecruitMarquee({ items }) {
       {hasItems && <MarqueeRow items={actualTop} direction="left" />}
 
       {/* Text */}
-      <div style={{ textAlign: 'center', padding: '48px 20px 44px' }}>
+      <div style={{ textAlign: 'center', padding: '28px 20px 24px' }}>
         <p style={{
-          ...serif, fontSize: 11, letterSpacing: '0.35em', color: '#f4a0be',
-          textTransform: 'uppercase', marginBottom: 14, fontStyle: 'italic',
+          ...serif, fontSize: 10, letterSpacing: '0.35em', color: '#f4a0be',
+          textTransform: 'uppercase', marginBottom: 8, fontStyle: 'italic',
         }}>Join us</p>
 
         <h2 style={{
-          ...serif, fontSize: 'clamp(26px, 4vw, 52px)', fontWeight: 300,
-          color: '#0d1f3a', lineHeight: 1.35, margin: '0 0 16px',
+          ...serif, fontSize: 'clamp(22px, 3.5vw, 44px)', fontWeight: 300,
+          color: '#0d1f3a', lineHeight: 1.3, margin: '0 0 10px',
         }}>
           モデルとして<br />
           <em style={{ color: '#5bbfd6', fontStyle: 'italic' }}>PhotoFleurの一員になりませんか？</em>
         </h2>
 
-        <div style={{ width: 36, height: 1, background: '#d6ecf5', margin: '0 auto 20px' }} />
-
-        <p style={{ fontSize: 13, color: '#778', lineHeight: 2, marginBottom: 28 }}>
-          完全女性運営によるサポートのもと<br />
-          あなたのモデル活動を全力で応援いたします。<br />
+        <p style={{ fontSize: 12, color: '#778', lineHeight: 1.9, marginBottom: 18 }}>
+          完全女性運営によるサポートのもと
+          あなたのモデル活動を全力で応援いたします。
           経験不問。公式LINEからお気軽にご連絡ください。
         </p>
 
         <Link href="/model-recruit" style={{
-          ...serif, display: 'inline-block', fontSize: 12, letterSpacing: '0.2em',
+          ...serif, display: 'inline-block', fontSize: 11, letterSpacing: '0.2em',
           textTransform: 'uppercase', color: '#1a3560', textDecoration: 'none',
-          border: '1.5px solid #1a3560', padding: '12px 44px', borderRadius: 2,
+          border: '1.5px solid #1a3560', padding: '10px 36px', borderRadius: 2,
         }}>
           詳しく見る →
         </Link>
