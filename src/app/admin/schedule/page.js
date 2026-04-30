@@ -18,7 +18,7 @@ export default function AdminSchedulePage() {
   const [loadError, setLoadError] = useState('')
   const [tab, setTab] = useState('upcoming')
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ event_date: '', event_type: 'street', title: '', location_name: '' })
+  const [form, setForm] = useState({ event_date: '', event_type: 'street', title: '' })
   const [saving, setSaving] = useState(false)
   const [reusing, setReusing] = useState(null)
 
@@ -46,8 +46,7 @@ export default function AdminSchedulePage() {
       body: JSON.stringify({
         event_date: form.event_date,
         event_type: form.event_type,
-        title: form.title || null,
-        location_name: form.location_name,
+        title: form.title,
         status: 'active',
       }),
     })
@@ -156,13 +155,9 @@ export default function AdminSchedulePage() {
               </select>
             </div>
           </div>
-          <div style={{ marginBottom: 14 }}>
-            <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>タイトル（例：ドレス撮影会）</label>
-            <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} style={inp} placeholder="ドレス撮影会" />
-          </div>
           <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>場所名 *</label>
-            <input type="text" required value={form.location_name} onChange={e => setForm(f => ({ ...f, location_name: e.target.value }))} style={inp} placeholder="Studio gallery-o15＆16" />
+            <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>タイトル *</label>
+            <input type="text" required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} style={inp} placeholder="着物で川越ぶらり撮影会" />
           </div>
           <p style={{ fontSize: 12, color: '#999', marginBottom: 16 }}>作成後に詳細設定・モデル追加・予約枠設定ができます</p>
           <button type="submit" disabled={saving}
