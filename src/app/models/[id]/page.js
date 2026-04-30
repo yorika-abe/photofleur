@@ -3,11 +3,6 @@ import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
 import PortfolioSlider from '@/components/PortfolioSlider'
 
-function formatDate(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00')
-  const days = ['日', '月', '火', '水', '木', '金', '土']
-  return `${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`
-}
 
 export async function generateMetadata({ params }) {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -152,20 +147,21 @@ export default async function ModelDetailPage({ params }) {
           <p style={{ color: '#aaa', fontSize: 14 }}>現在出演予定のイベントはありません。</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {upcomingEvents.map(ev => (
+            {upcomingEvents.map(ev => {
+              const mm = String(new Date(ev.event_date + 'T00:00:00').getMonth() + 1).padStart(2, '0')
+              const dd = String(new Date(ev.event_date + 'T00:00:00').getDate()).padStart(2, '0')
+              return (
               <Link key={ev.id} href={`/events/${ev.id}`} style={{ textDecoration: 'none' }}>
-                <div style={{ background: '#fff', borderRadius: 12, padding: '16px 20px', border: '1px solid #ece8f5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                  <div>
-                    <span style={{ fontSize: 11, background: ev.event_type === 'street' ? '#e8f5e9' : '#e8eaf6', color: ev.event_type === 'street' ? '#388e3c' : '#3949ab', borderRadius: 4, padding: '2px 7px', fontWeight: 600, marginRight: 8 }}>
-                      {ev.event_type === 'street' ? 'ストリート' : ev.event_type === 'studio' ? 'スタジオ' : '不定期'}
-                    </span>
-                    <span style={{ fontWeight: 700, fontSize: 15, color: '#2f2244' }}>{formatDate(ev.event_date)}</span>
-                    <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>{ev.title || ev.location_name}</div>
+                <div style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', border: '1px solid #ece8f5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                    <span style={{ fontWeight: 700, fontSize: 18, color: '#2f2244', letterSpacing: '0.02em' }}>{mm}/{dd}</span>
+                    {ev.title && <span style={{ fontSize: 13, color: '#555', fontWeight: 500 }}>{ev.title}</span>}
                   </div>
                   <span style={{ color: '#2f2244', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>予約 →</span>
                 </div>
               </Link>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

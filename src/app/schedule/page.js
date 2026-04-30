@@ -125,9 +125,9 @@ export default async function SchedulePage() {
                     <div style={{ ...serif, fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 700, color: '#111', lineHeight: 1, marginBottom: 5, letterSpacing: '0.04em' }}>
                       {date}（{dow}）
                     </div>
-                    {ev.location_name && (
+                    {ev.title && (
                       <div style={{ fontSize: 13, color: '#111', marginBottom: 6, fontWeight: 500 }}>
-                        {ev.location_name}
+                        {ev.title}
                       </div>
                     )}
                     <div style={{ fontSize: 11, color: '#aaa' }}>詳細・予約 →</div>

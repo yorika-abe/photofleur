@@ -60,11 +60,8 @@ export default function ModelBookingsPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 11, background: typeColor.bg, color: typeColor.color, borderRadius: 4, padding: '2px 8px', fontWeight: 700 }}>{typeLabel}</span>
                     <span style={{ fontWeight: 700, fontSize: 17 }}>{formatDate(event.event_date)}</span>
-                    {event.title && <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>{event.title}</span>}
+                    {event.title && <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: 500 }}>{event.title}</span>}
                   </div>
-                  {event.location_name && (
-                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>📍 {event.location_name}</div>
-                  )}
                 </div>
 
                 {/* Slots */}

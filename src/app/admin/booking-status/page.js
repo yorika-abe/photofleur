@@ -161,7 +161,7 @@ export default function AdminBookingStatusPage() {
                 <button key={item.event.id} onClick={() => setSelectedEventId(item.event.id)}
                   style={{ padding: '8px 16px', borderRadius: 20, border: `2px solid ${active ? (isStreet ? '#388e3c' : '#3949ab') : '#e5e5e5'}`, cursor: 'pointer', fontWeight: 600, fontSize: 13, background: active ? (isStreet ? '#e8f5e9' : '#e8eaf6') : '#fff', color: active ? (isStreet ? '#388e3c' : '#3949ab') : '#666' }}>
                   {formatDate(item.event.event_date)}
-                  <span style={{ marginLeft: 6, fontSize: 11 }}>{isStreet ? 'ストリート' : 'スタジオ'}</span>
+                  {item.event.title && <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 400 }}>{item.event.title}</span>}
                 </button>
               )
             })}

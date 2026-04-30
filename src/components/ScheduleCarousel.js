@@ -83,7 +83,6 @@ export default function ScheduleCarousel({ events }) {
       >
         {events.map((ev, i) => {
           const date = formatDate(ev.event_date)
-          const modelList = (ev.event_entries || []).map(e => e.models).filter(Boolean)
           const isStreet = ev.event_type === 'street'
           const isActive = i === activeIndex
 
@@ -121,17 +120,8 @@ export default function ScheduleCarousel({ events }) {
                   {ev.title && (
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', marginBottom: 4 }}>{ev.title}</div>
                   )}
-                  {ev.location_name && (
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginBottom: 10 }}>{ev.location_name}</div>
-                  )}
-                  {modelList.length > 0 && (
-                    <div style={{ display: 'flex' }}>
-                      {modelList.slice(0, 4).map((m, idx) => (
-                        <div key={idx} style={{ width: 26, height: 26, borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.6)', overflow: 'hidden', background: '#d6ecf5', marginLeft: idx > 0 ? -7 : 0 }}>
-                          {m.image && <img src={m.image} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                        </div>
-                      ))}
-                    </div>
+                  {ev.subtitle && (
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>{ev.subtitle}</div>
                   )}
                 </div>
               </div>

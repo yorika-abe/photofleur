@@ -140,6 +140,7 @@ export default function EventEditPage() {
         id,
         title: event.title,
         subtitle: event.subtitle,
+        description: event.description || null,
         event_date: event.event_date,
         event_type: event.event_type,
         status: event.status,
@@ -391,7 +392,6 @@ export default function EventEditPage() {
   const tabs = [
     { key: 'basic', label: '基本情報' },
     { key: 'gallery', label: 'ギャラリー' },
-    { key: 'location', label: '場所・詳細' },
     { key: 'models', label: 'モデル・枠' },
     { key: 'notify', label: '通知設定' },
   ]
@@ -442,12 +442,16 @@ export default function EventEditPage() {
               </div>
             </div>
             <div style={{ marginBottom: 14 }}>
-              <label style={label}>タイトル（例：ドレス撮影会）</label>
-              <input type="text" value={event.title || ''} onChange={e => updateField('title', e.target.value)} style={inp} placeholder="ドレス撮影会" />
+              <label style={label}>タイトル</label>
+              <input type="text" value={event.title || ''} onChange={e => updateField('title', e.target.value)} style={inp} placeholder="木場エリア" />
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={label}>小見出し（サブタイトル）</label>
               <input type="text" value={event.subtitle || ''} onChange={e => updateField('subtitle', e.target.value)} style={inp} placeholder="フォトフル念願のドレス撮影会💖" />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={label}>魅力文（宣伝文）</label>
+              <textarea value={event.description || ''} onChange={e => updateField('description', e.target.value)} rows={3} style={{ ...inp, resize: 'vertical' }} placeholder="イベントの魅力や特徴を紹介する文章を入力してください..." />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               <div>
@@ -514,52 +518,11 @@ export default function EventEditPage() {
         </div>
       )}
 
-      {/* ギャラリータブ */}
-      {activeTab === 'gallery' && (
-        <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e5e5e5' }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2f2244', marginBottom: 4, marginTop: 0 }}>撮影イメージ ギャラリー</h3>
-          <p style={{ fontSize: 12, color: '#999', marginBottom: 16 }}>複数枚登録できます。イベント詳細ページに表示されます。</p>
-
-          {(event.gallery_images || []).length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 8, marginBottom: 16 }}>
-              {(event.gallery_images || []).map((url, i) => (
-                <div key={i} style={{ position: 'relative', aspectRatio: '1', borderRadius: 8, overflow: 'hidden' }}>
-                  <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <button onClick={() => updateField('gallery_images', (event.gallery_images || []).filter((_, idx) => idx !== i))}
-                    style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#2f2244', color: '#fff', borderRadius: 8, padding: '9px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 600, opacity: uploading === 'gallery' ? 0.7 : 1 }}>
-            📷 画像を追加（複数可）
-            <input type="file" accept="image/*" multiple style={{ display: 'none' }} disabled={!!uploading}
-              onChange={e => e.target.files?.length && uploadGalleryImages(Array.from(e.target.files))} />
-          </label>
-
-          {uploading === 'gallery' && (
-            <div style={{ marginTop: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888', marginBottom: 3 }}><span>アップロード中...</span><span>{uploadProgress}%</span></div>
-              <div style={{ background: '#eee', borderRadius: 99, height: 6 }}><div style={{ height: '100%', background: '#2f2244', borderRadius: 99, width: `${uploadProgress}%`, transition: 'width 0.2s' }} /></div>
-            </div>
-          )}
-
-          {(event.gallery_images || []).length > 0 && (
-            <p style={{ fontSize: 12, color: '#999', marginTop: 12 }}>変更後は「保存する」ボタンを押してください</p>
-          )}
-        </div>
-      )}
-
-      {/* 場所・詳細タブ */}
-      {activeTab === 'location' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* 場所・詳細（基本情報タブの続き） */}
+      {activeTab === 'basic' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 0 }}>
           <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e5e5e5' }}>
             <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2f2244', marginBottom: 16, marginTop: 0 }}>公開場所情報</h3>
-            <div style={{ marginBottom: 14 }}>
-              <label style={label}>場所名 *</label>
-              <input type="text" value={event.location_name || ''} onChange={e => updateField('location_name', e.target.value)} style={inp} placeholder="Studio gallery-o15＆16" />
-            </div>
             <div style={{ marginBottom: 14 }}>
               <label style={label}>住所</label>
               <input type="text" value={event.address || ''} onChange={e => {
@@ -622,6 +585,43 @@ export default function EventEditPage() {
             <p style={{ fontSize: 12, color: '#999', marginBottom: 12 }}>前日22時送信のメールに追加で記載したい内容</p>
             <textarea value={event.reminder_extra_note || ''} onChange={e => updateField('reminder_extra_note', e.target.value)} rows={4} style={{ ...inp, resize: 'vertical' }} placeholder="追加の注意事項など..." />
           </div>
+        </div>
+      )}
+
+      {/* ギャラリータブ */}
+      {activeTab === 'gallery' && (
+        <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e5e5e5' }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2f2244', marginBottom: 4, marginTop: 0 }}>撮影イメージ ギャラリー</h3>
+          <p style={{ fontSize: 12, color: '#999', marginBottom: 16 }}>複数枚登録できます。イベント詳細ページに表示されます。</p>
+
+          {(event.gallery_images || []).length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 8, marginBottom: 16 }}>
+              {(event.gallery_images || []).map((url, i) => (
+                <div key={i} style={{ position: 'relative', aspectRatio: '1', borderRadius: 8, overflow: 'hidden' }}>
+                  <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button onClick={() => updateField('gallery_images', (event.gallery_images || []).filter((_, idx) => idx !== i))}
+                    style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#2f2244', color: '#fff', borderRadius: 8, padding: '9px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 600, opacity: uploading === 'gallery' ? 0.7 : 1 }}>
+            📷 画像を追加（複数可）
+            <input type="file" accept="image/*" multiple style={{ display: 'none' }} disabled={!!uploading}
+              onChange={e => e.target.files?.length && uploadGalleryImages(Array.from(e.target.files))} />
+          </label>
+
+          {uploading === 'gallery' && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888', marginBottom: 3 }}><span>アップロード中...</span><span>{uploadProgress}%</span></div>
+              <div style={{ background: '#eee', borderRadius: 99, height: 6 }}><div style={{ height: '100%', background: '#2f2244', borderRadius: 99, width: `${uploadProgress}%`, transition: 'width 0.2s' }} /></div>
+            </div>
+          )}
+
+          {(event.gallery_images || []).length > 0 && (
+            <p style={{ fontSize: 12, color: '#999', marginTop: 12 }}>変更後は「保存する」ボタンを押してください</p>
+          )}
         </div>
       )}
 

@@ -6,6 +6,62 @@ import { createBrowserClient } from '@supabase/ssr'
 
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
+function UpcomingEventTabs({ events }) {
+  const types = [...new Set(events.map(e => e.event_type))].sort()
+  const [tab, setTab] = useState(types[0] || 'street')
+  const TYPE_LABEL = { street: 'ストリート', studio: 'スタジオ', irregular: '不定期' }
+  const TYPE_COLOR = { street: { active: '#388e3c', bg: '#e8f5e9' }, studio: { active: '#3949ab', bg: '#e8eaf6' }, irregular: { active: '#e65100', bg: '#fff3e0' } }
+  const filtered = events.filter(e => e.event_type === tab)
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #d6ecf5' }}>
+      <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0d1f3a', marginTop: 0, marginBottom: 16 }}>公開中の参加イベント</h2>
+      {events.length === 0 ? (
+        <p style={{ color: '#aaa', fontSize: 14, margin: 0 }}>現在出演予定のイベントはありません。</p>
+      ) : (
+        <>
+          {types.length > 1 && (
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              {types.map(t => {
+                const c = TYPE_COLOR[t] || TYPE_COLOR.irregular
+                const isActive = tab === t
+                return (
+                  <button key={t} onClick={() => setTab(t)}
+                    style={{ padding: '5px 14px', borderRadius: 20, border: `2px solid ${isActive ? c.active : '#e5e5e5'}`, background: isActive ? c.bg : '#fff', color: isActive ? c.active : '#888', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                    {TYPE_LABEL[t] || t}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {filtered.map(ev => {
+              const mm = String(new Date(ev.event_date + 'T00:00:00').getMonth() + 1).padStart(2, '0')
+              const dd = String(new Date(ev.event_date + 'T00:00:00').getDate()).padStart(2, '0')
+              return (
+                <Link key={ev.id} href={`/events/${ev.id}`} style={{ textDecoration: 'none' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: '#f8fbff', borderRadius: 10, border: '1px solid #e8f4fb' }}>
+                    {ev.main_image && (
+                      <div style={{ width: 48, height: 48, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
+                        <img src={ev.main_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                    )}
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontWeight: 700, fontSize: 16, color: '#0d1f3a' }}>{mm}/{dd}</span>
+                      {ev.title && <span style={{ fontSize: 13, color: '#555', marginLeft: 8 }}>{ev.title}</span>}
+                    </div>
+                    <span style={{ fontSize: 12, color: '#5bbfd6', fontWeight: 600, flexShrink: 0 }}>詳細 →</span>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function ModelPortalHome() {
   const [model, setModel] = useState(null)
   const [allModels, setAllModels] = useState(null) // null = not admin, [] = admin with no selection
@@ -52,7 +108,7 @@ export default function ModelPortalHome() {
         const eventIds = entries.map(e => e.event_id).filter(Boolean)
         const { data: eventsData } = await supabase
           .from('events')
-          .select('id, event_date, event_type, title, location_name, status')
+          .select('id, event_date, event_type, title, main_image, status')
           .in('id', eventIds)
         upcoming = (eventsData || [])
           .filter(ev => ev.status !== 'cancelled' && ev.event_date >= today)
@@ -80,12 +136,6 @@ export default function ModelPortalHome() {
     }
     init()
   }, [])
-
-  function formatDate(dateStr) {
-    const d = new Date(dateStr + 'T00:00:00')
-    const days = ['日', '月', '火', '水', '木', '金', '土']
-    return `${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`
-  }
 
   if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#aaa' }}>読み込み中...</div>
 
@@ -206,31 +256,7 @@ export default function ModelPortalHome() {
         </div>
 
         {/* 参加予定イベント */}
-        <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #d6ecf5' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0d1f3a', marginTop: 0, marginBottom: 16 }}>
-            公開中の参加イベント
-          </h2>
-          {upcomingEvents.length === 0 ? (
-            <p style={{ color: '#aaa', fontSize: 14, margin: 0 }}>現在出演予定のイベントはありません。</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {upcomingEvents.map(ev => (
-                <Link key={ev.id} href={`/events/${ev.id}`} style={{ textDecoration: 'none' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#f8fbff', borderRadius: 8, border: '1px solid #e8f4fb' }}>
-                    <div>
-                      <span style={{ fontSize: 11, background: ev.event_type === 'street' ? '#e8f5e9' : '#e8eaf6', color: ev.event_type === 'street' ? '#388e3c' : '#3949ab', borderRadius: 4, padding: '2px 7px', fontWeight: 600, marginRight: 8 }}>
-                        {ev.event_type === 'street' ? 'ストリート' : ev.event_type === 'studio' ? 'スタジオ' : '不定期'}
-                      </span>
-                      <span style={{ fontWeight: 600, fontSize: 14, color: '#0d1f3a' }}>{formatDate(ev.event_date)}</span>
-                      {ev.title && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{ev.title}</div>}
-                    </div>
-                    <span style={{ fontSize: 12, color: '#5bbfd6', fontWeight: 600 }}>詳細 →</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+        <UpcomingEventTabs events={upcomingEvents} />
       </div>
     </div>
   )

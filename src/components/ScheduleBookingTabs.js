@@ -41,9 +41,9 @@ export default function ScheduleBookingTabs({ events, entriesByEvent, slotsByEnt
                 flexShrink: 0, transition: 'background 0.2s',
               }}>
               {tabMm}/{tabDd}
-              {(ev.location_name || ev.title) && (
+              {ev.title && (
                 <span style={{ marginLeft: 6, fontWeight: 400 }}>
-                  {ev.location_name || ev.title}
+                  {ev.title}
                 </span>
               )}
             </button>
