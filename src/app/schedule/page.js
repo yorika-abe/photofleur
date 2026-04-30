@@ -3,11 +3,21 @@ import { createSupabaseAdminClient } from '@/lib/supabase-server'
 
 export const metadata = { title: 'スケジュール一覧 | PhotoFleur' }
 
+const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
+
+const TYPE_LABEL = { street: 'STREET', studio: 'STUDIO', special: 'SPECIAL' }
+const TYPE_COLOR = { street: '#0097a7', studio: '#c2185b', special: '#1a3560' }
+
 function formatDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00')
   const mm = String(d.getMonth() + 1).padStart(2, '0')
   const dd = String(d.getDate()).padStart(2, '0')
   return `${mm}/${dd}`
+}
+
+function formatDow(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00')
+  return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]
 }
 
 export default async function SchedulePage() {
@@ -33,12 +43,21 @@ export default async function SchedulePage() {
   const eventsWithEntries = (events || []).map(ev => ({ ...ev, event_entries: entriesByEvent[ev.id] || [] }))
 
   return (
-    <div style={{ background: '#f7f5f2', minHeight: '100vh' }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: 'clamp(40px, 6vw, 72px) 20px' }}>
+    <div style={{ background: '#fff', minHeight: '100vh' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(40px, 6vw, 64px) 20px' }}>
 
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <p style={{ fontSize: 11, letterSpacing: '0.35em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>Schedule</p>
-          <h1 style={{ fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 700, color: '#1a3560', margin: 0 }}>開催予定のイベント</h1>
+          <h1 style={{ ...serif, fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 700, color: '#1a3560', margin: '0 0 20px' }}>開催予定のイベント</h1>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
+            <p style={{ fontSize: 12, color: '#666', margin: 0 }}>
+              📌 予約受付は撮影日の<strong>2週間前月曜日 21:00〜</strong>開始いたします。
+            </p>
+            <p style={{ fontSize: 12, color: '#666', margin: 0 }}>
+              📌 予約開始の<strong>2日前まで</strong>にスケジュールを公開いたします。
+            </p>
+          </div>
         </div>
 
         {!eventsWithEntries || eventsWithEntries.length === 0 ? (
@@ -46,62 +65,73 @@ export default async function SchedulePage() {
             <p>現在、予定されているイベントはありません。</p>
           </div>
         ) : (
-          <div className="schedule-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+          <div className="schedule-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
             {eventsWithEntries.map(ev => {
               const date = formatDate(ev.event_date)
-              const isStreet = ev.event_type === 'street'
-              const isStudio = ev.event_type === 'studio'
-              const tagBg = isStreet ? 'rgba(0,151,167,0.85)' : isStudio ? 'rgba(194,24,91,0.85)' : 'rgba(26,53,96,0.85)'
-              const cardBg = isStreet ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : isStudio ? 'linear-gradient(160deg,#f4d6e8,#e8b8d0)' : 'linear-gradient(160deg,#c5cae9,#9fa8da)'
+              const dow = formatDow(ev.event_date)
+              const type = ev.event_type || 'special'
+              const tagColor = TYPE_COLOR[type] || TYPE_COLOR.special
+              const tagLabel = TYPE_LABEL[type] || 'EVENT'
               const modelList = (ev.event_entries || []).map(e => e.models).filter(Boolean)
+              const cardBg = !ev.main_image
+                ? (type === 'street' ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : type === 'studio' ? 'linear-gradient(160deg,#f4d6e8,#e8b8d0)' : 'linear-gradient(160deg,#c5cae9,#9fa8da)')
+                : undefined
 
               return (
-                <Link key={ev.id} href={`/events/${ev.id}`} style={{ textDecoration: 'none', display: 'block' }}>
-                  <div className="sched-card" style={{ background: '#fff', borderRadius: 4, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', transition: 'box-shadow 0.3s ease, transform 0.3s ease' }}>
-
-                    {/* 画像エリア */}
-                    <div style={{ position: 'relative', aspectRatio: '4/3', background: cardBg, overflow: 'hidden' }}>
-                      {ev.main_image && (
-                        <img src={ev.main_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }} className="sched-img" />
-                      )}
-                      <div style={{ position: 'absolute', top: 12, left: 12 }}>
-                        <span style={{ fontSize: 10, letterSpacing: '0.15em', color: '#fff', textTransform: 'uppercase', background: tagBg, padding: '4px 10px', borderRadius: 2, fontWeight: 600 }}>
-                          {isStreet ? 'Street' : isStudio ? 'Studio' : 'Special'}
-                        </span>
-                      </div>
+                <Link key={ev.id} href={`/events/${ev.id}`} style={{ textDecoration: 'none', display: 'block' }} className="sched-card">
+                  {/* Image */}
+                  <div style={{ position: 'relative', aspectRatio: '1/1', borderRadius: 6, overflow: 'hidden', background: cardBg || '#e8e8e8', marginBottom: 10 }}>
+                    {ev.main_image && (
+                      <img src={ev.main_image} alt={ev.title || ''} className="sched-img"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.45s ease', display: 'block' }} />
+                    )}
+                    {/* Type tag */}
+                    <div style={{ position: 'absolute', top: 8, left: 8 }}>
+                      <span style={{
+                        fontSize: 9, letterSpacing: '0.12em', color: '#fff', textTransform: 'uppercase',
+                        background: tagColor, padding: '3px 8px', borderRadius: 2, fontWeight: 700,
+                      }}>
+                        {tagLabel}
+                      </span>
                     </div>
+                    {/* Date badge */}
+                    <div style={{ position: 'absolute', bottom: 8, left: 8 }}>
+                      <span style={{
+                        fontSize: 11, color: '#fff', background: 'rgba(0,0,0,0.55)',
+                        padding: '3px 8px', borderRadius: 3, fontWeight: 600, letterSpacing: '0.05em',
+                      }}>
+                        {date}（{dow}）
+                      </span>
+                    </div>
+                  </div>
 
-                    {/* テキストエリア */}
-                    <div style={{ padding: '18px 20px 20px' }}>
-                      <div style={{ fontSize: 'clamp(22px, 4vw, 28px)', fontWeight: 700, color: '#1a3560', letterSpacing: '0.05em', marginBottom: 6 }}>
-                        {date}
+                  {/* Info */}
+                  <div style={{ padding: '0 2px' }}>
+                    <div style={{ ...serif, fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 700, color: '#1a3560', lineHeight: 1, marginBottom: 4, letterSpacing: '0.04em' }}>
+                      {date}
+                    </div>
+                    {ev.location_name && (
+                      <div style={{ fontSize: 11, color: '#888', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <span style={{ fontSize: 11 }}>📍</span>{ev.location_name}
                       </div>
-                      {ev.title && (
-                        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginBottom: 4 }}>{ev.title}</div>
-                      )}
-                      {ev.location_name && (
-                        <div style={{ fontSize: 12, color: '#888', marginBottom: 12 }}>{ev.location_name}</div>
-                      )}
+                    )}
+                    {ev.title && (
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1a3560', marginBottom: 6, lineHeight: 1.4 }}>{ev.title}</div>
+                    )}
 
-                      {modelList.length > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{ display: 'flex' }}>
-                            {modelList.slice(0, 5).map((m, idx) => (
-                              <div key={idx} style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid #fff', overflow: 'hidden', background: '#e0d8f0', marginLeft: idx > 0 ? -8 : 0, boxShadow: '0 1px 4px rgba(0,0,0,0.12)' }}>
-                                {m.image && <img src={m.image} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                              </div>
-                            ))}
+                    {/* Model icons */}
+                    {modelList.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}>
+                        {modelList.slice(0, 5).map((m, idx) => (
+                          <div key={idx} style={{ width: 22, height: 22, borderRadius: '50%', border: '1.5px solid #fff', overflow: 'hidden', background: '#e0d8f0', marginLeft: idx > 0 ? -6 : 0, boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}>
+                            {m.image && <img src={m.image} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                           </div>
-                          {modelList.length > 5 && (
-                            <span style={{ fontSize: 11, color: '#aaa' }}>+{modelList.length - 5}</span>
-                          )}
-                        </div>
-                      )}
-
-                      <div style={{ marginTop: 14, fontSize: 12, color: '#5bbfd6', fontWeight: 600, letterSpacing: '0.05em' }}>
-                        詳細・予約 →
+                        ))}
+                        {modelList.length > 5 && <span style={{ fontSize: 10, color: '#aaa', marginLeft: 2 }}>+{modelList.length - 5}</span>}
                       </div>
-                    </div>
+                    )}
+
+                    <div style={{ fontSize: 11, color: '#5bbfd6', fontWeight: 600 }}>詳細・予約 →</div>
                   </div>
                 </Link>
               )
@@ -111,11 +141,10 @@ export default async function SchedulePage() {
       </div>
 
       <style>{`
-        .sched-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.14) !important; transform: translateY(-2px); }
-        .sched-card:hover .sched-img { transform: scale(1.04); }
-        @media (max-width: 600px) {
-          .schedule-grid { grid-template-columns: 1fr !important; }
-        }
+        .sched-card:hover .sched-img { transform: scale(1.05); }
+        .sched-card:hover { opacity: 0.92; }
+        @media (max-width: 900px) { .schedule-grid { grid-template-columns: repeat(3, 1fr) !important; } }
+        @media (max-width: 560px) { .schedule-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; } }
       `}</style>
     </div>
   )
