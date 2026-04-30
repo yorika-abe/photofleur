@@ -111,32 +111,63 @@ export default async function EventDetailPage({ params }) {
 
       {/* Header: date / location / title / subtitle / description */}
       <div style={{ marginTop: 28, marginBottom: 32, textAlign: 'center' }}>
-        <div style={{ fontSize: 52, fontWeight: 800, color: '#1a1a1a', marginBottom: 12, letterSpacing: 2, lineHeight: 1.1 }}>
+        {/* Date with Playfair Display italic + gradient effect */}
+        <div style={{
+          fontFamily: 'var(--font-cormorant), Georgia, serif',
+          fontStyle: 'italic',
+          fontSize: 68,
+          fontWeight: 700,
+          letterSpacing: 4,
+          lineHeight: 1,
+          marginBottom: 16,
+          background: 'linear-gradient(135deg, #111 0%, #555 60%, #111 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+        }}>
           {formatDateShort(event.event_date)}
         </div>
 
         {event.location_name && (
-          <div style={{ fontSize: 16, color: '#666', marginBottom: 6 }}>
+          <div style={{ fontSize: 15, color: '#888', marginBottom: 6, letterSpacing: 1 }}>
             📍 {event.location_name}
           </div>
         )}
 
+        {/* Title: small, gray (swapped) */}
         {event.title && (
-          <div style={{ fontSize: 26, fontWeight: 700, color: '#1a1a1a', marginBottom: 0 }}>
+          <div style={{
+            fontFamily: 'var(--font-cormorant), Georgia, serif',
+            fontSize: 15,
+            fontWeight: 500,
+            color: '#aaa',
+            letterSpacing: 2,
+            marginBottom: 4,
+          }}>
             {event.title}
           </div>
         )}
 
-        <hr style={{ border: 'none', borderTop: '1px solid #ddd', margin: '24px auto', maxWidth: 400 }} />
-
+        {/* Subtitle: large, black (swapped) */}
         {event.subtitle && (
-          <div style={{ fontSize: 14, color: '#999', fontWeight: 400, marginBottom: 16, letterSpacing: 0.5 }}>
+          <div style={{
+            fontFamily: 'var(--font-cormorant), Georgia, serif',
+            fontStyle: 'italic',
+            fontSize: 30,
+            fontWeight: 600,
+            color: '#1a1a1a',
+            letterSpacing: 1,
+            lineHeight: 1.3,
+            marginBottom: 0,
+          }}>
             {event.subtitle}
           </div>
         )}
 
+        <hr style={{ border: 'none', borderTop: '1px solid #ddd', margin: '24px auto', maxWidth: 360 }} />
+
         {event.description && (
-          <p style={{ fontSize: 14, color: '#666', lineHeight: 2, margin: '0 auto', whiteSpace: 'pre-line', maxWidth: 600 }}>
+          <p style={{ fontSize: 14, color: '#666', lineHeight: 2, margin: '0 auto', whiteSpace: 'pre-line', maxWidth: 560 }}>
             {event.description}
           </p>
         )}
