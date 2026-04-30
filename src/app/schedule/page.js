@@ -5,8 +5,6 @@ export const metadata = { title: 'スケジュール一覧 | PhotoFleur' }
 
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
-const TYPE_LABEL = { street: 'STREET', studio: 'STUDIO', special: 'SPECIAL' }
-const TYPE_COLOR = { street: '#0097a7', studio: '#c2185b', special: '#1a3560' }
 
 function formatDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00')
@@ -48,8 +46,8 @@ export default async function SchedulePage() {
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <p style={{ fontSize: 11, letterSpacing: '0.35em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>Schedule</p>
-          <h1 style={{ ...serif, fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 700, color: '#1a3560', margin: '0 0 20px' }}>開催予定のイベント</h1>
+          <p style={{ fontSize: 11, letterSpacing: '0.35em', color: '#222', textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>Schedule</p>
+          <h1 style={{ ...serif, fontSize: 'clamp(40px, 8vw, 80px)', fontWeight: 700, color: '#1a3560', margin: '0 0 20px' }}>開催予定のイベント</h1>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
             <p style={{ fontSize: 12, color: '#666', margin: 0 }}>
               📌 予約受付は撮影日の<strong>2週間前月曜日 21:00〜</strong>開始いたします。
@@ -70,8 +68,6 @@ export default async function SchedulePage() {
               const date = formatDate(ev.event_date)
               const dow = formatDow(ev.event_date)
               const type = ev.event_type || 'special'
-              const tagColor = TYPE_COLOR[type] || TYPE_COLOR.special
-              const tagLabel = TYPE_LABEL[type] || 'EVENT'
               const modelList = (ev.event_entries || []).map(e => e.models).filter(Boolean)
               const cardBg = !ev.main_image
                 ? (type === 'street' ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : type === 'studio' ? 'linear-gradient(160deg,#f4d6e8,#e8b8d0)' : 'linear-gradient(160deg,#c5cae9,#9fa8da)')
@@ -85,15 +81,6 @@ export default async function SchedulePage() {
                       <img src={ev.main_image} alt={ev.title || ''} className="sched-img"
                         style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.45s ease', display: 'block' }} />
                     )}
-                    {/* Type tag */}
-                    <div style={{ position: 'absolute', top: 8, left: 8 }}>
-                      <span style={{
-                        fontSize: 9, letterSpacing: '0.12em', color: '#fff', textTransform: 'uppercase',
-                        background: tagColor, padding: '3px 8px', borderRadius: 2, fontWeight: 700,
-                      }}>
-                        {tagLabel}
-                      </span>
-                    </div>
                     {/* Date badge */}
                     <div style={{ position: 'absolute', bottom: 8, left: 8 }}>
                       <span style={{
@@ -106,13 +93,13 @@ export default async function SchedulePage() {
                   </div>
 
                   {/* Info */}
-                  <div style={{ padding: '0 2px' }}>
+                  <div style={{ padding: '0 2px', textAlign: 'center' }}>
                     <div style={{ ...serif, fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 700, color: '#1a3560', lineHeight: 1, marginBottom: 4, letterSpacing: '0.04em' }}>
                       {date}
                     </div>
                     {ev.location_name && (
-                      <div style={{ fontSize: 11, color: '#888', marginBottom: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
-                        <span style={{ fontSize: 11 }}>📍</span>{ev.location_name}
+                      <div style={{ fontSize: 11, color: '#888', marginBottom: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+                        <span>📍</span>{ev.location_name}
                       </div>
                     )}
                     {ev.title && (
@@ -121,7 +108,7 @@ export default async function SchedulePage() {
 
                     {/* Model icons */}
                     {modelList.length > 0 && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, marginBottom: 6 }}>
                         {modelList.slice(0, 5).map((m, idx) => (
                           <div key={idx} style={{ width: 22, height: 22, borderRadius: '50%', border: '1.5px solid #fff', overflow: 'hidden', background: '#e0d8f0', marginLeft: idx > 0 ? -6 : 0, boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}>
                             {m.image && <img src={m.image} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
