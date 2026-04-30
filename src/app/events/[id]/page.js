@@ -189,27 +189,28 @@ export default async function EventDetailPage({ params }) {
               />
             </div>
           )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
             {(event.address || event.location_name) && (
               <div>
-                <div style={{ fontSize: 11, color: '#999', marginBottom: 2 }}>開催場所</div>
-                {event.address && <div style={{ fontSize: 13, color: '#333', marginTop: 2 }}>{event.address}</div>}
+                <div style={{ fontSize: 12, color: '#999', marginBottom: 3 }}>開催場所</div>
+                {event.address && <div style={{ fontSize: 16, fontWeight: 600, color: '#222' }}>{event.address}</div>}
+              </div>
+            )}
+            {event.access_note && (
+              <div>
+                <div style={{ fontSize: 12, color: '#999', marginBottom: 3 }}>アクセス</div>
+                <div style={{ fontSize: 15, color: '#333', lineHeight: 1.7 }}>{event.access_note}</div>
               </div>
             )}
             {mapsLink && (
               <a href={mapsLink} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#222', fontSize: 13, textDecoration: 'underline', width: 'fit-content' }}>
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#222', fontSize: 14, textDecoration: 'underline', width: 'fit-content' }}>
                 🗺️ Google Mapsで開く
               </a>
             )}
-            {event.access_note && (
-              <div style={{ fontSize: 13, color: '#333', lineHeight: 1.8 }}>
-                <span style={{ fontWeight: 600 }}>アクセス：</span>{event.access_note}
-              </div>
-            )}
             {event.studio_url && (
               <a href={event.studio_url} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#222', fontSize: 13, textDecoration: 'underline', fontWeight: 600, width: 'fit-content' }}>
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#222', fontSize: 14, textDecoration: 'underline', fontWeight: 600, width: 'fit-content' }}>
                 🏢 スタジオ詳細を見る →
               </a>
             )}
