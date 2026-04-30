@@ -157,10 +157,10 @@ export default async function Home() {
 
       {/* ─── MODELS ─── */}
       {models && models.length > 0 && (
-        <section style={{ background: '#0d1f3a', padding: '80px 0' }}>
+        <section style={{ background: '#fff', padding: '80px 0' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
-            <div className="reveal" style={{ textAlign: 'center', marginBottom: 56, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 32 }}>
-              <h2 style={{ ...serif, fontSize: 'clamp(56px, 10vw, 100px)', fontWeight: 300, margin: 0, color: '#fff', letterSpacing: '0.15em' }}>
+            <div className="reveal" style={{ textAlign: 'center', marginBottom: 56, borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: 32 }}>
+              <h2 style={{ ...serif, fontSize: 'clamp(56px, 10vw, 100px)', fontWeight: 300, margin: 0, color: '#0d1f3a', letterSpacing: '0.15em' }}>
                 MODELS
               </h2>
             </div>
@@ -169,17 +169,17 @@ export default async function Home() {
               {models.map((model) => (
                 <Link key={model.id} href={`/models/${model.id}`} style={{ textDecoration: 'none' }}>
                   <div>
-                    <div style={{ position: 'relative', aspectRatio: '2/3', background: '#1a3560', overflow: 'hidden', borderRadius: 2 }} className="model-card">
+                    <div style={{ position: 'relative', aspectRatio: '2/3', background: '#f0f0f0', overflow: 'hidden', borderRadius: 2 }} className="model-card">
                       {model.image
                         ? <img src={model.image} alt={model.name} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.6s ease' }} className="model-img" />
-                        : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5bbfd6' }}>
+                        : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc' }}>
                             <span style={{ fontSize: 36 }}>👤</span>
                           </div>
                       }
                     </div>
                     <div style={{ padding: '10px 4px 0' }}>
-                      <div style={{ color: '#fff', fontWeight: 600, fontSize: 13 }}>{model.name}</div>
-                      {model.name_en && <div style={{ ...serif, color: '#a8e2f4', fontSize: 11, fontStyle: 'italic' }}>{model.name_en}</div>}
+                      <div style={{ color: '#222', fontWeight: 600, fontSize: 13 }}>{model.name}</div>
+                      {model.name_en && <div style={{ ...serif, color: '#999', fontSize: 11, fontStyle: 'italic' }}>{model.name_en}</div>}
                     </div>
                   </div>
                 </Link>
