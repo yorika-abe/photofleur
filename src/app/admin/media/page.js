@@ -278,10 +278,17 @@ export default function AdminMediaPage() {
 
       </div>
 
-      <button onClick={save} disabled={saving}
-        style={{ marginTop: 24, background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 36px', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
-        {saving ? '保存中...' : '保存する'}
-      </button>
+      <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
+        <button onClick={save} disabled={saving}
+          style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 36px', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+          {saving ? '保存中...' : '保存する'}
+        </button>
+        {saved && (
+          <span style={{ fontSize: 14, color: '#388e3c', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+            ✓ 保存しました
+          </span>
+        )}
+      </div>
     </div>
   )
 }
