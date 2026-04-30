@@ -11,6 +11,14 @@ function formatDateFull(dateStr) {
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`
 }
 
+function formatDateShort(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00')
+  const days = ['日', '月', '火', '水', '木', '金', '土']
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${mm}/${dd}（${days[d.getDay()]}）`
+}
+
 export async function generateMetadata({ params }) {
   const { id } = await params
   const supabase = await createSupabaseAdminClient()
@@ -90,8 +98,6 @@ export default async function EventDetailPage({ params }) {
     }
   }
 
-  const typeLabel = event.event_type === 'street' ? 'ストリート撮影' : event.event_type === 'studio' ? 'スタジオ撮影' : '不定期撮影'
-  const typeColor = event.event_type === 'street' ? { bg: '#e0f7fa', color: '#0097a7' } : event.event_type === 'studio' ? { bg: '#fce4ec', color: '#c2185b' } : { bg: '#ede7f6', color: '#5e35b1' }
   const now = new Date()
   const bookingOpen = event.booking_open_at ? new Date(event.booking_open_at) <= now : true
 
@@ -104,35 +110,33 @@ export default async function EventDetailPage({ params }) {
       <Link href="/schedule" style={{ color: '#888', textDecoration: 'none', fontSize: 14 }}>← スケジュール一覧</Link>
 
       {/* Header: date / location / title / subtitle / description */}
-      <div style={{ marginTop: 28, marginBottom: 32 }}>
-        <span style={{ background: typeColor.bg, color: typeColor.color, borderRadius: 6, padding: '4px 12px', fontSize: 12, fontWeight: 600 }}>{typeLabel}</span>
-
-        <div style={{ fontSize: 34, fontWeight: 800, color: '#1a1a1a', marginTop: 16, marginBottom: 6, letterSpacing: 1, lineHeight: 1.2 }}>
-          {formatDateFull(event.event_date)}
+      <div style={{ marginTop: 28, marginBottom: 32, textAlign: 'center' }}>
+        <div style={{ fontSize: 52, fontWeight: 800, color: '#1a1a1a', marginBottom: 12, letterSpacing: 2, lineHeight: 1.1 }}>
+          {formatDateShort(event.event_date)}
         </div>
 
         {event.location_name && (
-          <div style={{ fontSize: 16, color: '#555', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div style={{ fontSize: 16, color: '#666', marginBottom: 6 }}>
             📍 {event.location_name}
           </div>
         )}
 
         {event.title && (
-          <div style={{ fontSize: 22, fontWeight: 700, color: '#222', marginTop: 4, marginBottom: 0 }}>
+          <div style={{ fontSize: 26, fontWeight: 700, color: '#1a1a1a', marginBottom: 0 }}>
             {event.title}
           </div>
         )}
 
-        <hr style={{ border: 'none', borderTop: '1px solid #ddd', margin: '20px 0' }} />
+        <hr style={{ border: 'none', borderTop: '1px solid #ddd', margin: '24px auto', maxWidth: 400 }} />
 
         {event.subtitle && (
-          <div style={{ fontSize: 15, color: '#444', fontWeight: 500, marginBottom: 12 }}>
+          <div style={{ fontSize: 14, color: '#999', fontWeight: 400, marginBottom: 16, letterSpacing: 0.5 }}>
             {event.subtitle}
           </div>
         )}
 
         {event.description && (
-          <p style={{ fontSize: 14, color: '#555', lineHeight: 1.9, margin: 0, whiteSpace: 'pre-line' }}>
+          <p style={{ fontSize: 14, color: '#666', lineHeight: 2, margin: '0 auto', whiteSpace: 'pre-line', maxWidth: 600 }}>
             {event.description}
           </p>
         )}
