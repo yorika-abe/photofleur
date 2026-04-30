@@ -10,11 +10,11 @@ export async function POST(req) {
     const body = await req.json()
     const {
       slot_id, name, last_name, first_name, last_name_kana, first_name_kana,
-      email, phone, sns_url, is_outdoor, discount_amount, final_price,
+      email, phone, sns_url, nickname, is_outdoor, discount_amount, final_price,
       coupon_id, marketing_consent,
     } = body
 
-    if (!slot_id || !email || !last_name || !first_name) {
+    if (!slot_id || !email || !last_name || !first_name || !nickname) {
       return Response.json({ error: '必須項目が不足しています' }, { status: 400 })
     }
 
@@ -42,7 +42,7 @@ export async function POST(req) {
       .from('bookings')
       .insert({
         slot_id, name, last_name, first_name, last_name_kana, first_name_kana,
-        email, phone: phone || null, sns_url: sns_url || null,
+        email, phone: phone || null, sns_url: sns_url || null, nickname: nickname || null,
         is_outdoor: is_outdoor || false,
         discount_amount: discount_amount || 0,
         final_price: final_price || 0,

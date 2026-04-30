@@ -30,7 +30,7 @@ function ConfirmForm() {
   const [form, setForm] = useState({
     last_name: '', first_name: '',
     last_name_kana: '', first_name_kana: '',
-    email: '', phone: '', sns_url: '',
+    email: '', phone: '', sns_url: '', nickname: '',
     marketing_consent: true,
   })
   const [termsAgreed, setTermsAgreed] = useState(false)
@@ -169,7 +169,7 @@ function ConfirmForm() {
   async function handleSubmit(e) {
     e.preventDefault()
     const { last_name, first_name, last_name_kana, first_name_kana, email, phone } = form
-    if (!last_name || !first_name || !last_name_kana || !first_name_kana || !email || !phone || !form.sns_url) {
+    if (!last_name || !first_name || !last_name_kana || !first_name_kana || !email || !phone || !form.sns_url || !form.nickname) {
       setError('必須項目を全て入力してください。'); return
     }
     if (!termsAgreed) {
@@ -213,6 +213,7 @@ function ConfirmForm() {
         name: `${last_name} ${first_name}`,
         last_name, first_name, last_name_kana, first_name_kana,
         email, phone,
+        nickname: form.nickname || null,
         sns_url: form.sns_url || null,
         is_outdoor: isOutdoor,
         discount_amount: (slotInfo?.price || 0) - finalPrice,
@@ -337,9 +338,15 @@ function ConfirmForm() {
             <input type="tel" style={inp} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="09012345678" required />
           </div>
 
-          <div>
+          <div style={{ marginBottom: 12 }}>
             <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>SNS URL <span style={{ color: 'red' }}>*</span></label>
             <input style={inp} value={form.sns_url} onChange={e => setForm(f => ({ ...f, sns_url: e.target.value }))} placeholder="https://twitter.com/..." required />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>ニックネーム（アカウント名など） <span style={{ color: 'red' }}>*</span></label>
+            <p style={{ fontSize: 12, color: '#888', margin: '0 0 6px' }}>モデルに呼ばれている名前などがある場合はそのニックネームをご記入ください</p>
+            <input style={inp} value={form.nickname} onChange={e => setForm(f => ({ ...f, nickname: e.target.value }))} placeholder="例：たろちゃん、yamada_photo" required />
           </div>
         </div>
 

@@ -569,14 +569,12 @@ export default function EventEditPage() {
           </div>
 
           <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e5e5e5' }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2f2244', marginBottom: 16, marginTop: 0 }}>
-              {event.event_type === 'studio' ? 'スタジオ利用規約（確定メール記載）' : 'ストリート伝達事項（確定メール記載）'}
-            </h3>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2f2244', marginBottom: 16, marginTop: 0 }}>伝達事項（確定メール記載）</h3>
             <textarea
-              value={event.event_type === 'studio' ? (event.studio_rules || '') : (event.street_notes || '')}
-              onChange={e => updateField(event.event_type === 'studio' ? 'studio_rules' : 'street_notes', e.target.value)}
+              value={event.street_notes || ''}
+              onChange={e => updateField('street_notes', e.target.value)}
               rows={5} style={{ ...inp, resize: 'vertical' }}
-              placeholder={event.event_type === 'studio' ? 'スタジオより共有されているスタジオ利用規約...' : 'ストリートエリアの伝達事項...'}
+              placeholder="集合場所の詳細、持ち物、注意事項など..."
             />
           </div>
 

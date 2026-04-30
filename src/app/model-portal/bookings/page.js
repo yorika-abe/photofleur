@@ -93,7 +93,7 @@ export default function ModelBookingsPage() {
                               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, flexWrap: 'wrap' }}>
                                 <span style={{ fontSize: 12, background: '#00897b', color: '#fff', borderRadius: 4, padding: '2px 8px', fontWeight: 600 }}>予約済み</span>
                                 <span style={{ fontSize: 13, color: '#444' }}>
-                                  {slot.booking.last_name}{slot.booking.first_name} 様
+                                  {slot.booking.nickname || `${slot.booking.last_name}${slot.booking.first_name}`} 様
                                 </span>
                                 {slot.booking.sns_url ? (
                                   <a href={slot.booking.sns_url} target="_blank" rel="noopener noreferrer"

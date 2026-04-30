@@ -29,13 +29,11 @@ function buildLocationBlock(event) {
 }
 
 function buildRulesBlock(event) {
-  const isStreet = event?.event_type === 'street'
-  const content = isStreet ? event?.street_notes : event?.studio_rules
+  const content = event?.street_notes
   if (!content) return ''
-  const title = isStreet ? 'ストリート撮影 伝達事項' : 'スタジオ利用規約'
   return `
     <div style="border-top:1px solid #e5e5e5; padding-top:20px; margin-bottom:24px;">
-      <p style="margin:0 0 10px; font-size:14px; font-weight:700; color:#2f2244;">${title}</p>
+      <p style="margin:0 0 10px; font-size:14px; font-weight:700; color:#2f2244;">伝達事項</p>
       <p style="margin:0; font-size:13px; color:#555; line-height:1.9; white-space:pre-line;">${content}</p>
     </div>
   `

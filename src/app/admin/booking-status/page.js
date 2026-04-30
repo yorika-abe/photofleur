@@ -41,6 +41,7 @@ export default function AdminBookingStatusPage() {
   const [editFees, setEditFees] = useState(false)
   const [costs, setCosts] = useState({ lunchCount: 0, lunchRate: 1000, studioCost: 0 })
   const [savedIds, setSavedIds] = useState(new Set())
+  const [selectedBooking, setSelectedBooking] = useState(null)
 
   const todayStr = new Date().toISOString().split('T')[0]
 
@@ -256,10 +257,12 @@ export default function AdminBookingStatusPage() {
                               }
                               const isCard = booking.payment_method === 'card'
                               return (
-                                <td key={label} style={{ padding: '6px 8px', textAlign: 'center', background: isCard ? '#e8f5e9' : '#fce4ec' }}>
+                                <td key={label} style={{ padding: '6px 8px', textAlign: 'center', background: isCard ? '#e8f5e9' : '#fce4ec', cursor: 'pointer' }}
+                                  onClick={() => setSelectedBooking({ ...booking, modelName: row.model.name, slotLabel: label })}>
                                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
                                     <span style={{ fontSize: 13 }}>{isCard ? '🟢' : '❌'}</span>
-                                    <span style={{ fontSize: 12, fontWeight: 600, color: '#333' }}>{booking.last_name}</span>
+                                    <span style={{ fontSize: 12, fontWeight: 600, color: '#333' }}>{booking.nickname || booking.last_name}</span>
+                                    {booking.sns_url && <span style={{ fontSize: 11 }}>🔗</span>}
                                   </div>
                                 </td>
                               )
@@ -277,7 +280,39 @@ export default function AdminBookingStatusPage() {
                   <span>🟢 カード決済済み</span>
                   <span>❌ 現金払い</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ background: '#f0f0f0', padding: '2px 8px', borderRadius: 4 }}>—</span> 出勤なし</span>
+                  <span style={{ color: '#aaa' }}>※枠をタップで予約詳細表示</span>
                 </div>
+
+                {/* 予約詳細ポップアップ */}
+                {selectedBooking && (
+                  <div onClick={() => setSelectedBooking(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+                    <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, padding: '28px 24px', maxWidth: 400, width: '100%', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                        <span style={{ fontWeight: 700, fontSize: 15, color: '#1a3560' }}>予約詳細</span>
+                        <button onClick={() => setSelectedBooking(null)} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#999', lineHeight: 1 }}>×</button>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 14 }}>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <span style={{ fontSize: 18 }}>{selectedBooking.payment_method === 'card' ? '🟢' : '❌'}</span>
+                          <span style={{ fontWeight: 700, fontSize: 16, color: '#1a3560' }}>{selectedBooking.nickname || '—'}</span>
+                        </div>
+                        <div style={{ color: '#888', fontSize: 12 }}>{selectedBooking.slotLabel} / {selectedBooking.modelName}</div>
+                        <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <div><span style={{ color: '#aaa', minWidth: 80, display: 'inline-block' }}>氏名</span>{selectedBooking.last_name} {selectedBooking.first_name}</div>
+                          <div><span style={{ color: '#aaa', minWidth: 80, display: 'inline-block' }}>決済</span>{selectedBooking.payment_method === 'card' ? 'カード決済済み' : '現金払い'}</div>
+                          {selectedBooking.sns_url && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ color: '#aaa', minWidth: 80, display: 'inline-block' }}>SNS</span>
+                              <a href={selectedBooking.sns_url} target="_blank" rel="noopener noreferrer" style={{ color: '#1a3560', fontWeight: 600, wordBreak: 'break-all', fontSize: 13 }}>
+                                🔗 {selectedBooking.sns_url}
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* 報酬メモ */}
                 <div style={{ marginTop: 24, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, padding: '16px 20px' }}>
