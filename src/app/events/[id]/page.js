@@ -180,44 +180,44 @@ export default async function EventDetailPage({ params }) {
         </div>
       )}
 
-      {/* Map */}
-      {embedUrl && (
-        <div style={{ marginBottom: 0, borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e5e5' }}>
-          <iframe
-            src={embedUrl}
-            width="100%" height="280" style={{ border: 0, display: 'block' }}
-            allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"
-          />
-        </div>
-      )}
-
-      {/* Address / Access / Studio URL */}
-      {(event.location_name || event.access_note || event.studio_url || mapsLink) && (
-        <div style={{ marginTop: 16, marginBottom: 32, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {event.location_name && (
-            <div>
-              <div style={{ fontSize: 11, color: '#aaa', marginBottom: 2 }}>開催場所</div>
-              <div style={{ fontWeight: 600, color: '#333', fontSize: 15 }}>{event.location_name}</div>
-              {event.address && <div style={{ fontSize: 13, color: '#777', marginTop: 2 }}>{event.address}</div>}
+      {/* Map + Address side by side */}
+      {(embedUrl || event.location_name || event.access_note || event.studio_url || mapsLink) && (
+        <div style={{ display: 'flex', gap: 20, marginBottom: 32, alignItems: 'flex-start' }}>
+          {embedUrl && (
+            <div style={{ flexShrink: 0, width: 220, borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e5e5' }}>
+              <iframe
+                src={embedUrl}
+                width="220" height="180" style={{ border: 0, display: 'block' }}
+                allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"
+              />
             </div>
           )}
-          {mapsLink && (
-            <a href={mapsLink} target="_blank" rel="noopener noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#555', fontSize: 13, textDecoration: 'underline', width: 'fit-content' }}>
-              🗺️ Google Mapsで開く
-            </a>
-          )}
-          {event.access_note && (
-            <div style={{ fontSize: 13, color: '#555', lineHeight: 1.8 }}>
-              <span style={{ color: '#888', fontWeight: 600 }}>アクセス：</span>{event.access_note}
-            </div>
-          )}
-          {event.studio_url && (
-            <a href={event.studio_url} target="_blank" rel="noopener noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#444', fontSize: 13, textDecoration: 'underline', fontWeight: 600, width: 'fit-content' }}>
-              🏢 スタジオ詳細を見る →
-            </a>
-          )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+            {event.location_name && (
+              <div>
+                <div style={{ fontSize: 11, color: '#999', marginBottom: 2 }}>開催場所</div>
+                <div style={{ fontWeight: 600, color: '#222', fontSize: 15 }}>{event.location_name}</div>
+                {event.address && <div style={{ fontSize: 13, color: '#333', marginTop: 2 }}>{event.address}</div>}
+              </div>
+            )}
+            {mapsLink && (
+              <a href={mapsLink} target="_blank" rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#222', fontSize: 13, textDecoration: 'underline', width: 'fit-content' }}>
+                🗺️ Google Mapsで開く
+              </a>
+            )}
+            {event.access_note && (
+              <div style={{ fontSize: 13, color: '#333', lineHeight: 1.8 }}>
+                <span style={{ fontWeight: 600 }}>アクセス：</span>{event.access_note}
+              </div>
+            )}
+            {event.studio_url && (
+              <a href={event.studio_url} target="_blank" rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#222', fontSize: 13, textDecoration: 'underline', fontWeight: 600, width: 'fit-content' }}>
+                🏢 スタジオ詳細を見る →
+              </a>
+            )}
+          </div>
         </div>
       )}
 
