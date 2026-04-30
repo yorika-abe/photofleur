@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { createBrowserClient } from '@supabase/ssr'
 
 export default function AdminCouponsPage() {
   const [coupons, setCoupons] = useState([])
@@ -13,17 +12,13 @@ export default function AdminCouponsPage() {
     code: '', discount_type: 'fixed', discount_value: '', max_uses: '', valid_from: '', valid_until: '', description: '', is_active: true,
   })
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  )
-
   useEffect(() => { load() }, [])
 
   async function load() {
     setLoading(true)
-    const { data } = await supabase.from('coupons').select('*').order('created_at', { ascending: false })
-    setCoupons(data || [])
+    const res = await fetch('/api/admin/coupons')
+    const data = await res.json()
+    setCoupons(data.coupons || [])
     setLoading(false)
   }
 
@@ -32,18 +27,23 @@ export default function AdminCouponsPage() {
     if (!form.code || !form.discount_value) return
     setSaving(true)
 
-    const { error } = await supabase.from('coupons').insert({
-      code: form.code.trim().toUpperCase(),
-      discount_type: form.discount_type,
-      discount_value: Number(form.discount_value),
-      max_uses: form.max_uses ? Number(form.max_uses) : null,
-      valid_from: form.valid_from || null,
-      valid_until: form.valid_until || null,
-      description: form.description || null,
-      is_active: form.is_active,
+    const res = await fetch('/api/admin/coupons', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: form.code.trim().toUpperCase(),
+        discount_type: form.discount_type,
+        discount_value: Number(form.discount_value),
+        max_uses: form.max_uses ? Number(form.max_uses) : null,
+        valid_from: form.valid_from || null,
+        valid_until: form.valid_until || null,
+        description: form.description || null,
+        is_active: form.is_active,
+      }),
     })
+    const data = await res.json()
 
-    if (error) { alert('エラー: ' + error.message) }
+    if (data.error) { alert('エラー: ' + data.error) }
     else {
       setShowForm(false)
       setForm({ code: '', discount_type: 'fixed', discount_value: '', max_uses: '', valid_from: '', valid_until: '', description: '', is_active: true })
@@ -53,13 +53,21 @@ export default function AdminCouponsPage() {
   }
 
   async function toggleActive(coupon) {
-    await supabase.from('coupons').update({ is_active: !coupon.is_active }).eq('id', coupon.id)
+    await fetch('/api/admin/coupons', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: coupon.id, is_active: !coupon.is_active }),
+    })
     setCoupons(prev => prev.map(c => c.id === coupon.id ? { ...c, is_active: !c.is_active } : c))
   }
 
   async function deleteCoupon(id) {
     if (!confirm('このクーポンを削除しますか？')) return
-    await supabase.from('coupons').delete().eq('id', id)
+    await fetch('/api/admin/coupons', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
     setCoupons(prev => prev.filter(c => c.id !== id))
   }
 
