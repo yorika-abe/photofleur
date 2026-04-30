@@ -191,9 +191,9 @@ export default function AdminMediaPage() {
         )}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-            📷 写真を追加
+            📷 写真を追加（複数可）
             <input type="file" accept="image/*" multiple style={{ display: 'none' }} disabled={!!uploading}
-              onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(f => onAddImage(f)) }} />
+              onChange={async e => { if (e.target.files) { for (const f of Array.from(e.target.files)) await onAddImage(f) } }} />
           </label>
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#444', color: '#fff', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
             🎬 動画を追加
@@ -224,7 +224,7 @@ export default function AdminMediaPage() {
         <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
           📷 {label}
           <input type="file" accept="image/*" multiple style={{ display: 'none' }} disabled={!!uploading}
-            onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(f => onAdd(f)) }} />
+            onChange={async e => { if (e.target.files) { for (const f of Array.from(e.target.files)) await onAdd(f) } }} />
         </label>
         {uploading === uploadKey && <ProgressBar progress={uploadProgress} />}
       </>
@@ -316,12 +316,12 @@ export default function AdminMediaPage() {
           <>
             <Section title="ヒーロー背景画像（PC）" desc="複数枚登録するとフェードで自動切り替えされます（5秒間隔）">
               <ImageGrid images={heroImages} onRemove={i => setHeroImages(imgs => imgs.filter((_, idx) => idx !== i))}
-                uploadKey="hero_bg" onAdd={f => uploadWithSignedUrl(f, 'hero_bg', url => setHeroImages(imgs => [...imgs, url]))} label="画像を追加" />
+                uploadKey="hero_bg" onAdd={f => uploadWithSignedUrl(f, 'hero_bg', url => setHeroImages(imgs => [...imgs, url]))} label="画像を追加（複数可）" />
             </Section>
 
             <Section title="ヒーロー背景画像（モバイル）" desc="スマホ用の縦長画像。未設定の場合はPC用が使用されます">
               <ImageGrid images={heroImagesMobile} onRemove={i => setHeroImagesMobile(imgs => imgs.filter((_, idx) => idx !== i))}
-                uploadKey="hero_bg_mobile" onAdd={f => uploadWithSignedUrl(f, 'hero_bg_mobile', url => setHeroImagesMobile(imgs => [...imgs, url]))} label="画像を追加" aspect="9/16" />
+                uploadKey="hero_bg_mobile" onAdd={f => uploadWithSignedUrl(f, 'hero_bg_mobile', url => setHeroImagesMobile(imgs => [...imgs, url]))} label="画像を追加（複数可）" aspect="9/16" />
             </Section>
 
             <Section title="ヒーロー下の動画①">
