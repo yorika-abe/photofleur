@@ -32,7 +32,7 @@ export default async function SchedulePage() {
 
   const eventIds = (events || []).map(e => e.id)
   const { data: entries } = eventIds.length > 0
-    ? await supabase.from('event_entries').select('id, event_id, model_id, models(id, name, name_en, image, street_price, studio_price)').in('event_id', eventIds)
+    ? await supabase.from('event_entries').select('id, event_id, model_id, models(id, name, name_en, image, street_price, studio_price, twitter_url)').in('event_id', eventIds)
     : { data: [] }
   const entriesByEvent = {}
   for (const entry of (entries || [])) {
@@ -40,6 +40,33 @@ export default async function SchedulePage() {
     entriesByEvent[entry.event_id].push(entry)
   }
   const eventsWithEntries = (events || []).map(ev => ({ ...ev, event_entries: entriesByEvent[ev.id] || [] }))
+
+  const entryIds = (entries || []).map(e => e.id)
+  const { data: allSlots } = entryIds.length > 0
+    ? await supabase.from('booking_slots').select('id, slot_label, start_time, price, is_reserved, max_reservations, slot_order, event_entry_id').in('event_entry_id', entryIds).order('slot_order', { ascending: true })
+    : { data: [] }
+  const allSlotIds = (allSlots || []).map(s => s.id)
+  const { data: bookingCounts } = allSlotIds.length > 0
+    ? await supabase.from('bookings').select('slot_id, is_outdoor').in('slot_id', allSlotIds)
+    : { data: [] }
+  const slotsByEntry = {}
+  for (const slot of allSlots || []) {
+    if (!slotsByEntry[slot.event_entry_id]) slotsByEntry[slot.event_entry_id] = []
+    slotsByEntry[slot.event_entry_id].push(slot)
+  }
+  const indoorCountBySlot = {}
+  for (const b of bookingCounts || []) {
+    if (!b.is_outdoor) indoorCountBySlot[b.slot_id] = (indoorCountBySlot[b.slot_id] || 0) + 1
+  }
+  const slotMap = {}
+  for (const s of allSlots || []) slotMap[s.id] = s
+  const indoorCountByLabel = {}
+  for (const b of bookingCounts || []) {
+    if (!b.is_outdoor) {
+      const slot = slotMap[b.slot_id]
+      if (slot) indoorCountByLabel[slot.slot_label] = (indoorCountByLabel[slot.slot_label] || 0) + 1
+    }
+  }
 
   return (
     <div style={{ background: '#fff', minHeight: '100vh' }}>
@@ -107,8 +134,12 @@ export default async function SchedulePage() {
               events={eventsWithEntries.map(ev => ({
                 id: ev.id, event_date: ev.event_date, event_type: ev.event_type,
                 title: ev.title, location_name: ev.location_name, booking_open_at: ev.booking_open_at,
+                studio_capacity: ev.studio_capacity || null,
               }))}
               entriesByEvent={entriesByEvent}
+              slotsByEntry={slotsByEntry}
+              bookingCounts={bookingCounts || []}
+              indoorCountByLabel={indoorCountByLabel}
             />
           </div>
         )}
