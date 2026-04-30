@@ -47,15 +47,15 @@ export default function RequestPage() {
             <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #d6ecf5' }}>
               <div style={{ ...serif, fontSize: 28, fontWeight: 700, color: '#5bbfd6', marginBottom: 10 }}>①</div>
               <div style={{ fontSize: 12, fontWeight: 600, color: '#5bbfd6', letterSpacing: '0.1em', marginBottom: 8 }}>安全管理のための条件</div>
-              <p style={{ fontSize: 14, lineHeight: 1.9, color: '#3a3050', margin: 0 }}>
-                Photo Fleurの撮影会を<strong>過去に10回以上ご利用</strong>いただいた方。<br />
-                <span style={{ fontSize: 12, color: '#aaa' }}>※規定回数未満の方はリクエスト撮影をご利用いただけません。</span>
+              <p style={{ fontSize: 13, lineHeight: 1.9, color: '#3a3050', margin: 0, textWrap: 'balance' }}>
+                Photo Fleurの撮影会を<strong>過去に10回以上ご利用</strong>いただいた方。
+                <span style={{ fontSize: 12, color: '#aaa', display: 'block', marginTop: 6 }}>※規定回数未満の方はリクエスト撮影をご利用いただけません。</span>
               </p>
             </div>
             <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #d6ecf5' }}>
               <div style={{ ...serif, fontSize: 28, fontWeight: 700, color: '#5bbfd6', marginBottom: 10 }}>②</div>
               <div style={{ fontSize: 12, fontWeight: 600, color: '#5bbfd6', letterSpacing: '0.1em', marginBottom: 8 }}>モデル指名のための条件</div>
-              <p style={{ fontSize: 14, lineHeight: 1.9, color: '#3a3050', margin: 0 }}>
+              <p style={{ fontSize: 13, lineHeight: 1.9, color: '#3a3050', margin: 0, textWrap: 'balance' }}>
                 お申し込み月に<strong>2枠以上の撮影に参加</strong>しており、かつ<strong>希望モデルを過去に1回以上撮影</strong>したことがある方。
               </p>
             </div>
