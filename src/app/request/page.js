@@ -15,10 +15,10 @@ export default function RequestPage() {
     <div style={{ background: '#fff', color: '#1a1228' }}>
 
       {/* ─── HERO ─── */}
-      <section style={{ background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 100%)', color: '#fff', padding: 'clamp(48px, 8vw, 80px) 20px', textAlign: 'center' }}>
-        <div style={{ maxWidth: 700, margin: '0 auto' }}>
-          <p style={{ ...serif, fontSize: 11, letterSpacing: '0.4em', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginBottom: 16, fontStyle: 'italic' }}>Request Shooting</p>
-          <h1 style={{ ...serif, fontSize: 'clamp(22px, 4vw, 48px)', fontWeight: 400, lineHeight: 1.2, margin: '0 0 20px', whiteSpace: 'nowrap' }}>
+      <section style={{ background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 100%)', color: '#fff', padding: 'clamp(64px, 10vw, 110px) 20px', textAlign: 'center' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          <p style={{ ...serif, fontSize: 11, letterSpacing: '0.4em', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginBottom: 20, fontStyle: 'italic' }}>Request Shooting</p>
+          <h1 style={{ ...serif, fontSize: 'clamp(32px, 5.5vw, 64px)', fontWeight: 400, lineHeight: 1.2, margin: '0 0 24px', whiteSpace: 'nowrap' }}>
             📸 リクエスト撮影について
           </h1>
           <div style={{ width: 48, height: 1, background: 'rgba(168,226,244,0.5)', margin: '0 auto 20px' }} />
