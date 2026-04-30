@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
-import HeroSlideshow from '@/components/HeroSlideshow'
+import HeroSection from '@/components/HeroSection'
 import RecruitMarquee from '@/components/RecruitMarquee'
 import ScrollReveal from '@/components/ScrollReveal'
 import ScheduleCarousel from '@/components/ScheduleCarousel'
@@ -87,46 +87,7 @@ export default async function Home() {
       <ScrollReveal />
 
       {/* ─── HERO ─── */}
-      <section style={{ position: 'relative', height: '100svh', minHeight: 600, overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
-        <span className="hero-desktop"><HeroSlideshow images={heroImages} /></span>
-        <span className="hero-mobile"><HeroSlideshow images={heroImagesMobile.length > 0 ? heroImagesMobile : heroImages} objectFit="contain" /></span>
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,20,40,0.9) 0%, rgba(10,20,40,0.2) 50%, transparent 100%)' }} />
-
-        <div style={{ position: 'absolute', top: 28, right: 28, textAlign: 'right' }}>
-          <div style={{ ...serif, fontSize: 10, letterSpacing: '0.25em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: 4 }}>Photography × Model</div>
-          <div style={{ ...serif, fontSize: 11, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>Since 2024</div>
-        </div>
-
-        <div style={{ position: 'relative', zIndex: 2, padding: 'clamp(32px, 5vw, 64px)', width: '100%' }}>
-          <p style={{ ...serif, fontSize: 'clamp(11px, 1.5vw, 13px)', letterSpacing: '0.35em', color: 'rgba(255,255,255,0.5)', marginBottom: 12, textTransform: 'uppercase', fontStyle: 'italic' }}>
-            Let your own unique flower bloom
-          </p>
-          <h1 style={{ ...serif, fontSize: 'clamp(64px, 14vw, 140px)', fontWeight: 300, lineHeight: 0.9, margin: '0 0 8px', letterSpacing: '-0.01em' }}>
-            <span style={{ display: 'block', fontWeight: 300, color: '#fff' }}>Photo</span>
-            <span style={{ display: 'block', fontWeight: 700, fontStyle: 'italic', color: '#a8e2f4' }}>FLEUR</span>
-          </h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 32, marginTop: 32, flexWrap: 'wrap' }}>
-            <Link href="/schedule" style={{
-              ...serif, fontSize: 'clamp(13px, 1.8vw, 16px)', letterSpacing: '0.2em',
-              color: '#fff', textDecoration: 'none', textTransform: 'uppercase',
-              borderBottom: '1px solid rgba(255,255,255,0.6)', paddingBottom: 4,
-            }}>
-              View Schedule
-            </Link>
-            <Link href="/models" style={{
-              ...serif, fontSize: 'clamp(13px, 1.8vw, 16px)', letterSpacing: '0.2em',
-              color: 'rgba(255,255,255,0.6)', textDecoration: 'none', textTransform: 'uppercase',
-            }}>
-              Our Models
-            </Link>
-          </div>
-        </div>
-
-        <div style={{ position: 'absolute', bottom: 32, right: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-          <div style={{ ...serif, fontSize: 10, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', writingMode: 'vertical-rl' }}>Scroll</div>
-          <div style={{ width: 1, height: 48, background: 'linear-gradient(to bottom, rgba(255,255,255,0.4), transparent)' }} />
-        </div>
-      </section>
+      <HeroSection images={heroImages} mobileImages={heroImagesMobile} />
 
       {/* ─── HERO VIDEO 1 ─── */}
       {heroVideo && (
