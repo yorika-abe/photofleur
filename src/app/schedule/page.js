@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
+import ScheduleBookingTabs from '@/components/ScheduleBookingTabs'
 
 export const metadata = { title: 'スケジュール一覧 | PhotoFleur' }
 
@@ -31,7 +32,7 @@ export default async function SchedulePage() {
 
   const eventIds = (events || []).map(e => e.id)
   const { data: entries } = eventIds.length > 0
-    ? await supabase.from('event_entries').select('id, event_id, model_id, models(id, name, name_en, image)').in('event_id', eventIds)
+    ? await supabase.from('event_entries').select('id, event_id, model_id, models(id, name, name_en, image, street_price, studio_price)').in('event_id', eventIds)
     : { data: [] }
   const entriesByEvent = {}
   for (const entry of (entries || [])) {
@@ -97,6 +98,18 @@ export default async function SchedulePage() {
                 </Link>
               )
             })}
+          </div>
+        )}
+
+        {eventsWithEntries.length > 0 && (
+          <div style={{ marginTop: 48 }}>
+            <ScheduleBookingTabs
+              events={eventsWithEntries.map(ev => ({
+                id: ev.id, event_date: ev.event_date, event_type: ev.event_type,
+                title: ev.title, location_name: ev.location_name, booking_open_at: ev.booking_open_at,
+              }))}
+              entriesByEvent={entriesByEvent}
+            />
           </div>
         )}
       </div>
