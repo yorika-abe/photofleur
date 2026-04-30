@@ -66,53 +66,53 @@ export default function Header() {
   }
 
   return (
-    <header style={{ background: '#1a3560', position: 'sticky', top: 0, zIndex: 100 }}>
+    <header style={{ background: '#fff', borderBottom: '1px solid #eee', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
-        <Link href="/" style={{ color: '#fff', textDecoration: 'none', fontWeight: 700, fontSize: 22, letterSpacing: '0.05em' }}>
+        <Link href="/" style={{ color: '#1a3560', textDecoration: 'none', fontWeight: 700, fontSize: 22, letterSpacing: '0.05em' }}>
           PhotoFleur
         </Link>
 
         {/* Desktop nav */}
-        <nav style={{ display: 'flex', gap: 4, alignItems: 'center' }} className="desktop-nav">
+        <nav style={{ display: 'flex', gap: 2, alignItems: 'center' }} className="desktop-nav">
           {navLinks.map(link => (
             <Link
               key={link.href}
               href={link.href}
               style={{
-                color: isActive(link.href) ? '#fff' : 'rgba(255,255,255,0.75)',
+                color: isActive(link.href) ? '#1a3560' : '#555',
                 textDecoration: 'none',
                 fontSize: 13,
                 fontWeight: isActive(link.href) ? 700 : 500,
                 padding: '6px 10px',
                 borderRadius: 6,
-                background: isActive(link.href) ? 'rgba(255,255,255,0.15)' : 'transparent',
-                borderBottom: isActive(link.href) ? '2px solid rgba(255,255,255,0.8)' : '2px solid transparent',
+                background: isActive(link.href) ? 'rgba(26,53,96,0.07)' : 'transparent',
+                borderBottom: isActive(link.href) ? '2px solid #1a3560' : '2px solid transparent',
               }}
             >
               {link.label}
             </Link>
           ))}
           {user ? (
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 8 }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginLeft: 8 }}>
               {roles.includes('admin') && (
                 <Link href="/admin" style={{
-                  color: '#f0c040', textDecoration: 'none', fontSize: 13, fontWeight: 600,
+                  color: '#a07000', textDecoration: 'none', fontSize: 13, fontWeight: 600,
                   padding: '6px 10px', borderRadius: 6,
-                  background: isActive('/admin') ? 'rgba(240,192,64,0.15)' : 'transparent',
+                  background: isActive('/admin') ? 'rgba(160,112,0,0.08)' : 'transparent',
                 }}>管理画面</Link>
               )}
               {roles.includes('model') && (
-                <Link href="/model-portal" style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 10px', borderRadius: 6, background: isActive('/model-portal') ? 'rgba(160,216,239,0.15)' : 'transparent' }}>モデル画面</Link>
+                <Link href="/model-portal" style={{ color: '#1a7090', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 10px', borderRadius: 6, background: isActive('/model-portal') ? 'rgba(26,112,144,0.08)' : 'transparent' }}>モデル画面</Link>
               )}
               {!roles.includes('admin') && !roles.includes('model') && (
-                <Link href="/my" style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 10px' }}>マイページ</Link>
+                <Link href="/my" style={{ color: '#1a7090', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 10px' }}>マイページ</Link>
               )}
-              <button onClick={handleLogout} style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontSize: 13 }}>
+              <button onClick={handleLogout} style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontSize: 13 }}>
                 ログアウト
               </button>
             </div>
           ) : (
-            <Link href="/login" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 500, marginLeft: 8 }}>
+            <Link href="/login" style={{ background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 500, marginLeft: 8 }}>
               ログイン
             </Link>
           )}
@@ -125,27 +125,27 @@ export default function Header() {
           style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'none', flexDirection: 'column', gap: 5, padding: 8 }}
           aria-label="メニュー"
         >
-          <span style={{ display: 'block', width: 22, height: 2, background: '#fff' }} />
-          <span style={{ display: 'block', width: 22, height: 2, background: '#fff' }} />
-          <span style={{ display: 'block', width: 22, height: 2, background: '#fff' }} />
+          <span style={{ display: 'block', width: 22, height: 2, background: '#1a3560' }} />
+          <span style={{ display: 'block', width: 22, height: 2, background: '#1a3560' }} />
+          <span style={{ display: 'block', width: 22, height: 2, background: '#1a3560' }} />
         </button>
       </div>
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div style={{ background: '#1e4070', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 4 }} className="mobile-menu">
+        <div style={{ background: '#fff', borderTop: '1px solid #eee', padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: 2 }} className="mobile-menu">
           {navLinks.map(link => (
             <Link
               key={link.href}
               href={link.href}
               onClick={() => setMenuOpen(false)}
               style={{
-                color: '#fff',
+                color: isActive(link.href) ? '#1a3560' : '#444',
                 textDecoration: 'none',
-                fontSize: 16,
+                fontSize: 15,
                 padding: '10px 12px',
                 borderRadius: 8,
-                background: isActive(link.href) ? 'rgba(255,255,255,0.15)' : 'transparent',
+                background: isActive(link.href) ? 'rgba(26,53,96,0.07)' : 'transparent',
                 fontWeight: isActive(link.href) ? 700 : 400,
               }}
             >
@@ -154,13 +154,13 @@ export default function Header() {
           ))}
           {user ? (
             <>
-              {roles.includes('admin') && <Link href="/admin" onClick={() => setMenuOpen(false)} style={{ color: '#f0c040', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>管理画面</Link>}
-              {roles.includes('model') && <Link href="/model-portal" onClick={() => setMenuOpen(false)} style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>モデル画面</Link>}
-              {!roles.includes('admin') && !roles.includes('model') && <Link href="/my" onClick={() => setMenuOpen(false)} style={{ color: '#a0d8ef', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>マイページ</Link>}
-              <button onClick={handleLogout} style={{ background: 'none', color: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 16, padding: '10px 12px' }}>ログアウト</button>
+              {roles.includes('admin') && <Link href="/admin" onClick={() => setMenuOpen(false)} style={{ color: '#a07000', textDecoration: 'none', fontSize: 15, padding: '10px 12px' }}>管理画面</Link>}
+              {roles.includes('model') && <Link href="/model-portal" onClick={() => setMenuOpen(false)} style={{ color: '#1a7090', textDecoration: 'none', fontSize: 15, padding: '10px 12px' }}>モデル画面</Link>}
+              {!roles.includes('admin') && !roles.includes('model') && <Link href="/my" onClick={() => setMenuOpen(false)} style={{ color: '#1a7090', textDecoration: 'none', fontSize: 15, padding: '10px 12px' }}>マイページ</Link>}
+              <button onClick={handleLogout} style={{ background: 'none', color: '#888', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 15, padding: '10px 12px' }}>ログアウト</button>
             </>
           ) : (
-            <Link href="/login" onClick={() => setMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none', fontSize: 16, padding: '10px 12px' }}>ログイン</Link>
+            <Link href="/login" onClick={() => setMenuOpen(false)} style={{ color: '#1a3560', textDecoration: 'none', fontSize: 15, padding: '10px 12px', fontWeight: 600 }}>ログイン</Link>
           )}
         </div>
       )}
