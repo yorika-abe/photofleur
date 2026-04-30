@@ -55,7 +55,6 @@ export default function Footer() {
               <Link href="/schedule" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 13 }}>スケジュール</Link>
               <Link href="/models" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 13 }}>モデル一覧</Link>
               <Link href="/request" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 13 }}>リクエスト撮影</Link>
-              <Link href="/model-recruit" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 13 }}>モデル募集</Link>
             </div>
           </div>
           <div>
@@ -63,6 +62,12 @@ export default function Footer() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <Link href="/faq" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 13 }}>よくある質問</Link>
               <a href="https://lin.ee/VgTzmhe" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 13 }}>LINEで問い合わせ</a>
+            </div>
+          </div>
+          <div>
+            <div style={{ color: '#fff', fontWeight: 600, marginBottom: 12, fontSize: 14 }}>採用</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Link href="/model-recruit" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 13 }}>モデル募集</Link>
             </div>
           </div>
           <div>
