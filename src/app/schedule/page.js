@@ -80,7 +80,7 @@ export default async function SchedulePage() {
 
   return (
     <div style={{ background: '#fff', minHeight: '100vh' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(40px, 6vw, 64px) 20px' }}>
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: 'clamp(40px, 6vw, 64px) 20px' }}>
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
@@ -101,7 +101,7 @@ export default async function SchedulePage() {
             <p>現在、予定されているイベントはありません。</p>
           </div>
         ) : (
-          <div className="schedule-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+          <div className="schedule-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
             {eventsWithEntries.map(ev => {
               const date = formatDate(ev.event_date)
               const dow = formatDow(ev.event_date)
