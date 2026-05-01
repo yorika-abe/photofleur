@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { compressImage } from '@/lib/compressImage'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
@@ -39,8 +40,9 @@ export default function AdminBlogEditPage() {
     })
   }, [id])
 
-  async function uploadCover(file) {
+  async function uploadCover(rawFile) {
     setUploading(true)
+    const file = await compressImage(rawFile)
     const ext = file.name.split('.').pop()
     const path = `blog/${Date.now()}.${ext}`
     const fd = new FormData()

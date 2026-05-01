@@ -1,5 +1,6 @@
 'use client'
 import { useRef, useEffect, useCallback, useState } from 'react'
+import { compressImage } from '@/lib/compressImage'
 
 const FONT_SIZES = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '40px']
 const COLORS = ['#000000', '#333333', '#555555', '#888888', '#ffffff', '#e53935', '#f4511e', '#fb8c00', '#fdd835', '#43a047', '#1e88e5', '#8e24aa', '#d81b60', '#00acc1', '#1a3560', '#5bbfd6', '#f4a0be']
@@ -307,8 +308,9 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
     sync()
   }
 
-  async function uploadMedia(file, type) {
+  async function uploadMedia(rawFile, type) {
     setUploading(true)
+    const file = type === 'image' ? await compressImage(rawFile) : rawFile
     const ext = file.name.split('.').pop()
     const path = `${uploadPath}/${Date.now()}.${ext}`
     const fd = new FormData()
