@@ -62,7 +62,7 @@ export default async function ModelRecruitPage() {
               {
                 icon: '✿',
                 title: '安心して活動できる環境',
-                body: '所属モデルの多くが未経験からスタートしています。初めてのストリート撮影でも安心して臨めるよう、受付・撮影ルール・安全面のサポートを徹底しています。',
+                body: '所属モデルの多くが未経験からスタートしています。初めての撮影でも安心して臨めるよう、受付・撮影ルール・安全面のサポートを徹底しています。',
               },
               {
                 icon: '✿',
@@ -101,7 +101,7 @@ export default async function ModelRecruitPage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
             {[
-              '土日祝を中心としたスタジオ撮影・野外撮影',
+              '土日祝を中心としたスタジオ撮影・ストリート撮影',
               '1枠60〜90分の個撮形式',
               '私服・ファッション撮影中心',
               '都内・神奈川を中心に活動中',
@@ -229,7 +229,7 @@ export default async function ModelRecruitPage() {
                 </div>
               ))}
             </div>
-            <p style={{ fontSize: 13, color: '#aaa', margin: '20px 0 0' }}>確認後、運営よりご連絡いたします。</p>
+            <p style={{ fontSize: 13, color: '#aaa', margin: '20px 0 0' }}>確認後、採用の可能性のある方にのみ運営よりご連絡いたします。</p>
           </div>
 
           <div style={{ textAlign: 'center' }}>
