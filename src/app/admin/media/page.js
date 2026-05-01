@@ -3,6 +3,24 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
+async function compressImage(file, maxW = 2000, maxH = 2000, quality = 0.88) {
+  return new Promise(resolve => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      let w = img.width, h = img.height
+      if (w > maxW) { h = Math.round(h * maxW / w); w = maxW }
+      if (h > maxH) { w = Math.round(w * maxH / h); h = maxH }
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+      URL.revokeObjectURL(url)
+      canvas.toBlob(blob => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' })), 'image/jpeg', quality)
+    }
+    img.src = url
+  })
+}
+
 const TABS = [
   { id: 'home', label: 'HOME' },
   { id: 'request', label: 'リクエスト撮影' },
@@ -60,8 +78,9 @@ export default function AdminMediaPage() {
   async function uploadWithSignedUrl(file, key, onSuccess) {
     setUploading(key)
     setUploadProgress(0)
-    const path = `site/${key}-${Date.now()}.${file.name.split('.').pop()}`
     try {
+      const compressed = await compressImage(file, 2000, 2000, 0.88)
+      const path = `site/${key}-${Date.now()}.jpg`
       const res = await fetch('/api/admin/upload-signed-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -80,8 +99,8 @@ export default function AdminMediaPage() {
         })
         xhr.addEventListener('error', () => reject('通信エラー'))
         xhr.open('PUT', signedUrl)
-        xhr.setRequestHeader('Content-Type', file.type)
-        xhr.send(file)
+        xhr.setRequestHeader('Content-Type', 'image/jpeg')
+        xhr.send(compressed)
       })
       onSuccess(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${path}`)
     } catch (e) { alert('アップロードエラー: ' + e) }
@@ -124,9 +143,10 @@ export default function AdminMediaPage() {
   async function uploadImage(file, key, setter) {
     setUploading(key)
     setUploadProgress(0)
-    const path = `site/${key}-${Date.now()}.${file.name.split('.').pop()}`
     try {
-      const url = await uploadWithProgress(file, path)
+      const compressed = await compressImage(file, 2000, 2000, 0.88)
+      const path = `site/${key}-${Date.now()}.jpg`
+      const url = await uploadWithProgress(compressed, path)
       setter(url)
     } catch (e) { alert('アップロードエラー: ' + e) }
     setUploading(null)
@@ -337,7 +357,7 @@ export default function AdminMediaPage() {
                 items={recruitImages}
                 onRemove={i => setRecruitImages(imgs => imgs.filter((_, idx) => idx !== i))}
                 uploadKey="recruit_bg"
-                onAddImage={f => { setUploading('recruit_bg'); setUploadProgress(0); const path = `site/recruit-${Date.now()}.${f.name.split('.').pop()}`; uploadWithProgress(f, path).then(url => { setRecruitImages(imgs => [...imgs, url]); setUploading(null); setUploadProgress(0) }).catch(e => { alert(e); setUploading(null) }) }}
+                onAddImage={f => { setUploading('recruit_bg'); setUploadProgress(0); compressImage(f, 1600, 1600, 0.85).then(c => uploadWithProgress(c, `site/recruit-${Date.now()}.jpg`)).then(url => { setRecruitImages(imgs => [...imgs, url]); setUploading(null); setUploadProgress(0) }).catch(e => { alert(e); setUploading(null) }) }}
                 onAddVideo={f => uploadVideoWithSignedUrl(f, 'recruit_bg', url => setRecruitImages(imgs => [...imgs, url]))}
               />
             </Section>

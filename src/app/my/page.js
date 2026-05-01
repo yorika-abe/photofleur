@@ -4,6 +4,24 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
 
+async function compressImage(file, maxW = 1600, maxH = 1600, quality = 0.85) {
+  return new Promise(resolve => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      let w = img.width, h = img.height
+      if (w > maxW) { h = Math.round(h * maxW / w); w = maxW }
+      if (h > maxH) { w = Math.round(w * maxH / h); h = maxH }
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+      URL.revokeObjectURL(url)
+      canvas.toBlob(blob => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' })), 'image/jpeg', quality)
+    }
+    img.src = url
+  })
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr + 'T00:00:00')
@@ -91,7 +109,10 @@ export default function MyPage() {
     if (photoFiles.length === 0) return
     setUploading(true)
     const fd = new FormData()
-    for (const f of photoFiles) fd.append('files', f)
+    for (const f of photoFiles) {
+      const compressed = await compressImage(f, 1600, 1600, 0.85)
+      fd.append('files', compressed)
+    }
     fd.append('model_ids', JSON.stringify(photoModelIds))
     fd.append('sns_url', form.sns_url || '')
     const res = await fetch('/api/customer/contributed-photos', { method: 'POST', body: fd })
