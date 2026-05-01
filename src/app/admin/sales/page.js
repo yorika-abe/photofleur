@@ -155,13 +155,6 @@ export default function AdminSalesPage() {
     return { bookings: bookingsInMonth, revenue, records: recordsInMonth, grossProfit, misc, netProfit }
   }
 
-  // Year-level KPI (by event_date)
-  const yearStr = String(currentYear)
-  const yearRevenue = data.filter(b => b.event?.event_date?.startsWith(yearStr)).reduce((s, b) => s + b.revenue, 0)
-  const cmData = monthData(currentMonth)
-  const currentMonthGrossProfit = savedRecords.filter(r => r.eventDate?.slice(0, 7) === currentMonth).reduce((s, r) => s + (r.grossProfit || 0), 0)
-  const currentMonthNetProfit = currentMonthGrossProfit - Math.round(cmData.revenue * 0.036) - (miscExpenses[currentMonth] || 0)
-
   const activeData = monthData(activeMonth)
 
   // Model breakdown for active month
@@ -208,22 +201,6 @@ export default function AdminSalesPage() {
         <Link href="/admin/bookings" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>予約一覧</Link>
         <div style={{ padding: '10px 24px', fontWeight: 700, fontSize: 15, color: '#1a3560', borderBottom: '2px solid #1a3560', marginBottom: -2, cursor: 'default' }}>売上管理</div>
         <Link href="/admin/booking-status?tab=history" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>履歴</Link>
-      </div>
-
-      {/* 年次KPI */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 28 }}>
-        {[
-          { label: `${currentYear}年総売上`, value: yen(yearRevenue), sub: `開催日ベース`, color: '#2f2244' },
-          { label: '今月売上', value: yen(cmData.revenue), sub: `${cmData.bookings.length}件（開催日ベース）`, color: '#388e3c' },
-          { label: '今月粗利益', value: yen(currentMonthGrossProfit), sub: '保存済み記録から集計', color: '#3949ab' },
-          { label: '今月純利益', value: yen(currentMonthNetProfit), sub: `粗利-手数料-諸々経費`, color: currentMonthNetProfit >= 0 ? '#00695c' : '#c62828' },
-        ].map(s => (
-          <div key={s.label} style={{ background: '#fff', borderRadius: 12, padding: '16px', border: `2px solid ${s.color}18`, textAlign: 'center' }}>
-            <div style={{ fontSize: 11, color: '#aaa', marginBottom: 6 }}>{s.label}</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: s.color }}>{s.value}</div>
-            <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>{s.sub}</div>
-          </div>
-        ))}
       </div>
 
       {/* 月タブ */}
