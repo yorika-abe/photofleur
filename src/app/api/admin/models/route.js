@@ -4,7 +4,7 @@ export async function GET() {
   const supabase = await createSupabaseAdminClient()
   const [{ data: applications }, { data: models }] = await Promise.all([
     supabase.from('model_applications').select('*').order('created_at', { ascending: false }),
-    supabase.from('models').select('*').order('name'),
+    supabase.from('models').select('*').order('display_order', { ascending: true }).order('name'),
   ])
   return Response.json({ applications: applications || [], models: models || [] })
 }

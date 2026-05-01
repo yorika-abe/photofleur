@@ -11,6 +11,7 @@ export default async function ModelsPage() {
     .from('models')
     .select('id, name, name_en, image')
     .eq('status', 'active')
+    .order('display_order', { ascending: true })
     .order('name', { ascending: true })
 
   return (

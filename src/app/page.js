@@ -43,7 +43,9 @@ export default async function Home() {
     adminSupabase
       .from('models')
       .select('id, name, name_en, image')
-      .eq('status', 'active'),
+      .eq('status', 'active')
+      .order('display_order', { ascending: true })
+      .order('name', { ascending: true }),
     adminSupabase.from('site_settings').select('key, value'),
     adminSupabase
       .from('blog_posts')

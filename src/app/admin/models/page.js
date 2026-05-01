@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 
 const TIER_LABELS = {
@@ -65,6 +65,8 @@ export default function AdminModelsPage() {
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(null)
   const [toast, setToast] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const dragIdx = useRef(null)
 
   useEffect(() => {
     fetch('/api/admin/models')
@@ -109,6 +111,37 @@ export default function AdminModelsPage() {
     showToast(isChange ? '変更を却下しました（公開情報は維持）' : '非公開にしました', '#e65100')
   }
 
+  // Drag and drop handlers (active tab only)
+  function onDragStart(i) { dragIdx.current = i }
+  function onDragOver(e, i) {
+    e.preventDefault()
+    if (dragIdx.current === null || dragIdx.current === i) return
+    setModels(prev => {
+      const activeIds = prev.filter(m => m.status === 'active' && !m.pending_data).map(m => m.id)
+      const fromId = activeIds[dragIdx.current]
+      const toId = activeIds[i]
+      const fromGlobal = prev.findIndex(m => m.id === fromId)
+      const toGlobal = prev.findIndex(m => m.id === toId)
+      const next = [...prev]
+      const [moved] = next.splice(fromGlobal, 1)
+      next.splice(toGlobal, 0, moved)
+      dragIdx.current = i
+      return next
+    })
+  }
+  async function onDrop() {
+    dragIdx.current = null
+    const activeIds = models.filter(m => m.status === 'active' && !m.pending_data).map(m => m.id)
+    setSaving(true)
+    await fetch('/api/admin/models/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: activeIds }),
+    })
+    setSaving(false)
+    showToast('並び順を保存しました ✓')
+  }
+
   const pending = models.filter(m => m.status === 'pending' || (m.status === 'active' && m.pending_data))
   const active = models.filter(m => m.status === 'active' && !m.pending_data)
   const inactive = models.filter(m => m.status === 'inactive')
@@ -126,7 +159,6 @@ export default function AdminModelsPage() {
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 20px' }}>
 
-      {/* Toast */}
       {toast && (
         <div style={{ position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)', background: toast.color, color: '#fff', borderRadius: 10, padding: '14px 28px', fontWeight: 700, fontSize: 15, zIndex: 9999, boxShadow: '0 4px 20px rgba(0,0,0,0.2)', whiteSpace: 'nowrap' }}>
           {toast.msg}
@@ -153,7 +185,7 @@ export default function AdminModelsPage() {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 32 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: tab === 'active' ? 12 : 32 }}>
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             style={{ padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 14, background: tab === t.key ? '#1a3560' : '#f0f0f0', color: tab === t.key ? '#fff' : '#555' }}>
@@ -162,54 +194,75 @@ export default function AdminModelsPage() {
         ))}
       </div>
 
+      {tab === 'active' && (
+        <p style={{ fontSize: 12, color: '#999', marginBottom: 20 }}>
+          ↕ ドラッグ＆ドロップで並び替え可能{saving ? '　保存中...' : ''}
+        </p>
+      )}
+
       {displayModels.length === 0
         ? <p style={{ color: '#999' }}>該当するモデルはいません。</p>
         : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
-            {displayModels.map(model => {
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
+            {displayModels.map((model, i) => {
               const isChange = model.status === 'active' && !!model.pending_data
               const approvingThis = processing === model.id + '_approve'
               const rejectingThis = processing === model.id + '_reject'
+              const isDraggable = tab === 'active'
               return (
-                <div key={model.id} style={{ background: '#fff', borderRadius: 14, border: tab === 'pending' ? '2px solid #ffb74d' : '1px solid #e5e5e5', overflow: 'hidden' }}>
-                  <div style={{ height: 200, background: '#e0d8f0', overflow: 'hidden', position: 'relative' }}>
+                <div key={model.id}
+                  draggable={isDraggable}
+                  onDragStart={isDraggable ? () => onDragStart(i) : undefined}
+                  onDragOver={isDraggable ? e => onDragOver(e, i) : undefined}
+                  onDrop={isDraggable ? onDrop : undefined}
+                  style={{
+                    background: '#fff', borderRadius: 12,
+                    border: tab === 'pending' ? '2px solid #ffb74d' : '1px solid #e5e5e5',
+                    overflow: 'hidden',
+                    cursor: isDraggable ? 'grab' : 'default',
+                    userSelect: 'none',
+                  }}
+                >
+                  <div style={{ aspectRatio: '2/3', background: '#e0d8f0', overflow: 'hidden', position: 'relative' }}>
                     {(isChange ? model.pending_data?.image || model.image : model.image)
                       ? <img src={isChange ? model.pending_data?.image || model.image : model.image} alt={model.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b0a0c0', fontSize: 32 }}>👤</div>
                     }
                     {tab === 'pending' && (
-                      <div style={{ position: 'absolute', top: 8, left: 8, background: isChange ? '#1565c0' : '#ff9800', color: '#fff', borderRadius: 4, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>
+                      <div style={{ position: 'absolute', top: 6, left: 6, background: isChange ? '#1565c0' : '#ff9800', color: '#fff', borderRadius: 4, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>
                         {isChange ? '変更申請' : '新規申請'}
                       </div>
                     )}
+                    {isDraggable && (
+                      <div style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.35)', color: '#fff', borderRadius: 4, padding: '2px 6px', fontSize: 12 }}>⠿</div>
+                    )}
                   </div>
-                  <div style={{ padding: '14px 16px' }}>
-                    <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560', marginBottom: 2 }}>{model.name || '（名前未設定）'}</div>
-                    {model.name_en && <div style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>{model.name_en}</div>}
+                  <div style={{ padding: '10px 10px' }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 2 }}>{model.name || '（名前未設定）'}</div>
+                    {model.name_en && <div style={{ fontSize: 10, color: '#aaa', marginBottom: 4 }}>{model.name_en}</div>}
                     {model.price_tier && TIER_LABELS[model.price_tier] && (
-                      <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, background: TIER_LABELS[model.price_tier].bg, color: TIER_LABELS[model.price_tier].color, borderRadius: 4, padding: '2px 8px', marginBottom: 6 }}>
+                      <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 700, background: TIER_LABELS[model.price_tier].bg, color: TIER_LABELS[model.price_tier].color, borderRadius: 4, padding: '1px 6px', marginBottom: 6 }}>
                         {TIER_LABELS[model.price_tier].label}
                       </span>
                     )}
-                    {model.bio && <p style={{ fontSize: 12, color: '#666', lineHeight: 1.6, marginBottom: 10, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{model.bio}</p>}
 
                     {tab === 'pending' && <PendingDiff model={model} />}
 
-                    <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
                       {tab === 'pending' && (
                         <>
                           <button onClick={() => approve(model.id, isChange)} disabled={!!processing}
-                            style={{ flex: 1, background: approvingThis ? '#aaa' : '#388e3c', color: '#fff', border: 'none', borderRadius: 7, padding: '8px', cursor: processing ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13 }}>
-                            {approvingThis ? '処理中...' : isChange ? '変更を承認' : '承認して公開'}
+                            style={{ flex: 1, background: approvingThis ? '#aaa' : '#388e3c', color: '#fff', border: 'none', borderRadius: 6, padding: '6px', cursor: processing ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 11 }}>
+                            {approvingThis ? '処理中...' : isChange ? '変更承認' : '承認公開'}
                           </button>
                           <button onClick={() => reject(model.id, isChange)} disabled={!!processing}
-                            style={{ background: rejectingThis ? '#aaa' : '#fce4ec', color: rejectingThis ? '#fff' : '#c62828', border: 'none', borderRadius: 7, padding: '8px 12px', cursor: processing ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 12 }}>
-                            {rejectingThis ? '処理中...' : isChange ? '却下' : '却下'}
+                            style={{ background: rejectingThis ? '#aaa' : '#fce4ec', color: rejectingThis ? '#fff' : '#c62828', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: processing ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 11 }}>
+                            {rejectingThis ? '...' : '却下'}
                           </button>
                         </>
                       )}
                       <Link href={`/admin/models/${model.id}`}
-                        style={{ flex: tab !== 'pending' ? 1 : undefined, display: 'block', textAlign: 'center', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 7, padding: '8px', fontSize: 13, fontWeight: 600 }}>
+                        style={{ flex: tab !== 'pending' ? 1 : undefined, display: 'block', textAlign: 'center', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '6px', fontSize: 12, fontWeight: 600 }}>
                         編集
                       </Link>
                     </div>
