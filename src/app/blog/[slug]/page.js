@@ -22,9 +22,11 @@ export default async function BlogPostPage({ params }) {
 
   if (!post) notFound()
 
-  const { data: author } = post.author_id
-    ? await supabase.from('models').select('name, image').eq('user_id', post.author_id).single().catch(() => ({ data: null }))
-    : { data: null }
+  let author = null
+  if (post.author_id) {
+    const { data } = await supabase.from('models').select('name, image').eq('user_id', post.author_id).maybeSingle()
+    author = data
+  }
 
   // HTMLタグが含まれているか判定（リッチエディター出力）
   const isHtml = (post.content || '').includes('<')
