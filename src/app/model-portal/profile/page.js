@@ -52,22 +52,27 @@ export default function ModelProfilePage() {
 
   async function uploadProfileImage(file) {
     setUploading(true)
-    const ext = file.name.split('.').pop()
-    const path = `models/profile-${Date.now()}.${ext}`
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('path', path)
-    const res = await fetch('/api/model-portal/upload', { method: 'POST', body: formData })
-    const data = await res.json()
-    if (data.error) { alert('アップロードエラー: ' + data.error); setUploading(false); return }
-    setForm(f => ({ ...f, image: data.url }))
-    setUploading(false)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `models/profile-${Date.now()}.${ext}`
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('path', path)
+      const res = await fetch('/api/model-portal/upload', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (data.error) { alert('アップロードエラー: ' + data.error); return }
+      setForm(f => ({ ...f, image: data.url }))
+    } catch (e) {
+      alert('アップロード失敗: ' + e.message)
+    } finally {
+      setUploading(false)
+    }
   }
 
   async function uploadPortfolioImages(files) {
     const fileArr = Array.from(files)
     setUploading(true)
-    setUploadProgress(`0 / ${fileArr.length}`)
+    setUploadProgress(`1 / ${fileArr.length}`)
     const uploaded = []
     try {
       for (let i = 0; i < fileArr.length; i++) {
@@ -78,12 +83,16 @@ export default function ModelProfilePage() {
         const formData = new FormData()
         formData.append('file', file)
         formData.append('path', path)
-        const res = await fetch('/api/model-portal/upload', { method: 'POST', body: formData })
-        const data = await res.json()
-        if (data.error) { alert('アップロードエラー: ' + data.error); continue }
-        uploaded.push(data.url)
+        try {
+          const res = await fetch('/api/model-portal/upload', { method: 'POST', body: formData })
+          const data = await res.json()
+          if (data.error) { alert(`(${i + 1}枚目) アップロードエラー: ${data.error}`); continue }
+          uploaded.push(data.url)
+        } catch (e) {
+          alert(`(${i + 1}枚目) アップロード失敗: ${e.message}`)
+        }
       }
-      setPortfolioImages(prev => [...prev, ...uploaded])
+      if (uploaded.length > 0) setPortfolioImages(prev => [...prev, ...uploaded])
     } finally {
       setUploading(false)
       setUploadProgress('')
