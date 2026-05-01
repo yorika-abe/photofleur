@@ -1,8 +1,26 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Cropper from 'react-easy-crop'
+
+async function getCroppedBlob(imageSrc, pixelCrop, quality = 0.85, maxW = 1920, maxH = 1080) {
+  const img = await new Promise((resolve, reject) => {
+    const i = new Image()
+    i.onload = () => resolve(i)
+    i.onerror = reject
+    i.src = imageSrc
+  })
+  let dstW = pixelCrop.width, dstH = pixelCrop.height
+  if (dstW > maxW) { dstH = dstH * (maxW / dstW); dstW = maxW }
+  if (dstH > maxH) { dstW = dstW * (maxH / dstH); dstH = maxH }
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(dstW)
+  canvas.height = Math.round(dstH)
+  canvas.getContext('2d').drawImage(img, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, canvas.width, canvas.height)
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality))
+}
 
 const STUDIO_SLOTS = [
   { label: '0部 09:00〜09:45', start: '09:00', end: '09:45', order: 0 },
@@ -45,6 +63,11 @@ export default function EventEditPage() {
   const [productImgProgress, setProductImgProgress] = useState(0)
   const [recalculating, setRecalculating] = useState(null) // entryId
   const [recalcDone, setRecalcDone] = useState(null) // entryId
+
+  const [cropSrc, setCropSrc] = useState(null)
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
 
 
   useEffect(() => { load() }, [id])
@@ -173,6 +196,44 @@ export default function EventEditPage() {
     }
   }
 
+  function openCropModal(file) {
+    const url = URL.createObjectURL(file)
+    setCropSrc(url)
+    setCrop({ x: 0, y: 0 })
+    setZoom(1)
+  }
+
+  function closeCropModal() {
+    if (cropSrc) URL.revokeObjectURL(cropSrc)
+    setCropSrc(null)
+  }
+
+  const onCropComplete = useCallback((_, pixels) => {
+    setCroppedAreaPixels(pixels)
+  }, [])
+
+  async function confirmCrop() {
+    if (!cropSrc || !croppedAreaPixels) return
+    const src = cropSrc
+    const pixels = croppedAreaPixels
+    setCropSrc(null)
+    setUploading('main_image')
+    setUploadProgress(0)
+    try {
+      const blob = await getCroppedBlob(src, pixels, 0.85, 1920, 1080)
+      URL.revokeObjectURL(src)
+      const path = `events/${id}/main-${Date.now()}.jpg`
+      const url = await uploadWithProgress(new File([blob], 'main.jpg', { type: 'image/jpeg' }), path)
+      updateField('main_image', url)
+    } catch (e) {
+      URL.revokeObjectURL(src)
+      alert('アップロードエラー: ' + (e.message || String(e)))
+    } finally {
+      setUploading(null)
+      setUploadProgress(0)
+    }
+  }
+
   function uploadWithProgress(file, path) {
     return new Promise((resolve, reject) => {
       const formData = new FormData()
@@ -191,18 +252,6 @@ export default function EventEditPage() {
       xhr.open('POST', '/api/admin/upload')
       xhr.send(formData)
     })
-  }
-
-  async function uploadMainImage(file) {
-    setUploading('main_image')
-    setUploadProgress(0)
-    const path = `events/${id}/main-${Date.now()}.${file.name.split('.').pop()}`
-    try {
-      const url = await uploadWithProgress(file, path)
-      updateField('main_image', url)
-    } catch (e) { alert('アップロードエラー: ' + e) }
-    setUploading(null)
-    setUploadProgress(0)
   }
 
   async function uploadGalleryImages(files) {
@@ -399,6 +448,42 @@ export default function EventEditPage() {
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '20px 16px' }}>
+
+      {/* Crop modal */}
+      {cropSrc && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <Cropper
+              image={cropSrc}
+              crop={crop}
+              zoom={zoom}
+              aspect={16 / 9}
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={onCropComplete}
+            />
+          </div>
+          <div style={{ background: '#1a1a2e', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, whiteSpace: 'nowrap' }}>ズーム</span>
+              <input type="range" min={1} max={3} step={0.01} value={zoom}
+                onChange={e => setZoom(Number(e.target.value))}
+                style={{ flex: 1, accentColor: '#2f2244' }} />
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={closeCropModal}
+                style={{ padding: '10px 24px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#fff', fontSize: 14, cursor: 'pointer' }}>
+                キャンセル
+              </button>
+              <button onClick={confirmCrop}
+                style={{ padding: '10px 28px', borderRadius: 8, border: 'none', background: '#2f2244', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                この範囲でアップロード
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Link href="/admin/schedule" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← スケジュール管理</Link>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0 20px' }}>
@@ -481,7 +566,7 @@ export default function EventEditPage() {
               <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#2f2244', color: '#fff', borderRadius: 8, padding: '9px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 600, opacity: uploading === 'main_image' ? 0.7 : 1 }}>
                 📷 画像をアップロード
                 <input type="file" accept="image/*" style={{ display: 'none' }} disabled={!!uploading}
-                  onChange={e => e.target.files?.[0] && uploadMainImage(e.target.files[0])} />
+                  onChange={e => { if (e.target.files?.[0]) { openCropModal(e.target.files[0]); e.target.value = '' } }} />
               </label>
               {uploading === 'main_image' && (
                 <div style={{ marginTop: 8 }}>
