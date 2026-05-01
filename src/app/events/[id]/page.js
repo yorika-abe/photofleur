@@ -262,13 +262,13 @@ export default async function EventDetailPage({ params }) {
         <div>※ご予約前に必ず<Link href="/terms" style={{ color: '#333', fontWeight: 700, textDecoration: 'underline' }}>ご利用規約</Link>をご確認ください。</div>
         {event.studio_capacity && event.event_type === 'studio' && (
           <>
-            <div>※各部のスタジオ撮影定員は、『枠の先着順』となります。</div>
+            <div>※各部のスタジオ撮影定員（<span style={{ color: '#e00', fontWeight: 700 }}>{event.studio_capacity}名</span>）は、『枠の先着順』となります。</div>
             <div>※定員人数を超えている場合は、野外撮影を「<span style={{ color: '#e00', fontWeight: 700 }}>{(event.studio_fee || 0).toLocaleString()}</span>円引き」で受付させていただきます。</div>
           </>
         )}
         {event.studio_capacity && event.event_type === 'special' && (
           <>
-            <div>※各部の特別撮影定員は、『枠の先着順』となります。</div>
+            <div>※各部の特別撮影定員（<span style={{ color: '#e00', fontWeight: 700 }}>{event.studio_capacity}名</span>）は、『枠の先着順』となります。</div>
             <div>※定員人数を超えている場合は、定員外撮影を「<span style={{ color: '#e00', fontWeight: 700 }}>{(event.studio_fee || 0).toLocaleString()}</span>円引き」で受付させていただきます。</div>
           </>
         )}
