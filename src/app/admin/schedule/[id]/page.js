@@ -385,9 +385,10 @@ export default function EventEditPage() {
     setTimeout(() => setRecalcDone(null), 3000)
   }
 
-  async function uploadProductImage(file) {
+  async function uploadProductImage(rawFile) {
     setUploadingProductImg(true)
     setProductImgProgress(0)
+    const file = rawFile.type.startsWith('image/') ? await compressImage(rawFile) : rawFile
     const path = `events/${id}/product-${Date.now()}.${file.name.split('.').pop()}`
     try {
       const url = await uploadWithProgress(file, path)
