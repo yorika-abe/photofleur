@@ -35,7 +35,7 @@ export default async function Home() {
   const [{ data: events }, { data: models }, { data: siteSettingsRows }, { data: noticesData }] = await Promise.all([
     adminSupabase
       .from('events')
-      .select('id, event_date, event_type, title, subtitle, location_name, main_image')
+      .select('id, event_date, event_type, title, subtitle, location_name, main_image, thumbnail_image')
       .eq('status', 'active')
       .gte('event_date', today)
       .order('event_date', { ascending: true })

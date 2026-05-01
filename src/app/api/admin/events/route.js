@@ -31,11 +31,14 @@ export async function PATCH(req) {
   const { id, ...body } = await req.json()
   const base = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/`
 
-  const { data: current } = await supabase.from('events').select('main_image, gallery_images').eq('id', id).single()
+  const { data: current } = await supabase.from('events').select('main_image, thumbnail_image, gallery_images').eq('id', id).single()
   if (current) {
     const toDelete = []
     if (current.main_image && current.main_image !== body.main_image && current.main_image.startsWith(base)) {
       toDelete.push(current.main_image.replace(base, ''))
+    }
+    if (current.thumbnail_image && current.thumbnail_image !== body.thumbnail_image && current.thumbnail_image.startsWith(base)) {
+      toDelete.push(current.thumbnail_image.replace(base, ''))
     }
     const oldGallery = (() => { try { return JSON.parse(current.gallery_images || '[]') } catch { return [] } })()
     const newGallery = (() => { try { return JSON.parse(body.gallery_images || '[]') } catch { return [] } })()

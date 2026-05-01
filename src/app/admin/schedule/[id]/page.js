@@ -65,6 +65,7 @@ export default function EventEditPage() {
   const [recalcDone, setRecalcDone] = useState(null) // entryId
 
   const [cropSrc, setCropSrc] = useState(null)
+  const [cropTarget, setCropTarget] = useState(null) // 'main' | 'portrait'
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
@@ -176,6 +177,7 @@ export default function EventEditPage() {
         studio_fee: event.studio_fee != null ? parseInt(event.studio_fee) : 2000,
         studio_budget: event.studio_budget != null ? parseInt(event.studio_budget) : 0,
         main_image: event.main_image,
+        thumbnail_image: event.thumbnail_image || null,
         gallery_images: JSON.stringify(event.gallery_images || []),
         booking_open_at: event.booking_open_at ? new Date(event.booking_open_at + ':00+09:00').toISOString() : null,
         meeting_place: event.meeting_place,
@@ -196,9 +198,10 @@ export default function EventEditPage() {
     }
   }
 
-  function openCropModal(file) {
+  function openCropModal(file, target) {
     const url = URL.createObjectURL(file)
     setCropSrc(url)
+    setCropTarget(target)
     setCrop({ x: 0, y: 0 })
     setZoom(1)
   }
@@ -206,6 +209,7 @@ export default function EventEditPage() {
   function closeCropModal() {
     if (cropSrc) URL.revokeObjectURL(cropSrc)
     setCropSrc(null)
+    setCropTarget(null)
   }
 
   const onCropComplete = useCallback((_, pixels) => {
@@ -216,15 +220,21 @@ export default function EventEditPage() {
     if (!cropSrc || !croppedAreaPixels) return
     const src = cropSrc
     const pixels = croppedAreaPixels
+    const target = cropTarget
     setCropSrc(null)
-    setUploading('main_image')
+    setCropTarget(null)
+    const uploadKey = target === 'portrait' ? 'thumbnail_image' : 'main_image'
+    setUploading(uploadKey)
     setUploadProgress(0)
     try {
-      const blob = await getCroppedBlob(src, pixels, 0.85, 1920, 1080)
+      const blob = target === 'portrait'
+        ? await getCroppedBlob(src, pixels, 0.85, 1200, 1500)
+        : await getCroppedBlob(src, pixels, 0.85, 1920, 1080)
       URL.revokeObjectURL(src)
-      const path = `events/${id}/main-${Date.now()}.jpg`
-      const url = await uploadWithProgress(new File([blob], 'main.jpg', { type: 'image/jpeg' }), path)
-      updateField('main_image', url)
+      const prefix = target === 'portrait' ? 'portrait' : 'main'
+      const path = `events/${id}/${prefix}-${Date.now()}.jpg`
+      const url = await uploadWithProgress(new File([blob], `${prefix}.jpg`, { type: 'image/jpeg' }), path)
+      updateField(uploadKey, url)
     } catch (e) {
       URL.revokeObjectURL(src)
       alert('アップロードエラー: ' + (e.message || String(e)))
@@ -457,7 +467,7 @@ export default function EventEditPage() {
               image={cropSrc}
               crop={crop}
               zoom={zoom}
-              aspect={16 / 9}
+              aspect={cropTarget === 'portrait' ? 4 / 5 : 16 / 9}
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={onCropComplete}
@@ -554,28 +564,53 @@ export default function EventEditPage() {
                 <input type="datetime-local" value={event.booking_open_at ? event.booking_open_at.slice(0, 16) : ''} onChange={e => updateField('booking_open_at', e.target.value)} style={inp} />
               </div>
             </div>
-            <div style={{ marginBottom: 14 }}>
-              <label style={label}>メインイメージ</label>
-              {event.main_image && (
-                <div style={{ position: 'relative', marginBottom: 10 }}>
-                  <img src={event.main_image} style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 8 }} />
-                  <button onClick={() => updateField('main_image', '')}
-                    style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontSize: 12 }}>削除</button>
-                </div>
-              )}
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#2f2244', color: '#fff', borderRadius: 8, padding: '9px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 600, opacity: uploading === 'main_image' ? 0.7 : 1 }}>
-                📷 画像をアップロード
-                <input type="file" accept="image/*" style={{ display: 'none' }} disabled={!!uploading}
-                  onChange={e => { if (e.target.files?.[0]) { openCropModal(e.target.files[0]); e.target.value = '' } }} />
-              </label>
-              {uploading === 'main_image' && (
-                <div style={{ marginTop: 8 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888', marginBottom: 3 }}><span>アップロード中...</span><span>{uploadProgress}%</span></div>
-                  <div style={{ background: '#eee', borderRadius: 99, height: 6 }}><div style={{ height: '100%', background: '#2f2244', borderRadius: 99, width: `${uploadProgress}%`, transition: 'width 0.2s' }} /></div>
-                </div>
-              )}
-              <div style={{ marginTop: 8 }}>
-                <input type="url" value={event.main_image || ''} onChange={e => updateField('main_image', e.target.value)} style={{ ...inp, fontSize: 12 }} placeholder="またはURLを直接入力" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+              {/* 横長メインイメージ 16:9 */}
+              <div>
+                <label style={label}>メインイメージ（横長 16:9）</label>
+                <p style={{ fontSize: 11, color: '#aaa', margin: '0 0 8px' }}>イベント詳細ページのヘッダー用</p>
+                {event.main_image && (
+                  <div style={{ position: 'relative', marginBottom: 8 }}>
+                    <img src={event.main_image} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: 8 }} />
+                    <button onClick={() => updateField('main_image', '')}
+                      style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: 6, padding: '2px 8px', cursor: 'pointer', fontSize: 12 }}>削除</button>
+                  </div>
+                )}
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#2f2244', color: '#fff', borderRadius: 8, padding: '8px 14px', cursor: uploading === 'main_image' ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600, opacity: uploading === 'main_image' ? 0.7 : 1 }}>
+                  📷 横長をアップロード
+                  <input type="file" accept="image/*" style={{ display: 'none' }} disabled={!!uploading}
+                    onChange={e => { if (e.target.files?.[0]) { openCropModal(e.target.files[0], 'main'); e.target.value = '' } }} />
+                </label>
+                {uploading === 'main_image' && (
+                  <div style={{ marginTop: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888', marginBottom: 2 }}><span>アップロード中...</span><span>{uploadProgress}%</span></div>
+                    <div style={{ background: '#eee', borderRadius: 99, height: 5 }}><div style={{ height: '100%', background: '#2f2244', borderRadius: 99, width: `${uploadProgress}%`, transition: 'width 0.2s' }} /></div>
+                  </div>
+                )}
+              </div>
+
+              {/* 縦長サムネイル 4:5 */}
+              <div>
+                <label style={label}>サムネイル（縦長 4:5）</label>
+                <p style={{ fontSize: 11, color: '#aaa', margin: '0 0 8px' }}>HOME・イベント一覧のカード表示用</p>
+                {event.thumbnail_image && (
+                  <div style={{ position: 'relative', marginBottom: 8, display: 'inline-block' }}>
+                    <img src={event.thumbnail_image} style={{ width: 80, aspectRatio: '4/5', objectFit: 'cover', borderRadius: 8, display: 'block' }} />
+                    <button onClick={() => updateField('thumbnail_image', '')}
+                      style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                  </div>
+                )}
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a3560', color: '#fff', borderRadius: 8, padding: '8px 14px', cursor: uploading === 'thumbnail_image' ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600, opacity: uploading === 'thumbnail_image' ? 0.7 : 1 }}>
+                  📷 縦長をアップロード
+                  <input type="file" accept="image/*" style={{ display: 'none' }} disabled={!!uploading}
+                    onChange={e => { if (e.target.files?.[0]) { openCropModal(e.target.files[0], 'portrait'); e.target.value = '' } }} />
+                </label>
+                {uploading === 'thumbnail_image' && (
+                  <div style={{ marginTop: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888', marginBottom: 2 }}><span>アップロード中...</span><span>{uploadProgress}%</span></div>
+                    <div style={{ background: '#eee', borderRadius: 99, height: 5 }}><div style={{ height: '100%', background: '#1a3560', borderRadius: 99, width: `${uploadProgress}%`, transition: 'width 0.2s' }} /></div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

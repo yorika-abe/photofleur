@@ -106,27 +106,28 @@ export default async function SchedulePage() {
               const date = formatDate(ev.event_date)
               const dow = formatDow(ev.event_date)
               const type = ev.event_type || 'special'
-              const cardBg = !ev.main_image
+              const thumbSrc = ev.thumbnail_image || ev.main_image
+              const cardBg = !thumbSrc
                 ? (type === 'street' ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : type === 'studio' ? 'linear-gradient(160deg,#f4d6e8,#e8b8d0)' : 'linear-gradient(160deg,#c5cae9,#9fa8da)')
-                : undefined
+                : '#e8e0f0'
 
               return (
                 <Link key={ev.id} href={`/events/${ev.id}`} style={{ textDecoration: 'none', display: 'block' }} className="sched-card">
-                  {/* Image */}
-                  <div style={{ position: 'relative', aspectRatio: '1/1', borderRadius: 6, overflow: 'hidden', background: cardBg || '#e8e8e8', marginBottom: 10 }}>
-                    {ev.main_image && (
-                      <img src={ev.main_image} alt={ev.title || ''} className="sched-img"
+                  {/* 4:5 image, no overlay */}
+                  <div style={{ position: 'relative', aspectRatio: '4/5', borderRadius: 8, overflow: 'hidden', background: cardBg, marginBottom: 10 }}>
+                    {thumbSrc && (
+                      <img src={thumbSrc} alt={ev.title || ''} className="sched-img"
                         style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.45s ease', display: 'block' }} />
                     )}
                   </div>
 
-                  {/* Info */}
+                  {/* Info below image, centered */}
                   <div style={{ padding: '8px 2px 0', textAlign: 'center' }}>
-                    <div style={{ ...serif, fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 700, color: '#111', lineHeight: 1, marginBottom: 5, letterSpacing: '0.04em' }}>
+                    <div style={{ ...serif, fontSize: 'clamp(18px, 2.5vw, 24px)', fontWeight: 700, color: '#111', lineHeight: 1, marginBottom: 5, letterSpacing: '0.04em' }}>
                       {date}（{dow}）
                     </div>
                     {ev.title && (
-                      <div style={{ fontSize: 13, color: '#111', marginBottom: 6, fontWeight: 500 }}>
+                      <div style={{ fontSize: 12, color: '#333', marginBottom: 4, fontWeight: 500 }}>
                         {ev.title}
                       </div>
                     )}

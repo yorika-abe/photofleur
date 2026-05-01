@@ -11,6 +11,11 @@ function formatDate(dateStr) {
   return `${mm}/${dd}`
 }
 
+function formatDow(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00')
+  return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]
+}
+
 export default function ScheduleCarousel({ events }) {
   const trackRef = useRef(null)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -75,16 +80,18 @@ export default function ScheduleCarousel({ events }) {
           overflowX: 'scroll',
           scrollSnapType: 'x mandatory',
           gap: 20,
-          padding: '32px clamp(32px, 12vw, 200px) 48px',
+          padding: '32px clamp(32px, 12vw, 200px) 56px',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
-          alignItems: 'center',
+          alignItems: 'flex-start',
         }}
       >
         {events.map((ev, i) => {
           const date = formatDate(ev.event_date)
+          const dow = formatDow(ev.event_date)
           const isStreet = ev.event_type === 'street'
           const isActive = i === activeIndex
+          const thumbSrc = ev.thumbnail_image || ev.main_image
 
           return (
             <Link
@@ -93,37 +100,38 @@ export default function ScheduleCarousel({ events }) {
               className="s-card"
               style={{
                 flexShrink: 0,
-                width: 'clamp(220px, 48vw, 300px)',
+                width: 'clamp(180px, 40vw, 240px)',
                 scrollSnapAlign: 'center',
                 textDecoration: 'none',
                 display: 'block',
-                transform: isActive ? 'scale(1.08)' : 'scale(0.88)',
+                transform: isActive ? 'scale(1.06)' : 'scale(0.88)',
                 transition: 'transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94)',
                 zIndex: isActive ? 2 : 1,
                 position: 'relative',
-                opacity: isActive ? 1 : 0.72,
+                opacity: isActive ? 1 : 0.65,
               }}
             >
-              <div style={{ position: 'relative', overflow: 'hidden', aspectRatio: '3/4', background: '#d6ecf5', borderRadius: 6, boxShadow: isActive ? '0 16px 48px rgba(0,0,0,0.28)' : '0 4px 12px rgba(0,0,0,0.12)' }}>
-                {ev.main_image
-                  ? <img src={ev.main_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <div style={{ width: '100%', height: '100%', background: isStreet ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : 'linear-gradient(160deg,#f4d6e8,#e8b8d0)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {/* 4:5 image, no overlay */}
+              <div style={{ aspectRatio: '4/5', borderRadius: 8, overflow: 'hidden', background: thumbSrc ? '#e8e0f0' : (isStreet ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : 'linear-gradient(160deg,#f4d6e8,#e8b8d0)'), boxShadow: isActive ? '0 16px 48px rgba(0,0,0,0.22)' : '0 4px 12px rgba(0,0,0,0.1)' }}>
+                {thumbSrc
+                  ? <img src={thumbSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <span style={{ fontSize: 48, opacity: 0.4 }}>{isStreet ? '🌆' : '🏢'}</span>
                     </div>
                 }
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,25,50,0.85) 0%, rgba(10,25,50,0.05) 55%, transparent 100%)' }} />
+              </div>
 
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 18px' }}>
-                  <div style={{ ...serif, fontSize: 'clamp(26px, 5vw, 38px)', fontWeight: 400, color: '#fff', lineHeight: 1, marginBottom: 8, letterSpacing: '0.02em' }}>
-                    {date}
-                  </div>
-                  {ev.title && (
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', marginBottom: 4 }}>{ev.title}</div>
-                  )}
-                  {ev.subtitle && (
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>{ev.subtitle}</div>
-                  )}
+              {/* text below image, centered */}
+              <div style={{ padding: '12px 4px 0', textAlign: 'center' }}>
+                <div style={{ ...serif, fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 700, color: '#0d1f3a', lineHeight: 1, marginBottom: 6, letterSpacing: '0.02em' }}>
+                  {date}（{dow}）
                 </div>
+                {ev.title && (
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#333', marginBottom: 3 }}>{ev.title}</div>
+                )}
+                {ev.subtitle && (
+                  <div style={{ fontSize: 11, color: '#888' }}>{ev.subtitle}</div>
+                )}
               </div>
             </Link>
           )
