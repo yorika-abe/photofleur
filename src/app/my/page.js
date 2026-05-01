@@ -48,6 +48,7 @@ export default function MyPage() {
   const [photoModelIds, setPhotoModelIds] = useState([])
   const [uploading, setUploading] = useState(false)
   const [uploadDone, setUploadDone] = useState(false)
+  const [uploadCount, setUploadCount] = useState({ current: 0, total: 0 })
   const [feedbackContent, setFeedbackContent] = useState('')
   const [feedbackSending, setFeedbackSending] = useState(false)
   const [feedbackDone, setFeedbackDone] = useState(false)
@@ -108,9 +109,11 @@ export default function MyPage() {
     e.preventDefault()
     if (photoFiles.length === 0) return
     setUploading(true)
+    setUploadCount({ current: 0, total: photoFiles.length })
     const fd = new FormData()
-    for (const f of photoFiles) {
-      const compressed = await compressImage(f, 1600, 1600, 0.85)
+    for (let i = 0; i < photoFiles.length; i++) {
+      setUploadCount({ current: i + 1, total: photoFiles.length })
+      const compressed = await compressImage(photoFiles[i], 1600, 1600, 0.85)
       fd.append('files', compressed)
     }
     fd.append('model_ids', JSON.stringify(photoModelIds))
@@ -274,7 +277,7 @@ export default function MyPage() {
 
           <button type="submit" disabled={uploading || photoFiles.length === 0}
             style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 28px', fontWeight: 700, fontSize: 14, cursor: photoFiles.length === 0 ? 'not-allowed' : 'pointer', opacity: (uploading || photoFiles.length === 0) ? 0.6 : 1 }}>
-            {uploading ? 'アップロード中...' : '送信する'}
+            {uploading ? `アップロード中${uploadCount.total > 1 ? ` ${uploadCount.current} / ${uploadCount.total}` : ''}...` : '送信する'}
           </button>
         </form>
         </>)}

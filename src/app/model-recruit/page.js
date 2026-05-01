@@ -1,11 +1,14 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
+import FadingHeroBg from '@/components/FadingHeroBg'
 
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
 export default async function ModelRecruitPage() {
   const supabase = await createSupabaseAdminClient()
   const { data } = await supabase.from('site_settings').select('value').eq('key', 'recruit_hero_image').single()
-  const heroImage = data?.value || ''
+  const raw = data?.value || ''
+  let heroImages = []
+  try { const p = JSON.parse(raw); heroImages = Array.isArray(p) ? p : (raw ? [raw] : []) } catch { heroImages = raw ? [raw] : [] }
 
   return (
     <div style={{ background: '#fff', color: '#1a1228' }}>
@@ -13,7 +16,7 @@ export default async function ModelRecruitPage() {
       {/* ─── HERO ─── */}
       <section style={{ position: 'relative', background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 50%, #0d1f3a 100%)', color: '#fff', padding: 'clamp(80px, 12vw, 140px) 20px', textAlign: 'center', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 60%, rgba(91,191,214,0.12) 0%, transparent 60%)' }} />
-        {heroImage && <img src={heroImage} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.3 }} />}
+        <FadingHeroBg images={heroImages} opacity={0.3} />
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 700, margin: '0 auto' }}>
           <p style={{ ...serif, fontSize: 11, letterSpacing: '0.4em', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginBottom: 20, fontStyle: 'italic' }}>Model Recruit</p>
           <h1 style={{ ...serif, fontSize: 'clamp(36px, 7vw, 72px)', fontWeight: 400, lineHeight: 1.1, margin: '0 0 24px' }}>

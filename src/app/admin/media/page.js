@@ -35,10 +35,11 @@ export default function AdminMediaPage() {
   const [heroVideo2, setHeroVideo2] = useState('')
   const [missionBg, setMissionBg] = useState('')
   const [recruitImages, setRecruitImages] = useState([])
-  const [requestHeroImage, setRequestHeroImage] = useState('')
-  const [recruitHeroImage, setRecruitHeroImage] = useState('')
+  const [requestHeroImages, setRequestHeroImages] = useState([])
+  const [recruitHeroImages, setRecruitHeroImages] = useState([])
   const [uploading, setUploading] = useState(null)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadCount, setUploadCount] = useState({ current: 0, total: 0 })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -50,8 +51,10 @@ export default function AdminMediaPage() {
       setHeroVideo2(data.hero_video_2 || '')
       setMissionBg(data.mission_bg || '')
       setRecruitImages(JSON.parse(data.recruit_bg_images || '[]'))
-      setRequestHeroImage(data.request_hero_image || '')
-      setRecruitHeroImage(data.recruit_hero_image || '')
+      const rhi = data.request_hero_image || ''
+      try { const p = JSON.parse(rhi); setRequestHeroImages(Array.isArray(p) ? p : (rhi ? [rhi] : [])) } catch { setRequestHeroImages(rhi ? [rhi] : []) }
+      const mhi = data.recruit_hero_image || ''
+      try { const p = JSON.parse(mhi); setRecruitHeroImages(Array.isArray(p) ? p : (mhi ? [mhi] : [])) } catch { setRecruitHeroImages(mhi ? [mhi] : []) }
     })
   }, [])
 
@@ -165,8 +168,8 @@ export default function AdminMediaPage() {
         hero_video_2: heroVideo2,
         mission_bg: missionBg,
         recruit_bg_images: JSON.stringify(recruitImages),
-        request_hero_image: requestHeroImage,
-        recruit_hero_image: recruitHeroImage,
+        request_hero_image: JSON.stringify(requestHeroImages),
+        recruit_hero_image: JSON.stringify(recruitHeroImages),
       }),
     })
     setSaving(false)
@@ -177,13 +180,16 @@ export default function AdminMediaPage() {
   const inp = { width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }
 
   function ProgressBar({ progress }) {
+    const multi = uploadCount.total > 1
+    const barW = multi ? Math.round((uploadCount.current / uploadCount.total) * 100) : progress
     return (
       <div style={{ marginTop: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888', marginBottom: 3 }}>
-          <span>アップロード中...</span><span>{progress}%</span>
+          <span>アップロード中{multi ? ` ${uploadCount.current} / ${uploadCount.total}` : ''}...</span>
+          {!multi && <span>{progress}%</span>}
         </div>
         <div style={{ background: '#e8f4fb', borderRadius: 99, height: 6, overflow: 'hidden' }}>
-          <div style={{ height: '100%', background: '#1a3560', borderRadius: 99, width: `${progress}%`, transition: 'width 0.2s ease' }} />
+          <div style={{ height: '100%', background: '#1a3560', borderRadius: 99, width: `${barW}%`, transition: 'width 0.2s ease' }} />
         </div>
       </div>
     )
@@ -213,7 +219,16 @@ export default function AdminMediaPage() {
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
             📷 写真を追加（複数可）
             <input type="file" accept="image/*" multiple style={{ display: 'none' }} disabled={!!uploading}
-              onChange={async e => { if (e.target.files) { for (const f of Array.from(e.target.files)) await onAddImage(f) } }} />
+              onChange={async e => {
+                if (!e.target.files) return
+                const arr = Array.from(e.target.files)
+                setUploadCount({ current: 0, total: arr.length })
+                for (let i = 0; i < arr.length; i++) {
+                  setUploadCount({ current: i + 1, total: arr.length })
+                  await onAddImage(arr[i])
+                }
+                setUploadCount({ current: 0, total: 0 })
+              }} />
           </label>
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#444', color: '#fff', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
             🎬 動画を追加
@@ -244,7 +259,16 @@ export default function AdminMediaPage() {
         <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
           📷 {label}
           <input type="file" accept="image/*" multiple style={{ display: 'none' }} disabled={!!uploading}
-            onChange={async e => { if (e.target.files) { for (const f of Array.from(e.target.files)) await onAdd(f) } }} />
+            onChange={async e => {
+              if (!e.target.files) return
+              const arr = Array.from(e.target.files)
+              setUploadCount({ current: 0, total: arr.length })
+              for (let i = 0; i < arr.length; i++) {
+                setUploadCount({ current: i + 1, total: arr.length })
+                await onAdd(arr[i])
+              }
+              setUploadCount({ current: 0, total: 0 })
+            }} />
         </label>
         {uploading === uploadKey && <ProgressBar progress={uploadProgress} />}
       </>
@@ -370,15 +394,17 @@ export default function AdminMediaPage() {
 
         {/* ── リクエスト撮影 ── */}
         {tab === 'request' && (
-          <Section title="ヒーロー背景画像" desc="リクエスト撮影ページのヒーローセクション背景に使用されます">
-            <SingleImageSection value={requestHeroImage} onChange={setRequestHeroImage} uploadKey="request_hero" label="画像をアップロード" />
+          <Section title="ヒーロー背景画像" desc="複数枚登録するとフェードで自動切り替えされます">
+            <ImageGrid images={requestHeroImages} onRemove={i => setRequestHeroImages(imgs => imgs.filter((_, idx) => idx !== i))}
+              uploadKey="request_hero" onAdd={f => uploadWithSignedUrl(f, 'request_hero', url => setRequestHeroImages(imgs => [...imgs, url]))} label="画像を追加（複数可）" aspect="16/9" />
           </Section>
         )}
 
         {/* ── モデル募集 ── */}
         {tab === 'recruit_page' && (
-          <Section title="ヒーロー背景画像" desc="モデル募集ページのヒーローセクション背景に使用されます">
-            <SingleImageSection value={recruitHeroImage} onChange={setRecruitHeroImage} uploadKey="recruit_hero" label="画像をアップロード" />
+          <Section title="ヒーロー背景画像" desc="複数枚登録するとフェードで自動切り替えされます">
+            <ImageGrid images={recruitHeroImages} onRemove={i => setRecruitHeroImages(imgs => imgs.filter((_, idx) => idx !== i))}
+              uploadKey="recruit_hero" onAdd={f => uploadWithSignedUrl(f, 'recruit_hero', url => setRecruitHeroImages(imgs => [...imgs, url]))} label="画像を追加（複数可）" aspect="16/9" />
           </Section>
         )}
 
