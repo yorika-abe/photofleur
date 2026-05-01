@@ -157,7 +157,6 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
       sel.addRange(savedRangeRef.current)
     }
     document.execCommand('createLink', false, linkUrl)
-    // リンク要素に太字・下線を強制適用
     editorRef.current?.querySelectorAll('a').forEach(a => {
       a.style.color = '#1a3560'
       a.style.fontWeight = '700'
@@ -166,6 +165,35 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
     sync()
     setShowLinkInput(false)
     setLinkUrl('')
+  }
+
+  function autoLinkLastWord() {
+    const sel = window.getSelection()
+    if (!sel || sel.rangeCount === 0) return
+    const range = sel.getRangeAt(0)
+    const node = range.startContainer
+    if (node.nodeType !== 3) return
+    const text = node.textContent.substring(0, range.startOffset)
+    const match = text.match(/(https?:\/\/[^\s]+)$/)
+    if (!match) return
+    const url = match[1]
+    const urlStart = range.startOffset - url.length
+    const newRange = document.createRange()
+    newRange.setStart(node, urlStart)
+    newRange.setEnd(node, range.startOffset)
+    sel.removeAllRanges()
+    sel.addRange(newRange)
+    document.execCommand('createLink', false, url)
+    const anchor = editorRef.current?.querySelector(`a[href="${url}"]`)
+    if (anchor) { anchor.style.color = '#1a3560'; anchor.style.textDecoration = 'underline' }
+    sel.collapseToEnd()
+    sync()
+  }
+
+  function insertHR() {
+    editorRef.current?.focus()
+    document.execCommand('insertHTML', false, '<hr style="border:none;border-top:2px solid #e0e0e0;margin:20px 0;" />')
+    sync()
   }
 
   async function uploadMedia(file, type) {
@@ -239,6 +267,7 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
           {uploading ? '⏳' : '🖼'}
         </ToolBtn>
         <ToolBtn onClick={() => videoInputRef.current?.click()} title="動画を挿入">🎬</ToolBtn>
+        <ToolBtn onClick={insertHR} title="横線を挿入">line</ToolBtn>
 
         <input ref={imgInputRef} type="file" accept="image/*" style={{ display: 'none' }}
           onChange={e => e.target.files?.[0] && uploadMedia(e.target.files[0], 'image')} />
@@ -267,6 +296,7 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
 
       {/* エディター本体 */}
       <div ref={editorRef} contentEditable suppressContentEditableWarning onInput={sync}
+        onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') autoLinkLastWord() }}
         style={{ minHeight: 320, maxHeight: 480, padding: '16px', outline: 'none', fontSize: 15, lineHeight: 1.9, color: '#333', overflowY: 'auto', overflowX: 'hidden', wordBreak: 'break-word', borderRadius: '0 0 10px 10px', background: '#fff' }}
         data-placeholder="ここに記事の内容を書いてください..." />
 
