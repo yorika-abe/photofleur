@@ -166,12 +166,6 @@ export default function AdminBookingStatusPage() {
     doSave(currentItem, revenue, labor, lunchTotal, grossProfit)
   }
 
-  function handleMarkDone(currentItem, revenue, labor, lunchTotal, grossProfit) {
-    if (!currentItem) return
-    if (!window.confirm(`${formatDate(currentItem.event.event_date)} を対応済みにしますか？`)) return
-    doSave(currentItem, revenue, labor, lunchTotal, grossProfit)
-  }
-
   function deleteHistory(eventId) {
     if (!window.confirm('この履歴を削除しますか？')) return
     try {
@@ -551,16 +545,11 @@ export default function AdminBookingStatusPage() {
 
                     {/* ボタン（過去イベントのみ） */}
                     {isPastEvent && (
-                      <div style={{ marginTop: 16, marginBottom: 32, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                        <button
-                          onClick={() => handleMarkDone(currentItem, revenue, labor, lunchTotal, grossProfit)}
-                          style={{ background: '#fff', color: '#888', border: '1px solid #ccc', borderRadius: 10, padding: '12px 24px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-                          対応済みにする
-                        </button>
+                      <div style={{ marginTop: 16, marginBottom: 32, display: 'flex', justifyContent: 'flex-end' }}>
                         <button
                           onClick={() => handleSave(currentItem, revenue, labor, lunchTotal, grossProfit)}
-                          style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 32px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-                          記録を保存して完了
+                          style={{ background: '#c62828', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 32px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                          記録を保存して予約状況から削除
                         </button>
                       </div>
                     )}
