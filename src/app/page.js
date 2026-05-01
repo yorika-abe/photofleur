@@ -49,13 +49,18 @@ export default async function Home() {
     adminSupabase.from('site_settings').select('key, value'),
     adminSupabase
       .from('blog_posts')
-      .select('id, title, cover_image, content, published_at')
-      .eq('category', 'notice')
+      .select('id, title, slug, cover_image, content, published_at, category')
+      .eq('category', 'news')
       .eq('status', 'published')
       .order('published_at', { ascending: false })
       .limit(8),
   ])
   const notices = noticesData || []
+
+  const { data: blogCategories } = await adminSupabase
+    .from('blog_categories')
+    .select('name, slug')
+    .order('display_order', { ascending: true })
 
   // Fetch event entries separately
   const eventIds = (events || []).map(e => e.id)
@@ -217,22 +222,40 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ─── NOTICES ─── */}
-      {notices.length > 0 && (
-        <section style={{ background: '#fdf7fb', padding: '80px 0 0' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
-            <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8, borderBottom: '1px solid #f0d6e8', paddingBottom: 24 }}>
+      {/* ─── NOTICES / BLOG ─── */}
+      <section style={{ background: '#fdf7fb', padding: '80px 0 0' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
+          <div className="reveal" style={{ marginBottom: 8, borderBottom: '1px solid #f0d6e8', paddingBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
               <div>
                 <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#f4a0be', textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>News &amp; Notice</p>
                 <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>
                   お知らせ
                 </h2>
               </div>
+              <Link href="/blog" style={{ fontSize: 13, color: '#f4a0be', fontWeight: 600, textDecoration: 'none', borderBottom: '1px solid #f4a0be', paddingBottom: 2, whiteSpace: 'nowrap' }}>
+                ブログ一覧を見る →
+              </Link>
             </div>
+            {blogCategories && blogCategories.length > 0 && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
+                <Link href="/blog" style={{ fontSize: 12, padding: '4px 14px', borderRadius: 20, border: '1px solid #f4a0be', color: '#f4a0be', textDecoration: 'none', fontWeight: 600 }}>
+                  すべて
+                </Link>
+                {blogCategories.map(cat => (
+                  <Link key={cat.slug} href={`/blog?category=${cat.slug}`} style={{ fontSize: 12, padding: '4px 14px', borderRadius: 20, border: '1px solid #ddd', color: '#888', textDecoration: 'none', fontWeight: 500 }}>
+                    {cat.name}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
-          <NoticesCarousel notices={notices} />
-        </section>
-      )}
+        </div>
+        {notices.length > 0 && <NoticesCarousel notices={notices} />}
+        {notices.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '40px 0 60px', color: '#ccc', fontSize: 14 }}>お知らせはまだありません</div>
+        )}
+      </section>
 
       {/* ─── RECRUIT CTA ─── */}
       <RecruitMarquee items={recruitBgImages} />

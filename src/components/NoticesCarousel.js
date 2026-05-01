@@ -92,7 +92,7 @@ export default function NoticesCarousel({ notices }) {
           return (
             <Link
               key={notice.id}
-              href={`/notices/${notice.id}`}
+              href={`/blog/${notice.slug}`}
               className="n-card"
               style={{
                 flexShrink: 0,

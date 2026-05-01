@@ -47,7 +47,6 @@ export default async function AdminPage() {
           { href: '/admin/shifts', label: 'シフト管理', icon: '🗓️', badge: pendingShifts ?? 0 },
           { href: '/admin/coupons', label: 'クーポン管理', icon: '🎟️' },
           { href: '/admin/blog', label: 'ブログ管理', icon: '✍️' },
-          { href: '/admin/notices', label: 'お知らせ管理', icon: '📢' },
           { href: '/admin/feedback', label: 'ご意見箱', icon: '📮', badge: unreadFeedback ?? 0 },
           { href: '/admin/media', label: 'メディア管理', icon: '🖼️' },
           { href: '/admin/representative', label: '代表メッセージ', icon: '✉️' },
