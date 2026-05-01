@@ -266,7 +266,7 @@ export default async function EventDetailPage({ params }) {
             <div>※定員人数を超えている場合は、野外撮影を「<span style={{ color: '#e00', fontWeight: 700 }}>{(event.studio_fee || 0).toLocaleString()}</span>円引き」で受付させていただきます。</div>
           </>
         )}
-        {event.studio_capacity && event.event_type === 'special' && (
+        {event.studio_capacity && event.event_type === 'irregular' && (
           <>
             <div>※各部の特別撮影定員（<span style={{ color: '#e00', fontWeight: 700 }}>{event.studio_capacity}名</span>）は、『枠の先着順』となります。</div>
             <div>※定員人数を超えている場合は、定員外撮影を「<span style={{ color: '#e00', fontWeight: 700 }}>{(event.studio_fee || 0).toLocaleString()}</span>円引き」で受付させていただきます。</div>
