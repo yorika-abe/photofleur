@@ -11,7 +11,7 @@ function MediaThumb({ url, style }) {
   if (isVideo(url)) {
     return (
       <div style={{ ...style, position: 'relative' }}>
-        <video src={url} muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        <video src={url} muted loop playsInline style={{ width: '100%', height: 'auto', display: 'block' }}
           onMouseEnter={e => e.target.play()} onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0 }} />
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
           <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -32,34 +32,19 @@ export default function PortfolioSlider({ images }) {
   const prev = () => setLightbox(i => (i - 1 + images.length) % images.length)
   const next = () => setLightbox(i => (i + 1) % images.length)
 
-  // Build mosaic layout: first item large (2×2), then alternating patterns
-  const gridItems = images.map((url, i) => {
-    let colSpan = 1, rowSpan = 1
-    if (i === 0) { colSpan = 2; rowSpan = 2 }
-    else if (i % 7 === 3) { colSpan = 2 }
-    return { url, colSpan, rowSpan }
-  })
-
   return (
     <div style={{ marginTop: 56 }}>
       <p style={{ fontSize: 11, fontWeight: 600, color: '#aaa', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 20 }}>Portfolio</p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gridAutoRows: '180px', gap: 4 }}>
-        {gridItems.map(({ url, colSpan, rowSpan }, i) => (
+      <div style={{ columns: '2', gap: 4 }}>
+        {images.map((url, i) => (
           <div
             key={i}
             onClick={() => setLightbox(i)}
-            style={{
-              gridColumn: `span ${colSpan}`,
-              gridRow: `span ${rowSpan}`,
-              overflow: 'hidden',
-              background: '#e0d8f0',
-              cursor: 'pointer',
-              position: 'relative',
-            }}
+            style={{ breakInside: 'avoid', marginBottom: 4, cursor: 'pointer', overflow: 'hidden', background: '#e8e0f0' }}
             className="pf-item"
           >
-            <MediaThumb url={url} style={{ width: '100%', height: '100%', transition: 'transform 0.4s ease' }} />
+            <MediaThumb url={url} style={{ width: '100%', height: 'auto', display: 'block', transition: 'transform 0.4s ease' }} />
           </div>
         ))}
       </div>
