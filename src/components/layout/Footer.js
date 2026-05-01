@@ -26,11 +26,11 @@ function InstagramIcon() {
 
 export default function Footer() {
   return (
-    <footer style={{ background: '#0d1a2e', color: 'rgba(255,255,255,0.7)', padding: '48px 20px 32px', marginTop: 'auto' }}>
+    <footer style={{ background: '#fff', color: '#556070', padding: '48px 20px 32px', marginTop: 'auto', borderTop: '1px solid #e8f4f8' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 32, marginBottom: 40 }}>
           <div>
-            <div style={{ color: '#fff', fontWeight: 700, fontSize: 20, marginBottom: 12 }}>PhotoFleur</div>
+            <div style={{ color: '#0d1f3a', fontWeight: 700, fontSize: 20, marginBottom: 12 }}>PhotoFleur</div>
             <p style={{ fontSize: 13, lineHeight: 1.7, margin: '0 0 20px' }}>
               それぞれが自分らしい&ldquo;花&rdquo;となり、芽生え咲き、輝ける場所を。
             </p>
@@ -40,7 +40,7 @@ export default function Footer() {
                 <LineIcon />
               </a>
               <a href="https://x.com/photofleur_?s=21" target="_blank" rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, background: '#000', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, color: '#fff', textDecoration: 'none' }}>
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, background: '#000', borderRadius: 10, color: '#fff', textDecoration: 'none' }}>
                 <XIcon />
               </a>
               <a href="https://www.instagram.com/photofleur.official?igsh=ZDc0MTQyNW01dmN0&utm_source=qr" target="_blank" rel="noopener noreferrer"
@@ -50,35 +50,35 @@ export default function Footer() {
             </div>
           </div>
           <div>
-            <div style={{ color: '#fff', fontWeight: 600, marginBottom: 12, fontSize: 14 }}>サービス</div>
+            <div style={{ color: '#0d1f3a', fontWeight: 600, marginBottom: 12, fontSize: 14 }}>サービス</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <Link href="/schedule" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 13 }}>スケジュール</Link>
-              <Link href="/models" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 13 }}>モデル一覧</Link>
-              <Link href="/request" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 13 }}>リクエスト撮影</Link>
+              <Link href="/schedule" style={{ color: '#556070', textDecoration: 'none', fontSize: 13 }}>スケジュール</Link>
+              <Link href="/models" style={{ color: '#556070', textDecoration: 'none', fontSize: 13 }}>モデル一覧</Link>
+              <Link href="/request" style={{ color: '#556070', textDecoration: 'none', fontSize: 13 }}>リクエスト撮影</Link>
             </div>
           </div>
           <div>
-            <div style={{ color: '#fff', fontWeight: 600, marginBottom: 12, fontSize: 14 }}>サポート</div>
+            <div style={{ color: '#0d1f3a', fontWeight: 600, marginBottom: 12, fontSize: 14 }}>サポート</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <Link href="/faq" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 13 }}>よくある質問</Link>
-              <a href="https://lin.ee/VgTzmhe" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 13 }}>LINEで問い合わせ</a>
+              <Link href="/faq" style={{ color: '#556070', textDecoration: 'none', fontSize: 13 }}>よくある質問</Link>
+              <a href="https://lin.ee/VgTzmhe" target="_blank" rel="noopener noreferrer" style={{ color: '#556070', textDecoration: 'none', fontSize: 13 }}>LINEで問い合わせ</a>
             </div>
           </div>
           <div>
-            <div style={{ color: '#fff', fontWeight: 600, marginBottom: 12, fontSize: 14 }}>採用</div>
+            <div style={{ color: '#0d1f3a', fontWeight: 600, marginBottom: 12, fontSize: 14 }}>採用</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <Link href="/model-recruit" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 13 }}>モデル募集</Link>
+              <Link href="/model-recruit" style={{ color: '#556070', textDecoration: 'none', fontSize: 13 }}>モデル募集</Link>
             </div>
           </div>
           <div>
-            <div style={{ color: '#fff', fontWeight: 600, marginBottom: 12, fontSize: 14 }}>法的情報</div>
+            <div style={{ color: '#0d1f3a', fontWeight: 600, marginBottom: 12, fontSize: 14 }}>法的情報</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <Link href="/terms" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 13 }}>利用規約</Link>
-              <Link href="/tokushoho" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 13 }}>特定商取引法に基づく表記</Link>
+              <Link href="/terms" style={{ color: '#556070', textDecoration: 'none', fontSize: 13 }}>利用規約</Link>
+              <Link href="/tokushoho" style={{ color: '#556070', textDecoration: 'none', fontSize: 13 }}>特定商取引法に基づく表記</Link>
             </div>
           </div>
         </div>
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 24, textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+        <div style={{ borderTop: '1px solid #e8f4f8', paddingTop: 24, textAlign: 'center', fontSize: 12, color: '#aaa' }}>
           © 2024 PhotoFleur. All rights reserved.
         </div>
       </div>
