@@ -67,6 +67,7 @@ export default function ModelPortalHome() {
   const [allModels, setAllModels] = useState(null) // null = not admin, [] = admin with no selection
   const [upcomingEvents, setUpcomingEvents] = useState([])
   const [pendingShiftCount, setPendingShiftCount] = useState(0)
+  const [newPhotoCount, setNewPhotoCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   const supabase = createBrowserClient(
@@ -117,6 +118,15 @@ export default function ModelPortalHome() {
       }
 
       setUpcomingEvents(upcoming)
+
+      // 新着提供写真カウント
+      const lastViewed = document.cookie.split('; ').find(r => r.startsWith('model_photos_last_viewed='))?.split('=')[1] || null
+      const photosRes = await fetch(`/api/model-portal/photos?model_id=${model.id}`)
+      const photosData = await photosRes.json()
+      const newCount = Array.isArray(photosData)
+        ? (lastViewed ? photosData.filter(p => new Date(p.created_at) > new Date(lastViewed)).length : photosData.length)
+        : 0
+      setNewPhotoCount(newCount)
 
       // 未提出シフト数カウント
       const [reqRes, shiftRes] = await Promise.all([
@@ -237,7 +247,7 @@ export default function ModelPortalHome() {
             { href: '/model-portal/shifts', icon: '📅', label: 'シフト提出', desc: '参加可能日程を登録', badge: pendingShiftCount },
             { href: '/model-portal/blog', icon: '📝', label: 'ブログ', desc: '記事を書く' },
             { href: '/model-portal/private-info', icon: '🔒', label: '非公開登録情報', desc: '住所・連絡先・契約同意' },
-            { href: '/model-portal/photos', icon: '📸', label: 'ご提供写真', desc: '提供いただいた写真を確認' },
+            { href: '/model-portal/photos', icon: '📸', label: 'ご提供写真', desc: '提供いただいた写真を確認', badge: newPhotoCount },
           ]).map(item => (
             <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
               <div style={{ background: '#fff', borderRadius: 12, padding: '20px', border: '1px solid #d6ecf5', transition: 'box-shadow 0.2s', position: 'relative' }}>
