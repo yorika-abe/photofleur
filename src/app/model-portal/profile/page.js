@@ -3,6 +3,42 @@
 import { useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 
+function compressImage(file, { maxW, maxH, quality = 0.85, cropRatio = null }) {
+  return new Promise(resolve => {
+    const img = new Image()
+    const blobUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(blobUrl)
+      let srcX = 0, srcY = 0, srcW = img.width, srcH = img.height
+
+      if (cropRatio) {
+        const [rw, rh] = cropRatio
+        const target = rw / rh
+        if (srcW / srcH > target) {
+          srcW = srcH * target
+          srcX = (img.width - srcW) / 2
+        } else {
+          srcH = srcW / target
+          srcY = (img.height - srcH) / 2
+        }
+      }
+
+      let dstW = srcW, dstH = srcH
+      if (maxW && dstW > maxW) { dstH = dstH * (maxW / dstW); dstW = maxW }
+      if (maxH && dstH > maxH) { dstW = dstW * (maxH / dstH); dstH = maxH }
+
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(dstW)
+      canvas.height = Math.round(dstH)
+      canvas.getContext('2d').drawImage(img, srcX, srcY, srcW, srcH, 0, 0, canvas.width, canvas.height)
+      canvas.toBlob(blob => {
+        resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }))
+      }, 'image/jpeg', quality)
+    }
+    img.src = blobUrl
+  })
+}
+
 export default function ModelProfilePage() {
   const [model, setModel] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -66,9 +102,9 @@ export default function ModelProfilePage() {
   async function uploadProfileImage(file) {
     setUploading(true)
     try {
-      const ext = file.name.split('.').pop()
-      const path = `models/profile-${Date.now()}.${ext}`
-      const url = await uploadViaSignedUrl(file, path)
+      const compressed = await compressImage(file, { maxW: 1200, maxH: 1500, quality: 0.85, cropRatio: [4, 5] })
+      const path = `models/profile-${Date.now()}.jpg`
+      const url = await uploadViaSignedUrl(compressed, path)
       setForm(f => ({ ...f, image: url }))
     } catch (e) {
       alert('アップロード失敗: ' + e.message)
@@ -86,10 +122,10 @@ export default function ModelProfilePage() {
       for (let i = 0; i < fileArr.length; i++) {
         const file = fileArr[i]
         setUploadProgress(`${i + 1} / ${fileArr.length}`)
-        const ext = file.name.split('.').pop()
-        const path = `models/portfolio-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
         try {
-          const url = await uploadViaSignedUrl(file, path)
+          const compressed = await compressImage(file, { maxW: 1600, maxH: 1600, quality: 0.85 })
+          const path = `models/portfolio-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
+          const url = await uploadViaSignedUrl(compressed, path)
           uploaded.push(url)
         } catch (e) {
           alert(`(${i + 1}枚目) アップロード失敗: ${e.message}`)
