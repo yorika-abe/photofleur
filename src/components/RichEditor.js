@@ -9,11 +9,28 @@ const BLOCK_FORMATS = [
   { value: 'h2', label: '見出し2' },
   { value: 'h3', label: '見出し3' },
 ]
+const CROP_RATIOS = [
+  { label: 'そのまま', value: '' },
+  { label: '16:9', value: '16/9' },
+  { label: '4:3', value: '4/3' },
+  { label: '1:1', value: '1/1' },
+  { label: '3:4', value: '3/4' },
+]
+const WIDTHS = ['25%', '33%', '50%', '75%', '100%']
 
 function ToolBtn({ onClick, active, title, children, style }) {
   return (
     <button type="button" onMouseDown={e => { e.preventDefault(); onClick() }} title={title}
       style={{ padding: '4px 8px', border: active ? '2px solid #0097a7' : '1px solid #ddd', borderRadius: 5, background: active ? '#e0f7fa' : '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: active ? '#00838f' : '#333', minWidth: 30, lineHeight: 1.4, ...style }}>
+      {children}
+    </button>
+  )
+}
+
+function SmBtn({ onClick, active, children }) {
+  return (
+    <button type="button" onMouseDown={e => { e.preventDefault(); onClick() }}
+      style={{ padding: '2px 8px', borderRadius: 4, border: active ? '2px solid #0097a7' : '1px solid #ddd', background: active ? '#e0f7fa' : '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: active ? '#00838f' : '#333', whiteSpace: 'nowrap' }}>
       {children}
     </button>
   )
@@ -54,13 +71,30 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
   const [blockFormat, setBlockFormat] = useState('p')
   const [showLinkInput, setShowLinkInput] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')
+  const [selectedMedia, setSelectedMedia] = useState(null)
+  const [mediaState, setMediaState] = useState({ width: '100%', layout: 'normal', cropRatio: '', objX: 50, objY: 50 })
   const [fmt, setFmt] = useState({ bold: false, italic: false, underline: false, strikeThrough: false, justifyLeft: false, justifyCenter: false, justifyRight: false, insertUnorderedList: false, insertOrderedList: false })
+
+  useEffect(() => {
+    if (!selectedMedia) return
+    const pos = (selectedMedia.style.objectPosition || '50% 50%').split(' ')
+    const layout = selectedMedia.style.float === 'left' ? 'float-left'
+      : selectedMedia.style.float === 'right' ? 'float-right'
+      : (selectedMedia.style.marginLeft === 'auto' && selectedMedia.style.marginRight === 'auto') ? 'center'
+      : 'normal'
+    setMediaState({
+      width: selectedMedia.style.width || '100%',
+      cropRatio: selectedMedia.style.aspectRatio || '',
+      objX: parseInt(pos[0]) || 50,
+      objY: parseInt(pos[1]) || 50,
+      layout,
+    })
+  }, [selectedMedia])
 
   const updateFmt = useCallback(() => {
     try {
       const sel = window.getSelection()
       if (sel && sel.rangeCount > 0) {
-        // ブロック形式検出
         let node = sel.getRangeAt(0).startContainer
         while (node && node !== editorRef.current) {
           const tag = node.nodeName?.toLowerCase()
@@ -68,13 +102,10 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
           if (['p', 'div'].includes(tag)) { setBlockFormat('p'); break }
           node = node.parentNode
         }
-        // 配置検出（style.textAlign から直接読む）
         let alignNode = sel.getRangeAt(0).startContainer
         let align = ''
         while (alignNode && alignNode !== editorRef.current) {
-          if (alignNode.nodeType === 1 && alignNode.style?.textAlign) {
-            align = alignNode.style.textAlign; break
-          }
+          if (alignNode.nodeType === 1 && alignNode.style?.textAlign) { align = alignNode.style.textAlign; break }
           alignNode = alignNode.parentNode
         }
         setFmt(f => ({
@@ -102,14 +133,22 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
     return () => document.removeEventListener('selectionchange', updateFmt)
   }, [updateFmt])
 
+  function sync() {
+    // アウトラインを除いた状態で保存
+    const el = editorRef.current
+    if (!el) return
+    const outlined = el.querySelectorAll('[data-selected="1"]')
+    outlined.forEach(e => e.removeAttribute('data-selected'))
+    onChange?.(el.innerHTML || '')
+    if (selectedMedia) selectedMedia.setAttribute('data-selected', '1')
+  }
+
   const exec = useCallback((cmd, val = null) => {
     editorRef.current?.focus()
     document.execCommand(cmd, false, val)
     sync()
     updateFmt()
   }, [updateFmt])
-
-  function sync() { onChange?.(editorRef.current?.innerHTML || '') }
 
   function applyBlockFormat(format) {
     setBlockFormat(format)
@@ -184,8 +223,10 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
     sel.removeAllRanges()
     sel.addRange(newRange)
     document.execCommand('createLink', false, url)
-    const anchor = editorRef.current?.querySelector(`a[href="${url}"]`)
-    if (anchor) { anchor.style.color = '#1a3560'; anchor.style.textDecoration = 'underline' }
+    editorRef.current?.querySelectorAll(`a[href="${url}"]`).forEach(a => {
+      a.style.color = '#1a3560'
+      a.style.textDecoration = 'underline'
+    })
     sel.collapseToEnd()
     sync()
   }
@@ -193,6 +234,76 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
   function insertHR() {
     editorRef.current?.focus()
     document.execCommand('insertHTML', false, '<hr style="border:none;border-top:2px solid #e0e0e0;margin:20px 0;" />')
+    sync()
+  }
+
+  function insertTwoColumns() {
+    editorRef.current?.focus()
+    document.execCommand('insertHTML', false,
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0;">' +
+        '<div style="min-width:0;padding:4px 0;">（左の内容）</div>' +
+        '<div style="min-width:0;padding:4px 0;">（右の内容）</div>' +
+      '</div><p><br></p>'
+    )
+    sync()
+  }
+
+  // --- メディア編集 ---
+  function handleEditorClick(e) {
+    const t = e.target
+    if (t.tagName === 'IMG' || t.tagName === 'VIDEO') {
+      editorRef.current?.querySelectorAll('img, video').forEach(m => m.removeAttribute('data-selected'))
+      t.setAttribute('data-selected', '1')
+      setSelectedMedia(t)
+    } else if (!e.target.closest?.('.media-panel')) {
+      editorRef.current?.querySelectorAll('img, video').forEach(m => m.removeAttribute('data-selected'))
+      setSelectedMedia(null)
+    }
+  }
+
+  function applyMediaWidth(w) {
+    if (!selectedMedia) return
+    selectedMedia.style.width = w
+    selectedMedia.style.maxWidth = '100%'
+    setMediaState(s => ({ ...s, width: w }))
+    sync()
+  }
+
+  function applyMediaLayout(layout) {
+    if (!selectedMedia) return
+    const m = selectedMedia
+    if (layout === 'float-left') {
+      m.style.float = 'left'; m.style.display = 'block'; m.style.margin = '0 16px 8px 0'
+    } else if (layout === 'float-right') {
+      m.style.float = 'right'; m.style.display = 'block'; m.style.margin = '0 0 8px 16px'
+    } else if (layout === 'center') {
+      m.style.float = 'none'; m.style.display = 'block'; m.style.marginLeft = 'auto'; m.style.marginRight = 'auto'
+    } else {
+      m.style.float = 'none'; m.style.display = 'block'; m.style.margin = '8px 0'
+    }
+    setMediaState(s => ({ ...s, layout }))
+    sync()
+  }
+
+  function applyMediaCrop(ratio) {
+    if (!selectedMedia) return
+    if (ratio === '') {
+      selectedMedia.style.aspectRatio = ''
+      selectedMedia.style.objectFit = ''
+      selectedMedia.style.objectPosition = ''
+    } else {
+      selectedMedia.style.aspectRatio = ratio
+      selectedMedia.style.objectFit = 'cover'
+      selectedMedia.style.objectPosition = `${mediaState.objX}% ${mediaState.objY}%`
+    }
+    setMediaState(s => ({ ...s, cropRatio: ratio }))
+    sync()
+  }
+
+  function applyMediaObjPos(x, y) {
+    if (!selectedMedia || !mediaState.cropRatio) return
+    selectedMedia.style.objectPosition = `${x}% ${y}%`
+    setMediaState(s => ({ ...s, objX: x, objY: y }))
     sync()
   }
 
@@ -209,9 +320,9 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
     if (data.error) { alert('アップロードエラー: ' + data.error); return }
     editorRef.current?.focus()
     if (type === 'image') {
-      document.execCommand('insertHTML', false, `<img src="${data.url}" style="max-width:100%;border-radius:6px;margin:8px 0;" />`)
+      document.execCommand('insertHTML', false, `<img src="${data.url}" style="max-width:100%;border-radius:6px;margin:8px 0;display:block;" />`)
     } else {
-      document.execCommand('insertHTML', false, `<video src="${data.url}" controls style="max-width:100%;border-radius:6px;margin:8px 0;"></video>`)
+      document.execCommand('insertHTML', false, `<video src="${data.url}" controls style="max-width:100%;border-radius:6px;margin:8px 0;display:block;"></video>`)
     }
     sync()
   }
@@ -221,13 +332,11 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
       {/* ツールバー */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center', padding: '8px 10px', background: '#f8f8f8', borderBottom: '1px solid #e0e0e0', borderRadius: '10px 10px 0 0', position: 'sticky', top: 0, zIndex: 50 }}>
 
-        {/* 見出し/本文 */}
         <select value={blockFormat} onChange={e => applyBlockFormat(e.target.value)} onMouseDown={e => e.stopPropagation()}
           style={{ padding: '4px 6px', border: '1px solid #ddd', borderRadius: 5, fontSize: 13, cursor: 'pointer' }}>
           {BLOCK_FORMATS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
         </select>
 
-        {/* フォントサイズ */}
         <select value={fontSize} onChange={e => applyFontSize(e.target.value)} onMouseDown={e => e.stopPropagation()}
           style={{ padding: '4px 6px', border: '1px solid #ddd', borderRadius: 5, fontSize: 13, cursor: 'pointer' }}>
           {FONT_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -247,7 +356,7 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
 
         {sep}
 
-        <ToolBtn onClick={openLinkInput} active={showLinkInput} title="選択テキストにリンクを付ける（太字+下線で表示）">🔗 リンク</ToolBtn>
+        <ToolBtn onClick={openLinkInput} active={showLinkInput} title="テキストにリンクを付ける">🔗 リンク</ToolBtn>
         <ToolBtn onClick={() => exec('unlink')} title="リンク解除">解除</ToolBtn>
 
         {sep}
@@ -268,6 +377,7 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
         </ToolBtn>
         <ToolBtn onClick={() => videoInputRef.current?.click()} title="動画を挿入">🎬</ToolBtn>
         <ToolBtn onClick={insertHR} title="横線を挿入">line</ToolBtn>
+        <ToolBtn onClick={insertTwoColumns} title="2カラムレイアウトを挿入">2列</ToolBtn>
 
         <input ref={imgInputRef} type="file" accept="image/*" style={{ display: 'none' }}
           onChange={e => e.target.files?.[0] && uploadMedia(e.target.files[0], 'image')} />
@@ -294,8 +404,61 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
         </div>
       )}
 
+      {/* メディア編集パネル */}
+      {selectedMedia && (
+        <div className="media-panel" style={{ background: '#f0f7fb', borderBottom: '1px solid #b3d4e8', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#1a3560' }}>🖼 メディア編集</span>
+
+            {/* 幅 */}
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: '#888' }}>幅:</span>
+              {WIDTHS.map(w => (
+                <SmBtn key={w} onClick={() => applyMediaWidth(w)} active={mediaState.width === w}>{w}</SmBtn>
+              ))}
+            </div>
+
+            {/* 配置 */}
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: '#888' }}>配置:</span>
+              <SmBtn onClick={() => applyMediaLayout('normal')} active={mediaState.layout === 'normal'}>通常</SmBtn>
+              <SmBtn onClick={() => applyMediaLayout('center')} active={mediaState.layout === 'center'}>中央</SmBtn>
+              <SmBtn onClick={() => applyMediaLayout('float-left')} active={mediaState.layout === 'float-left'}>左＋右テキスト</SmBtn>
+              <SmBtn onClick={() => applyMediaLayout('float-right')} active={mediaState.layout === 'float-right'}>右＋左テキスト</SmBtn>
+            </div>
+
+            <button type="button" onMouseDown={e => { e.preventDefault(); selectedMedia?.removeAttribute('data-selected'); setSelectedMedia(null) }}
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 16, lineHeight: 1 }}>✕</button>
+          </div>
+
+          {/* トリミング */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: 12, color: '#888' }}>表示トリミング:</span>
+            {CROP_RATIOS.map(r => (
+              <SmBtn key={r.value} onClick={() => applyMediaCrop(r.value)} active={mediaState.cropRatio === r.value}>{r.label}</SmBtn>
+            ))}
+            {mediaState.cropRatio && (
+              <>
+                <span style={{ fontSize: 12, color: '#888', marginLeft: 8 }}>表示位置 横:</span>
+                <input type="range" min="0" max="100" value={mediaState.objX}
+                  onMouseDown={e => e.stopPropagation()}
+                  onChange={e => applyMediaObjPos(Number(e.target.value), mediaState.objY)}
+                  style={{ width: 80, cursor: 'pointer' }} />
+                <span style={{ fontSize: 12, color: '#888' }}>縦:</span>
+                <input type="range" min="0" max="100" value={mediaState.objY}
+                  onMouseDown={e => e.stopPropagation()}
+                  onChange={e => applyMediaObjPos(mediaState.objX, Number(e.target.value))}
+                  style={{ width: 80, cursor: 'pointer' }} />
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* エディター本体 */}
-      <div ref={editorRef} contentEditable suppressContentEditableWarning onInput={sync}
+      <div ref={editorRef} contentEditable suppressContentEditableWarning
+        onInput={sync}
+        onClick={handleEditorClick}
         onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') autoLinkLastWord() }}
         style={{ minHeight: 320, maxHeight: 480, padding: '16px', outline: 'none', fontSize: 15, lineHeight: 1.9, color: '#333', overflowY: 'auto', overflowX: 'hidden', wordBreak: 'break-word', borderRadius: '0 0 10px 10px', background: '#fff' }}
         data-placeholder="ここに記事の内容を書いてください..." />
@@ -311,6 +474,8 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
         [contenteditable] ul { list-style-type: disc; padding-left: 1.8em; margin: 0.5em 0; }
         [contenteditable] ol { list-style-type: decimal; padding-left: 1.8em; margin: 0.5em 0; }
         [contenteditable] li { margin: 0.2em 0; }
+        [contenteditable] img[data-selected="1"], [contenteditable] video[data-selected="1"] { outline: 3px solid #0097a7; outline-offset: 2px; }
+        [contenteditable] img[data-selected="1"], [contenteditable] video[data-selected="1"] { cursor: pointer; }
       `}</style>
     </div>
   )
