@@ -58,6 +58,7 @@ export default function AdminBookingStatusPage() {
   const todayStr = new Date().toISOString().split('T')[0]
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('tab') === 'history') setShowHistory(true)
     const ids = loadSavedIds()
     setSavedIds(ids)
     fetch('/api/admin/booking-status')
