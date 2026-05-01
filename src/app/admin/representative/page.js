@@ -1,16 +1,39 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import RichEditor from '@/components/RichEditor'
+import Cropper from 'react-easy-crop'
+
+async function getCroppedBlob(imageSrc, pixelCrop, quality = 0.85, maxW = 1200, maxH = 1500) {
+  const img = await new Promise((resolve, reject) => {
+    const i = new Image()
+    i.onload = () => resolve(i)
+    i.onerror = reject
+    i.src = imageSrc
+  })
+  let dstW = pixelCrop.width, dstH = pixelCrop.height
+  if (dstW > maxW) { dstH = dstH * (maxW / dstW); dstW = maxW }
+  if (dstH > maxH) { dstW = dstW * (maxH / dstH); dstH = maxH }
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(dstW)
+  canvas.height = Math.round(dstH)
+  canvas.getContext('2d').drawImage(img, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, canvas.width, canvas.height)
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality))
+}
 
 export default function AdminRepresentativePage() {
   const [form, setForm] = useState({ photo: '', role: '', name: '', message: '', model_id: '' })
   const [models, setModels] = useState([])
   const [uploading, setUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  // Crop modal state
+  const [cropSrc, setCropSrc] = useState(null)
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
 
   useEffect(() => {
     fetch('/api/admin/site-settings')
@@ -34,36 +57,41 @@ export default function AdminRepresentativePage() {
       .catch(() => {})
   }, [])
 
-  function uploadWithProgress(file, path) {
-    return new Promise((resolve, reject) => {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('path', path)
-      const xhr = new XMLHttpRequest()
-      xhr.upload.addEventListener('progress', e => {
-        if (e.lengthComputable) setUploadProgress(Math.round(e.loaded / e.total * 100))
-      })
-      xhr.addEventListener('load', () => {
-        const data = JSON.parse(xhr.responseText)
-        if (data.error) { reject(data.error); return }
-        resolve(data.url)
-      })
-      xhr.addEventListener('error', () => reject('通信エラー'))
-      xhr.open('POST', '/api/admin/upload')
-      xhr.send(formData)
-    })
+  function openCropModal(file) {
+    const url = URL.createObjectURL(file)
+    setCropSrc(url)
+    setCrop({ x: 0, y: 0 })
+    setZoom(1)
   }
 
-  async function uploadPhoto(file) {
+  function closeCropModal() {
+    if (cropSrc) URL.revokeObjectURL(cropSrc)
+    setCropSrc(null)
+  }
+
+  const onCropComplete = useCallback((_, pixels) => {
+    setCroppedAreaPixels(pixels)
+  }, [])
+
+  async function confirmCrop() {
+    if (!cropSrc || !croppedAreaPixels) return
     setUploading(true)
-    setUploadProgress(0)
-    const path = `site/rep-${Date.now()}.${file.name.split('.').pop()}`
+    closeCropModal()
     try {
-      const url = await uploadWithProgress(file, path)
-      setForm(f => ({ ...f, photo: url }))
-    } catch (e) { alert('アップロードエラー: ' + e) }
-    setUploading(false)
-    setUploadProgress(0)
+      const blob = await getCroppedBlob(cropSrc, croppedAreaPixels, 0.85, 1200, 1500)
+      const path = `site/rep-${Date.now()}.jpg`
+      const formData = new FormData()
+      formData.append('file', new File([blob], 'rep.jpg', { type: 'image/jpeg' }))
+      formData.append('path', path)
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setForm(f => ({ ...f, photo: data.url }))
+    } catch (e) {
+      alert('アップロードエラー: ' + e.message)
+    } finally {
+      setUploading(false)
+    }
   }
 
   async function save() {
@@ -98,6 +126,42 @@ export default function AdminRepresentativePage() {
 
   return (
     <div style={{ maxWidth: 700, margin: '0 auto', padding: '40px 20px' }}>
+
+      {/* Crop modal */}
+      {cropSrc && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <Cropper
+              image={cropSrc}
+              crop={crop}
+              zoom={zoom}
+              aspect={4 / 5}
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={onCropComplete}
+            />
+          </div>
+          <div style={{ background: '#1a1a2e', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, whiteSpace: 'nowrap' }}>ズーム</span>
+              <input type="range" min={1} max={3} step={0.01} value={zoom}
+                onChange={e => setZoom(Number(e.target.value))}
+                style={{ flex: 1, accentColor: '#5bbfd6' }} />
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={closeCropModal}
+                style={{ padding: '10px 24px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#fff', fontSize: 14, cursor: 'pointer' }}>
+                キャンセル
+              </button>
+              <button onClick={confirmCrop}
+                style={{ padding: '10px 28px', borderRadius: 8, border: 'none', background: '#5bbfd6', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                この範囲でアップロード
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
       <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: '16px 0 28px' }}>代表メッセージ管理</h1>
 
@@ -105,7 +169,8 @@ export default function AdminRepresentativePage() {
 
         {/* 写真 */}
         <div style={{ background: '#fff', border: '1px solid #d6ecf5', borderRadius: 14, padding: '24px' }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 16 }}>写真</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 4 }}>写真</h2>
+          <p style={{ fontSize: 12, color: '#aaa', marginBottom: 16, marginTop: 0 }}>4:5（縦長）にトリミングして保存されます</p>
           <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
             {form.photo && (
               <div style={{ position: 'relative' }}>
@@ -115,21 +180,12 @@ export default function AdminRepresentativePage() {
               </div>
             )}
             <div>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a3560', color: '#fff', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a3560', color: '#fff', borderRadius: 8, padding: '10px 18px', cursor: uploading ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, opacity: uploading ? 0.6 : 1 }}>
                 📷 写真をアップロード
                 <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploading}
-                  onChange={e => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />
+                  onChange={e => { if (e.target.files?.[0]) { openCropModal(e.target.files[0]); e.target.value = '' } }} />
               </label>
-              {uploading && (
-                <div style={{ marginTop: 10 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#888', marginBottom: 4 }}>
-                    <span>アップロード中...</span><span>{uploadProgress}%</span>
-                  </div>
-                  <div style={{ background: '#e8f4fb', borderRadius: 99, height: 8, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', background: '#1a3560', borderRadius: 99, width: `${uploadProgress}%`, transition: 'width 0.2s ease' }} />
-                  </div>
-                </div>
-              )}
+              {uploading && <p style={{ color: '#888', fontSize: 12, marginTop: 8 }}>アップロード中...</p>}
               <div style={{ marginTop: 12 }}>
                 <input style={inp} value={form.photo} onChange={e => setForm(f => ({ ...f, photo: e.target.value }))} placeholder="またはURLを直接入力" />
               </div>
