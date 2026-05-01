@@ -75,10 +75,13 @@ export default function AdminRepresentativePage() {
 
   async function confirmCrop() {
     if (!cropSrc || !croppedAreaPixels) return
+    const src = cropSrc
+    const pixels = croppedAreaPixels
+    setCropSrc(null)
     setUploading(true)
-    closeCropModal()
     try {
-      const blob = await getCroppedBlob(cropSrc, croppedAreaPixels, 0.85, 1200, 1500)
+      const blob = await getCroppedBlob(src, pixels, 0.85, 1200, 1500)
+      URL.revokeObjectURL(src)
       const path = `site/rep-${Date.now()}.jpg`
       const formData = new FormData()
       formData.append('file', new File([blob], 'rep.jpg', { type: 'image/jpeg' }))
@@ -88,7 +91,8 @@ export default function AdminRepresentativePage() {
       if (data.error) throw new Error(data.error)
       setForm(f => ({ ...f, photo: data.url }))
     } catch (e) {
-      alert('アップロードエラー: ' + e.message)
+      URL.revokeObjectURL(src)
+      alert('アップロードエラー: ' + (e.message || String(e)))
     } finally {
       setUploading(false)
     }

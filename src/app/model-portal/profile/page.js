@@ -125,16 +125,20 @@ export default function ModelProfilePage() {
 
   async function confirmCrop() {
     if (!cropSrc || !croppedAreaPixels) return
+    const src = cropSrc
+    const pixels = croppedAreaPixels
+    setCropSrc(null) // モーダルを閉じるがURLはまだ revoke しない
     setUploading(true)
-    closeCropModal()
     try {
-      const blob = await getCroppedBlob(cropSrc, croppedAreaPixels, 0.85, 1200, 1500)
+      const blob = await getCroppedBlob(src, pixels, 0.85, 1200, 1500)
+      URL.revokeObjectURL(src)
       const file = new File([blob], `profile-${Date.now()}.jpg`, { type: 'image/jpeg' })
       const path = `models/${file.name}`
       const url = await uploadViaSignedUrl(file, path)
       setForm(f => ({ ...f, image: url }))
     } catch (e) {
-      alert('アップロード失敗: ' + e.message)
+      URL.revokeObjectURL(src)
+      alert('アップロード失敗: ' + (e.message || String(e)))
     } finally {
       setUploading(false)
     }
