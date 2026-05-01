@@ -259,7 +259,19 @@ export default async function EventDetailPage({ params }) {
 
       {/* Notes */}
       <div style={{ marginBottom: 32, fontSize: 13, color: '#666', lineHeight: 2.2, display: 'flex', flexDirection: 'column', gap: 0 }}>
-        <div><Link href="/terms" style={{ color: '#333', fontWeight: 600 }}>※ご予約前に必ずご利用規約</Link>をご確認ください。</div>
+        <div>※ご予約前に必ず<Link href="/terms" style={{ color: '#333', fontWeight: 700, textDecoration: 'underline' }}>ご利用規約</Link>をご確認ください。</div>
+        {event.studio_capacity && event.event_type === 'studio' && (
+          <>
+            <div>※各部のスタジオ撮影定員は、『枠の先着順』となります。</div>
+            <div>※定員人数を超えている場合は、野外撮影を「<span style={{ color: '#e00', fontWeight: 700 }}>{(event.studio_fee || 0).toLocaleString()}</span>円引き」で受付させていただきます。</div>
+          </>
+        )}
+        {event.studio_capacity && event.event_type === 'special' && (
+          <>
+            <div>※各部の特別撮影定員は、『枠の先着順』となります。</div>
+            <div>※定員人数を超えている場合は、定員外撮影を「<span style={{ color: '#e00', fontWeight: 700 }}>{(event.studio_fee || 0).toLocaleString()}</span>円引き」で受付させていただきます。</div>
+          </>
+        )}
         <div>※確定メールにて予約完了です。</div>
         <div>※同じモデルの撮影は１日２枠まででお願いいたします。</div>
         <div>※続けての撮影の場合モデルと別行動による15分休憩でお願い致します。</div>
