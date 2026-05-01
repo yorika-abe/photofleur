@@ -84,7 +84,6 @@ export default async function SchedulePage() {
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <p style={{ fontSize: 11, letterSpacing: '0.35em', color: '#222', textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>Schedule</p>
           <h1 style={{ ...serif, fontSize: 'clamp(40px, 8vw, 80px)', fontWeight: 700, color: '#1a3560', margin: '0 0 20px' }}>開催予定のイベント</h1>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
             <p style={{ fontSize: 12, color: '#666', margin: 0 }}>
