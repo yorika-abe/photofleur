@@ -235,7 +235,6 @@ export default function ModelPortalHome() {
             { href: '/model-portal/profile', icon: '✏️', label: 'プロフィール編集', desc: '写真・プロフィールを更新' },
             { href: '/model-portal/bookings', icon: '📋', label: '予約状況', desc: 'カメラマンSNS・空き確認' },
             { href: '/model-portal/shifts', icon: '📅', label: 'シフト提出', desc: '参加可能日程を登録', badge: pendingShiftCount },
-            { href: '/model-portal/shifts/extra', icon: '➕', label: '追加エントリー・変更申請', desc: '締め切り後の参加・変更申請' },
             { href: '/model-portal/blog', icon: '📝', label: 'ブログ', desc: '記事を書く' },
             { href: '/model-portal/private-info', icon: '🔒', label: '非公開登録情報', desc: '住所・連絡先・契約同意' },
             { href: '/model-portal/photos', icon: '📸', label: 'ご提供写真', desc: '提供いただいた写真を確認' },
