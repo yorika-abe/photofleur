@@ -5,6 +5,24 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Cropper from 'react-easy-crop'
 
+async function compressImage(file, maxW = 1600, maxH = 1600, quality = 0.85) {
+  return new Promise(resolve => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      let w = img.width, h = img.height
+      if (w > maxW) { h = Math.round(h * maxW / w); w = maxW }
+      if (h > maxH) { w = Math.round(w * maxH / h); h = maxH }
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+      URL.revokeObjectURL(url)
+      canvas.toBlob(blob => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' })), 'image/jpeg', quality)
+    }
+    img.src = url
+  })
+}
+
 async function getCroppedBlob(imageSrc, pixelCrop, quality = 0.85, maxW = 1920, maxH = 1080) {
   const img = await new Promise((resolve, reject) => {
     const i = new Image()
@@ -270,9 +288,9 @@ export default function EventEditPage() {
     try {
       const urls = []
       for (let i = 0; i < files.length; i++) {
-        const file = files[i]
-        const path = `events/${id}/gallery-${Date.now()}-${i}.${file.name.split('.').pop()}`
-        const url = await uploadWithProgress(file, path)
+        const compressed = await compressImage(files[i], 1600, 1600, 0.85)
+        const path = `events/${id}/gallery-${Date.now()}-${i}.jpg`
+        const url = await uploadWithProgress(compressed, path)
         urls.push(url)
       }
       updateField('gallery_images', [...(event.gallery_images || []), ...urls])
