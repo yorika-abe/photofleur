@@ -155,9 +155,9 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
   }
 
   return (
-    <div style={{ border: '1px solid #ddd', borderRadius: 10, overflow: 'visible' }}>
+    <div style={{ border: '1px solid #ddd', borderRadius: 10, overflow: 'hidden' }}>
       {/* ツールバー */}
-      <div style={btnRow}>
+      <div style={{ ...btnRow, position: 'sticky', top: 0, zIndex: 50 }}>
         {/* フォントサイズ */}
         <select
           value={fontSize}
@@ -242,6 +242,7 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
         onInput={sync}
         style={{
           minHeight: 320,
+          maxHeight: 480,
           padding: '16px',
           outline: 'none',
           fontSize: 15,
