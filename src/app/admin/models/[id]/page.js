@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { compressImage } from '@/lib/compressImage'
 
 const PRICE_TIERS = [
   { key: 'staff',  label: '運営スタッフ', street: 12000, studio: 10000, is_staff: true,  color: '#1a3560', bg: '#e8f0fb' },
@@ -64,8 +65,9 @@ export default function AdminModelEditPage() {
       })
   }, [id])
 
-  async function uploadImage(file, field) {
+  async function uploadImage(rawFile, field) {
     setUploading(true)
+    const file = rawFile.type.startsWith('image/') ? await compressImage(rawFile) : rawFile
     const ext = file.name.split('.').pop()
     const path = `models/${isNew ? 'new' : id}/${field}-${Date.now()}.${ext}`
     const formData = new FormData()
@@ -285,7 +287,8 @@ export default function AdminModelEditPage() {
               onChange={async e => {
                 if (!e.target.files?.length) return
                 setUploading(true)
-                for (const file of Array.from(e.target.files)) {
+                for (const rawFile of Array.from(e.target.files)) {
+                  const file = rawFile.type.startsWith('image/') ? await compressImage(rawFile) : rawFile
                   const ext = file.name.split('.').pop()
                   const path = `models/${isNew ? 'new' : id}/portfolio-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
                   const formData = new FormData()
