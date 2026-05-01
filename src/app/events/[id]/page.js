@@ -178,19 +178,19 @@ export default async function EventDetailPage({ params }) {
         </div>
       )}
 
-      {/* Map + Address side by side */}
-      {(embedUrl || event.location_name || event.access_note || event.studio_url || mapsLink) && (
-        <div style={{ display: 'flex', gap: 20, marginBottom: 32, alignItems: 'flex-start' }}>
+      {/* Map + Address + Thumbnail */}
+      {(embedUrl || event.location_name || event.access_note || event.studio_url || mapsLink || event.thumbnail_image) && (
+        <div style={{ display: 'flex', gap: 16, marginBottom: 32, alignItems: 'stretch' }}>
           {embedUrl && (
-            <div style={{ flexShrink: 0, width: 280, borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e5e5' }}>
+            <div style={{ flexShrink: 0, width: 260, borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e5e5', minHeight: 220 }}>
               <iframe
                 src={embedUrl}
-                width="280" height="220" style={{ border: 0, display: 'block' }}
+                style={{ border: 0, display: 'block', width: '100%', height: '100%', minHeight: 220 }}
                 allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"
               />
             </div>
           )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, justifyContent: 'center' }}>
             {(event.address || event.location_name) && (
               <div>
                 <div style={{ fontSize: 12, color: '#999', marginBottom: 3 }}>開催場所</div>
@@ -216,6 +216,11 @@ export default async function EventDetailPage({ params }) {
               </a>
             )}
           </div>
+          {event.thumbnail_image && (
+            <div style={{ flexShrink: 0, width: 130, borderRadius: 12, overflow: 'hidden' }}>
+              <img src={event.thumbnail_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            </div>
+          )}
         </div>
       )}
 
