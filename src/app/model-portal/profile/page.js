@@ -8,6 +8,7 @@ export default function ModelProfilePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState('')
   const [form, setForm] = useState({
     name: '', name_en: '', bio: '', height: '', birthday: '', shoe_size: '',
     image: '', twitter_url: '', instagram_url: '', favorite_things: '',
@@ -64,21 +65,29 @@ export default function ModelProfilePage() {
   }
 
   async function uploadPortfolioImages(files) {
+    const fileArr = Array.from(files)
     setUploading(true)
+    setUploadProgress(`0 / ${fileArr.length}`)
     const uploaded = []
-    for (const file of Array.from(files)) {
-      const ext = file.name.split('.').pop()
-      const path = `models/portfolio-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('path', path)
-      const res = await fetch('/api/model-portal/upload', { method: 'POST', body: formData })
-      const data = await res.json()
-      if (data.error) { alert('アップロードエラー: ' + data.error); continue }
-      uploaded.push(data.url)
+    try {
+      for (let i = 0; i < fileArr.length; i++) {
+        const file = fileArr[i]
+        setUploadProgress(`${i + 1} / ${fileArr.length}`)
+        const ext = file.name.split('.').pop()
+        const path = `models/portfolio-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('path', path)
+        const res = await fetch('/api/model-portal/upload', { method: 'POST', body: formData })
+        const data = await res.json()
+        if (data.error) { alert('アップロードエラー: ' + data.error); continue }
+        uploaded.push(data.url)
+      }
+      setPortfolioImages(prev => [...prev, ...uploaded])
+    } finally {
+      setUploading(false)
+      setUploadProgress('')
     }
-    setPortfolioImages(prev => [...prev, ...uploaded])
-    setUploading(false)
   }
 
   async function save() {
@@ -235,7 +244,7 @@ export default function ModelProfilePage() {
             <input type="file" accept="image/*" multiple disabled={uploading} style={{ display: 'none' }}
               onChange={e => e.target.files?.length && uploadPortfolioImages(e.target.files)} />
           </label>
-          {uploading && <p style={{ color: '#888', fontSize: 12, marginTop: 8 }}>アップロード中...</p>}
+          {uploading && <p style={{ color: '#888', fontSize: 12, marginTop: 8 }}>アップロード中...{uploadProgress ? ` (${uploadProgress}枚目)` : ''}</p>}
         </section>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
