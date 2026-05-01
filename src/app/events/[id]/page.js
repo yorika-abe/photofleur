@@ -172,9 +172,9 @@ export default async function EventDetailPage({ params }) {
       </div>
 
       {/* Main image */}
-      {event.main_image && (
+      {(event.main_image || event.thumbnail_image) && (
         <div style={{ marginBottom: 32, borderRadius: 16, overflow: 'hidden' }}>
-          <img src={event.main_image} alt={event.title || ''} style={{ width: '100%', height: 'auto', display: 'block' }} />
+          <img src={event.main_image || event.thumbnail_image} alt={event.title || ''} style={{ width: '100%', height: 'auto', display: 'block' }} />
         </div>
       )}
 
