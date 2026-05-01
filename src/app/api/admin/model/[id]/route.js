@@ -50,9 +50,24 @@ export async function POST(req, { params }) {
   const supabase = await createSupabaseAdminClient()
 
   if (action === 'approve') {
-    const { data: model } = await supabase.from('models').select('pending_data').eq('id', id).single()
+    const { data: model } = await supabase.from('models').select('*').eq('id', id).single()
     const updates = { status: 'active', pending_data: null }
     if (model?.pending_data) Object.assign(updates, model.pending_data)
+
+    // 使われなくなった画像をStorageから削除
+    if (model?.pending_data) {
+      const base = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/`
+      const toDelete = []
+      if (model.image && model.pending_data.image && model.image !== model.pending_data.image && model.image.startsWith(base))
+        toDelete.push(model.image.replace(base, ''))
+      const oldPf = model.portfolio_images || []
+      const newPf = model.pending_data.portfolio_images || []
+      for (const url of oldPf) {
+        if (!newPf.includes(url) && url?.startsWith(base)) toDelete.push(url.replace(base, ''))
+      }
+      if (toDelete.length > 0) await supabase.storage.from('images').remove(toDelete)
+    }
+
     await supabase.from('models').update(updates).eq('id', id)
     return Response.json({ ok: true })
   }
