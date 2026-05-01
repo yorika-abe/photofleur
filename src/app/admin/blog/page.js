@@ -41,8 +41,8 @@ export default function AdminBlogPage() {
   }
 
   async function deletePost(id) {
-    if (!confirm('この記事を削除しますか？')) return
-    await supabase.from('blog_posts').delete().eq('id', id)
+    if (!confirm('この記事を削除しますか？記事内の画像・動画もすべて削除されます。')) return
+    await fetch(`/api/admin/blog/${id}`, { method: 'DELETE' })
     setPosts(prev => prev.filter(p => p.id !== id))
   }
 

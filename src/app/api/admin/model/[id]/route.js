@@ -79,3 +79,22 @@ export async function POST(req, { params }) {
 
   return Response.json({ error: 'Unknown action' }, { status: 400 })
 }
+
+export async function DELETE(_req, { params }) {
+  const { id } = await params
+  const supabase = await createSupabaseAdminClient()
+  const base = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/`
+
+  const { data: model } = await supabase.from('models').select('image, portfolio_images').eq('id', id).single()
+  if (model) {
+    const toDelete = []
+    if (model.image?.startsWith(base)) toDelete.push(model.image.replace(base, ''))
+    for (const url of model.portfolio_images || []) {
+      if (url?.startsWith(base)) toDelete.push(url.replace(base, ''))
+    }
+    if (toDelete.length > 0) await supabase.storage.from('images').remove(toDelete)
+  }
+
+  await supabase.from('models').delete().eq('id', id)
+  return Response.json({ ok: true })
+}

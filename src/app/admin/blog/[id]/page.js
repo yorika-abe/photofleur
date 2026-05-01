@@ -78,8 +78,12 @@ export default function AdminBlogEditPage() {
       if (error) { alert('エラー: ' + error.message); setSaving(false); return }
       router.replace(`/admin/blog/${data.id}`)
     } else {
-      const { error } = await supabase.from('blog_posts').update(updates).eq('id', id)
-      if (error) { alert('エラー: ' + error.message); setSaving(false); return }
+      const res = await fetch(`/api/admin/blog/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      })
+      if (!res.ok) { alert('エラーが発生しました'); setSaving(false); return }
       setForm(f => ({ ...f, slug, status }))
       alert(publishNow ? '公開しました' : '保存しました')
     }

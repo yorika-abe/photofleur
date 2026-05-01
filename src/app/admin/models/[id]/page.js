@@ -362,7 +362,7 @@ export default function AdminModelEditPage() {
         )}
 
         {/* Save */}
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
           <button onClick={save} disabled={saving || uploading}
             style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 32px', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
             {saving ? '保存中...' : '変更を保存'}
@@ -372,6 +372,17 @@ export default function AdminModelEditPage() {
               style={{ display: 'inline-flex', alignItems: 'center', padding: '14px 20px', border: '2px solid #1a3560', color: '#1a3560', textDecoration: 'none', borderRadius: 10, fontWeight: 600, fontSize: 14 }}>
               公開ページを確認 →
             </Link>
+          )}
+          {!isNew && (
+            <button onClick={async () => {
+              if (!confirm('このモデルを完全に削除しますか？\nプロフィール画像・ポートフォリオ画像もすべて削除されます。')) return
+              const res = await fetch(`/api/admin/model/${id}`, { method: 'DELETE' })
+              if (!res.ok) { alert('削除に失敗しました'); return }
+              router.push('/admin/models')
+            }}
+              style={{ marginLeft: 'auto', background: 'none', border: '1px solid #e57373', color: '#c62828', borderRadius: 10, padding: '14px 20px', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+              モデルを削除
+            </button>
           )}
         </div>
       </div>
