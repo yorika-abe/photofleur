@@ -101,7 +101,7 @@ export default async function SchedulePage() {
             <p>現在、予定されているイベントはありません。</p>
           </div>
         ) : (
-          <div className="schedule-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+          <div className="schedule-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
             {eventsWithEntries.map(ev => {
               const date = formatDate(ev.event_date)
               const dow = formatDow(ev.event_date)
@@ -160,8 +160,8 @@ export default async function SchedulePage() {
       <style>{`
         .sched-card:hover .sched-img { transform: scale(1.05); }
         .sched-card:hover { opacity: 0.92; }
-        @media (max-width: 900px) { .schedule-grid { grid-template-columns: repeat(3, 1fr) !important; } }
-        @media (max-width: 560px) { .schedule-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; } }
+        @media (max-width: 800px) { .schedule-grid { grid-template-columns: repeat(3, 1fr) !important; } }
+        @media (max-width: 560px) { .schedule-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; } }
       `}</style>
     </div>
   )
