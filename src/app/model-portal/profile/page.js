@@ -50,18 +50,26 @@ export default function ModelProfilePage() {
     init()
   }, [])
 
+  async function uploadViaSignedUrl(file, path) {
+    const res = await fetch('/api/model-portal/upload-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path }),
+    })
+    const { token, publicUrl, error } = await res.json()
+    if (error) throw new Error(error)
+    const uploadRes = await supabase.storage.from('images').uploadToSignedUrl(path, token, file)
+    if (uploadRes.error) throw new Error(uploadRes.error.message)
+    return publicUrl
+  }
+
   async function uploadProfileImage(file) {
     setUploading(true)
     try {
       const ext = file.name.split('.').pop()
       const path = `models/profile-${Date.now()}.${ext}`
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('path', path)
-      const res = await fetch('/api/model-portal/upload', { method: 'POST', body: formData })
-      const data = await res.json()
-      if (data.error) { alert('アップロードエラー: ' + data.error); return }
-      setForm(f => ({ ...f, image: data.url }))
+      const url = await uploadViaSignedUrl(file, path)
+      setForm(f => ({ ...f, image: url }))
     } catch (e) {
       alert('アップロード失敗: ' + e.message)
     } finally {
@@ -80,14 +88,9 @@ export default function ModelProfilePage() {
         setUploadProgress(`${i + 1} / ${fileArr.length}`)
         const ext = file.name.split('.').pop()
         const path = `models/portfolio-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('path', path)
         try {
-          const res = await fetch('/api/model-portal/upload', { method: 'POST', body: formData })
-          const data = await res.json()
-          if (data.error) { alert(`(${i + 1}枚目) アップロードエラー: ${data.error}`); continue }
-          uploaded.push(data.url)
+          const url = await uploadViaSignedUrl(file, path)
+          uploaded.push(url)
         } catch (e) {
           alert(`(${i + 1}枚目) アップロード失敗: ${e.message}`)
         }
