@@ -1,36 +1,39 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
+import Cropper from 'react-easy-crop'
 
-function compressImage(file, { maxW, maxH, quality = 0.85, cropRatio = null }) {
+async function getCroppedBlob(imageSrc, pixelCrop, quality = 0.85, maxW = 1200, maxH = 1500) {
+  const img = await new Promise((resolve, reject) => {
+    const i = new Image()
+    i.onload = () => resolve(i)
+    i.onerror = reject
+    i.src = imageSrc
+  })
+  let dstW = pixelCrop.width, dstH = pixelCrop.height
+  if (dstW > maxW) { dstH = dstH * (maxW / dstW); dstW = maxW }
+  if (dstH > maxH) { dstW = dstW * (maxH / dstH); dstH = maxH }
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(dstW)
+  canvas.height = Math.round(dstH)
+  canvas.getContext('2d').drawImage(img, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, canvas.width, canvas.height)
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality))
+}
+
+function compressToJpeg(file, maxW, maxH, quality = 0.85) {
   return new Promise(resolve => {
     const img = new Image()
     const blobUrl = URL.createObjectURL(file)
     img.onload = () => {
       URL.revokeObjectURL(blobUrl)
-      let srcX = 0, srcY = 0, srcW = img.width, srcH = img.height
-
-      if (cropRatio) {
-        const [rw, rh] = cropRatio
-        const target = rw / rh
-        if (srcW / srcH > target) {
-          srcW = srcH * target
-          srcX = (img.width - srcW) / 2
-        } else {
-          srcH = srcW / target
-          srcY = (img.height - srcH) / 2
-        }
-      }
-
-      let dstW = srcW, dstH = srcH
-      if (maxW && dstW > maxW) { dstH = dstH * (maxW / dstW); dstW = maxW }
-      if (maxH && dstH > maxH) { dstW = dstW * (maxH / dstH); dstH = maxH }
-
+      let dstW = img.width, dstH = img.height
+      if (dstW > maxW) { dstH = dstH * (maxW / dstW); dstW = maxW }
+      if (dstH > maxH) { dstW = dstW * (maxH / dstH); dstH = maxH }
       const canvas = document.createElement('canvas')
       canvas.width = Math.round(dstW)
       canvas.height = Math.round(dstH)
-      canvas.getContext('2d').drawImage(img, srcX, srcY, srcW, srcH, 0, 0, canvas.width, canvas.height)
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
       canvas.toBlob(blob => {
         resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }))
       }, 'image/jpeg', quality)
@@ -52,6 +55,12 @@ export default function ModelProfilePage() {
   const [portfolioImages, setPortfolioImages] = useState([])
   const [message, setMessage] = useState('')
 
+  // Crop modal state
+  const [cropSrc, setCropSrc] = useState(null)
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
+
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -65,7 +74,6 @@ export default function ModelProfilePage() {
       const { model } = await res.json()
       if (model) {
         setModel(model)
-        // 申請中データがあればそちらをフォームに表示（最新の申請内容を反映）
         const src = model.pending_data || model
         setForm({
           name: src.name || '',
@@ -99,12 +107,31 @@ export default function ModelProfilePage() {
     return publicUrl
   }
 
-  async function uploadProfileImage(file) {
+  function openCropModal(file) {
+    const url = URL.createObjectURL(file)
+    setCropSrc(url)
+    setCrop({ x: 0, y: 0 })
+    setZoom(1)
+  }
+
+  function closeCropModal() {
+    if (cropSrc) URL.revokeObjectURL(cropSrc)
+    setCropSrc(null)
+  }
+
+  const onCropComplete = useCallback((_, pixels) => {
+    setCroppedAreaPixels(pixels)
+  }, [])
+
+  async function confirmCrop() {
+    if (!cropSrc || !croppedAreaPixels) return
     setUploading(true)
+    closeCropModal()
     try {
-      const compressed = await compressImage(file, { maxW: 1200, maxH: 1500, quality: 0.85, cropRatio: [4, 5] })
-      const path = `models/profile-${Date.now()}.jpg`
-      const url = await uploadViaSignedUrl(compressed, path)
+      const blob = await getCroppedBlob(cropSrc, croppedAreaPixels, 0.85, 1200, 1500)
+      const file = new File([blob], `profile-${Date.now()}.jpg`, { type: 'image/jpeg' })
+      const path = `models/${file.name}`
+      const url = await uploadViaSignedUrl(file, path)
       setForm(f => ({ ...f, image: url }))
     } catch (e) {
       alert('アップロード失敗: ' + e.message)
@@ -123,7 +150,7 @@ export default function ModelProfilePage() {
         const file = fileArr[i]
         setUploadProgress(`${i + 1} / ${fileArr.length}`)
         try {
-          const compressed = await compressImage(file, { maxW: 1600, maxH: 1600, quality: 0.85 })
+          const compressed = await compressToJpeg(file, 1600, 1600, 0.85)
           const path = `models/portfolio-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
           const url = await uploadViaSignedUrl(compressed, path)
           uploaded.push(url)
@@ -192,6 +219,42 @@ export default function ModelProfilePage() {
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '24px 16px' }}>
+
+      {/* Crop modal */}
+      {cropSrc && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <Cropper
+              image={cropSrc}
+              crop={crop}
+              zoom={zoom}
+              aspect={4 / 5}
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={onCropComplete}
+            />
+          </div>
+          <div style={{ background: '#1a1a2e', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, whiteSpace: 'nowrap' }}>ズーム</span>
+              <input type="range" min={1} max={3} step={0.01} value={zoom}
+                onChange={e => setZoom(Number(e.target.value))}
+                style={{ flex: 1, accentColor: '#5bbfd6' }} />
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={closeCropModal}
+                style={{ padding: '10px 24px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#fff', fontSize: 14, cursor: 'pointer' }}>
+                キャンセル
+              </button>
+              <button onClick={confirmCrop}
+                style={{ padding: '10px 28px', borderRadius: 8, border: 'none', background: '#5bbfd6', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                この範囲でアップロード
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: 0 }}>マイプロフィール</h1>
         <span style={{ background: statusLabel.bg, color: statusLabel.color, borderRadius: 6, padding: '4px 14px', fontSize: 13, fontWeight: 600 }}>
@@ -239,20 +302,21 @@ export default function ModelProfilePage() {
 
         {/* Profile image */}
         <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 18 }}>プロフィール画像</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 4 }}>プロフィール画像</h2>
+          <p style={{ fontSize: 12, color: '#aaa', marginBottom: 16, marginTop: 0 }}>4:5（縦長）にトリミングして保存されます</p>
           <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
             {form.image && (
-              <div style={{ width: 100, height: 133, borderRadius: 10, overflow: 'hidden', background: '#d6ecf5', flexShrink: 0, position: 'relative' }}>
+              <div style={{ width: 100, height: 125, borderRadius: 10, overflow: 'hidden', background: '#d6ecf5', flexShrink: 0, position: 'relative' }}>
                 <img src={form.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <button onClick={() => setForm(f => ({ ...f, image: '' }))}
                   style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: 13 }}>×</button>
               </div>
             )}
             <div>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a3560', color: '#fff', borderRadius: 8, padding: '12px 20px', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a3560', color: '#fff', borderRadius: 8, padding: '12px 20px', cursor: uploading ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 600, opacity: uploading ? 0.6 : 1 }}>
                 📷 写真を選ぶ
                 <input type="file" accept="image/*" disabled={uploading} style={{ display: 'none' }}
-                  onChange={e => e.target.files?.[0] && uploadProfileImage(e.target.files[0])} />
+                  onChange={e => { if (e.target.files?.[0]) { openCropModal(e.target.files[0]); e.target.value = '' } }} />
               </label>
               {uploading && <p style={{ color: '#888', fontSize: 12, marginTop: 8 }}>アップロード中...</p>}
             </div>
