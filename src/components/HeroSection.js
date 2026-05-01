@@ -85,12 +85,13 @@ export default function HeroSection({ images, mobileImages }) {
     return () => clearInterval(t)
   }, [imgs.length])
 
-  // Extract dominant accent color when image changes
+  // Extract dominant accent color when image changes (use mobile image on small screens)
   useEffect(() => {
-    const src = imgs[current]
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640
+    const src = (isMobile && mobileImgs[current]) ? mobileImgs[current] : imgs[current]
     if (!src) return
     extractAccentColor(src).then(setAccentColor)
-  }, [current, imgs])
+  }, [current, imgs, mobileImgs])
 
   return (
     <section style={{ position: 'relative', height: '100svh', minHeight: 600, overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
@@ -126,7 +127,7 @@ export default function HeroSection({ images, mobileImages }) {
       </span>
 
       {/* Gradient overlay */}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,20,40,0.9) 0%, rgba(10,20,40,0.2) 50%, transparent 100%)' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,20,40,0.6) 0%, rgba(10,20,40,0.08) 55%, transparent 100%)' }} />
 
       {/* Top-right label */}
       <div style={{ position: 'absolute', top: 28, right: 28, textAlign: 'right' }}>
@@ -136,12 +137,12 @@ export default function HeroSection({ images, mobileImages }) {
 
       {/* Main text */}
       <div style={{ position: 'relative', zIndex: 2, padding: 'clamp(32px, 5vw, 64px)', width: '100%' }}>
-        <p style={{ ...serif, fontSize: 'clamp(11px, 1.5vw, 13px)', letterSpacing: '0.35em', color: 'rgba(255,255,255,0.5)', marginBottom: 12, textTransform: 'uppercase', fontStyle: 'italic' }}>
+        <p style={{ ...serif, fontSize: 'clamp(11px, 1.5vw, 13px)', letterSpacing: '0.35em', color: 'rgba(255,255,255,0.7)', marginBottom: 12, textTransform: 'uppercase', fontStyle: 'italic', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
           Let your own unique flower bloom
         </p>
         <h1 style={{ ...serif, fontSize: 'clamp(64px, 14vw, 140px)', fontWeight: 300, lineHeight: 0.9, margin: '0 0 8px', letterSpacing: '-0.01em' }}>
-          <span style={{ display: 'block', fontWeight: 300, color: '#fff' }}>Photo</span>
-          <span style={{ display: 'block', fontWeight: 700, fontStyle: 'italic', color: accentColor, transition: 'color 1.8s ease' }}>FLEUR</span>
+          <span style={{ display: 'block', fontWeight: 300, color: '#fff', textShadow: '0 2px 16px rgba(0,0,0,0.55)' }}>Photo</span>
+          <span style={{ display: 'block', fontWeight: 700, fontStyle: 'italic', color: accentColor, transition: 'color 1.8s ease', textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}>FLEUR</span>
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 32, marginTop: 32, flexWrap: 'wrap' }}>
           <Link href="/schedule" style={{
@@ -149,12 +150,14 @@ export default function HeroSection({ images, mobileImages }) {
             color: '#fff', textDecoration: 'none', textTransform: 'uppercase',
             borderBottom: `1px solid ${accentColor}`, paddingBottom: 4,
             transition: 'border-color 1.8s ease',
+            textShadow: '0 1px 8px rgba(0,0,0,0.6)',
           }}>
             View Schedule
           </Link>
           <Link href="/models" style={{
             ...serif, fontSize: 'clamp(13px, 1.8vw, 16px)', letterSpacing: '0.2em',
-            color: 'rgba(255,255,255,0.6)', textDecoration: 'none', textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.8)', textDecoration: 'none', textTransform: 'uppercase',
+            textShadow: '0 1px 8px rgba(0,0,0,0.6)',
           }}>
             Our Models
           </Link>
