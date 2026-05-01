@@ -10,7 +10,7 @@ export async function GET() {
 
   const { data: events } = await supabase
     .from('events')
-    .select('id, event_date, event_type, title, location_name')
+    .select('id, event_date, event_type, title, location_name, studio_budget')
     .gte('event_date', since)
     .order('event_date', { ascending: true })
 

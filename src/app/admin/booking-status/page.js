@@ -68,9 +68,16 @@ export default function AdminBookingStatusPage() {
     } catch { setFees(DEFAULT_FEES) }
     try {
       const saved = localStorage.getItem(`pf_costs_${selectedEventId}`)
-      setCosts(saved ? JSON.parse(saved) : { lunchCount: 0, lunchRate: 1000, studioCost: 0 })
+      const savedCosts = saved ? JSON.parse(saved) : {}
+      const eventItem = data.find(item => item.event.id === selectedEventId)
+      const studioBudget = eventItem?.event?.studio_budget ?? 0
+      setCosts({
+        lunchCount: savedCosts.lunchCount ?? 0,
+        lunchRate: savedCosts.lunchRate ?? 1000,
+        studioCost: studioBudget,
+      })
     } catch { setCosts({ lunchCount: 0, lunchRate: 1000, studioCost: 0 }) }
-  }, [selectedEventId])
+  }, [selectedEventId, data])
 
   function updateFee(tier, dur, value) {
     const next = { ...fees, [tier]: { ...fees[tier], [dur]: Number(value) || 0 } }
@@ -81,7 +88,16 @@ export default function AdminBookingStatusPage() {
   function updateCost(key, value) {
     const next = { ...costs, [key]: Number(value) || 0 }
     setCosts(next)
-    if (selectedEventId) localStorage.setItem(`pf_costs_${selectedEventId}`, JSON.stringify(next))
+    if (selectedEventId) {
+      localStorage.setItem(`pf_costs_${selectedEventId}`, JSON.stringify(next))
+      if (key === 'studioCost') {
+        fetch('/api/admin/events', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: selectedEventId, studio_budget: Number(value) || 0 }),
+        })
+      }
+    }
   }
 
   function handleSave(currentItem, revenue, labor, lunchTotal, grossProfit) {

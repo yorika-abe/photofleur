@@ -151,6 +151,7 @@ export default function EventEditPage() {
         studio_url: event.studio_url,
         studio_capacity: event.studio_capacity ? parseInt(event.studio_capacity) : null,
         studio_fee: event.studio_fee != null ? parseInt(event.studio_fee) : 2000,
+        studio_budget: event.studio_budget != null ? parseInt(event.studio_budget) : 0,
         main_image: event.main_image,
         gallery_images: JSON.stringify(event.gallery_images || []),
         booking_open_at: event.booking_open_at ? new Date(event.booking_open_at + ':00+09:00').toISOString() : null,
@@ -515,6 +516,18 @@ export default function EventEditPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* 経費メモ（全イベント種別） */}
+      {activeTab === 'basic' && (
+        <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e5e5e5', marginTop: 0 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2f2244', marginBottom: 8, marginTop: 0 }}>経費メモ</h3>
+          <p style={{ fontSize: 12, color: '#999', marginBottom: 14, marginTop: 0 }}>予約状況の「スタジオ代・衣装代」と連動します</p>
+          <div>
+            <label style={label}>スタジオ代・衣装代（円）</label>
+            <input type="number" min="0" value={event.studio_budget ?? ''} onChange={e => updateField('studio_budget', e.target.value)} style={inp} placeholder="0" />
+          </div>
         </div>
       )}
 

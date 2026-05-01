@@ -53,10 +53,13 @@ export default function ModelProfilePage() {
     setUploading(true)
     const ext = file.name.split('.').pop()
     const path = `models/profile-${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('images').upload(path, file, { upsert: true })
-    if (error) { alert('アップロードエラー: ' + error.message); setUploading(false); return }
-    const { data } = supabase.storage.from('images').getPublicUrl(path)
-    setForm(f => ({ ...f, image: data.publicUrl }))
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('path', path)
+    const res = await fetch('/api/model-portal/upload', { method: 'POST', body: formData })
+    const data = await res.json()
+    if (data.error) { alert('アップロードエラー: ' + data.error); setUploading(false); return }
+    setForm(f => ({ ...f, image: data.url }))
     setUploading(false)
   }
 
@@ -66,10 +69,13 @@ export default function ModelProfilePage() {
     for (const file of Array.from(files)) {
       const ext = file.name.split('.').pop()
       const path = `models/portfolio-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-      const { error } = await supabase.storage.from('images').upload(path, file, { upsert: true })
-      if (error) { alert('アップロードエラー: ' + error.message); continue }
-      const { data } = supabase.storage.from('images').getPublicUrl(path)
-      uploaded.push(data.publicUrl)
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('path', path)
+      const res = await fetch('/api/model-portal/upload', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (data.error) { alert('アップロードエラー: ' + data.error); continue }
+      uploaded.push(data.url)
     }
     setPortfolioImages(prev => [...prev, ...uploaded])
     setUploading(false)
