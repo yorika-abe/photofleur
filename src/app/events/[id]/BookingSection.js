@@ -63,7 +63,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
   return (
     <>
       {/* モデルグリッド */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 40 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10, marginBottom: 40 }}>
         {validEntries.map(entry => {
           const model = entry.models
           const slots = slotsByEntry[entry.id] || []
@@ -83,7 +83,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
               onMouseEnter={e => { if (!allFull) { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(26,53,96,0.12)' } }}
               onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
             >
-              <div style={{ aspectRatio: '3/4', overflow: 'hidden', background: '#f0f4fb' }}>
+              <div style={{ aspectRatio: '1/1', overflow: 'hidden', background: '#f0f4fb' }}>
                 {model.image
                   ? <img src={model.image} alt={model.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48 }}>👤</div>

@@ -101,7 +101,7 @@ export default async function SchedulePage() {
             <p>現在、予定されているイベントはありません。</p>
           </div>
         ) : (
-          <div className="schedule-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
+          <div className="schedule-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
             {eventsWithEntries.map(ev => {
               const date = formatDate(ev.event_date)
               const dow = formatDow(ev.event_date)
