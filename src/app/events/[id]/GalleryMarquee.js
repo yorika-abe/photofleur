@@ -1,7 +1,5 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
-
 export default function GalleryMarquee({ images }) {
   if (!images || images.length === 0) return null
 
@@ -19,9 +17,6 @@ export default function GalleryMarquee({ images }) {
           gap: 8px;
           width: max-content;
           animation: marquee ${images.length * 3}s linear infinite;
-        }
-        .gallery-track:hover {
-          animation-play-state: paused;
         }
       `}</style>
       <div className="gallery-track">
