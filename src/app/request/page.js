@@ -33,10 +33,11 @@ export default async function RequestPage() {
           </h1>
           <div style={{ width: 48, height: 1, background: 'rgba(168,226,244,0.5)', margin: '0 auto 20px' }} />
           <p style={{ fontSize: 'clamp(13px, 1.8vw, 16px)', lineHeight: 1.9, color: 'rgba(255,255,255,0.8)', margin: 0 }}>
-            ご希望の<strong style={{ color: '#a8e2f4' }}>モデル・ロケーション・衣装・日時</strong>をもとに、完全オーダーメイドの撮影を承ります。ご希望のシチュエーションで、より自由度の高い撮影をお楽しみいただけます✨
+            ご希望の<strong style={{ color: '#a8e2f4' }}>モデル・ロケーション・衣装・日時</strong>をもとに、完全オーダーメイドの撮影を承ります。<br />
+            ご希望のシチュエーションで、より自由度の高い撮影をお楽しみいただけます✨
           </p>
           <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 14, marginBottom: 0 }}>
-            ※土曜・日曜・祝日は定期撮影会開催日のため、リクエスト撮影の受付は行っておりません。
+            ※撮影会開催日は、リクエスト撮影の受付は行っておりません。
           </p>
         </div>
       </section>
@@ -83,8 +84,11 @@ export default async function RequestPage() {
             </h2>
           </div>
           <div style={{ background: '#f8fbff', borderRadius: 12, padding: '24px 28px', border: '1px solid #d6ecf5' }}>
+            <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: '0 0 16px' }}>
+              モデルスタジオ料金×撮影時間（リクエスト撮影は２時間から受付しております）＋スタッフ同伴料1,000円×撮影時間＋モデル・スタッフの交通費
+            </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: '#556070', lineHeight: 1.9 }}>
-              <p style={{ margin: 0 }}>※通常のモデル撮影料金はモデルページのスタジオ料金をご参照ください。</p>
+              <p style={{ margin: 0 }}>※モデルページのスタジオ料金をご参照ください。</p>
               <p style={{ margin: 0 }}>※モデルにより追加料金が発生する場合がございます。詳細はお問い合わせください。</p>
               <p style={{ margin: 0 }}>※スタッフおよびモデルの<strong>交通費（実費）</strong>は別途ご負担となります。</p>
               <p style={{ margin: 0 }}>※当日撮影に際して発生する料金は全てカメラマンさん持ちでお願いいたします。</p>
@@ -126,7 +130,8 @@ export default async function RequestPage() {
           </div>
           <div style={{ background: '#f8fbff', borderRadius: 12, padding: '24px 28px', border: '1px solid #d6ecf5' }}>
             <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0 }}>
-              開催希望日を<strong>第1〜第3希望</strong>までお知らせください。モデル・スタッフのスケジュールを確認のうえ、折り返しご連絡させていただきます。
+              開催希望日を<strong>第1〜第3希望</strong>までお知らせください。<br />
+              モデル・スタッフのスケジュールを確認のうえ、折り返しご連絡させていただきます。
             </p>
           </div>
         </div>
@@ -154,6 +159,7 @@ export default async function RequestPage() {
                 {[
                   '希望モデル名',
                   'お名前',
+                  'SNSアカウントURL',
                   '電話番号',
                   '第1希望日・希望時間',
                   '第2希望日・希望時間',
