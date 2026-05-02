@@ -51,6 +51,8 @@ export default function AdminBookingStatusPage() {
   const [costs, setCosts] = useState({ lunchCount: 0, lunchRate: 1000, studioCost: 0 })
   const [savedIds, setSavedIds] = useState(new Set())
   const [selectedBooking, setSelectedBooking] = useState(null)
+  const [eventProducts, setEventProducts] = useState([])
+  const [productSales, setProductSales] = useState({})
   const [showHistory, setShowHistory] = useState(false)
   const [historyRecords, setHistoryRecords] = useState([])
   const [expandedHistory, setExpandedHistory] = useState(null)
@@ -92,14 +94,33 @@ export default function AdminBookingStatusPage() {
         lunchCount: savedCosts.lunchCount ?? 0,
         lunchRate: savedCosts.lunchRate ?? 1000,
         studioCost: studioBudget,
+        hanselling: savedCosts.hanselling ?? 0,
       })
-    } catch { setCosts({ lunchCount: 0, lunchRate: 1000, studioCost: 0 }) }
+    } catch { setCosts({ lunchCount: 0, lunchRate: 1000, studioCost: 0, hanselling: 0 }) }
+
+    // 予約商品を取得
+    fetch(`/api/admin/events/${selectedEventId}/products`)
+      .then(r => r.json())
+      .then(d => setEventProducts(Array.isArray(d) ? d : []))
+      .catch(() => setEventProducts([]))
+
+    // 商品販売数をlocalStorageから読み込む
+    try {
+      const saved = localStorage.getItem(`pf_product_sales_${selectedEventId}`)
+      setProductSales(saved ? JSON.parse(saved) : {})
+    } catch { setProductSales({}) }
   }, [selectedEventId, data])
 
   function updateFee(tier, dur, value) {
     const next = { ...fees, [tier]: { ...fees[tier], [dur]: Number(value) || 0 } }
     setFees(next)
     if (selectedEventId) localStorage.setItem(`pf_fees_${selectedEventId}`, JSON.stringify(next))
+  }
+
+  function updateProductSale(productId, count) {
+    const next = { ...productSales, [productId]: Number(count) || 0 }
+    setProductSales(next)
+    if (selectedEventId) localStorage.setItem(`pf_product_sales_${selectedEventId}`, JSON.stringify(next))
   }
 
   function updateCost(key, value) {
@@ -117,7 +138,7 @@ export default function AdminBookingStatusPage() {
     }
   }
 
-  function doSave(currentItem, revenue, labor, lunchTotal, grossProfit) {
+  function doSave(currentItem, revenue, productRevenue, labor, lunchTotal, grossProfit) {
     const eventId = currentItem.event.id
     const record = {
       eventId,
@@ -126,12 +147,18 @@ export default function AdminBookingStatusPage() {
       eventType: currentItem.event.event_type,
       locationName: currentItem.event.location_name,
       revenue,
+      productRevenue,
+      totalRevenue: revenue + productRevenue,
       labor,
       lunchTotal,
       lunchCount: costs.lunchCount || 0,
       lunchRate: costs.lunchRate || 0,
       studioCost: costs.studioCost || 0,
+      hanselling: costs.hanselling || 0,
       grossProfit,
+      productSalesSnapshot: eventProducts.map(p => ({
+        name: p.name, price: p.price, count: productSales[p.id] || 0,
+      })),
       savedAt: new Date().toISOString(),
       timeSlots: currentItem.timeSlots,
       rows: currentItem.rows.map(row => ({
@@ -161,10 +188,10 @@ export default function AdminBookingStatusPage() {
     setSelectedEventId(next?.event.id || null)
   }
 
-  function handleSave(currentItem, revenue, labor, lunchTotal, grossProfit) {
+  function handleSave(currentItem, revenue, productRevenue, labor, lunchTotal, grossProfit) {
     if (!currentItem) return
     if (!window.confirm(`${formatDate(currentItem.event.event_date)} の記録を保存して予約状況から削除しますか？`)) return
-    doSave(currentItem, revenue, labor, lunchTotal, grossProfit)
+    doSave(currentItem, revenue, productRevenue, labor, lunchTotal, grossProfit)
   }
 
   function deleteHistory(eventId) {
@@ -230,7 +257,7 @@ export default function AdminBookingStatusPage() {
                       {rec.locationName && <span style={{ fontSize: 13, color: '#666' }}>{rec.locationName}</span>}
                       {rec.eventTitle && <span style={{ fontSize: 13, color: '#888' }}>{rec.eventTitle}</span>}
                       <div style={{ marginLeft: 'auto', display: 'flex', gap: 20, alignItems: 'center' }}>
-                        <span style={{ fontSize: 13, color: '#388e3c', fontWeight: 600 }}>売上 ¥{(rec.revenue || 0).toLocaleString()}</span>
+                        <span style={{ fontSize: 13, color: '#388e3c', fontWeight: 600 }}>売上 ¥{(rec.totalRevenue ?? rec.revenue ?? 0).toLocaleString()}</span>
                         <span style={{ fontSize: 13, color: rec.grossProfit >= 0 ? '#388e3c' : '#c62828', fontWeight: 700 }}>粗利 ¥{(rec.grossProfit || 0).toLocaleString()}</span>
                         <span style={{ color: '#bbb', fontSize: 12 }}>{isExpanded ? '▲' : '▼'}</span>
                       </div>
@@ -238,10 +265,12 @@ export default function AdminBookingStatusPage() {
                     {isExpanded && (
                       <div style={{ padding: '14px 18px', borderTop: '1px solid #f0f0f0', background: '#fafafa' }}>
                         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', fontSize: 13, color: '#555', marginBottom: 12 }}>
-                          <div><span style={{ color: '#aaa' }}>売上　</span><span style={{ fontWeight: 700, color: '#388e3c' }}>¥{(rec.revenue || 0).toLocaleString()}</span></div>
+                          <div><span style={{ color: '#aaa' }}>撮影売上　</span><span style={{ fontWeight: 700, color: '#388e3c' }}>¥{(rec.revenue || 0).toLocaleString()}</span></div>
+                          {rec.productRevenue > 0 && <div><span style={{ color: '#aaa' }}>商品売上　</span><span style={{ fontWeight: 700, color: '#388e3c' }}>¥{rec.productRevenue.toLocaleString()}</span></div>}
                           <div><span style={{ color: '#aaa' }}>人件費　</span><span style={{ fontWeight: 700, color: '#c62828' }}>¥{(rec.labor || 0).toLocaleString()}</span></div>
                           {rec.lunchTotal > 0 && <div><span style={{ color: '#aaa' }}>お昼代　</span><span style={{ fontWeight: 700, color: '#c62828' }}>¥{rec.lunchTotal.toLocaleString()}</span></div>}
                           {rec.studioCost > 0 && <div><span style={{ color: '#aaa' }}>スタジオ代　</span><span style={{ fontWeight: 700, color: '#c62828' }}>¥{rec.studioCost.toLocaleString()}</span></div>}
+                          {rec.hanselling > 0 && <div><span style={{ color: '#aaa' }}>販管費　</span><span style={{ fontWeight: 700, color: '#c62828' }}>¥{rec.hanselling.toLocaleString()}</span></div>}
                           <div><span style={{ color: '#aaa' }}>粗利益　</span><span style={{ fontWeight: 700, color: rec.grossProfit >= 0 ? '#388e3c' : '#c62828', fontSize: 15 }}>¥{(rec.grossProfit || 0).toLocaleString()}</span></div>
                         </div>
                         {rec.rows?.length > 0 && (
@@ -345,8 +374,10 @@ export default function AdminBookingStatusPage() {
                     }
                   }
                 }
+                const productRevenue = eventProducts.reduce((s, p) => s + p.price * (productSales[p.id] || 0), 0)
+                const totalRevenue = revenue + productRevenue
                 const lunchTotal = (costs.lunchCount || 0) * (costs.lunchRate || 0)
-                const grossProfit = revenue - labor - lunchTotal - (costs.studioCost || 0)
+                const grossProfit = totalRevenue - labor - lunchTotal - (costs.studioCost || 0) - (costs.hanselling || 0)
 
                 const inp = { padding: '4px 6px', border: '1px solid #ddd', borderRadius: 4, fontSize: 13, textAlign: 'right' }
 
@@ -499,13 +530,49 @@ export default function AdminBookingStatusPage() {
                       </div>
                     </div>
 
+                    {/* 予約商品売上 */}
+                    {eventProducts.length > 0 && (
+                      <div style={{ marginTop: 16, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, padding: '16px 20px' }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 12 }}>予約商品売上</div>
+                        {eventProducts.map(p => (
+                          <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f5f5f5', flexWrap: 'wrap', gap: 8 }}>
+                            <div>
+                              <span style={{ fontWeight: 600, fontSize: 13, color: '#333' }}>{p.name}</span>
+                              <span style={{ color: '#aaa', fontSize: 12, marginLeft: 8 }}>¥{p.price.toLocaleString()}/個</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                              <input type="number" min="0" value={productSales[p.id] || 0}
+                                onChange={e => updateProductSale(p.id, e.target.value)}
+                                style={{ ...inp, width: 60 }} />
+                              <span style={{ color: '#777' }}>個 =</span>
+                              <span style={{ fontWeight: 700, color: '#388e3c', minWidth: 80, textAlign: 'right' }}>¥{(p.price * (productSales[p.id] || 0)).toLocaleString()}</span>
+                            </div>
+                          </div>
+                        ))}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10 }}>
+                          <span style={{ fontWeight: 700, fontSize: 13, color: '#555' }}>商品売上計</span>
+                          <span style={{ fontWeight: 700, fontSize: 15, color: '#388e3c' }}>¥{productRevenue.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    )}
+
                     {/* 利益管理 */}
                     <div style={{ marginTop: 16, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, padding: '16px 20px' }}>
                       <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>利益管理</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
-                          <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>売上</span>
-                          <span style={{ fontSize: 16, fontWeight: 700, color: '#388e3c' }}>¥{revenue.toLocaleString()}</span>
+                          <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>撮影売上</span>
+                          <span style={{ fontSize: 15, fontWeight: 700, color: '#388e3c' }}>¥{revenue.toLocaleString()}</span>
+                        </div>
+                        {productRevenue > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
+                            <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>商品売上</span>
+                            <span style={{ fontSize: 15, fontWeight: 700, color: '#388e3c' }}>¥{productRevenue.toLocaleString()}</span>
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
+                          <span style={{ fontSize: 13, color: '#1a3560', fontWeight: 700 }}>売上合計</span>
+                          <span style={{ fontSize: 16, fontWeight: 700, color: '#1a3560' }}>¥{totalRevenue.toLocaleString()}</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
                           <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>人件費（モデル報酬）</span>
@@ -525,7 +592,7 @@ export default function AdminBookingStatusPage() {
                             <span style={{ fontWeight: 700, color: '#c62828', minWidth: 70, textAlign: 'right' }}>−¥{lunchTotal.toLocaleString()}</span>
                           </div>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '2px solid #ddd', flexWrap: 'wrap', gap: 8 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0f0f0', flexWrap: 'wrap', gap: 8 }}>
                           <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>スタジオ代・衣装代</span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                             <input type="number" min="0" value={costs.studioCost}
@@ -533,6 +600,16 @@ export default function AdminBookingStatusPage() {
                               style={{ ...inp, width: 90 }} />
                             <span style={{ color: '#777' }}>円 =</span>
                             <span style={{ fontWeight: 700, color: '#c62828', minWidth: 70, textAlign: 'right' }}>−¥{(costs.studioCost || 0).toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '2px solid #ddd', flexWrap: 'wrap', gap: 8 }}>
+                          <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>販管費</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                            <input type="number" min="0" value={costs.hanselling || 0}
+                              onChange={e => updateCost('hanselling', e.target.value)}
+                              style={{ ...inp, width: 90 }} />
+                            <span style={{ color: '#777' }}>円 =</span>
+                            <span style={{ fontWeight: 700, color: '#c62828', minWidth: 70, textAlign: 'right' }}>−¥{(costs.hanselling || 0).toLocaleString()}</span>
                           </div>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12 }}>
@@ -548,7 +625,7 @@ export default function AdminBookingStatusPage() {
                     {isPastEvent && (
                       <div style={{ marginTop: 16, marginBottom: 32, display: 'flex', justifyContent: 'flex-end' }}>
                         <button
-                          onClick={() => handleSave(currentItem, revenue, labor, lunchTotal, grossProfit)}
+                          onClick={() => handleSave(currentItem, revenue, productRevenue, labor, lunchTotal, grossProfit)}
                           style={{ background: '#c62828', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 32px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
                           記録を保存して予約状況から削除
                         </button>

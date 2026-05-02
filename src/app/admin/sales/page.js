@@ -147,16 +147,19 @@ export default function AdminSalesPage() {
   // Per-month calculations
   function monthData(month) {
     const bookingsInMonth = data.filter(b => b.event?.event_date?.slice(0, 7) === month)
-    const revenue = bookingsInMonth.reduce((s, b) => s + b.revenue, 0)
+    const slotRevenue = bookingsInMonth.reduce((s, b) => s + b.revenue, 0)
     const recordsInMonth = savedRecords.filter(r => r.eventDate?.slice(0, 7) === month)
+    const productRevenue = recordsInMonth.reduce((s, r) => s + (r.productRevenue || 0), 0)
+    const revenue = slotRevenue + productRevenue
     const grossProfit = recordsInMonth.reduce((s, r) => s + (r.grossProfit || 0), 0)
     const misc = miscExpenses[month] || 0
-    const netProfit = grossProfit - Math.round(revenue * 0.036) - misc
-    return { bookings: bookingsInMonth, revenue, records: recordsInMonth, grossProfit, misc, netProfit }
+    const netProfit = grossProfit - Math.round(slotRevenue * 0.036) - misc
+    return { bookings: bookingsInMonth, revenue, slotRevenue, productRevenue, records: recordsInMonth, grossProfit, misc, netProfit }
   }
 
   const yearStr = String(currentYear)
   const yearRevenue = data.filter(b => b.event?.event_date?.startsWith(yearStr)).reduce((s, b) => s + b.revenue, 0)
+    + savedRecords.filter(r => r.eventDate?.startsWith(yearStr)).reduce((s, r) => s + (r.productRevenue || 0), 0)
 
   const activeData = monthData(activeMonth)
 
@@ -270,10 +273,10 @@ export default function AdminSalesPage() {
       {/* 月次サマリー */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 20 }}>
         {[
-          { label: '売上', value: yen(activeData.revenue), color: '#388e3c' },
+          { label: '売上', value: yen(activeData.revenue), color: '#388e3c', note: activeData.productRevenue > 0 ? `うち商品 ${yen(activeData.productRevenue)}` : null },
           { label: '粗利益', value: yen(activeData.grossProfit), color: '#3949ab', note: '保存済み記録' },
           { label: '諸々経費', value: yen(activeData.misc), color: '#e65100', editable: true },
-          { label: '純利益', value: yen(activeData.netProfit), color: activeData.netProfit >= 0 ? '#00695c' : '#c62828', note: `粗利−手数料(${yen(Math.round(activeData.revenue * 0.036))})−経費` },
+          { label: '純利益', value: yen(activeData.netProfit), color: activeData.netProfit >= 0 ? '#00695c' : '#c62828', note: `粗利−手数料(${yen(Math.round(activeData.slotRevenue * 0.036))})−経費` },
         ].map(s => (
           <div key={s.label} style={{ background: '#fff', borderRadius: 10, padding: '14px', border: '1px solid #e5e5e5', textAlign: 'center' }}>
             <div style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>{s.label}</div>
