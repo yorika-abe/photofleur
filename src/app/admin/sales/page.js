@@ -155,6 +155,9 @@ export default function AdminSalesPage() {
     return { bookings: bookingsInMonth, revenue, records: recordsInMonth, grossProfit, misc, netProfit }
   }
 
+  const yearStr = String(currentYear)
+  const yearRevenue = data.filter(b => b.event?.event_date?.startsWith(yearStr)).reduce((s, b) => s + b.revenue, 0)
+
   const activeData = monthData(activeMonth)
 
   // Model breakdown for active month
@@ -201,6 +204,13 @@ export default function AdminSalesPage() {
         <Link href="/admin/bookings" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>予約一覧</Link>
         <div style={{ padding: '10px 24px', fontWeight: 700, fontSize: 15, color: '#1a3560', borderBottom: '2px solid #1a3560', marginBottom: -2, cursor: 'default' }}>売上管理</div>
         <Link href="/admin/booking-status?tab=history" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>履歴</Link>
+      </div>
+
+      {/* 年次売上 */}
+      <div style={{ background: '#fff', borderRadius: 12, padding: '16px', border: '2px solid #2f224418', textAlign: 'center', marginBottom: 16 }}>
+        <div style={{ fontSize: 11, color: '#aaa', marginBottom: 6 }}>{currentYear}年総売上</div>
+        <div style={{ fontSize: 22, fontWeight: 700, color: '#2f2244' }}>{yen(yearRevenue)}</div>
+        <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>開催日ベース</div>
       </div>
 
       {/* 月タブ */}
