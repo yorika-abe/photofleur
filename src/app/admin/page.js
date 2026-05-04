@@ -53,7 +53,7 @@ export default async function AdminPage() {
           { href: '/admin/users', label: 'ユーザー権限管理', icon: '🔑' },
           { href: '/admin/photos', label: 'ご提供写真', icon: '📸', badge: newPhotos ?? 0 },
           { href: '/admin/newsletter', label: 'メルマガ配信', icon: '📧' },
-          { href: '/admin/private-products', label: '非公開商品管理', icon: '🔒' },
+          { href: '/admin/private-products', label: '非公開商品管理', icon: '🔗' },
         ].map(link => (
           <Link key={link.href} href={link.href} style={{ textDecoration: 'none' }}>
             <div style={{ background: '#1a3560', color: '#fff', borderRadius: 12, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
