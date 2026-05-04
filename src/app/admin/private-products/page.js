@@ -1,8 +1,8 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
-import { compressImage } from '@/lib/compressImage'
+import Cropper from 'react-easy-crop'
 
 const PAYMENT_OPTIONS = [
   { value: 'cash', label: '現金のみ' },
@@ -24,6 +24,10 @@ export default function PrivateProductsPage() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [editId, setEditId] = useState(null)
+  const [cropSrc, setCropSrc] = useState(null)
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
   const [expanded, setExpanded] = useState(null)
   const [toast, setToast] = useState(null)
   const [copiedToken, setCopiedToken] = useState(null)
@@ -45,16 +49,44 @@ export default function PrivateProductsPage() {
     setLoading(false)
   }
 
-  async function uploadImage(file) {
+  function uploadImage(file) {
+    const url = URL.createObjectURL(file)
+    setCropSrc(url)
+    setCrop({ x: 0, y: 0 })
+    setZoom(1)
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  const onCropComplete = useCallback((_, pixels) => {
+    setCroppedAreaPixels(pixels)
+  }, [])
+
+  async function confirmCrop() {
+    if (!cropSrc || !croppedAreaPixels) return
+    const src = cropSrc
+    const pixels = croppedAreaPixels
+    setCropSrc(null)
     setUploading(true)
-    const compressed = await compressImage(file)
-    const ext = compressed.name.split('.').pop()
-    const path = `private-products/${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('images').upload(path, compressed)
-    setUploading(false)
-    if (error) { alert('アップロード失敗'); return }
-    const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(path)
-    setForm(f => ({ ...f, image: publicUrl }))
+    try {
+      const img = await new Promise((resolve, reject) => {
+        const i = new Image(); i.onload = () => resolve(i); i.onerror = reject; i.src = src
+      })
+      const canvas = document.createElement('canvas')
+      canvas.width = pixels.width; canvas.height = pixels.height
+      canvas.getContext('2d').drawImage(img, pixels.x, pixels.y, pixels.width, pixels.height, 0, 0, pixels.width, pixels.height)
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.85))
+      URL.revokeObjectURL(src)
+      const path = `private-products/${Date.now()}.jpg`
+      const { error } = await supabase.storage.from('images').upload(path, new File([blob], 'image.jpg', { type: 'image/jpeg' }))
+      if (error) { alert('アップロード失敗'); return }
+      const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(path)
+      setForm(f => ({ ...f, image: publicUrl }))
+    } catch (e) {
+      URL.revokeObjectURL(src)
+      alert('アップロードエラー: ' + e)
+    } finally {
+      setUploading(false)
+    }
   }
 
   function startEdit(p) {
@@ -142,6 +174,39 @@ export default function PrivateProductsPage() {
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 16px' }}>
+      {cropSrc && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <Cropper
+              image={cropSrc}
+              crop={crop}
+              zoom={zoom}
+              aspect={4 / 3}
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={onCropComplete}
+            />
+          </div>
+          <div style={{ background: '#1a1a2e', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, whiteSpace: 'nowrap' }}>ズーム</span>
+              <input type="range" min={1} max={3} step={0.01} value={zoom}
+                onChange={e => setZoom(Number(e.target.value))}
+                style={{ flex: 1, accentColor: '#1a3560' }} />
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={() => { URL.revokeObjectURL(cropSrc); setCropSrc(null) }}
+                style={{ padding: '10px 24px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#fff', fontSize: 14, cursor: 'pointer' }}>
+                キャンセル
+              </button>
+              <button onClick={confirmCrop}
+                style={{ padding: '10px 28px', borderRadius: 8, border: 'none', background: '#1a3560', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                この範囲でアップロード
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {toast && (
         <div style={{ position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)', background: '#1b5e20', color: '#fff', borderRadius: 10, padding: '12px 24px', fontWeight: 600, fontSize: 14, zIndex: 9999 }}>
           {toast}

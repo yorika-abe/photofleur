@@ -77,8 +77,7 @@ export default function EventEditPage() {
   const [products, setProducts] = useState([])
   const [modelsSubTab, setModelsSubTab] = useState('models')
   const [newProduct, setNewProduct] = useState({ name: '', image: '', description: '', price: 0, stock: 1, option_groups: [] })
-  const [uploadingProductImg, setUploadingProductImg] = useState(false)
-  const [productImgProgress, setProductImgProgress] = useState(0)
+
   const [recalculating, setRecalculating] = useState(null) // entryId
   const [recalcDone, setRecalcDone] = useState(null) // entryId
 
@@ -241,6 +240,26 @@ export default function EventEditPage() {
     const target = cropTarget
     setCropSrc(null)
     setCropTarget(null)
+
+    if (target === 'product') {
+      setUploading('product')
+      setUploadProgress(0)
+      try {
+        const blob = await getCroppedBlob(src, pixels, 0.85, 1920, 1920)
+        URL.revokeObjectURL(src)
+        const path = `events/${id}/product-${Date.now()}.jpg`
+        const url = await uploadWithProgress(new File([blob], 'product.jpg', { type: 'image/jpeg' }), path)
+        setNewProduct(p => ({ ...p, image: url }))
+      } catch (e) {
+        URL.revokeObjectURL(src)
+        alert('アップロードエラー: ' + (e.message || String(e)))
+      } finally {
+        setUploading(null)
+        setUploadProgress(0)
+      }
+      return
+    }
+
     const uploadKey = target === 'portrait' ? 'thumbnail_image' : 'main_image'
     setUploading(uploadKey)
     setUploadProgress(0)
@@ -385,17 +404,8 @@ export default function EventEditPage() {
     setTimeout(() => setRecalcDone(null), 3000)
   }
 
-  async function uploadProductImage(rawFile) {
-    setUploadingProductImg(true)
-    setProductImgProgress(0)
-    const file = rawFile.type.startsWith('image/') ? await compressImage(rawFile) : rawFile
-    const path = `events/${id}/product-${Date.now()}.${file.name.split('.').pop()}`
-    try {
-      const url = await uploadWithProgress(file, path)
-      setNewProduct(p => ({ ...p, image: url }))
-    } catch (e) { alert('アップロードエラー: ' + e) }
-    setUploadingProductImg(false)
-    setProductImgProgress(0)
+  function uploadProductImage(rawFile) {
+    openCropModal(rawFile, 'product')
   }
 
   async function addProduct() {
@@ -509,7 +519,7 @@ export default function EventEditPage() {
               image={cropSrc}
               crop={crop}
               zoom={zoom}
-              aspect={cropTarget === 'portrait' ? 4 / 5 : 16 / 9}
+              aspect={cropTarget === 'portrait' ? 4 / 5 : cropTarget === 'product' ? 4 / 3 : 16 / 9}
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={onCropComplete}
@@ -929,9 +939,9 @@ export default function EventEditPage() {
                                   style={{ position: 'absolute', top: -6, right: -6, background: '#e53935', color: '#fff', border: 'none', borderRadius: '50%', width: 16, height: 16, cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>×</button>
                               </div>
                             )}
-                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: uploadingProductImg ? '#ccc' : '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 12px', cursor: uploadingProductImg ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600 }}>
-                              📷 {uploadingProductImg ? `${productImgProgress}%` : 'アップロード'}
-                              <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingProductImg}
+                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: uploading === 'product' ? '#ccc' : '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 12px', cursor: uploading === 'product' ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600 }}>
+                              📷 {uploading === 'product' ? `${uploadProgress}%` : '画像を選んでトリミング'}
+                              <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploading === 'product'}
                                 onChange={e => e.target.files?.[0] && uploadProductImage(e.target.files[0])} />
                             </label>
                           </div>
