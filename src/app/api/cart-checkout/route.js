@@ -91,7 +91,8 @@ export async function POST(req) {
       }
 
     } else if (item.type === 'product') {
-      await admin.from('event_product_bookings').insert({
+      const productQrToken = randomUUID()
+      const { data: productBooking } = await admin.from('event_product_bookings').insert({
         event_id: item.eventId,
         product_id: item.productId,
         customer_name: customer.name,
@@ -102,7 +103,33 @@ export async function POST(req) {
         payment_method: paymentMethod,
         square_payment_id: squarePaymentId || null,
         selections: item.selections || {},
-      }).catch(() => {})
+        qr_token: productQrToken,
+      }).select('id').single().catch(() => ({ data: null }))
+
+      if (productBooking) {
+        qrTokens[item.cartId] = productQrToken
+
+        // 確認メール
+        let modelName = null
+        if (item.selectedModelIds?.length > 0) {
+          const { data: firstModel } = await admin.from('models').select('name').eq('id', item.selectedModelIds[0]).single().catch(() => ({ data: null }))
+          modelName = firstModel?.name || null
+        }
+        fetch(`${baseUrl}/api/send-private-booking-mail`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerName: customer.name,
+            email: customer.email,
+            qr_token: productQrToken,
+            productTitle: item.name,
+            eventDate: item.eventDate || null,
+            timeLabel: item.selections?.slot || null,
+            price: item.price || 0,
+            modelName,
+          }),
+        }).catch(() => {})
+      }
 
       // モデルへのLINE通知
       if (item.selectedModelIds?.length > 0) {

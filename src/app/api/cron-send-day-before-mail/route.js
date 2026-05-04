@@ -106,6 +106,36 @@ export async function GET(req) {
       }
     }
 
+    // 特別予約商品の前日メール
+    const { data: epBookings } = await supabase
+      .from('event_product_bookings')
+      .select('id, customer_name, customer_email, qr_token, selections, event_products(name, price), events(event_date)')
+      .is('cancelled_at', null)
+      .not('customer_email', 'is', null)
+
+    const epTomorrow = (epBookings || []).filter(b => b.events?.event_date === tomorrowDate)
+    for (const b of epTomorrow) {
+      try {
+        const res = await fetch(`${baseUrl}/api/send-private-booking-mail`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerName: b.customer_name,
+            email: b.customer_email,
+            qr_token: b.qr_token,
+            productTitle: b.event_products?.name || '',
+            eventDate: b.events?.event_date || null,
+            timeLabel: b.selections?.slot || null,
+            price: b.event_products?.price || 0,
+            modelName: null,
+          }),
+        })
+        results.push({ type: 'event_product', email: b.customer_email, ok: res.ok })
+      } catch (e) {
+        results.push({ type: 'event_product', email: b.customer_email, ok: false, error: String(e) })
+      }
+    }
+
     return Response.json({
       success: true,
       sentCount: results.filter(r => r.ok).length,

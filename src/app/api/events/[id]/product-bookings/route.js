@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import { sendLineMessage } from '@/lib/line'
+import { randomUUID } from 'crypto'
 
 export async function POST(req, { params }) {
   const { id } = await params
@@ -8,14 +9,46 @@ export async function POST(req, { params }) {
 
   if (!customer_name?.trim()) return Response.json({ error: 'お名前を入力してください' }, { status: 400 })
 
-  // Store booking (table: event_product_bookings)
-  await admin.from('event_product_bookings').insert({
+  const qrToken = randomUUID()
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || ''
+
+  const { data: productBooking } = await admin.from('event_product_bookings').insert({
     event_id: id,
     product_id,
     customer_name,
     customer_email: customer_email || null,
     selections,
-  }).catch(() => {})
+    qr_token: qrToken,
+  }).select('id').single().catch(() => ({ data: null }))
+
+  if (productBooking) {
+    // イベント情報取得して確認メール送信
+    const { data: eventData } = await admin.from('events').select('event_date, location_name').eq('id', id).single().catch(() => ({ data: null }))
+    const { data: productData } = await admin.from('event_products').select('name, price').eq('id', product_id).single().catch(() => ({ data: null }))
+
+    let modelName = null
+    if (selected_model_ids?.length > 0) {
+      const { data: firstModel } = await admin.from('models').select('name').eq('id', selected_model_ids[0]).single().catch(() => ({ data: null }))
+      modelName = firstModel?.name || null
+    }
+
+    if (customer_email) {
+      fetch(`${baseUrl}/api/send-private-booking-mail`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: customer_name,
+          email: customer_email,
+          qr_token: qrToken,
+          productTitle: productData?.name || product_name,
+          eventDate: eventData?.event_date || null,
+          timeLabel: selections?.slot || null,
+          price: productData?.price || 0,
+          modelName,
+        }),
+      }).catch(() => {})
+    }
+  }
 
   // Send LINE to selected models
   if (selected_model_ids?.length > 0) {
@@ -31,5 +64,5 @@ export async function POST(req, { params }) {
     }
   }
 
-  return Response.json({ ok: true })
+  return Response.json({ ok: true, qr_token: qrToken })
 }

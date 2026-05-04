@@ -57,6 +57,25 @@ export default function AdminBookingsPage() {
       final_price: b.private_products?.price || 0,
     }))
 
+    // 特別予約商品
+    const { data: epbRaw } = await supabase
+      .from('event_product_bookings')
+      .select('id, customer_name, customer_email, customer_phone, sns_url, nickname, payment_method, qr_token, cancelled_at, created_at, product_id, event_id, selections, event_products(id, name, price), events(id, event_date, location_name)')
+      .order('created_at', { ascending: false })
+
+    const epBookings = (epbRaw || []).map(b => ({
+      ...b,
+      _type: 'event_product',
+      name: b.customer_name || '',
+      email: b.customer_email || '',
+      phone: b.customer_phone || null,
+      product: b.event_products || {},
+      model: {},
+      event: b.events || {},
+      slot: { slot_label: b.selections?.slot || '' },
+      final_price: b.event_products?.price || 0,
+    }))
+
     if (!data) {
       setBookings(privateBookings)
       setLoading(false)
@@ -103,7 +122,7 @@ export default function AdminBookingsPage() {
       return { ...b, _type: 'regular', slot, event, model }
     })
 
-    const merged = [...regularBookings, ...privateBookings]
+    const merged = [...regularBookings, ...privateBookings, ...epBookings]
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 
     setBookings(merged)
@@ -117,6 +136,8 @@ export default function AdminBookingsPage() {
 
     const body = b._type === 'private'
       ? { private_booking_id: b.id }
+      : b._type === 'event_product'
+      ? { event_product_booking_id: b.id }
       : { booking_id: b.id }
 
     const res = await fetch('/api/admin/cancel-booking', {
@@ -210,8 +231,10 @@ export default function AdminBookingsPage() {
             const price = b.final_price || b.slot?.price || 0
             const isCancelled = !!b.cancelled_at
             const isPrivate = b._type === 'private'
+            const isEP = b._type === 'event_product'
+            const borderColor = isCancelled ? '1px solid #ffcdd2' : isPrivate ? '1px solid #e8d5f5' : isEP ? '1px solid #d5e8f5' : '1px solid #e5e5e5'
             return (
-              <div key={b.id} style={{ background: isCancelled ? '#fafafa' : '#fff', borderRadius: 12, border: isCancelled ? '1px solid #ffcdd2' : isPrivate ? '1px solid #e8d5f5' : '1px solid #e5e5e5', overflow: 'hidden', opacity: isCancelled ? 0.7 : 1 }}>
+              <div key={b.id} style={{ background: isCancelled ? '#fafafa' : '#fff', borderRadius: 12, border: borderColor, overflow: 'hidden', opacity: isCancelled ? 0.7 : 1 }}>
                 {/* Main row */}
                 <div
                   onClick={() => setExpanded(isExpanded ? null : b.id)}
@@ -221,6 +244,7 @@ export default function AdminBookingsPage() {
                       <span style={{ fontWeight: 700, fontSize: 14, color: isCancelled ? '#999' : '#2f2244' }}>{b.name || `${b.last_name} ${b.first_name}`}</span>
                       {isCancelled && <span style={{ background: '#ffcdd2', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>キャンセル済</span>}
                       {isPrivate && <span style={{ background: '#f3e5f5', color: '#7b1fa2', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>非公開商品</span>}
+                      {isEP && <span style={{ background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>特別予約商品</span>}
                     </div>
                     <div style={{ fontSize: 12, color: '#888' }}>{b.email}</div>
                   </div>
@@ -229,10 +253,10 @@ export default function AdminBookingsPage() {
                   </div>
                   <div style={{ fontSize: 13, color: '#555', minWidth: 80 }}>{b.model?.name || '—'}</div>
                   <div style={{ fontSize: 13, color: '#555', minWidth: 80 }}>
-                    {isPrivate ? (b.product?.title || '—') : (b.slot?.slot_label || '—')}
+                    {(isPrivate || isEP) ? (b.product?.name || b.product?.title || '—') : (b.slot?.slot_label || '—')}
                   </div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    {!isPrivate && b.is_outdoor && (
+                    {!isPrivate && !isEP && b.is_outdoor && (
                       <span style={{ background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '2px 7px', fontSize: 11, fontWeight: 600 }}>屋外</span>
                     )}
                     {!isPrivate && (
@@ -253,8 +277,8 @@ export default function AdminBookingsPage() {
                     <div>
                       <div style={{ fontSize: 11, color: '#999', marginBottom: 8, fontWeight: 600 }}>お客様情報</div>
                       <div style={{ fontSize: 13, color: '#444', lineHeight: 2.2 }}>
-                        <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>氏名</span>{b.last_name} {b.first_name}</div>
-                        {b.last_name_kana && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>ふりがな</span>{b.last_name_kana} {b.first_name_kana}</div>}
+                        <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>氏名</span>{isEP ? b.customer_name : `${b.last_name} ${b.first_name}`}</div>
+                        {!isEP && b.last_name_kana && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>ふりがな</span>{b.last_name_kana} {b.first_name_kana}</div>}
                         <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>メール</span>{b.email}</div>
                         {b.phone && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>電話</span>{b.phone}</div>}
                         {b.sns_url && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>SNS</span><a href={b.sns_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2f2244' }}>{b.sns_url.replace('https://', '')}</a></div>}
@@ -269,6 +293,14 @@ export default function AdminBookingsPage() {
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>商品</span>{b.product?.title}</div>
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>モデル</span>{b.model?.name || '—'}</div>
                             {b.event?.event_date && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>開催日</span>{b.event.event_date}{b.product?.time_label ? ` ${b.product.time_label}` : ''}</div>}
+                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>支払</span>{b.payment_method === 'card' ? 'カード決済' : '当日現金'}</div>
+                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>金額</span>¥{price.toLocaleString()}</div>
+                          </>
+                        ) : isEP ? (
+                          <>
+                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>商品</span>{b.product?.name || '—'}</div>
+                            {b.event?.event_date && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>開催日</span>{b.event.event_date}{b.event?.location_name ? ` ${b.event.location_name}` : ''}</div>}
+                            {b.selections?.slot && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>時間枠</span>{b.selections.slot}</div>}
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>支払</span>{b.payment_method === 'card' ? 'カード決済' : '当日現金'}</div>
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>金額</span>¥{price.toLocaleString()}</div>
                           </>
@@ -293,7 +325,7 @@ export default function AdminBookingsPage() {
                         />
                       ) : <div style={{ fontSize: 12, color: '#ccc' }}>QRなし</div>}
                       <div style={{ fontSize: 11, color: '#aaa', marginTop: 8 }}>予約日：{new Date(b.created_at).toLocaleDateString('ja-JP')}</div>
-                      {!isPrivate && b.marketing_consent && <div style={{ fontSize: 11, color: '#388e3c', marginTop: 4 }}>✓ メルマガ同意</div>}
+                      {!isPrivate && !isEP && b.marketing_consent && <div style={{ fontSize: 11, color: '#388e3c', marginTop: 4 }}>✓ メルマガ同意</div>}
                       {isCancelled ? (
                         <div style={{ marginTop: 16, fontSize: 13, color: '#c62828', fontWeight: 600 }}>✓ キャンセル済み（{new Date(b.cancelled_at).toLocaleDateString('ja-JP')}）</div>
                       ) : (

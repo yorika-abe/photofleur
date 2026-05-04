@@ -80,7 +80,39 @@ export async function POST(req) {
   const admin = await createSupabaseAdminClient()
   if (!(await checkAdmin(admin))) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { booking_id, private_booking_id } = await req.json()
+  const { booking_id, private_booking_id, event_product_booking_id } = await req.json()
+
+  // 特別予約商品のキャンセル
+  if (event_product_booking_id) {
+    const { data: epb } = await admin
+      .from('event_product_bookings')
+      .select('id, customer_email, customer_name, product_id, event_products(name, price, stock)')
+      .eq('id', event_product_booking_id)
+      .single()
+
+    if (!epb) return Response.json({ error: 'event product booking not found' }, { status: 404 })
+
+    const customerName = epb.customer_name || '様'
+    if (epb.customer_email) {
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName })
+      const { error } = await resend.emails.send({
+        from: 'Photo Fleur運営 <onboarding@resend.dev>',
+        to: epb.customer_email,
+        subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
+        html: templateResult?.html ?? buildCancelHtml({ customerName }),
+      })
+      if (error) return Response.json({ error: String(error) }, { status: 500 })
+    }
+
+    await admin.from('event_product_bookings').update({ cancelled_at: new Date().toISOString() }).eq('id', event_product_booking_id)
+
+    // 在庫を戻す
+    const currentStock = epb.event_products?.stock ?? 0
+    await admin.from('event_products').update({ stock: currentStock + 1 }).eq('id', epb.product_id).catch(() => {})
+
+    return Response.json({ ok: true })
+  }
 
   // 非公開商品予約のキャンセル
   if (private_booking_id) {
