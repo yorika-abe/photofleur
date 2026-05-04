@@ -98,17 +98,28 @@ export default function AdminBookingStatusPage() {
       })
     } catch { setCosts({ lunchCount: 0, lunchRate: 1000, studioCost: 0, hanselling: 0 }) }
 
-    // 予約商品を取得
+    // 予約商品を取得（booked_countを自動反映）
     fetch(`/api/admin/events/${selectedEventId}/products`)
       .then(r => r.json())
-      .then(d => setEventProducts(Array.isArray(d) ? d : []))
+      .then(d => {
+        const products = Array.isArray(d) ? d : []
+        setEventProducts(products)
+        // DB上の実際の購入数をベースにセット（手動上書き分はlocalStorageで加算）
+        try {
+          const saved = localStorage.getItem(`pf_product_sales_${selectedEventId}`)
+          const manual = saved ? JSON.parse(saved) : {}
+          const merged = {}
+          for (const p of products) {
+            merged[p.id] = manual[p.id] !== undefined ? manual[p.id] : p.booked_count
+          }
+          setProductSales(merged)
+        } catch {
+          const auto = {}
+          for (const p of products) auto[p.id] = p.booked_count
+          setProductSales(auto)
+        }
+      })
       .catch(() => setEventProducts([]))
-
-    // 商品販売数をlocalStorageから読み込む
-    try {
-      const saved = localStorage.getItem(`pf_product_sales_${selectedEventId}`)
-      setProductSales(saved ? JSON.parse(saved) : {})
-    } catch { setProductSales({}) }
   }, [selectedEventId, data])
 
   function updateFee(tier, dur, value) {
@@ -534,21 +545,25 @@ export default function AdminBookingStatusPage() {
                     {eventProducts.length > 0 && (
                       <div style={{ marginTop: 16, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, padding: '16px 20px' }}>
                         <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 12 }}>予約商品売上</div>
-                        {eventProducts.map(p => (
-                          <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f5f5f5', flexWrap: 'wrap', gap: 8 }}>
-                            <div>
-                              <span style={{ fontWeight: 600, fontSize: 13, color: '#333' }}>{p.name}</span>
-                              <span style={{ color: '#aaa', fontSize: 12, marginLeft: 8 }}>¥{p.price.toLocaleString()}/個</span>
+                        {eventProducts.map(p => {
+                          const isAuto = productSales[p.id] === p.booked_count
+                          return (
+                            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f5f5f5', flexWrap: 'wrap', gap: 8 }}>
+                              <div>
+                                <span style={{ fontWeight: 600, fontSize: 13, color: '#333' }}>{p.name}</span>
+                                <span style={{ color: '#aaa', fontSize: 12, marginLeft: 8 }}>¥{p.price.toLocaleString()}/個</span>
+                                {isAuto && <span style={{ fontSize: 10, background: '#e8f5e9', color: '#388e3c', borderRadius: 4, padding: '1px 6px', marginLeft: 6, fontWeight: 600 }}>自動</span>}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                                <input type="number" min="0" value={productSales[p.id] || 0}
+                                  onChange={e => updateProductSale(p.id, e.target.value)}
+                                  style={{ ...inp, width: 60 }} />
+                                <span style={{ color: '#777' }}>個 =</span>
+                                <span style={{ fontWeight: 700, color: '#388e3c', minWidth: 80, textAlign: 'right' }}>¥{(p.price * (productSales[p.id] || 0)).toLocaleString()}</span>
+                              </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-                              <input type="number" min="0" value={productSales[p.id] || 0}
-                                onChange={e => updateProductSale(p.id, e.target.value)}
-                                style={{ ...inp, width: 60 }} />
-                              <span style={{ color: '#777' }}>個 =</span>
-                              <span style={{ fontWeight: 700, color: '#388e3c', minWidth: 80, textAlign: 'right' }}>¥{(p.price * (productSales[p.id] || 0)).toLocaleString()}</span>
-                            </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10 }}>
                           <span style={{ fontWeight: 700, fontSize: 13, color: '#555' }}>商品売上計</span>
                           <span style={{ fontWeight: 700, fontSize: 15, color: '#388e3c' }}>¥{productRevenue.toLocaleString()}</span>

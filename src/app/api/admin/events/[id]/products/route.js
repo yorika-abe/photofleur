@@ -4,7 +4,15 @@ export async function GET(req, { params }) {
   const { id } = await params
   const supabase = await createSupabaseAdminClient()
   const { data } = await supabase.from('event_products').select('*').eq('event_id', id).order('display_order').order('created_at')
-  return Response.json(data || [])
+  const products = await Promise.all((data || []).map(async p => {
+    const { count } = await supabase
+      .from('event_product_bookings')
+      .select('*', { count: 'exact', head: true })
+      .eq('product_id', p.id)
+      .is('cancelled_at', null)
+    return { ...p, booked_count: count || 0 }
+  }))
+  return Response.json(products)
 }
 
 export async function POST(req, { params }) {
