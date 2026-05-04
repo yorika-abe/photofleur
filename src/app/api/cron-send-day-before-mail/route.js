@@ -74,6 +74,38 @@ export async function GET(req) {
       }
     }
 
+    // 非公開商品の前日メール
+    const { data: privateBookings } = await supabase
+      .from('private_bookings')
+      .select('id, email, last_name, first_name, qr_token, private_products(title, price, event_date, time_label, models(name))')
+      .is('cancelled_at', null)
+      .not('private_products', 'is', null)
+
+    const privateTomorrow = (privateBookings || []).filter(b => b.private_products?.event_date === tomorrowDate)
+    for (const b of privateTomorrow) {
+      try {
+        const customerName = `${b.last_name}${b.first_name ? ` ${b.first_name}` : ''}`
+        const product = b.private_products
+        const res = await fetch(`${baseUrl}/api/send-private-booking-mail`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerName,
+            email: b.email,
+            qr_token: b.qr_token,
+            productTitle: product.title,
+            eventDate: product.event_date,
+            timeLabel: product.time_label,
+            price: product.price,
+            modelName: product.models?.name || null,
+          }),
+        })
+        results.push({ type: 'private', email: b.email, ok: res.ok })
+      } catch (e) {
+        results.push({ type: 'private', email: b.email, ok: false, error: String(e) })
+      }
+    }
+
     return Response.json({
       success: true,
       sentCount: results.filter(r => r.ok).length,

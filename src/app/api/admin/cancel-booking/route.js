@@ -80,7 +80,38 @@ export async function POST(req) {
   const admin = await createSupabaseAdminClient()
   if (!(await checkAdmin(admin))) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { booking_id } = await req.json()
+  const { booking_id, private_booking_id } = await req.json()
+
+  // 非公開商品予約のキャンセル
+  if (private_booking_id) {
+    const { data: pb } = await admin
+      .from('private_bookings')
+      .select('id, email, last_name, first_name, product_id, private_products(title, price, stock)')
+      .eq('id', private_booking_id)
+      .single()
+
+    if (!pb) return Response.json({ error: 'private booking not found' }, { status: 404 })
+
+    const customerName = `${pb.last_name || ''}${pb.first_name ? ` ${pb.first_name}` : ''}`.trim() || '様'
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName })
+    const { error } = await resend.emails.send({
+      from: 'Photo Fleur運営 <onboarding@resend.dev>',
+      to: pb.email,
+      subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
+      html: templateResult?.html ?? buildCancelHtml({ customerName }),
+    })
+    if (error) return Response.json({ error: String(error) }, { status: 500 })
+
+    await admin.from('private_bookings').update({ cancelled_at: new Date().toISOString() }).eq('id', private_booking_id)
+
+    // 在庫を戻す
+    const currentStock = pb.private_products?.stock ?? 0
+    await admin.from('private_products').update({ stock: currentStock + 1 }).eq('id', pb.product_id).catch(() => {})
+
+    return Response.json({ ok: true })
+  }
+
   if (!booking_id) return Response.json({ error: 'booking_id required' }, { status: 400 })
 
   const { data: booking } = await admin

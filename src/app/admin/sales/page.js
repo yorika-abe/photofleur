@@ -104,10 +104,11 @@ export default function AdminSalesPage() {
 
     setData(enriched)
 
-    // 非公開商品予約を取得
+    // 非公開商品予約を取得（キャンセル済み除外）
     const { data: privateBookings } = await supabase
       .from('private_bookings')
       .select('id, last_name, first_name, email, payment_method, created_at, product_id, private_products(id, title, price, event_date, time_label, hanselling)')
+      .is('cancelled_at', null)
       .order('created_at', { ascending: false })
 
     setPrivateData((privateBookings || []).map(b => ({

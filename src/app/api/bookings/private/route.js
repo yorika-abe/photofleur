@@ -1,9 +1,10 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import { sendLineMessage } from '@/lib/line'
+import { randomUUID } from 'crypto'
 
 export async function POST(req) {
   const body = await req.json()
-  const { token, last_name, first_name, email, phone, payment_method, notes } = body
+  const { token, last_name, first_name, email, phone, payment_method, notes, square_payment_id } = body
 
   if (!token || !last_name || !email) {
     return Response.json({ error: 'Missing required fields' }, { status: 400 })
@@ -13,7 +14,7 @@ export async function POST(req) {
 
   const { data: product } = await admin
     .from('private_products')
-    .select('id, stock, payment_method, is_active, title, event_date, time_label, model_id, models(id, name, line_id)')
+    .select('id, stock, payment_method, is_active, title, price, event_date, time_label, model_id, models(id, name, line_id)')
     .eq('token', token)
     .single()
 
@@ -33,6 +34,9 @@ export async function POST(req) {
     return Response.json({ error: 'Invalid payment method' }, { status: 400 })
   }
 
+  const qrToken = randomUUID()
+  const customerName = `${last_name}${first_name ? ` ${first_name}` : ''}`
+
   const { error } = await admin.from('private_bookings').insert({
     product_id: product.id,
     last_name,
@@ -41,6 +45,8 @@ export async function POST(req) {
     phone: phone || null,
     payment_method,
     notes: notes || null,
+    qr_token: qrToken,
+    square_payment_id: square_payment_id || null,
   })
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
@@ -50,6 +56,24 @@ export async function POST(req) {
     .from('private_products')
     .update({ stock: product.stock - 1 })
     .eq('id', product.id)
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || ''
+
+  // 確定メール送信
+  fetch(`${baseUrl}/api/send-private-booking-mail`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      customerName,
+      email,
+      qr_token: qrToken,
+      productTitle: product.title,
+      eventDate: product.event_date || null,
+      timeLabel: product.time_label || null,
+      price: product.price || 0,
+      modelName: product.models?.name || null,
+    }),
+  }).catch(() => {})
 
   // モデルにLINE通知
   const model = product.models
@@ -63,7 +87,7 @@ export async function POST(req) {
 モデル名：${model.name}
 商品名：${product.title}
 日程：${dateStr}${product.time_label ? ` ${product.time_label}` : ''}
-お客様名：${last_name}${first_name ? ` ${first_name}` : ''}
+お客様名：${customerName}
 
 詳細は管理画面をご確認ください。`
 
@@ -79,5 +103,5 @@ export async function POST(req) {
     }).catch(() => {})
   }
 
-  return Response.json({ ok: true })
+  return Response.json({ ok: true, qr_token: qrToken })
 }
