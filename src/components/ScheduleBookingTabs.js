@@ -62,16 +62,6 @@ export default function ScheduleBookingTabs({ events, entriesByEvent, slotsByEnt
         })}
       </div>
 
-      {/* Products */}
-      {activeProducts.length > 0 && (
-        <ProductCards
-          products={activeProducts}
-          eventId={activeId}
-          slotLabels={activeSlotLabels}
-          eventModels={activeEventModels}
-        />
-      )}
-
       {/* Booking section — same component as event detail page */}
       {!bookingOpen && activeEvent?.booking_open_at ? (
         <div style={{ textAlign: 'center', padding: '48px 20px' }}>
@@ -91,6 +81,16 @@ export default function ScheduleBookingTabs({ events, entriesByEvent, slotsByEnt
           bookingCounts={bookingCounts}
           bookingOpen={bookingOpen}
           bookingOpenAt={activeEvent?.booking_open_at}
+        />
+      )}
+
+      {/* Products */}
+      {activeProducts.length > 0 && (
+        <ProductCards
+          products={activeProducts}
+          eventId={activeId}
+          slotLabels={activeSlotLabels}
+          eventModels={activeEventModels}
         />
       )}
 

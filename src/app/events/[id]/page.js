@@ -281,14 +281,6 @@ export default async function EventDetailPage({ params }) {
       {/* Gallery - horizontal scroll, no title */}
       <GalleryMarquee images={event.gallery_images} />
 
-      {/* Products */}
-      <ProductCards
-        products={products || []}
-        eventId={id}
-        slotLabels={[...new Set((allSlots || []).map(s => s.slot_label))]}
-        eventModels={[...new Map(entries.filter(e => e.models).map(e => [e.model_id, e.models])).values()]}
-      />
-
       {/* Booking */}
       <h2 style={{ fontSize: 20, fontWeight: 700, color: '#333', marginBottom: 16 }}>Booking</h2>
       <BookingSection
@@ -301,6 +293,14 @@ export default async function EventDetailPage({ params }) {
         bookingCounts={bookingCounts || []}
         bookingOpen={bookingOpen}
         bookingOpenAt={event.booking_open_at}
+      />
+
+      {/* Products */}
+      <ProductCards
+        products={products || []}
+        eventId={id}
+        slotLabels={[...new Set((allSlots || []).map(s => s.slot_label))]}
+        eventModels={[...new Map(entries.filter(e => e.models).map(e => [e.model_id, e.models])).values()]}
       />
     </div>
   )
