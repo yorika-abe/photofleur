@@ -4,6 +4,8 @@ import { Geist, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { CartProvider } from "@/context/CartContext";
+import CartButton from "@/components/CartButton";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 const cormorant = Playfair_Display({
@@ -22,11 +24,14 @@ export default function RootLayout({ children }) {
   return (
     <html lang="ja" className={`${geist.variable} ${cormorant.variable} h-full`}>
       <body style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-geist), Arial, sans-serif', background: '#fafafa', color: '#222' }}>
-        <Header />
-        <main style={{ flex: 1 }}>
-          {children}
-        </main>
-        <Footer />
+        <CartProvider>
+          <Header />
+          <main style={{ flex: 1 }}>
+            {children}
+          </main>
+          <Footer />
+          <CartButton />
+        </CartProvider>
       </body>
     </html>
   );

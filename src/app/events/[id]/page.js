@@ -293,6 +293,8 @@ export default async function EventDetailPage({ params }) {
         bookingCounts={bookingCounts || []}
         bookingOpen={bookingOpen}
         bookingOpenAt={event.booking_open_at}
+        eventDate={event.event_date}
+        eventLocation={event.location_name || ''}
       />
 
       {/* Products */}
@@ -301,6 +303,8 @@ export default async function EventDetailPage({ params }) {
         eventId={id}
         slotLabels={[...new Set((allSlots || []).map(s => s.slot_label))]}
         eventModels={[...new Map(entries.filter(e => e.models).map(e => [e.model_id, e.models])).values()]}
+        eventDate={event.event_date}
+        eventLocation={event.location_name || ''}
       />
     </div>
   )

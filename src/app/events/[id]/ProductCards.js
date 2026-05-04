@@ -1,5 +1,7 @@
 'use client'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useCart } from '@/context/CartContext'
 
 function getOptionGroups(product) {
   const opts = product.options
@@ -9,27 +11,24 @@ function getOptionGroups(product) {
   return []
 }
 
-export default function ProductCards({ products, eventId, slotLabels = [], eventModels = [] }) {
+export default function ProductCards({ products, eventId, slotLabels = [], eventModels = [], eventDate = '', eventLocation = '' }) {
   const [selected, setSelected] = useState(null)
   const [selections, setSelections] = useState({})
-  const [customerName, setCustomerName] = useState('')
-  const [customerEmail, setCustomerEmail] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [submitResult, setSubmitResult] = useState(null)
+  const [cartAdded, setCartAdded] = useState(false)
+  const { addItem } = useCart()
+  const router = useRouter()
 
   if (!products || products.length === 0) return null
 
   function openModal(p) {
     setSelected(p)
     setSelections({})
-    setCustomerName('')
-    setCustomerEmail('')
-    setSubmitResult(null)
+    setCartAdded(false)
   }
 
   function closeModal() {
     setSelected(null)
-    setSubmitResult(null)
+    setCartAdded(false)
   }
 
   function updateSelection(groupIdx, value, multiple) {
@@ -44,8 +43,8 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
     }
   }
 
-  async function handleSubmit() {
-    if (!selected) return
+  function buildCartItem() {
+    if (!selected) return null
     const groups = getOptionGroups(selected)
     const selectedModelIds = []
     const selectionData = {}
@@ -63,31 +62,40 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
       }
     })
 
-    setSubmitting(true)
-    try {
-      const res = await fetch(`/api/events/${eventId}/product-bookings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          product_id: selected.id,
-          product_name: selected.name,
-          customer_name: customerName,
-          customer_email: customerEmail,
-          selections: selectionData,
-          selected_model_ids: selectedModelIds,
-        }),
-      })
-      const data = await res.json()
-      setSubmitting(false)
-      if (res.ok) {
-        setSubmitResult({ ok: true })
-      } else {
-        setSubmitResult({ error: data.error || 'エラーが発生しました' })
-      }
-    } catch {
-      setSubmitting(false)
-      setSubmitResult({ error: '通信エラーが発生しました' })
+    const selectionSummary = Object.entries(selectionData)
+      .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+      .filter(([, v]) => v && (Array.isArray(v) ? v.length > 0 : v !== ''))
+      .join(' / ')
+
+    return {
+      type: 'product',
+      productId: selected.id,
+      name: selected.name,
+      image: selected.image,
+      price: selected.price || 0,
+      eventId,
+      eventDate,
+      eventLocation,
+      selections: selectionData,
+      selectedModelIds,
+      selectionSummary,
     }
+  }
+
+  function handleAddToCart() {
+    const item = buildCartItem()
+    if (!item) return
+    addItem(item)
+    setCartAdded(true)
+    setTimeout(() => setCartAdded(false), 2500)
+  }
+
+  function handleBuyNow() {
+    const item = buildCartItem()
+    if (!item) return
+    addItem(item)
+    closeModal()
+    router.push('/cart-checkout')
   }
 
   const selectedGroups = selected ? getOptionGroups(selected) : []
@@ -153,13 +161,7 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
                 </span>
               </div>
 
-              {submitResult?.ok ? (
-                <div style={{ background: '#e8f5e9', borderRadius: 12, padding: '20px', textAlign: 'center', marginBottom: 16 }}>
-                  <div style={{ fontSize: 24, marginBottom: 8 }}>✅</div>
-                  <div style={{ fontWeight: 700, color: '#2e7d32', fontSize: 15 }}>受付完了しました</div>
-                  <p style={{ fontSize: 13, color: '#555', margin: '8px 0 0' }}>当日スタッフまでお声がけください。</p>
-                </div>
-              ) : hasBookableOptions ? (
+              {hasBookableOptions ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {selectedGroups.map((group, idx) => {
                     const val = selections[idx]
@@ -256,31 +258,24 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
                     return null
                   })}
 
-                  <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#1a3560', marginBottom: 6 }}>お名前 *</label>
-                      <input value={customerName} onChange={e => setCustomerName(e.target.value)}
-                        placeholder="山田 太郎"
-                        style={{ width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#1a3560', marginBottom: 6 }}>メールアドレス</label>
-                      <input type="email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)}
-                        placeholder="example@email.com"
-                        style={{ width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
-                    </div>
+                  <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {cartAdded ? (
+                      <div style={{ background: '#e8f5e9', borderRadius: 10, padding: '12px', textAlign: 'center', color: '#2e7d32', fontWeight: 700 }}>
+                        ✓ カートに追加しました
+                      </div>
+                    ) : (
+                      <>
+                        <button onClick={handleBuyNow}
+                          style={{ width: '100%', padding: '13px 0', borderRadius: 10, border: 'none', background: '#1a3560', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
+                          今すぐ購入
+                        </button>
+                        <button onClick={handleAddToCart}
+                          style={{ width: '100%', padding: '12px 0', borderRadius: 10, border: '2px solid #1a3560', background: '#fff', color: '#1a3560', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                          🛒 カートに追加
+                        </button>
+                      </>
+                    )}
                   </div>
-
-                  {submitResult?.error && (
-                    <div style={{ background: '#ffebee', borderRadius: 8, padding: '10px 14px', color: '#c62828', fontSize: 13 }}>
-                      {submitResult.error}
-                    </div>
-                  )}
-
-                  <button onClick={handleSubmit} disabled={submitting || !customerName.trim()}
-                    style={{ width: '100%', padding: '13px 0', borderRadius: 10, border: 'none', background: submitting || !customerName.trim() ? '#ccc' : '#1a3560', color: '#fff', fontWeight: 700, fontSize: 15, cursor: submitting || !customerName.trim() ? 'not-allowed' : 'pointer' }}>
-                    {submitting ? '送信中...' : '予約する'}
-                  </button>
                 </div>
               ) : (
                 <p style={{ fontSize: 12, color: '#aaa', margin: 0 }}>ご予約後、当日スタッフまでお申し付けください。</p>

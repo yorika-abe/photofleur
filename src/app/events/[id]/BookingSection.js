@@ -2,10 +2,13 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useCart } from '@/context/CartContext'
 
-export default function BookingSection({ entries, slotsByEntry, indoorCountBySlot, indoorCountByLabel, studioCapacity, eventType, bookingCounts, bookingOpen, bookingOpenAt }) {
+export default function BookingSection({ entries, slotsByEntry, indoorCountBySlot, indoorCountByLabel, studioCapacity, eventType, bookingCounts, bookingOpen, bookingOpenAt, eventDate = '', eventLocation = '' }) {
   const [modal, setModal] = useState(null) // entry
   const [selectedSlotId, setSelectedSlotId] = useState('')
+  const [cartAdded, setCartAdded] = useState(false)
+  const { addItem } = useCart()
 
   function openModal(entry) {
     setModal(entry)
@@ -141,13 +144,32 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
                 </select>
               </div>
 
-              {selectedSlotId && (
-                <Link href={`/confirm?slot_id=${selectedSlotId}`}
-                  style={{ display: 'block', textAlign: 'center', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '13px 0', fontSize: 15, fontWeight: 700 }}>
-                  予約する
-                </Link>
-              )}
-              {!selectedSlotId && (
+              {selectedSlotId ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <Link href={`/confirm?slot_id=${selectedSlotId}`}
+                    style={{ display: 'block', textAlign: 'center', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '13px 0', fontSize: 15, fontWeight: 700 }}>
+                    今すぐ予約する
+                  </Link>
+                  <button onClick={() => {
+                    const slot = availableSlots.find(s => s.id === selectedSlotId)
+                    addItem({
+                      type: 'slot',
+                      slotId: selectedSlotId,
+                      name: modal.models.name,
+                      image: modal.models.image,
+                      slotLabel: slot?.slot_label || '',
+                      eventDate,
+                      eventLocation,
+                      price: slot?.price || 0,
+                    })
+                    setCartAdded(true)
+                    setTimeout(() => setCartAdded(false), 2500)
+                  }}
+                    style={{ width: '100%', padding: '12px', borderRadius: 10, border: '2px solid #1a3560', background: cartAdded ? '#e8f5e9' : '#fff', color: cartAdded ? '#2e7d32' : '#1a3560', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                    {cartAdded ? '✓ カートに追加しました' : '🛒 カートに追加'}
+                  </button>
+                </div>
+              ) : (
                 <div style={{ display: 'block', textAlign: 'center', background: '#ccc', color: '#fff', borderRadius: 10, padding: '13px 0', fontSize: 15, fontWeight: 700 }}>
                   予約する
                 </div>

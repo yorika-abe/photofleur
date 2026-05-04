@@ -81,6 +81,8 @@ export default function ScheduleBookingTabs({ events, entriesByEvent, slotsByEnt
           bookingCounts={bookingCounts}
           bookingOpen={bookingOpen}
           bookingOpenAt={activeEvent?.booking_open_at}
+          eventDate={activeEvent?.event_date || ''}
+          eventLocation={activeEvent?.location_name || ''}
         />
       )}
 
