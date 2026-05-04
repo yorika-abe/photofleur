@@ -106,3 +106,61 @@ export async function renderEmailTemplate(supabase, templateId, vars = {}) {
   const subject = substituteVars(tmpl.subject || '', vars)
   return { subject, html }
 }
+
+// Load template and inject raw HTML blocks where {{key}} text-only rows appear.
+// blockHtml: { items_block: '<html>...', qr_block: '<html>...' }
+// vars: simple string substitutions for remaining {{key}} placeholders
+// Returns null if no template saved yet; falls back to appending items_block at end.
+export async function renderEmailTemplateWithBlocks(supabase, templateId, blockHtml = {}, vars = {}) {
+  const { data: tmpl } = await supabase
+    .from('email_templates')
+    .select('subject, rows_json, header_json, footer')
+    .eq('id', templateId)
+    .single()
+
+  if (!tmpl) return null
+
+  const rows = tmpl.rows_json || []
+  const header = tmpl.header_json || { bgColor: '#1a3560', text: 'PhotoFleur', textColor: '#ffffff', fontSize: 20 }
+  const footer = tmpl.footer || ''
+
+  let hasItemsBlock = false
+  const bodyParts = []
+
+  for (const row of rows) {
+    if (row.cells?.length === 1 && row.cells[0].block?.type === 'text') {
+      const text = (row.cells[0].block?.data?.text || '').trim()
+      if (/^\{\{[\w_]+\}\}$/.test(text)) {
+        const key = text.slice(2, -2)
+        if (Object.prototype.hasOwnProperty.call(blockHtml, key)) {
+          bodyParts.push(blockHtml[key])
+          if (key === 'items_block') hasItemsBlock = true
+          continue
+        }
+      }
+    }
+    bodyParts.push(rowToHtml(row))
+  }
+
+  if (!hasItemsBlock && blockHtml.items_block) {
+    bodyParts.push(blockHtml.items_block)
+  }
+
+  let html = `<!DOCTYPE html><html><head><link href="${GOOGLE_FONTS_URL}" rel="stylesheet"></head><body style="margin:0;padding:0;background:#f5f5f5;font-family:'Helvetica Neue',Arial,sans-serif;">
+<div style="max-width:600px;margin:0 auto;background:#fff;">
+<div style="background:${header.bgColor};padding:24px 32px;text-align:center;">
+<span style="color:${header.textColor};font-size:${header.fontSize}px;font-weight:700;letter-spacing:0.05em;">${header.text}</span>
+</div>
+<div style="padding:24px 32px;">
+${bodyParts.join('\n')}
+</div>
+<div style="background:#f5f5f5;padding:16px 32px;font-size:11px;color:#999;text-align:center;">
+${footer}
+</div>
+</div>
+</body></html>`
+
+  html = substituteVars(html, vars)
+  const subject = substituteVars(tmpl.subject || '', vars)
+  return { subject, html }
+}

@@ -123,7 +123,7 @@ export default function CartCheckoutPage() {
       const chargeRes = await fetch('/api/square/charge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceId: result.token, amount: finalTotal }),
+        body: JSON.stringify({ sourceId: result.token, amount: finalTotal, email: form.email }),
       })
       const chargeData = await chargeRes.json()
       if (!chargeRes.ok) {

@@ -1,6 +1,6 @@
 export async function POST(req) {
   try {
-    const { sourceId, amount } = await req.json()
+    const { sourceId, amount, email } = await req.json()
     if (!sourceId || !amount) return Response.json({ error: '決済情報が不足しています' }, { status: 400 })
 
     const res = await fetch(`https://connect.squareup.com/v2/payments`, {
@@ -15,6 +15,7 @@ export async function POST(req) {
         idempotency_key: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         amount_money: { amount: amount * 100, currency: 'JPY' },
         location_id: process.env.SQUARE_LOCATION_ID,
+        ...(email ? { buyer_email_address: email } : {}),
       }),
     })
 

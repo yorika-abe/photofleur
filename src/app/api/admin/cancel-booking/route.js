@@ -2,6 +2,29 @@ import { Resend } from 'resend'
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
 import { renderEmailTemplate } from '@/lib/email-render'
 
+async function squareRefund(paymentId, amount) {
+  try {
+    const res = await fetch('https://connect.squareup.com/v2/refunds', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.SQUARE_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Square-Version': '2024-01-18',
+      },
+      body: JSON.stringify({
+        idempotency_key: `refund-${paymentId}-${Date.now()}`,
+        payment_id: paymentId,
+        amount_money: { amount: amount * 100, currency: 'JPY' },
+      }),
+    })
+    const data = await res.json()
+    if (!res.ok || data.errors) return { ok: false, error: data.errors?.[0]?.detail || '返金処理に失敗しました' }
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: String(e) }
+  }
+}
+
 async function checkAdmin(admin) {
   const server = await createSupabaseServerClient()
   const { data: { user } } = await server.auth.getUser()
@@ -80,98 +103,106 @@ export async function POST(req) {
   const admin = await createSupabaseAdminClient()
   if (!(await checkAdmin(admin))) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { booking_id, private_booking_id, event_product_booking_id } = await req.json()
+  const { booking_id, private_booking_id, event_product_booking_id, refund_amount } = await req.json()
+  const resend = new Resend(process.env.RESEND_API_KEY)
 
   // 特別予約商品のキャンセル
   if (event_product_booking_id) {
     const { data: epb } = await admin
       .from('event_product_bookings')
-      .select('id, customer_email, customer_name, product_id, event_products(name, price, stock)')
+      .select('id, customer_email, customer_name, product_id, square_payment_id, event_products(name, price, stock)')
       .eq('id', event_product_booking_id)
       .single()
 
     if (!epb) return Response.json({ error: 'event product booking not found' }, { status: 404 })
 
+    let refund_ok = false, refund_error = null
+    if (refund_amount > 0 && epb.square_payment_id) {
+      const r = await squareRefund(epb.square_payment_id, refund_amount)
+      refund_ok = r.ok; refund_error = r.error || null
+    }
+
     const customerName = epb.customer_name || '様'
     if (epb.customer_email) {
-      const resend = new Resend(process.env.RESEND_API_KEY)
       const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName })
-      const { error } = await resend.emails.send({
+      await resend.emails.send({
         from: 'Photo Fleur運営 <onboarding@resend.dev>',
         to: epb.customer_email,
         subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
         html: templateResult?.html ?? buildCancelHtml({ customerName }),
       })
-      if (error) return Response.json({ error: String(error) }, { status: 500 })
     }
 
     await admin.from('event_product_bookings').update({ cancelled_at: new Date().toISOString() }).eq('id', event_product_booking_id)
-
-    // 在庫を戻す
     const currentStock = epb.event_products?.stock ?? 0
     await admin.from('event_products').update({ stock: currentStock + 1 }).eq('id', epb.product_id).catch(() => {})
 
-    return Response.json({ ok: true })
+    return Response.json({ ok: true, refund_ok, refund_error })
   }
 
   // 非公開商品予約のキャンセル
   if (private_booking_id) {
     const { data: pb } = await admin
       .from('private_bookings')
-      .select('id, email, last_name, first_name, product_id, private_products(title, price, stock)')
+      .select('id, email, last_name, first_name, product_id, square_payment_id, private_products(title, price, stock)')
       .eq('id', private_booking_id)
       .single()
 
     if (!pb) return Response.json({ error: 'private booking not found' }, { status: 404 })
 
+    let refund_ok = false, refund_error = null
+    if (refund_amount > 0 && pb.square_payment_id) {
+      const r = await squareRefund(pb.square_payment_id, refund_amount)
+      refund_ok = r.ok; refund_error = r.error || null
+    }
+
     const customerName = `${pb.last_name || ''}${pb.first_name ? ` ${pb.first_name}` : ''}`.trim() || '様'
-    const resend = new Resend(process.env.RESEND_API_KEY)
     const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName })
-    const { error } = await resend.emails.send({
+    await resend.emails.send({
       from: 'Photo Fleur運営 <onboarding@resend.dev>',
       to: pb.email,
       subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
       html: templateResult?.html ?? buildCancelHtml({ customerName }),
     })
-    if (error) return Response.json({ error: String(error) }, { status: 500 })
 
     await admin.from('private_bookings').update({ cancelled_at: new Date().toISOString() }).eq('id', private_booking_id)
-
-    // 在庫を戻す
     const currentStock = pb.private_products?.stock ?? 0
     await admin.from('private_products').update({ stock: currentStock + 1 }).eq('id', pb.product_id).catch(() => {})
 
-    return Response.json({ ok: true })
+    return Response.json({ ok: true, refund_ok, refund_error })
   }
 
   if (!booking_id) return Response.json({ error: 'booking_id required' }, { status: 400 })
 
   const { data: booking } = await admin
     .from('bookings')
-    .select('id, email, name, last_name, first_name, slot_id')
+    .select('id, email, name, last_name, first_name, slot_id, square_payment_id')
     .eq('id', booking_id)
     .single()
 
   if (!booking) return Response.json({ error: 'booking not found' }, { status: 404 })
 
-  const customerName = booking.name || `${booking.last_name || ''} ${booking.first_name || ''}`.trim() || '様'
+  let refund_ok = false, refund_error = null
+  if (refund_amount > 0 && booking.square_payment_id) {
+    const r = await squareRefund(booking.square_payment_id, refund_amount)
+    refund_ok = r.ok; refund_error = r.error || null
+  }
 
-  const resend = new Resend(process.env.RESEND_API_KEY)
+  const customerName = booking.name || `${booking.last_name || ''} ${booking.first_name || ''}`.trim() || '様'
   const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName })
-  const { error } = await resend.emails.send({
+  const { error: mailError } = await resend.emails.send({
     from: 'Photo Fleur運営 <onboarding@resend.dev>',
     to: booking.email,
     subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
     html: templateResult?.html ?? buildCancelHtml({ customerName }),
   })
 
-  if (error) return Response.json({ error: String(error) }, { status: 500 })
+  if (mailError) return Response.json({ error: String(mailError) }, { status: 500 })
 
   await admin.from('bookings').update({ cancelled_at: new Date().toISOString() }).eq('id', booking_id)
-
   if (booking.slot_id) {
     await admin.from('booking_slots').update({ is_reserved: false }).eq('id', booking.slot_id)
   }
 
-  return Response.json({ ok: true })
+  return Response.json({ ok: true, refund_ok, refund_error })
 }

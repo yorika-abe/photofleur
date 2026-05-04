@@ -145,7 +145,7 @@ export default function AdminSalesPage() {
     if (m) allMonthsSet.add(m)
   }
   for (const b of privateData) {
-    const m = b.product?.event_date?.slice(0, 7)
+    const m = (b.product?.event_date || b.created_at)?.slice(0, 7)
     if (m) allMonthsSet.add(m)
   }
   const sortedMonths = [...allMonthsSet].sort().reverse()
@@ -170,7 +170,10 @@ export default function AdminSalesPage() {
     const recordsInMonth = savedRecords.filter(r => r.eventDate?.slice(0, 7) === month)
     const productRevenue = recordsInMonth.reduce((s, r) => s + (r.productRevenue || 0), 0)
     // 非公開商品
-    const privateBookingsInMonth = privateData.filter(b => b.product?.event_date?.slice(0, 7) === month)
+    const privateBookingsInMonth = privateData.filter(b => {
+      const m = (b.product?.event_date || b.created_at)?.slice(0, 7)
+      return m === month
+    })
     const privateRevenue = privateBookingsInMonth.reduce((s, b) => s + (b.product?.price || 0), 0)
     const privateHanselling = hansellingMode === 'per_booking'
       ? privateBookingsInMonth.reduce((s, b) => s + (b.product?.hanselling || 0), 0)
@@ -189,7 +192,7 @@ export default function AdminSalesPage() {
   const yearStr = String(currentYear)
   const yearRevenue = data.filter(b => b.event?.event_date?.startsWith(yearStr)).reduce((s, b) => s + b.revenue, 0)
     + savedRecords.filter(r => r.eventDate?.startsWith(yearStr)).reduce((s, r) => s + (r.productRevenue || 0), 0)
-    + privateData.filter(b => b.product?.event_date?.startsWith(yearStr)).reduce((s, b) => s + (b.product?.price || 0), 0)
+    + privateData.filter(b => (b.product?.event_date || b.created_at?.slice(0, 10))?.startsWith(yearStr)).reduce((s, b) => s + (b.product?.price || 0), 0)
 
   const activeData = monthData(activeMonth)
 

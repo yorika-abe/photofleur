@@ -13,6 +13,9 @@ export async function POST(req) {
 
   const qrTokens = {}
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || ''
+  const cartToken = randomUUID()
+  const cartSlotItems = []
+  const cartProductItems = []
 
   for (const item of items) {
     if (item.type === 'slot') {
@@ -54,11 +57,15 @@ export async function POST(req) {
         final_price: finalPrice,
         coupon_id: couponId || null,
         marketing_consent: customer.marketing_consent || false,
+        payment_method: paymentMethod || null,
+        square_payment_id: squarePaymentId || null,
         qr_token: qrToken,
+        cart_token: cartToken,
       }).select('id').single()
 
       if (!error && booking) {
         qrTokens[item.cartId] = qrToken
+        cartSlotItems.push({ slot_id: item.slotId, final_price: finalPrice, is_outdoor: isOutdoor })
 
         // 屋内カウント更新
         const { count: newCount } = await admin.from('bookings')
@@ -73,20 +80,6 @@ export async function POST(req) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'booking', slot_id: item.slotId }),
-        }).catch(() => {})
-
-        // 確認メール
-        fetch(`${baseUrl}/api/send-booking-mail`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            slot_id: item.slotId,
-            customerName: customer.name,
-            email: customer.email,
-            qr_token: qrToken,
-            final_price: finalPrice,
-            is_outdoor: isOutdoor,
-          }),
         }).catch(() => {})
       }
 
@@ -104,31 +97,24 @@ export async function POST(req) {
         square_payment_id: squarePaymentId || null,
         selections: item.selections || {},
         qr_token: productQrToken,
+        cart_token: cartToken,
       }).select('id').single().catch(() => ({ data: null }))
 
       if (productBooking) {
         qrTokens[item.cartId] = productQrToken
 
-        // 確認メール
         let modelName = null
         if (item.selectedModelIds?.length > 0) {
           const { data: firstModel } = await admin.from('models').select('name').eq('id', item.selectedModelIds[0]).single().catch(() => ({ data: null }))
           modelName = firstModel?.name || null
         }
-        fetch(`${baseUrl}/api/send-private-booking-mail`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            customerName: customer.name,
-            email: customer.email,
-            qr_token: productQrToken,
-            productTitle: item.name,
-            eventDate: item.eventDate || null,
-            timeLabel: item.selections?.slot || null,
-            price: item.price || 0,
-            modelName,
-          }),
-        }).catch(() => {})
+        cartProductItems.push({
+          productTitle: item.name,
+          eventDate: item.eventDate || null,
+          timeLabel: item.selections?.slot || null,
+          price: item.price || 0,
+          modelName,
+        })
       }
 
       // モデルへのLINE通知
@@ -146,6 +132,21 @@ export async function POST(req) {
         }
       }
     }
+  }
+
+  // まとめて確認メール送信
+  if (cartSlotItems.length > 0 || cartProductItems.length > 0) {
+    fetch(`${baseUrl}/api/send-cart-confirmation-mail`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: customer.name,
+        email: customer.email,
+        cartToken,
+        slotItems: cartSlotItems,
+        productItems: cartProductItems,
+      }),
+    }).catch(() => {})
   }
 
   // クーポン使用数更新

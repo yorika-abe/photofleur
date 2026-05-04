@@ -18,18 +18,14 @@ const TEMPLATE_DEFS = [
     defaultSubject: '【PhotoFleur】ご予約確定のお知らせ',
     vars: [
       { key: 'customer_name', desc: 'お客様名' },
-      { key: 'model_name', desc: 'モデル名' },
-      { key: 'event_date', desc: '開催日' },
-      { key: 'slot_label', desc: '予約時間' },
-      { key: 'price', desc: '料金' },
+      { key: 'items_block', desc: '予約内容・QRコード（自動生成）' },
     ] },
   { id: 'day-before-reminder', name: '前日リマインド', icon: '⏰',
-    defaultSubject: '【PhotoFleur】明日の撮影会のご案内',
+    defaultSubject: '【PhotoFleur】明日（{{date}}）のご案内',
     vars: [
       { key: 'customer_name', desc: 'お客様名' },
-      { key: 'model_name', desc: 'モデル名' },
-      { key: 'event_date', desc: '開催日' },
-      { key: 'slot_label', desc: '予約時間' },
+      { key: 'date', desc: '開催日（フォーマット済み）' },
+      { key: 'items_block', desc: '予約内容・QRコード（自動生成）' },
     ] },
   { id: 'thanks-mail', name: 'サンクス', icon: '🙏',
     defaultSubject: '【PhotoFleur】ご来場ありがとうございました',
@@ -120,10 +116,7 @@ function getDefaultRows(templateId) {
     case 'booking-confirmation':
       return [
         makeRow('text', { text: '{{customer_name}} 様\n\nこの度はPhoto Fleurにご予約いただき、誠にありがとうございます。\n以下の内容でご予約を受け付けました。', size: 15, lineHeight: 1.9 }),
-        makeRow('text', { text: 'モデル名：{{model_name}}\n開催日：{{event_date}}\n予約時間：{{slot_label}}\n料金：{{price}}', size: 15, lineHeight: 1.8, paddingTop: 16, paddingBottom: 16, paddingLeft: 20, paddingRight: 20 }),
-        makeRow('text', { text: '{{qr_block}}', align: 'center', size: 14 }),
-        makeRow('text', { text: '{{location_block}}', size: 14 }),
-        makeRow('text', { text: '{{rules_block}}', size: 13, color: '#555' }),
+        makeRow('text', { text: '{{items_block}}', size: 14 }),
         makeRow('divider', { color: '#e5e5e5' }),
         makeRow('text', { text: 'ご不明点がございましたら、公式LINEよりご連絡ください。\nhttps://lin.ee/7XLB4St\n\nモデルの体調不良などにより、こちらからキャンセルさせていただく可能性がございます。ご了承ください。', size: 13, color: '#555', lineHeight: 2 }),
       ]
@@ -131,9 +124,7 @@ function getDefaultRows(templateId) {
       return [
         makeRow('heading', { text: '明日の撮影会のご案内', size: 24 }),
         makeRow('text', { text: '{{customer_name}} 様\n\n明日はご予約いただいている撮影日です。\n以下の内容をご確認のうえ、当日お気をつけてお越しください。', size: 15, lineHeight: 1.9 }),
-        makeRow('text', { text: 'モデル名：{{model_name}}\n開催日：{{event_date}}\n予約時間：{{slot_label}}', size: 15, lineHeight: 1.8, paddingTop: 16, paddingBottom: 16, paddingLeft: 20, paddingRight: 20 }),
-        makeRow('text', { text: '{{qr_block}}', align: 'center', size: 14 }),
-        makeRow('text', { text: '{{location_block}}', size: 14 }),
+        makeRow('text', { text: '{{items_block}}', size: 14 }),
         makeRow('divider', { color: '#e5e5e5' }),
         makeRow('text', { text: 'ご不明点がございましたら、公式LINEよりご連絡ください。\nhttps://lin.ee/7XLB4St', size: 13, color: '#555', lineHeight: 2 }),
       ]

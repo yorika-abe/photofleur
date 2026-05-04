@@ -20,6 +20,7 @@ export default function AdminBookingsPage() {
   const [expanded, setExpanded] = useState(null)
   const [cancelling, setCancelling] = useState(null)
   const [toast, setToast] = useState(null)
+  const [refundModal, setRefundModal] = useState(null)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -37,7 +38,7 @@ export default function AdminBookingsPage() {
     // 通常予約
     const { data } = await supabase
       .from('bookings')
-      .select('id, name, last_name, first_name, last_name_kana, first_name_kana, email, phone, sns_url, is_outdoor, final_price, qr_token, marketing_consent, created_at, slot_id, cancelled_at')
+      .select('id, name, last_name, first_name, last_name_kana, first_name_kana, email, phone, sns_url, is_outdoor, final_price, qr_token, marketing_consent, created_at, slot_id, cancelled_at, payment_method, square_payment_id')
       .order('created_at', { ascending: false })
 
     // 非公開商品予約
@@ -129,12 +130,22 @@ export default function AdminBookingsPage() {
     setLoading(false)
   }
 
-  async function cancelBooking(b) {
-    const name = b.name || `${b.last_name} ${b.first_name}`
-    if (!confirm(`${name} 様の予約をキャンセルしてメールを送信しますか？`)) return
+  function cancelBooking(b) {
+    const price = b.final_price || b.slot?.price || 0
+    if (b.payment_method === 'card' && b.square_payment_id) {
+      setRefundModal({ booking: b, refundType: 'full', customAmount: String(price) })
+    } else {
+      const name = b.name || `${b.last_name} ${b.first_name}`
+      if (!confirm(`${name} 様の予約をキャンセルしてメールを送信しますか？`)) return
+      executeCancel(b, 0)
+    }
+  }
+
+  async function executeCancel(b, refundAmount) {
+    setRefundModal(null)
     setCancelling(b.id)
 
-    const body = b._type === 'private'
+    const baseBody = b._type === 'private'
       ? { private_booking_id: b.id }
       : b._type === 'event_product'
       ? { event_product_booking_id: b.id }
@@ -143,13 +154,23 @@ export default function AdminBookingsPage() {
     const res = await fetch('/api/admin/cancel-booking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ ...baseBody, refund_amount: refundAmount }),
     })
     setCancelling(null)
     if (!res.ok) { alert('エラーが発生しました'); return }
-    setToast('キャンセルメールを発送しました。返金、キャンセル料、予約在庫の対応に移ってください。')
+
+    const data = await res.json()
+    let msg = 'キャンセルメールを発送しました。'
+    if (refundAmount > 0) {
+      if (data.refund_ok) msg += `　Square返金（¥${Number(refundAmount).toLocaleString()}）が完了しました。`
+      else if (data.refund_error) msg += `　※返金エラー: ${data.refund_error}`
+    } else {
+      msg += '返金・キャンセル料の対応は別途行ってください。'
+    }
+
+    setToast(msg)
     setBookings(prev => prev.map(bk => bk.id === b.id ? { ...bk, cancelled_at: new Date().toISOString() } : bk))
-    setTimeout(() => setToast(null), 6000)
+    setTimeout(() => setToast(null), 8000)
   }
 
   const today = new Date().toISOString().split('T')[0]
@@ -185,6 +206,63 @@ export default function AdminBookingsPage() {
           {toast}
         </div>
       )}
+
+      {refundModal && (() => {
+        const b = refundModal.booking
+        const price = b.final_price || b.slot?.price || 0
+        const refundAmount = refundModal.refundType === 'full' ? price
+          : refundModal.refundType === 'custom' ? Number(refundModal.customAmount) || 0
+          : 0
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: '#fff', borderRadius: 20, padding: 32, maxWidth: 420, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
+              <div style={{ fontSize: 17, fontWeight: 700, color: '#2f2244', marginBottom: 6 }}>予約キャンセル・返金</div>
+              <div style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>{b.name || `${b.last_name} ${b.first_name}`} 様　決済額：¥{price.toLocaleString()}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+                {[
+                  { key: 'none', label: '返金なし（キャンセルメールのみ）' },
+                  { key: 'full', label: `全額返金　¥${price.toLocaleString()}` },
+                  { key: 'custom', label: '金額を指定して返金' },
+                ].map(opt => (
+                  <label key={opt.key} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, cursor: 'pointer', padding: '10px 14px', borderRadius: 10, border: `2px solid ${refundModal.refundType === opt.key ? '#2f2244' : '#e5e5e5'}`, background: refundModal.refundType === opt.key ? '#f0eeff' : '#fafafa' }}>
+                    <input type="radio" checked={refundModal.refundType === opt.key} onChange={() => setRefundModal({ ...refundModal, refundType: opt.key })} style={{ accentColor: '#2f2244' }} />
+                    {opt.label}
+                  </label>
+                ))}
+                {refundModal.refundType === 'custom' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
+                    <span style={{ fontSize: 14, color: '#555' }}>返金額</span>
+                    <span style={{ fontSize: 14 }}>¥</span>
+                    <input
+                      type="number"
+                      value={refundModal.customAmount}
+                      onChange={e => setRefundModal({ ...refundModal, customAmount: e.target.value })}
+                      style={{ width: 120, padding: '6px 10px', border: '1px solid #ccc', borderRadius: 8, fontSize: 14 }}
+                      min={0} max={price}
+                    />
+                  </div>
+                )}
+              </div>
+              {refundModal.refundType !== 'none' && (
+                <div style={{ fontSize: 12, color: '#e65100', background: '#fff3e0', borderRadius: 8, padding: '8px 12px', marginBottom: 16 }}>
+                  ⚠️ Square返金：¥{refundAmount.toLocaleString()} を実行します
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => setRefundModal(null)} style={{ flex: 1, padding: '10px 0', border: '1px solid #ddd', borderRadius: 10, background: '#f5f5f5', color: '#555', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+                  戻る
+                </button>
+                <button
+                  onClick={() => executeCancel(b, refundAmount)}
+                  disabled={cancelling === b.id}
+                  style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: 10, background: '#c62828', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                  キャンセル実行
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       <Link href="/admin" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
       <div style={{ display: 'flex', gap: 0, margin: '8px 0 24px', borderBottom: '2px solid #e5e5e5' }}>
@@ -264,6 +342,15 @@ export default function AdminBookingsPage() {
                         {b.event?.event_type === 'street' ? 'スト' : 'スタ'}
                       </span>
                     )}
+                    {(() => {
+                      const pm = b.payment_method
+                      if (!pm) return null
+                      return (
+                        <span style={{ background: pm === 'card' ? '#e3f2fd' : '#f1f8e9', color: pm === 'card' ? '#1565c0' : '#33691e', borderRadius: 4, padding: '2px 7px', fontSize: 11, fontWeight: 600 }}>
+                          {pm === 'card' ? '💳カード' : '💴現金'}
+                        </span>
+                      )
+                    })()}
                   </div>
                   <div style={{ fontWeight: 700, fontSize: 14, color: '#2f2244', minWidth: 80, textAlign: 'right' }}>
                     ¥{price.toLocaleString()}
@@ -309,7 +396,8 @@ export default function AdminBookingsPage() {
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>イベント</span>{b.event?.event_date} {b.event?.location_name}</div>
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>モデル</span>{b.model?.name}</div>
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>時間枠</span>{b.slot?.slot_label}</div>
-                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>撮影</span>{b.is_outdoor ? '屋外' : '通常'}</div>
+                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>撮影場所</span>{b.is_outdoor ? '屋外' : '屋内'}</div>
+                            {b.payment_method && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>支払</span>{b.payment_method === 'card' ? '💳 カード決済' : '💴 当日現金'}</div>}
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>金額</span>¥{price.toLocaleString()}</div>
                           </>
                         )}
