@@ -61,7 +61,7 @@ export default async function EventDetailPage({ params }) {
 
   const { data: products } = await supabase
     .from('event_products')
-    .select('id, name, image, description, price, stock, available_slots')
+    .select('id, name, image, description, price, stock, available_slots, options')
     .eq('event_id', id)
     .order('display_order')
     .order('created_at')
@@ -282,7 +282,12 @@ export default async function EventDetailPage({ params }) {
       <GalleryMarquee images={event.gallery_images} />
 
       {/* Products */}
-      <ProductCards products={products || []} />
+      <ProductCards
+        products={products || []}
+        eventId={id}
+        slotLabels={[...new Set((allSlots || []).map(s => s.slot_label))]}
+        eventModels={[...new Map(entries.filter(e => e.models).map(e => [e.model_id, e.models])).values()]}
+      />
 
       {/* Booking */}
       <h2 style={{ fontSize: 20, fontWeight: 700, color: '#333', marginBottom: 16 }}>Booking</h2>

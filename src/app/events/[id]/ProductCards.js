@@ -1,10 +1,97 @@
 'use client'
 import { useState } from 'react'
 
-export default function ProductCards({ products }) {
+function getOptionGroups(product) {
+  const opts = product.options
+  if (opts && typeof opts === 'object' && !Array.isArray(opts) && opts.type === 'groups') {
+    return opts.groups || []
+  }
+  return []
+}
+
+export default function ProductCards({ products, eventId, slotLabels = [], eventModels = [] }) {
   const [selected, setSelected] = useState(null)
+  const [selections, setSelections] = useState({})
+  const [customerName, setCustomerName] = useState('')
+  const [customerEmail, setCustomerEmail] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitResult, setSubmitResult] = useState(null)
 
   if (!products || products.length === 0) return null
+
+  function openModal(p) {
+    setSelected(p)
+    setSelections({})
+    setCustomerName('')
+    setCustomerEmail('')
+    setSubmitResult(null)
+  }
+
+  function closeModal() {
+    setSelected(null)
+    setSubmitResult(null)
+  }
+
+  function updateSelection(groupIdx, value, multiple) {
+    if (multiple) {
+      setSelections(prev => {
+        const current = Array.isArray(prev[groupIdx]) ? prev[groupIdx] : []
+        const isSelected = current.includes(value)
+        return { ...prev, [groupIdx]: isSelected ? current.filter(v => v !== value) : [...current, value] }
+      })
+    } else {
+      setSelections(prev => ({ ...prev, [groupIdx]: value }))
+    }
+  }
+
+  async function handleSubmit() {
+    if (!selected) return
+    const groups = getOptionGroups(selected)
+    const selectedModelIds = []
+    const selectionData = {}
+
+    groups.forEach((group, idx) => {
+      const val = selections[idx]
+      if (group.type === 'models') {
+        const ids = Array.isArray(val) ? val : (val ? [val] : [])
+        selectedModelIds.push(...ids)
+        selectionData['model'] = ids.map(id => eventModels.find(m => m.id === id)?.name).filter(Boolean)
+      } else if (group.type === 'slots') {
+        selectionData['slot'] = Array.isArray(val) ? val.join(', ') : (val || '')
+      } else if (group.type === 'manual') {
+        selectionData[group.name || `option_${idx}`] = Array.isArray(val) ? val : (val ? [val] : [])
+      }
+    })
+
+    setSubmitting(true)
+    try {
+      const res = await fetch(`/api/events/${eventId}/product-bookings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          product_id: selected.id,
+          product_name: selected.name,
+          customer_name: customerName,
+          customer_email: customerEmail,
+          selections: selectionData,
+          selected_model_ids: selectedModelIds,
+        }),
+      })
+      const data = await res.json()
+      setSubmitting(false)
+      if (res.ok) {
+        setSubmitResult({ ok: true })
+      } else {
+        setSubmitResult({ error: data.error || 'エラーが発生しました' })
+      }
+    } catch {
+      setSubmitting(false)
+      setSubmitResult({ error: '通信エラーが発生しました' })
+    }
+  }
+
+  const selectedGroups = selected ? getOptionGroups(selected) : []
+  const hasBookableOptions = selectedGroups.length > 0
 
   return (
     <>
@@ -13,7 +100,7 @@ export default function ProductCards({ products }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
           {products.map(p => (
             <div key={p.id}
-              onClick={() => setSelected(p)}
+              onClick={() => openModal(p)}
               style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e5e5', overflow: 'hidden', cursor: 'pointer', transition: 'box-shadow 0.15s', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
               onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.12)'}
               onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'}>
@@ -41,14 +128,11 @@ export default function ProductCards({ products }) {
         </div>
       </div>
 
-      {/* モーダル */}
       {selected && (
-        <div
-          onClick={() => setSelected(null)}
+        <div onClick={closeModal}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{ background: '#fff', borderRadius: 20, maxWidth: 480, width: '100%', overflow: 'hidden', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: 20, maxWidth: 520, width: '100%', overflow: 'hidden', maxHeight: '90vh', overflowY: 'auto' }}>
             {selected.image && (
               <img src={selected.image} alt={selected.name} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} />
             )}
@@ -62,14 +146,147 @@ export default function ProductCards({ products }) {
               {selected.description && (
                 <p style={{ fontSize: 14, color: '#555', lineHeight: 1.8, marginBottom: 16, whiteSpace: 'pre-wrap' }}>{selected.description}</p>
               )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, borderTop: '1px solid #f0f0f0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, borderTop: '1px solid #f0f0f0', marginBottom: 20 }}>
                 <span style={{ fontSize: 22, fontWeight: 700, color: '#1a3560' }}>¥{(selected.price || 0).toLocaleString()}</span>
                 <span style={{ fontSize: 13, color: selected.stock <= 0 ? '#e53935' : '#888', fontWeight: selected.stock <= 0 ? 700 : 400 }}>
                   {selected.stock <= 0 ? '在庫なし' : `在庫 ${selected.stock}件`}
                 </span>
               </div>
-              <p style={{ fontSize: 12, color: '#aaa', marginTop: 12 }}>ご予約後、当日スタッフまでお申し付けください。</p>
-              <button onClick={() => setSelected(null)}
+
+              {submitResult?.ok ? (
+                <div style={{ background: '#e8f5e9', borderRadius: 12, padding: '20px', textAlign: 'center', marginBottom: 16 }}>
+                  <div style={{ fontSize: 24, marginBottom: 8 }}>✅</div>
+                  <div style={{ fontWeight: 700, color: '#2e7d32', fontSize: 15 }}>受付完了しました</div>
+                  <p style={{ fontSize: 13, color: '#555', margin: '8px 0 0' }}>当日スタッフまでお声がけください。</p>
+                </div>
+              ) : hasBookableOptions ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {selectedGroups.map((group, idx) => {
+                    const val = selections[idx]
+
+                    if (group.type === 'slots') {
+                      const isMultiple = group.multiple === true
+                      return (
+                        <div key={idx}>
+                          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#1a3560', marginBottom: 8 }}>
+                            📅 時間枠を選択{isMultiple ? '（複数可）' : ''}
+                          </label>
+                          {isMultiple ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              {slotLabels.map(slotLabel => (
+                                <label key={slotLabel} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '7px 10px', borderRadius: 8, background: (val || []).includes(slotLabel) ? '#e0f7fa' : '#f8f8f8' }}>
+                                  <input type="checkbox" checked={(val || []).includes(slotLabel)} onChange={() => updateSelection(idx, slotLabel, true)} />
+                                  <span style={{ fontSize: 13 }}>{slotLabel}</span>
+                                </label>
+                              ))}
+                            </div>
+                          ) : (
+                            <select value={val || ''} onChange={e => updateSelection(idx, e.target.value, false)}
+                              style={{ width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 14, background: '#fff' }}>
+                              <option value="">選択してください</option>
+                              {slotLabels.map(slotLabel => (
+                                <option key={slotLabel} value={slotLabel}>{slotLabel}</option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      )
+                    }
+
+                    if (group.type === 'models') {
+                      const isMultiple = group.multiple !== false
+                      return (
+                        <div key={idx}>
+                          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#1a3560', marginBottom: 8 }}>
+                            👤 モデルを選択{isMultiple ? '（複数可）' : ''}
+                          </label>
+                          {isMultiple ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              {eventModels.map(m => (
+                                <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '8px 10px', borderRadius: 8, background: (val || []).includes(m.id) ? '#e8f5e9' : '#f8f8f8' }}>
+                                  <input type="checkbox" checked={(val || []).includes(m.id)} onChange={() => updateSelection(idx, m.id, true)} />
+                                  {m.image && <img src={m.image} alt={m.name} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />}
+                                  <span style={{ fontSize: 13, fontWeight: 600 }}>{m.name}</span>
+                                </label>
+                              ))}
+                            </div>
+                          ) : (
+                            <select value={val || ''} onChange={e => updateSelection(idx, e.target.value, false)}
+                              style={{ width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 14, background: '#fff' }}>
+                              <option value="">選択してください</option>
+                              {eventModels.map(m => (
+                                <option key={m.id} value={m.id}>{m.name}</option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      )
+                    }
+
+                    if (group.type === 'manual') {
+                      const choices = (group.choices || []).filter(Boolean)
+                      const isMultiple = group.multiple === true
+                      return (
+                        <div key={idx}>
+                          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#1a3560', marginBottom: 8 }}>
+                            {group.name || '選択肢'}{isMultiple ? '（複数可）' : ''}
+                          </label>
+                          {isMultiple ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              {choices.map(choice => (
+                                <label key={choice} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '7px 10px', borderRadius: 8, background: (val || []).includes(choice) ? '#e8f0fe' : '#f8f8f8' }}>
+                                  <input type="checkbox" checked={(val || []).includes(choice)} onChange={() => updateSelection(idx, choice, true)} />
+                                  <span style={{ fontSize: 13 }}>{choice}</span>
+                                </label>
+                              ))}
+                            </div>
+                          ) : (
+                            <select value={val || ''} onChange={e => updateSelection(idx, e.target.value, false)}
+                              style={{ width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 14, background: '#fff' }}>
+                              <option value="">選択してください</option>
+                              {choices.map(choice => (
+                                <option key={choice} value={choice}>{choice}</option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      )
+                    }
+
+                    return null
+                  })}
+
+                  <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#1a3560', marginBottom: 6 }}>お名前 *</label>
+                      <input value={customerName} onChange={e => setCustomerName(e.target.value)}
+                        placeholder="山田 太郎"
+                        style={{ width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#1a3560', marginBottom: 6 }}>メールアドレス</label>
+                      <input type="email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)}
+                        placeholder="example@email.com"
+                        style={{ width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+
+                  {submitResult?.error && (
+                    <div style={{ background: '#ffebee', borderRadius: 8, padding: '10px 14px', color: '#c62828', fontSize: 13 }}>
+                      {submitResult.error}
+                    </div>
+                  )}
+
+                  <button onClick={handleSubmit} disabled={submitting || !customerName.trim()}
+                    style={{ width: '100%', padding: '13px 0', borderRadius: 10, border: 'none', background: submitting || !customerName.trim() ? '#ccc' : '#1a3560', color: '#fff', fontWeight: 700, fontSize: 15, cursor: submitting || !customerName.trim() ? 'not-allowed' : 'pointer' }}>
+                    {submitting ? '送信中...' : '予約する'}
+                  </button>
+                </div>
+              ) : (
+                <p style={{ fontSize: 12, color: '#aaa', margin: 0 }}>ご予約後、当日スタッフまでお申し付けください。</p>
+              )}
+
+              <button onClick={closeModal}
                 style={{ marginTop: 16, width: '100%', padding: '12px', borderRadius: 10, border: '1px solid #ddd', background: '#f5f5f5', color: '#555', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
                 閉じる
               </button>
