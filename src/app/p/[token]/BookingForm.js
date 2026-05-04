@@ -1,23 +1,87 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
-export default function PrivateProductBookingForm({ token, paymentMethod }) {
+const SQUARE_APP_ID = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID
+const SQUARE_LOCATION_ID = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || ''
+
+export default function PrivateProductBookingForm({ token, paymentMethod, price = 0 }) {
   const [form, setForm] = useState({
-    last_name: '', first_name: '', email: '', phone: '', payment_method: paymentMethod === 'both' ? 'cash' : paymentMethod, notes: '',
+    last_name: '', first_name: '', email: '', phone: '',
+    payment_method: paymentMethod === 'both' ? 'card' : paymentMethod,
+    notes: '',
   })
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
+  const [squareReady, setSquareReady] = useState(false)
+  const cardRef = useRef(null)
+  const paymentsRef = useRef(null)
+
+  const selectedPayment = form.payment_method
+
+  useEffect(() => {
+    if (selectedPayment === 'card') {
+      loadSquareSDK()
+    }
+  }, [selectedPayment])
+
+  async function loadSquareSDK() {
+    if (squareReady) return
+    if (window.Square) { await initCard(); return }
+    const script = document.createElement('script')
+    script.src = 'https://web.squarecdn.com/v1/square.js'
+    script.onload = initCard
+    document.head.appendChild(script)
+  }
+
+  async function initCard() {
+    try {
+      if (!SQUARE_APP_ID) return
+      await new Promise(r => setTimeout(r, 300))
+      if (!document.getElementById('card-container-private')) return
+      const payments = window.Square.payments(SQUARE_APP_ID, SQUARE_LOCATION_ID)
+      paymentsRef.current = payments
+      const card = await payments.card()
+      await card.attach('#card-container-private')
+      cardRef.current = card
+      setSquareReady(true)
+    } catch {
+      setError('カード入力フォームの初期化に失敗しました。当日現金をお選びください。')
+    }
+  }
 
   async function submit(e) {
     e.preventDefault()
     if (!form.last_name || !form.email) { setError('氏名・メールアドレスは必須です'); return }
     setSubmitting(true)
     setError('')
+
+    let squarePaymentId = null
+
+    if (selectedPayment === 'card' && price > 0) {
+      if (!cardRef.current) { setError('カード情報を入力してください。'); setSubmitting(false); return }
+      const result = await cardRef.current.tokenize()
+      if (result.status !== 'OK') {
+        setError('カード情報の処理に失敗しました。入力内容をご確認ください。')
+        setSubmitting(false); return
+      }
+      const chargeRes = await fetch('/api/square/charge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceId: result.token, amount: price }),
+      })
+      const chargeData = await chargeRes.json()
+      if (!chargeRes.ok) {
+        setError(chargeData.error || 'カード決済に失敗しました。')
+        setSubmitting(false); return
+      }
+      squarePaymentId = chargeData.payment_id
+    }
+
     const res = await fetch('/api/bookings/private', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, ...form }),
+      body: JSON.stringify({ token, ...form, square_payment_id: squarePaymentId }),
     })
     setSubmitting(false)
     if (res.ok) { setDone(true) }
@@ -69,15 +133,32 @@ export default function PrivateProductBookingForm({ token, paymentMethod }) {
       {paymentMethod === 'both' && (
         <div style={{ marginBottom: 14 }}>
           <label style={lbl}>お支払方法 *</label>
-          <div style={{ display: 'flex', gap: 20, marginTop: 6 }}>
-            {[['cash', '現金払い（当日）'], ['card', '事前カード決済']].map(([v, label]) => (
-              <label key={v} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14 }}>
-                <input type="radio" name="pm" value={v} checked={form.payment_method === v}
-                  onChange={() => setForm(f => ({ ...f, payment_method: v }))} />
+          <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
+            {[['cash', '当日現金'], ['card', 'クレジットカード']].map(([v, label]) => (
+              <button key={v} type="button"
+                onClick={() => setForm(f => ({ ...f, payment_method: v }))}
+                style={{
+                  flex: 1, padding: '10px', borderRadius: 8, border: `2px solid ${selectedPayment === v ? '#1a3560' : '#ddd'}`,
+                  background: selectedPayment === v ? '#1a3560' : '#fff', color: selectedPayment === v ? '#fff' : '#555',
+                  cursor: 'pointer', fontWeight: 600, fontSize: 14,
+                }}>
                 {label}
-              </label>
+              </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {selectedPayment === 'cash' && (
+        <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 8, padding: '12px', fontSize: 13, color: '#795548', marginBottom: 14 }}>
+          💴 当日受付にてお支払いください。
+        </div>
+      )}
+
+      {selectedPayment === 'card' && (
+        <div style={{ marginBottom: 14 }}>
+          <div id="card-container-private" style={{ minHeight: 90 }}></div>
+          {!squareReady && <p style={{ color: '#999', fontSize: 13, marginTop: 8 }}>カード入力フォームを読み込み中...</p>}
         </div>
       )}
 

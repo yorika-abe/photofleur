@@ -69,7 +69,7 @@ export default async function PrivateProductPage({ params }) {
 
       {/* 予約フォーム */}
       {product.stock > 0 && (
-        <PrivateProductBookingForm token={token} paymentMethod={product.payment_method} />
+        <PrivateProductBookingForm token={token} paymentMethod={product.payment_method} price={product.price} />
       )}
 
       <p style={{ fontSize: 11, color: '#bbb', textAlign: 'center', marginTop: 24 }}>PhotoFleur</p>
