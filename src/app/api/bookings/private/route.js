@@ -1,5 +1,5 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
-import { sendLineMessage, sendLineGroupMessage } from '@/lib/line'
+import { sendLineMessage } from '@/lib/line'
 
 export async function POST(req) {
   const body = await req.json()
@@ -70,8 +70,6 @@ export async function POST(req) {
     const result = model.line_id
       ? await sendLineMessage(model.line_id, message)
       : { ok: false, reason: 'no line_id' }
-
-    await sendLineGroupMessage(message).catch(() => {})
 
     await admin.from('line_notifications').insert({
       model_id: model.id,

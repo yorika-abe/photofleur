@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { sendLineMessage, sendLineGroupMessage, buildBookingNoticeMessage, buildDayBeforeNoticeMessage } from '@/lib/line'
+import { sendLineMessage, buildBookingNoticeMessage, buildDayBeforeNoticeMessage } from '@/lib/line'
 
 export async function POST(request) {
   const supabase = createClient(
@@ -63,8 +63,6 @@ export async function POST(request) {
       ? await sendLineMessage(model.line_id, message)
       : { ok: false, reason: 'no line_id' }
 
-    // スタッフグループにも送信
-    await sendLineGroupMessage(message).catch(() => {})
 
     await supabase.from('line_notifications').insert({
       model_id: model.id,
@@ -121,7 +119,6 @@ export async function POST(request) {
         })
 
         const result = await sendLineMessage(model.line_id, message)
-        await sendLineGroupMessage(message).catch(() => {})
 
         await supabase.from('line_notifications').insert({
           model_id: model.id,
