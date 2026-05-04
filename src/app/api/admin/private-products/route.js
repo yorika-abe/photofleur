@@ -28,7 +28,13 @@ export async function GET() {
     return { ...p, booking_count: count || 0 }
   }))
 
-  return Response.json(products)
+  const { data: models } = await admin
+    .from('models')
+    .select('id, name')
+    .eq('is_active', true)
+    .order('name')
+
+  return Response.json({ products, models: models || [] })
 }
 
 export async function POST(req) {

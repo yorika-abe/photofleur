@@ -12,7 +12,8 @@ const PAYMENT_OPTIONS = [
 
 const EMPTY_FORM = {
   title: '', description: '', price: 0, image: '', payment_method: 'both',
-  model_id: '', event_date: '', time_label: '', stock: 1, hanselling: 0,
+  model_id: '', event_date: '', time_label: '', stock: 1,
+  hansellingItems: [{ label: '', amount: 0 }],
 }
 
 export default function PrivateProductsPage() {
@@ -38,12 +39,9 @@ export default function PrivateProductsPage() {
 
   async function load() {
     setLoading(true)
-    const [{ data: prods }, { data: mods }] = await Promise.all([
-      fetch('/api/admin/private-products').then(r => r.json()).then(d => ({ data: Array.isArray(d) ? d : [] })),
-      supabase.from('models').select('id, name').eq('is_active', true).order('name'),
-    ])
-    setProducts(prods)
-    setModels(mods || [])
+    const res = await fetch('/api/admin/private-products').then(r => r.json())
+    setProducts(res.products || [])
+    setModels(res.models || [])
     setLoading(false)
   }
 
@@ -71,7 +69,7 @@ export default function PrivateProductsPage() {
       event_date: p.event_date || '',
       time_label: p.time_label || '',
       stock: p.stock ?? 1,
-      hanselling: p.hanselling || 0,
+      hansellingItems: p.hanselling > 0 ? [{ label: '', amount: p.hanselling }] : [{ label: '', amount: 0 }],
     })
     setExpanded(p.id)
   }
@@ -81,15 +79,27 @@ export default function PrivateProductsPage() {
     setForm(EMPTY_FORM)
   }
 
+  function updateHansellingItem(i, key, value) {
+    setForm(f => ({ ...f, hansellingItems: f.hansellingItems.map((item, idx) => idx === i ? { ...item, [key]: value } : item) }))
+  }
+  function addHansellingItem() {
+    setForm(f => ({ ...f, hansellingItems: [...f.hansellingItems, { label: '', amount: 0 }] }))
+  }
+  function removeHansellingItem(i) {
+    setForm(f => ({ ...f, hansellingItems: f.hansellingItems.filter((_, idx) => idx !== i) }))
+  }
+
   async function save() {
     if (!form.title.trim()) { alert('商品名を入力してください'); return }
     setSaving(true)
+    const { hansellingItems, ...restForm } = form
+    const hanselling = hansellingItems.reduce((s, item) => s + (Number(item.amount) || 0), 0)
     const url = editId ? `/api/admin/private-products/${editId}` : '/api/admin/private-products'
     const method = editId ? 'PATCH' : 'POST'
     const res = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, price: Number(form.price), stock: Number(form.stock), hanselling: Number(form.hanselling) }),
+      body: JSON.stringify({ ...restForm, price: Number(form.price), stock: Number(form.stock), hanselling }),
     })
     setSaving(false)
     if (!res.ok) { alert('保存失敗'); return }
@@ -193,9 +203,27 @@ export default function PrivateProductsPage() {
             <input value={form.time_label} onChange={e => setForm(f => ({ ...f, time_label: e.target.value }))}
               placeholder="13:00〜14:00" style={inp} />
           </div>
-          <div>
-            <label style={lbl}>販管費 ¥</label>
-            <input type="number" min="0" value={form.hanselling} onChange={e => setForm(f => ({ ...f, hanselling: e.target.value }))} style={inp} />
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={lbl}>販管費 <span style={{ fontWeight: 400, color: '#bbb', fontSize: 11 }}>（モデル報酬、スタッフ報酬、モデル交通費往復、スタッフ交通費往復）</span></label>
+            {form.hansellingItems.map((item, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <input value={item.label} onChange={e => updateHansellingItem(i, 'label', e.target.value)}
+                  placeholder="項目名" style={{ ...inp, flex: 2 }} />
+                <input type="number" min="0" value={item.amount} onChange={e => updateHansellingItem(i, 'amount', e.target.value)}
+                  placeholder="0" style={{ ...inp, flex: 1 }} />
+                {form.hansellingItems.length > 1 && (
+                  <button onClick={() => removeHansellingItem(i)}
+                    style={{ padding: '0 12px', border: '1px solid #ddd', borderRadius: 8, background: '#fff', color: '#e53935', cursor: 'pointer', fontSize: 18, flexShrink: 0 }}>×</button>
+                )}
+              </div>
+            ))}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+              <button onClick={addHansellingItem}
+                style={{ fontSize: 12, color: '#1a3560', background: 'none', border: '1px solid #1a3560', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}>+ 追加</button>
+              <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>
+                合計 ¥{form.hansellingItems.reduce((s, item) => s + (Number(item.amount) || 0), 0).toLocaleString()}
+              </span>
+            </div>
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={lbl}>画像</label>
