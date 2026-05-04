@@ -94,8 +94,11 @@ function OrderModal({ goods, onClose, onComplete }) {
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
   const [squareReady, setSquareReady] = useState(false)
+  const [optionsSelected, setOptionsSelected] = useState({})
   const cardRef = useRef(null)
   const paymentsRef = useRef(null)
+
+  const optionGroups = goods.options?.type === 'groups' ? goods.options.groups : []
 
   const selectedPayment = form.payment_method
 
@@ -158,7 +161,7 @@ function OrderModal({ goods, onClose, onComplete }) {
     const res = await fetch('/api/orders/goods', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ goods_id: goods.id, ...form, square_payment_id: squarePaymentId }),
+      body: JSON.stringify({ goods_id: goods.id, ...form, square_payment_id: squarePaymentId, options_selected: Object.keys(optionsSelected).length > 0 ? optionsSelected : null }),
     })
     setSubmitting(false)
     if (res.ok) {
@@ -217,6 +220,43 @@ function OrderModal({ goods, onClose, onComplete }) {
               <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                 placeholder="090-0000-0000" style={inp} />
             </div>
+            {optionGroups.map((group, i) => (
+              <div key={i} style={{ marginBottom: 14 }}>
+                <label style={lbl}>{group.name} *</label>
+                {group.multiple ? (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                    {group.choices.map(choice => {
+                      const selected = (optionsSelected[group.name] || []).includes(choice)
+                      return (
+                        <button key={choice} type="button"
+                          onClick={() => {
+                            const current = optionsSelected[group.name] || []
+                            const next = selected ? current.filter(c => c !== choice) : [...current, choice]
+                            setOptionsSelected(prev => ({ ...prev, [group.name]: next }))
+                          }}
+                          style={{ padding: '7px 14px', borderRadius: 8, border: `2px solid ${selected ? '#1a3560' : '#ddd'}`, background: selected ? '#1a3560' : '#fff', color: selected ? '#fff' : '#555', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+                          {choice}
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                    {group.choices.map(choice => {
+                      const selected = optionsSelected[group.name] === choice
+                      return (
+                        <button key={choice} type="button"
+                          onClick={() => setOptionsSelected(prev => ({ ...prev, [group.name]: choice }))}
+                          style={{ padding: '7px 14px', borderRadius: 8, border: `2px solid ${selected ? '#1a3560' : '#ddd'}`, background: selected ? '#1a3560' : '#fff', color: selected ? '#fff' : '#555', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+                          {choice}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            ))}
+
             <div style={{ marginBottom: 14 }}>
               <label style={lbl}>数量</label>
               <input type="number" min="1" max={maxQty} value={form.quantity}

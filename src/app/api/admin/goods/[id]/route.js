@@ -53,6 +53,10 @@ export async function PATCH(req, { params }) {
       payment_method: body.payment_method,
       stock: body.stock,
       is_active: body.is_active,
+      hanselling: body.hanselling ?? 0,
+      options: body.options ?? null,
+      sale_start: body.sale_start ?? null,
+      sale_end: body.sale_end ?? null,
     })
     .eq('id', id)
     .select()

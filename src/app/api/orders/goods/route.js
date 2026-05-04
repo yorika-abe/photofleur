@@ -3,7 +3,7 @@ import { Resend } from 'resend'
 
 export async function POST(req) {
   const body = await req.json()
-  const { goods_id, last_name, first_name, email, phone, payment_method, quantity, notes, square_payment_id } = body
+  const { goods_id, last_name, first_name, email, phone, payment_method, quantity, notes, square_payment_id, options_selected } = body
 
   if (!goods_id || !last_name || !email) {
     return Response.json({ error: 'Missing required fields' }, { status: 400 })
@@ -31,6 +31,7 @@ export async function POST(req) {
     quantity: qty,
     notes: notes || null,
     square_payment_id: square_payment_id || null,
+    options_selected: options_selected || null,
   })
 
   if (error) return Response.json({ error: error.message }, { status: 500 })

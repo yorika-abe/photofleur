@@ -46,6 +46,10 @@ export async function POST(req) {
       image: body.image || null,
       payment_method: body.payment_method || 'both',
       stock: body.stock !== undefined ? Number(body.stock) : -1,
+      hanselling: body.hanselling || 0,
+      options: body.options || null,
+      sale_start: body.sale_start || null,
+      sale_end: body.sale_end || null,
       is_active: true,
     })
     .select()
