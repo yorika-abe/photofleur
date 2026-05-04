@@ -51,6 +51,15 @@ export default async function SchedulePage() {
   }
   const eventsWithEntries = (events || []).map(ev => ({ ...ev, event_entries: entriesByEvent[ev.id] || [] }))
 
+  const { data: allProducts } = eventIds.length > 0
+    ? await supabase.from('event_products').select('id, event_id, name, image, description, price, stock, available_slots, options').in('event_id', eventIds).order('display_order').order('created_at')
+    : { data: [] }
+  const productsByEvent = {}
+  for (const p of allProducts || []) {
+    if (!productsByEvent[p.event_id]) productsByEvent[p.event_id] = []
+    productsByEvent[p.event_id].push(p)
+  }
+
   const entryIds = (entries || []).map(e => e.id)
   const { data: allSlots } = entryIds.length > 0
     ? await supabase.from('booking_slots').select('id, slot_label, start_time, price, is_reserved, max_reservations, slot_order, event_entry_id').in('event_entry_id', entryIds).order('slot_order', { ascending: true })
@@ -151,6 +160,7 @@ export default async function SchedulePage() {
               bookingCounts={bookingCounts || []}
               indoorCountBySlot={indoorCountBySlot}
               indoorCountByLabel={indoorCountByLabel}
+              productsByEvent={productsByEvent}
             />
           </div>
         )}

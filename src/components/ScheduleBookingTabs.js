@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import BookingSection from '@/app/events/[id]/BookingSection'
+import ProductCards from '@/app/events/[id]/ProductCards'
 
 function formatOpenAt(isoStr) {
   return new Date(isoStr).toLocaleString('ja-JP', {
@@ -11,7 +12,7 @@ function formatOpenAt(isoStr) {
   })
 }
 
-export default function ScheduleBookingTabs({ events, entriesByEvent, slotsByEntry, bookingCounts, indoorCountBySlot, indoorCountByLabel }) {
+export default function ScheduleBookingTabs({ events, entriesByEvent, slotsByEntry, bookingCounts, indoorCountBySlot, indoorCountByLabel, productsByEvent = {} }) {
   const [activeId, setActiveId] = useState(events[0]?.id || '')
 
   if (!events.length) return null
@@ -20,6 +21,16 @@ export default function ScheduleBookingTabs({ events, entriesByEvent, slotsByEnt
   const activeEntries = (entriesByEvent[activeId] || []).filter(e => e.models)
   const now = new Date()
   const bookingOpen = !activeEvent?.booking_open_at || new Date(activeEvent.booking_open_at) <= now
+
+  const activeProducts = productsByEvent[activeId] || []
+  const activeSlotLabels = [...new Set(
+    Object.values(
+      Object.fromEntries(
+        (activeEntries).map(e => [e.id, (slotsByEntry[e.id] || []).map(s => s.slot_label)])
+      )
+    ).flat()
+  )]
+  const activeEventModels = [...new Map(activeEntries.map(e => [e.model_id, e.models])).values()]
 
   return (
     <div style={{ borderTop: '2px solid #f0f0f0', paddingTop: 24 }}>
@@ -50,6 +61,16 @@ export default function ScheduleBookingTabs({ events, entriesByEvent, slotsByEnt
           )
         })}
       </div>
+
+      {/* Products */}
+      {activeProducts.length > 0 && (
+        <ProductCards
+          products={activeProducts}
+          eventId={activeId}
+          slotLabels={activeSlotLabels}
+          eventModels={activeEventModels}
+        />
+      )}
 
       {/* Booking section — same component as event detail page */}
       {!bookingOpen && activeEvent?.booking_open_at ? (
