@@ -29,7 +29,8 @@ export async function GET() {
     return { ...g, order_count: count || 0 }
   }))
 
-  return Response.json({ goods })
+  const { data: models } = await admin.from('models').select('id, name').eq('is_active', true).order('name')
+  return Response.json({ goods, models: models || [] })
 }
 
 export async function POST(req) {
