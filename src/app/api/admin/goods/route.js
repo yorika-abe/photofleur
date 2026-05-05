@@ -29,7 +29,7 @@ export async function GET() {
     return { ...g, order_count: count || 0 }
   }))
 
-  const { data: models } = await admin.from('models').select('id, name').eq('is_active', true).order('name')
+  const { data: models } = await admin.from('models').select('id, name').order('name')
   return Response.json({ goods, models: models || [] })
 }
 

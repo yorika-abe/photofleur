@@ -31,7 +31,6 @@ export async function GET() {
   const { data: models } = await admin
     .from('models')
     .select('id, name')
-    .eq('is_active', true)
     .order('name')
 
   return Response.json({ products, models: models || [] })
