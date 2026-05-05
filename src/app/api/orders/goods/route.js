@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import { Resend } from 'resend'
+import { renderEmailTemplate } from '@/lib/email-render'
 
 export async function POST(req) {
   const body = await req.json()
@@ -86,27 +87,40 @@ export async function POST(req) {
     const resend = new Resend(process.env.RESEND_API_KEY)
     const customerName = `${last_name}${first_name ? ` ${first_name}` : ''}`
     const total = goods.price * qty
+    const paymentLabel = payment_method === 'card' ? 'クレジットカード（決済済み）' : '当日現金'
+
+    const templateResult = await renderEmailTemplate(admin, 'goods-order-confirmation', {
+      customer_name: customerName,
+      goods_title: goods.title,
+      quantity: String(qty),
+      total_price: `¥${total.toLocaleString()}`,
+      payment_method: paymentLabel,
+      delivery_address: delivery_address || '',
+    }).catch(() => null)
+
+    const html = templateResult?.html ?? `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px 16px;background:#f5f5f7;">
+        <div style="background:#fff;border-radius:16px;padding:32px;">
+          <h2 style="color:#1a3560;margin:0 0 20px;">ご注文ありがとうございます</h2>
+          <p style="color:#333;margin:0 0 20px;">${customerName} 様<br>以下の内容でご注文を受け付けました。</p>
+          <table style="width:100%;border-collapse:collapse;margin:0 0 24px;">
+            <tr><td style="padding:10px 0;border-bottom:1px solid #eee;color:#888;width:120px;">商品名</td><td style="padding:10px 0;border-bottom:1px solid #eee;font-weight:600;">${goods.title}</td></tr>
+            <tr><td style="padding:10px 0;border-bottom:1px solid #eee;color:#888;">数量</td><td style="padding:10px 0;border-bottom:1px solid #eee;">${qty}</td></tr>
+            <tr><td style="padding:10px 0;border-bottom:1px solid #eee;color:#888;">合計金額</td><td style="padding:10px 0;border-bottom:1px solid #eee;font-weight:700;">¥${total.toLocaleString()}</td></tr>
+            <tr><td style="padding:10px 0;border-bottom:1px solid #eee;color:#888;">お支払方法</td><td style="padding:10px 0;border-bottom:1px solid #eee;">${paymentLabel}</td></tr>
+            ${delivery_address ? `<tr><td style="padding:10px 0;color:#888;">お届け先</td><td style="padding:10px 0;white-space:pre-wrap;">${delivery_address}</td></tr>` : ''}
+          </table>
+          <p style="color:#555;font-size:14px;">担当よりご連絡いたします。</p>
+          <p style="color:#aaa;font-size:12px;margin-top:24px;">PhotoFleur運営（送信専用）</p>
+        </div>
+      </div>
+    `
+
     await resend.emails.send({
       from: 'Photo Fleur運営 <onboarding@resend.dev>',
       to: email,
-      subject: '【PhotoFleur】ご注文ありがとうございます',
-      html: `
-        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px 16px;background:#f5f5f7;">
-          <div style="background:#fff;border-radius:16px;padding:32px;">
-            <h2 style="color:#1a3560;margin:0 0 20px;">ご注文ありがとうございます</h2>
-            <p style="color:#333;margin:0 0 20px;">${customerName} 様<br>以下の内容でご注文を受け付けました。</p>
-            <table style="width:100%;border-collapse:collapse;margin:0 0 24px;">
-              <tr><td style="padding:10px 0;border-bottom:1px solid #eee;color:#888;width:120px;">商品名</td><td style="padding:10px 0;border-bottom:1px solid #eee;font-weight:600;">${goods.title}</td></tr>
-              <tr><td style="padding:10px 0;border-bottom:1px solid #eee;color:#888;">数量</td><td style="padding:10px 0;border-bottom:1px solid #eee;">${qty}</td></tr>
-              <tr><td style="padding:10px 0;border-bottom:1px solid #eee;color:#888;">合計金額</td><td style="padding:10px 0;border-bottom:1px solid #eee;font-weight:700;">¥${total.toLocaleString()}</td></tr>
-              <tr><td style="padding:10px 0;border-bottom:1px solid #eee;color:#888;">お支払方法</td><td style="padding:10px 0;border-bottom:1px solid #eee;">${payment_method === 'card' ? 'クレジットカード（決済済み）' : '当日現金'}</td></tr>
-              ${delivery_address ? `<tr><td style="padding:10px 0;color:#888;">お届け先</td><td style="padding:10px 0;white-space:pre-wrap;">${delivery_address}</td></tr>` : ''}
-            </table>
-            <p style="color:#555;font-size:14px;">担当よりご連絡いたします。</p>
-            <p style="color:#aaa;font-size:12px;margin-top:24px;">PhotoFleur運営（送信専用）</p>
-          </div>
-        </div>
-      `,
+      subject: templateResult?.subject || '【PhotoFleur】ご注文ありがとうございます',
+      html,
     })
   } catch {}
 

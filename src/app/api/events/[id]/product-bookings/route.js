@@ -26,10 +26,11 @@ export async function POST(req, { params }) {
     const { data: eventData } = await admin.from('events').select('event_date, location_name').eq('id', id).single().catch(() => ({ data: null }))
     const { data: productData } = await admin.from('event_products').select('name, price').eq('id', product_id).single().catch(() => ({ data: null }))
 
-    let modelName = null
+    let modelName = null, modelImage = null
     if (selected_model_ids?.length > 0) {
-      const { data: firstModel } = await admin.from('models').select('name').eq('id', selected_model_ids[0]).single().catch(() => ({ data: null }))
+      const { data: firstModel } = await admin.from('models').select('name, image').eq('id', selected_model_ids[0]).single().catch(() => ({ data: null }))
       modelName = firstModel?.name || null
+      modelImage = firstModel?.image || null
     }
 
     if (customer_email) {
@@ -45,6 +46,7 @@ export async function POST(req, { params }) {
           timeLabel: selections?.slot || null,
           price: productData?.price || 0,
           modelName,
+          modelImage,
         }),
       }).catch(() => {})
     }

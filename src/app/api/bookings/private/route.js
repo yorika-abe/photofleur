@@ -14,7 +14,7 @@ export async function POST(req) {
 
   const { data: product } = await admin
     .from('private_products')
-    .select('id, stock, payment_method, is_active, title, price, event_date, time_label, model_id, models(id, name, line_id)')
+    .select('id, stock, payment_method, is_active, title, price, event_date, time_label, model_id, models(id, name, line_id, image)')
     .eq('token', token)
     .single()
 
@@ -72,6 +72,7 @@ export async function POST(req) {
       timeLabel: product.time_label || null,
       price: product.price || 0,
       modelName: product.models?.name || null,
+      modelImage: product.models?.image || null,
     }),
   }).catch(() => {})
 
