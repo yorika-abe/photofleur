@@ -24,6 +24,7 @@ const TEMPLATE_DEFS = [
     defaultSubject: '【PhotoFleur】明日（{{event_date}}）のご案内',
     vars: [
       { key: 'customer_name', desc: 'お客様名' },
+      { key: 'items_block', desc: '予約内容一覧（自動生成HTML・モデル写真・QRコード・場所情報含む）' },
       { key: 'model_name', desc: 'モデル名' },
       { key: 'model_image', desc: 'モデル写真URL（画像ブロックのURLに入力して使用）' },
       { key: 'event_date', desc: '開催日' },

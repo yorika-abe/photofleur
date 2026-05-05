@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
-import { renderEmailTemplate } from '@/lib/email-render'
+import { renderEmailTemplateWithBlocks } from '@/lib/email-render'
 
 function formatDate(dateString) {
   if (!dateString) return ''
@@ -86,16 +86,36 @@ export async function POST(req) {
       ? `<div style="text-align:center;margin-bottom:24px;"><p style="font-size:14px;color:#555;margin:0 0 12px;">当日受付時にこのQRコードをご提示ください</p><img src="${qrImageUrl}" alt="受付QRコード" style="width:160px;height:160px;border:1px solid #e5e5e5;border-radius:8px;"/></div>`
       : ''
 
-    const templateResult = await renderEmailTemplate(supabase, 'day-before-reminder', {
-      customer_name: customerName,
-      model_name: modelName,
-      model_image: modelImage,
-      event_date: eventDate,
-      slot_label: slotLabel,
-      qr_block: qrBlock,
-      location_block: buildLocationBlock(event),
-      rules_block: buildRulesBlock(event),
-    })
+    const locationBlock = buildLocationBlock(event)
+    const rulesBlock = buildRulesBlock(event)
+
+    const items_block = `
+      ${modelImage ? `<img src="${modelImage}" alt="${modelName}" style="display:block;width:100%;max-height:280px;object-fit:cover;border-radius:12px;margin-bottom:16px;"/>` : ''}
+      <div style="border:1px solid #e5e5e5; border-radius:16px; padding:20px; margin-bottom:24px; background:#fafafa;">
+        ${modelName ? `<p style="margin:0 0 14px; font-size:16px; line-height:1.8;"><strong>モデル名：</strong>${modelName}</p>` : ''}
+        <p style="margin:0 0 14px; font-size:16px; line-height:1.8;"><strong>開催日：</strong>${eventDate}</p>
+        <p style="margin:0 0 14px; font-size:16px; line-height:1.8;"><strong>予約時間：</strong>${slotLabel}</p>
+        <p style="margin:0; font-size:16px; line-height:1.8;"><strong>料金：</strong>¥${Number(displayPrice).toLocaleString()}${isOutdoor ? '（屋外撮影・スタジオ料金割引適用済み）' : ''}</p>
+      </div>
+      ${qrBlock}
+      ${locationBlock}
+      ${rulesBlock}
+    `
+
+    const templateResult = await renderEmailTemplateWithBlocks(
+      supabase, 'day-before-reminder',
+      { items_block },
+      {
+        customer_name: customerName,
+        model_name: modelName,
+        model_image: modelImage,
+        event_date: eventDate,
+        slot_label: slotLabel,
+        qr_block: qrBlock,
+        location_block: locationBlock,
+        rules_block: rulesBlock,
+      }
+    )
 
     const html = templateResult?.html ?? `
       <div style="margin:0; padding:0; background:#f5f5f7; font-family:Arial, sans-serif; color:#2f2244;">
@@ -122,8 +142,8 @@ export async function POST(req) {
               </div>
 
               ${qrBlock}
-              ${buildLocationBlock(event)}
-              ${buildRulesBlock(event)}
+              ${locationBlock}
+              ${rulesBlock}
 
               <div style="font-size:14px; color:#555; line-height:2; border-top:1px solid #f0f0f0; padding-top:20px;">
                 <p style="margin:0;">ご不明点がございましたら、公式LINEよりご連絡ください。<br>
