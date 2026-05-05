@@ -15,6 +15,7 @@ const EMPTY_FORM = {
   hansellingItems: [{ label: '', amount: 0 }],
   optionGroups: [],
   hasSalePeriod: false, sale_start: '', sale_end: '',
+  is_delivery: false,
 }
 
 export default function GoodsAdminPage() {
@@ -200,6 +201,7 @@ export default function GoodsAdminPage() {
       hasSalePeriod: !!(g.sale_start || g.sale_end),
       sale_start: g.sale_start ? g.sale_start.slice(0, 16) : '',
       sale_end: g.sale_end ? g.sale_end.slice(0, 16) : '',
+      is_delivery: g.options?.is_delivery || false,
     })
     setExpanded(g.id)
   }
@@ -213,24 +215,25 @@ export default function GoodsAdminPage() {
     const validGroups = form.optionGroups.filter(g =>
       g.name.trim() && (g.type === 'models' ? g.modelData.length > 0 : g.choices.some(c => c.name.trim()))
     )
-    const options = validGroups.length > 0
-      ? {
-          type: 'groups',
-          groups: validGroups.map(g =>
-            g.type === 'models'
-              ? {
-                  type: 'models', name: g.name, multiple: g.multiple,
-                  model_choices: g.modelData.map(m => ({
-                    model_id: m.model_id,
-                    model_name: m.model_name,
-                    stock: m.stock ?? -1,
-                    choices: m.choices.filter(c => c.name.trim()).map(c => ({ name: c.name, stock: c.stock ?? -1 })),
-                  })),
-                }
-              : { type: 'manual', name: g.name, choices: g.choices.filter(c => c.name.trim()).map(c => ({ name: c.name, stock: c.stock ?? -1 })), multiple: g.multiple }
-          )
-        }
-      : null
+    const optionsObj = {}
+    if (form.is_delivery) optionsObj.is_delivery = true
+    if (validGroups.length > 0) {
+      optionsObj.type = 'groups'
+      optionsObj.groups = validGroups.map(g =>
+        g.type === 'models'
+          ? {
+              type: 'models', name: g.name, multiple: g.multiple,
+              model_choices: g.modelData.map(m => ({
+                model_id: m.model_id,
+                model_name: m.model_name,
+                stock: m.stock ?? -1,
+                choices: m.choices.filter(c => c.name.trim()).map(c => ({ name: c.name, stock: c.stock ?? -1 })),
+              })),
+            }
+          : { type: 'manual', name: g.name, choices: g.choices.filter(c => c.name.trim()).map(c => ({ name: c.name, stock: c.stock ?? -1 })), multiple: g.multiple }
+      )
+    }
+    const options = Object.keys(optionsObj).length > 0 ? optionsObj : null
     const url = editId ? `/api/admin/goods/${editId}` : '/api/admin/goods'
     const method = editId ? 'PATCH' : 'POST'
     const res = await fetch(url, {
@@ -534,6 +537,15 @@ export default function GoodsAdminPage() {
             )}
           </div>
 
+          {/* お届け商品 */}
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input type="checkbox" checked={form.is_delivery}
+                onChange={e => setForm(f => ({ ...f, is_delivery: e.target.checked }))} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#555' }}>お届け商品（購入時に配送先住所を入力してもらう）</span>
+            </label>
+          </div>
+
           {/* 画像 */}
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={lbl}>画像</label>
@@ -621,11 +633,19 @@ export default function GoodsAdminPage() {
                       <div style={{ marginBottom: 12 }}>
                         <div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>選択肢グループ</div>
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                          {g.options.groups.map((gr, i) => (
-                            <div key={i} style={{ fontSize: 12, background: '#e8eaf6', color: '#3949ab', borderRadius: 6, padding: '3px 10px' }}>
-                              {gr.name}: {gr.choices.join(' / ')}
-                            </div>
-                          ))}
+                          {g.options.groups.map((gr, i) => {
+                            let summary = ''
+                            if (gr.type === 'models' && gr.model_choices) {
+                              summary = gr.model_choices.map(mc => mc.model_name).join(' / ')
+                            } else if (gr.choices) {
+                              summary = gr.choices.map(c => typeof c === 'string' ? c : c.name).join(' / ')
+                            }
+                            return (
+                              <div key={i} style={{ fontSize: 12, background: '#e8eaf6', color: '#3949ab', borderRadius: 6, padding: '3px 10px' }}>
+                                {gr.name}: {summary}
+                              </div>
+                            )
+                          })}
                         </div>
                       </div>
                     )}

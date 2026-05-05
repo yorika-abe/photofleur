@@ -14,6 +14,7 @@ function getOptionGroups(product) {
 export default function ProductCards({ products, eventId, slotLabels = [], eventModels = [], eventDate = '', eventLocation = '' }) {
   const [selected, setSelected] = useState(null)
   const [selections, setSelections] = useState({})
+  const [deliveryAddress, setDeliveryAddress] = useState('')
   const [cartAdded, setCartAdded] = useState(false)
   const { addItem } = useCart()
   const router = useRouter()
@@ -23,11 +24,13 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
   function openModal(p) {
     setSelected(p)
     setSelections({})
+    setDeliveryAddress('')
     setCartAdded(false)
   }
 
   function closeModal() {
     setSelected(null)
+    setDeliveryAddress('')
     setCartAdded(false)
   }
 
@@ -88,6 +91,8 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
       selections: selectionData,
       selectedModelIds,
       selectionSummary,
+      isDelivery: !!selected.options?.is_delivery,
+      deliveryAddress: deliveryAddress || null,
     }
   }
 
@@ -321,6 +326,17 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
 
                     return null
                   })}
+
+                  {selected.options?.is_delivery && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#1a3560', marginBottom: 8 }}>
+                        📦 お届け先住所 *
+                      </label>
+                      <textarea value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)}
+                        rows={3} placeholder="〒000-0000&#10;東京都〇〇区〇〇 1-2-3&#10;マンション名 部屋番号"
+                        style={{ width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 14, resize: 'vertical', boxSizing: 'border-box' }} />
+                    </div>
+                  )}
 
                   <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {cartAdded ? (

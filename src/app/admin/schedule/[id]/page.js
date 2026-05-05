@@ -76,7 +76,7 @@ export default function EventEditPage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [products, setProducts] = useState([])
   const [modelsSubTab, setModelsSubTab] = useState('models')
-  const [newProduct, setNewProduct] = useState({ name: '', image: '', description: '', price: 0, stock: 1, option_groups: [] })
+  const [newProduct, setNewProduct] = useState({ name: '', image: '', description: '', price: 0, stock: 1, option_groups: [], is_delivery: false })
   const [editingProductId, setEditingProductId] = useState(null)
 
   const [recalculating, setRecalculating] = useState(null) // entryId
@@ -411,9 +411,11 @@ export default function EventEditPage() {
 
   async function addProduct() {
     if (!newProduct.name.trim()) { alert('商品名を入力してください'); return }
-    const options = newProduct.option_groups.length > 0
-      ? { type: 'groups', groups: newProduct.option_groups }
-      : null
+    const optionsObj = {}
+    if (newProduct.is_delivery) optionsObj.is_delivery = true
+    if (newProduct.option_groups.length > 0) { optionsObj.type = 'groups'; optionsObj.groups = newProduct.option_groups }
+    const options = Object.keys(optionsObj).length > 0 ? optionsObj : null
+    const RESET_PRODUCT = { name: '', image: '', description: '', price: 0, stock: 1, option_groups: [], is_delivery: false }
     if (editingProductId) {
       await fetch(`/api/admin/events/${id}/products`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -421,7 +423,7 @@ export default function EventEditPage() {
       })
       setProducts(prev => prev.map(p => p.id === editingProductId ? { ...p, name: newProduct.name, image: newProduct.image, description: newProduct.description, price: parseInt(newProduct.price) || 0, stock: parseInt(newProduct.stock) || 1, options } : p))
       setEditingProductId(null)
-      setNewProduct({ name: '', image: '', description: '', price: 0, stock: 1, option_groups: [] })
+      setNewProduct(RESET_PRODUCT)
       return
     }
     const res = await fetch(`/api/admin/events/${id}/products`, {
@@ -431,7 +433,7 @@ export default function EventEditPage() {
     const data = await res.json()
     if (data.id) {
       setProducts(prev => [...prev, data])
-      setNewProduct({ name: '', image: '', description: '', price: 0, stock: 1, option_groups: [] })
+      setNewProduct(RESET_PRODUCT)
     } else if (data.error) {
       alert('エラー: ' + data.error)
     }
@@ -452,7 +454,7 @@ export default function EventEditPage() {
       }
       return { ...g }
     })
-    setNewProduct({ name: p.name, image: p.image || '', description: p.description || '', price: p.price || 0, stock: p.stock || 1, option_groups })
+    setNewProduct({ name: p.name, image: p.image || '', description: p.description || '', price: p.price || 0, stock: p.stock || 1, option_groups, is_delivery: p.options?.is_delivery || false })
     setEditingProductId(p.id)
   }
 
@@ -1008,7 +1010,7 @@ export default function EventEditPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                       <p style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', margin: 0 }}>{editingProductId ? '予約商品を編集' : '新しい予約商品を追加'}</p>
                       {editingProductId && (
-                        <button type="button" onClick={() => { setEditingProductId(null); setNewProduct({ name: '', image: '', description: '', price: 0, stock: 1, option_groups: [] }) }}
+                        <button type="button" onClick={() => { setEditingProductId(null); setNewProduct({ name: '', image: '', description: '', price: 0, stock: 1, option_groups: [], is_delivery: false }) }}
                           style={{ fontSize: 11, color: '#888', background: 'none', border: '1px solid #ddd', borderRadius: 5, padding: '3px 10px', cursor: 'pointer' }}>キャンセル</button>
                       )}
                     </div>
@@ -1213,6 +1215,11 @@ export default function EventEditPage() {
                         <textarea value={newProduct.description} onChange={e => setNewProduct(p => ({ ...p, description: e.target.value }))}
                           rows={2} style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, resize: 'vertical', boxSizing: 'border-box' }} placeholder="商品の説明..." />
                       </div>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontSize: 12 }}>
+                        <input type="checkbox" checked={newProduct.is_delivery}
+                          onChange={e => setNewProduct(p => ({ ...p, is_delivery: e.target.checked }))} />
+                        <span style={{ fontWeight: 600, color: '#555' }}>お届け商品（購入時に配送先住所を入力してもらう）</span>
+                      </label>
                       <button onClick={addProduct}
                         style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', cursor: 'pointer', fontWeight: 700, fontSize: 13, alignSelf: 'flex-start' }}>
                         {editingProductId ? '更新する' : '+ 追加する'}

@@ -3,7 +3,7 @@ import { Resend } from 'resend'
 
 export async function POST(req) {
   const body = await req.json()
-  const { goods_id, last_name, first_name, email, phone, payment_method, quantity, notes, square_payment_id, options_selected } = body
+  const { goods_id, last_name, first_name, email, phone, payment_method, quantity, notes, square_payment_id, options_selected, delivery_address } = body
 
   if (!goods_id || !last_name || !email) {
     return Response.json({ error: 'Missing required fields' }, { status: 400 })
@@ -32,6 +32,7 @@ export async function POST(req) {
     notes: notes || null,
     square_payment_id: square_payment_id || null,
     options_selected: options_selected || null,
+    delivery_address: delivery_address || null,
   })
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
@@ -98,7 +99,8 @@ export async function POST(req) {
               <tr><td style="padding:10px 0;border-bottom:1px solid #eee;color:#888;width:120px;">商品名</td><td style="padding:10px 0;border-bottom:1px solid #eee;font-weight:600;">${goods.title}</td></tr>
               <tr><td style="padding:10px 0;border-bottom:1px solid #eee;color:#888;">数量</td><td style="padding:10px 0;border-bottom:1px solid #eee;">${qty}</td></tr>
               <tr><td style="padding:10px 0;border-bottom:1px solid #eee;color:#888;">合計金額</td><td style="padding:10px 0;border-bottom:1px solid #eee;font-weight:700;">¥${total.toLocaleString()}</td></tr>
-              <tr><td style="padding:10px 0;color:#888;">お支払方法</td><td style="padding:10px 0;">${payment_method === 'card' ? 'クレジットカード（決済済み）' : '当日現金'}</td></tr>
+              <tr><td style="padding:10px 0;border-bottom:1px solid #eee;color:#888;">お支払方法</td><td style="padding:10px 0;border-bottom:1px solid #eee;">${payment_method === 'card' ? 'クレジットカード（決済済み）' : '当日現金'}</td></tr>
+              ${delivery_address ? `<tr><td style="padding:10px 0;color:#888;">お届け先</td><td style="padding:10px 0;white-space:pre-wrap;">${delivery_address}</td></tr>` : ''}
             </table>
             <p style="color:#555;font-size:14px;">担当よりご連絡いたします。</p>
             <p style="color:#aaa;font-size:12px;margin-top:24px;">PhotoFleur運営（送信専用）</p>

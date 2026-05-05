@@ -85,10 +85,12 @@ export default function GoodsShop() {
 }
 
 function OrderModal({ goods, onClose, onComplete }) {
+  const isDelivery = !!goods.options?.is_delivery
   const [form, setForm] = useState({
     last_name: '', first_name: '', email: '', phone: '',
     payment_method: goods.payment_method === 'both' ? 'card' : goods.payment_method,
     quantity: 1, notes: '',
+    delivery_address: '',
   })
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
@@ -136,6 +138,7 @@ function OrderModal({ goods, onClose, onComplete }) {
   async function submit(e) {
     e.preventDefault()
     if (!form.last_name || !form.email) { setError('氏名・メールアドレスは必須です'); return }
+    if (isDelivery && !form.delivery_address.trim()) { setError('お届け先住所を入力してください'); return }
     setSubmitting(true)
     setError('')
 
@@ -161,7 +164,7 @@ function OrderModal({ goods, onClose, onComplete }) {
     const res = await fetch('/api/orders/goods', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ goods_id: goods.id, ...form, square_payment_id: squarePaymentId, options_selected: Object.keys(optionsSelected).length > 0 ? optionsSelected : null }),
+      body: JSON.stringify({ goods_id: goods.id, ...form, square_payment_id: squarePaymentId, options_selected: Object.keys(optionsSelected).length > 0 ? optionsSelected : null, delivery_address: form.delivery_address || null }),
     })
     setSubmitting(false)
     if (res.ok) {
@@ -220,6 +223,13 @@ function OrderModal({ goods, onClose, onComplete }) {
               <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                 placeholder="090-0000-0000" style={inp} />
             </div>
+            {isDelivery && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={lbl}>お届け先住所 *</label>
+                <textarea value={form.delivery_address} onChange={e => setForm(f => ({ ...f, delivery_address: e.target.value }))}
+                  rows={3} placeholder="〒000-0000&#10;東京都〇〇区〇〇 1-2-3&#10;マンション名 部屋番号" style={{ ...inp, resize: 'vertical' }} />
+              </div>
+            )}
             {optionGroups.map((group, i) => {
               // 新形式: モデルごとに選択肢が違う
               if (group.type === 'models' && group.model_choices) {

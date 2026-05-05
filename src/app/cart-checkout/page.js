@@ -188,6 +188,7 @@ export default function CartCheckoutPage() {
               {item.eventDate && <div style={{ fontSize: 12, color: '#666' }}>📅 {item.eventDate}</div>}
               {item.eventLocation && <div style={{ fontSize: 12, color: '#666' }}>📍 {item.eventLocation}</div>}
               {item.selectionSummary && <div style={{ fontSize: 12, color: '#666' }}>{item.selectionSummary}</div>}
+              {item.isDelivery && item.deliveryAddress && <div style={{ fontSize: 12, color: '#666' }}>📦 {item.deliveryAddress}</div>}
             </div>
             <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560', marginLeft: 12, flexShrink: 0 }}>
               ¥{(item.price || 0).toLocaleString()}
