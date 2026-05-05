@@ -133,8 +133,8 @@ export default function GoodsAdminPage() {
       hansellingItems: g.hanselling > 0 ? [{ label: '', amount: g.hanselling }] : [{ label: '', amount: 0 }],
       optionGroups,
       hasSalePeriod: !!(g.sale_start || g.sale_end),
-      sale_start: g.sale_start || '',
-      sale_end: g.sale_end || '',
+      sale_start: g.sale_start ? g.sale_start.slice(0, 16) : '',
+      sale_end: g.sale_end ? g.sale_end.slice(0, 16) : '',
     })
     setExpanded(g.id)
   }
@@ -403,14 +403,14 @@ export default function GoodsAdminPage() {
             {form.hasSalePeriod && (
               <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
                 <div>
-                  <label style={lbl}>販売開始日（任意）</label>
-                  <input type="date" value={form.sale_start}
+                  <label style={lbl}>販売開始日時（任意）</label>
+                  <input type="datetime-local" value={form.sale_start}
                     onChange={e => setForm(f => ({ ...f, sale_start: e.target.value }))} style={inp} />
                 </div>
                 <span style={{ fontSize: 16, color: '#bbb', marginTop: 18 }}>〜</span>
                 <div>
-                  <label style={lbl}>販売終了日（任意）</label>
-                  <input type="date" value={form.sale_end}
+                  <label style={lbl}>販売終了日時（任意）</label>
+                  <input type="datetime-local" value={form.sale_end}
                     onChange={e => setForm(f => ({ ...f, sale_end: e.target.value }))} style={inp} />
                 </div>
               </div>
@@ -463,9 +463,9 @@ export default function GoodsAdminPage() {
             const payLabel = PAYMENT_OPTIONS.find(o => o.value === g.payment_method)?.label || ''
             const stockLabel = g.stock === -1 ? '無制限' : `残${g.stock}個`
             const optionCount = g.options?.groups?.length || 0
-            const today = new Date().toISOString().split('T')[0]
-            const beforeStart = g.sale_start && today < g.sale_start
-            const afterEnd = g.sale_end && today > g.sale_end
+            const now = new Date().toISOString()
+            const beforeStart = g.sale_start && now < g.sale_start
+            const afterEnd = g.sale_end && now > g.sale_end
             return (
               <div key={g.id} style={{ background: '#fff', borderRadius: 12, border: `1px solid ${g.is_active && !beforeStart && !afterEnd ? '#e5e5e5' : '#ffcdd2'}`, overflow: 'hidden', opacity: g.is_active ? 1 : 0.7 }}>
                 <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -480,8 +480,8 @@ export default function GoodsAdminPage() {
                     <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
                       ¥{g.price.toLocaleString()} ／ {payLabel} ／ {stockLabel}
                       {optionCount > 0 && <span> ／ 選択肢{optionCount}グループ</span>}
-                      {g.sale_start && <span> ／ {g.sale_start}〜</span>}
-                      {g.sale_end && <span>{g.sale_start ? '' : ' ／ 〜'}{g.sale_end}</span>}
+                      {g.sale_start && <span> ／ {new Date(g.sale_start).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}〜</span>}
+                      {g.sale_end && <span>{g.sale_start ? '' : ' ／ 〜'}{new Date(g.sale_end).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
