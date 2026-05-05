@@ -66,6 +66,7 @@ export default function AdminBookingStatusPage() {
   const [neExpandedHistory, setNeExpandedHistory] = useState(null)
   const [neExpandedPrivate, setNeExpandedPrivate] = useState(false)
   const [neExpandedGoods, setNeExpandedGoods] = useState(false)
+  const [productHansellingMap, setProductHansellingMap] = useState({})
 
   const todayStr = new Date().toISOString().split('T')[0]
 
@@ -139,10 +140,12 @@ export default function AdminBookingStatusPage() {
         studioCost: studioBudget,
         hanselling: savedCosts.hanselling ?? 0,
         hansellingMode: savedCosts.hansellingMode || 'flat',
-        productHanselling: savedCosts.productHanselling ?? 0,
-        productHansellingMode: savedCosts.productHansellingMode || 'flat',
       })
-    } catch { setCosts({ lunchCount: 0, lunchRate: 1000, studioCost: 0, hanselling: 0, hansellingMode: 'flat', productHanselling: 0, productHansellingMode: 'flat' }) }
+    } catch { setCosts({ lunchCount: 0, lunchRate: 1000, studioCost: 0, hanselling: 0, hansellingMode: 'flat' }) }
+    try {
+      const savedPH = localStorage.getItem(`pf_product_hanselling_${selectedEventId}`)
+      setProductHansellingMap(savedPH ? JSON.parse(savedPH) : {})
+    } catch { setProductHansellingMap({}) }
 
     // 予約商品を取得（booked_countを自動反映）
     fetch(`/api/admin/events/${selectedEventId}/products`)
@@ -178,6 +181,18 @@ export default function AdminBookingStatusPage() {
     const next = { ...productSales, [productId]: Number(count) || 0 }
     setProductSales(next)
     if (selectedEventId) localStorage.setItem(`pf_product_sales_${selectedEventId}`, JSON.stringify(next))
+  }
+
+  function updateProductHanselling(productId, key, value) {
+    const next = {
+      ...productHansellingMap,
+      [productId]: {
+        ...(productHansellingMap[productId] || { mode: 'flat', amount: 0 }),
+        [key]: key === 'mode' ? value : (Number(value) || 0),
+      },
+    }
+    setProductHansellingMap(next)
+    if (selectedEventId) localStorage.setItem(`pf_product_hanselling_${selectedEventId}`, JSON.stringify(next))
   }
 
   function updateCost(key, value) {
@@ -823,15 +838,16 @@ export default function AdminBookingStatusPage() {
                   }
                 }
                 const productRevenue = eventProducts.reduce((s, p) => s + p.price * (productSales[p.id] || 0), 0)
-                const totalProductCount = eventProducts.reduce((s, p) => s + (productSales[p.id] || 0), 0)
                 const totalRevenue = revenue + productRevenue
                 const lunchTotal = (costs.lunchCount || 0) * (costs.lunchRate || 0)
                 const slotHanselling = costs.hansellingMode === 'per_booking'
                   ? (costs.hanselling || 0) * bookingCount
                   : (costs.hanselling || 0)
-                const productHanselling = costs.productHansellingMode === 'per_item'
-                  ? (costs.productHanselling || 0) * totalProductCount
-                  : (costs.productHanselling || 0)
+                const productHanselling = eventProducts.reduce((s, p) => {
+                  const ph = productHansellingMap[p.id] || { mode: 'flat', amount: 0 }
+                  const cnt = productSales[p.id] || 0
+                  return s + (ph.mode === 'per_item' ? (ph.amount || 0) * cnt : (ph.amount || 0))
+                }, 0)
                 const grossProfit = totalRevenue - labor - lunchTotal - (costs.studioCost || 0) - slotHanselling - productHanselling
 
                 const inp = { padding: '4px 6px', border: '1px solid #ddd', borderRadius: 4, fontSize: 13, textAlign: 'right' }
@@ -991,19 +1007,44 @@ export default function AdminBookingStatusPage() {
                         <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 12 }}>予約商品売上</div>
                         {eventProducts.map(p => {
                           const isAuto = productSales[p.id] === p.booked_count
+                          const ph = productHansellingMap[p.id] || { mode: 'flat', amount: 0 }
+                          const cnt = productSales[p.id] || 0
+                          const phTotal = ph.mode === 'per_item' ? (ph.amount || 0) * cnt : (ph.amount || 0)
                           return (
-                            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f5f5f5', flexWrap: 'wrap', gap: 8 }}>
-                              <div>
-                                <span style={{ fontWeight: 600, fontSize: 13, color: '#333' }}>{p.name}</span>
-                                <span style={{ color: '#aaa', fontSize: 12, marginLeft: 8 }}>¥{p.price.toLocaleString()}/個</span>
-                                {isAuto && <span style={{ fontSize: 10, background: '#e8f5e9', color: '#388e3c', borderRadius: 4, padding: '1px 6px', marginLeft: 6, fontWeight: 600 }}>自動</span>}
+                            <div key={p.id} style={{ padding: '10px 0', borderBottom: '1px solid #f5f5f5' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+                                <div>
+                                  <span style={{ fontWeight: 600, fontSize: 13, color: '#333' }}>{p.name}</span>
+                                  <span style={{ color: '#aaa', fontSize: 12, marginLeft: 8 }}>¥{p.price.toLocaleString()}/個</span>
+                                  {isAuto && <span style={{ fontSize: 10, background: '#e8f5e9', color: '#388e3c', borderRadius: 4, padding: '1px 6px', marginLeft: 6, fontWeight: 600 }}>自動</span>}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                                  <input type="number" min="0" value={cnt}
+                                    onChange={e => updateProductSale(p.id, e.target.value)}
+                                    style={{ ...inp, width: 60 }} />
+                                  <span style={{ color: '#777' }}>個 =</span>
+                                  <span style={{ fontWeight: 700, color: '#388e3c', minWidth: 80, textAlign: 'right' }}>¥{(p.price * cnt).toLocaleString()}</span>
+                                </div>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-                                <input type="number" min="0" value={productSales[p.id] || 0}
-                                  onChange={e => updateProductSale(p.id, e.target.value)}
-                                  style={{ ...inp, width: 60 }} />
-                                <span style={{ color: '#777' }}>個 =</span>
-                                <span style={{ fontWeight: 700, color: '#388e3c', minWidth: 80, textAlign: 'right' }}>¥{(p.price * (productSales[p.id] || 0)).toLocaleString()}</span>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                  <span style={{ fontSize: 11, color: '#888' }}>販管費</span>
+                                  {[['flat', '総額入力'], ['per_item', '1件あたり×件数']].map(([v, lbl]) => (
+                                    <button key={v} type="button"
+                                      onClick={() => updateProductHanselling(p.id, 'mode', v)}
+                                      style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, border: `1px solid ${ph.mode === v ? '#6a1b9a' : '#ddd'}`, background: ph.mode === v ? '#6a1b9a' : '#fff', color: ph.mode === v ? '#fff' : '#888', cursor: 'pointer', fontWeight: 600 }}>
+                                      {lbl}
+                                    </button>
+                                  ))}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}>
+                                  <input type="number" min="0" value={ph.amount || 0}
+                                    onChange={e => updateProductHanselling(p.id, 'amount', e.target.value)}
+                                    style={{ ...inp, width: 70, fontSize: 12 }} />
+                                  {ph.mode === 'per_item' && <span style={{ color: '#aaa' }}>×{cnt}件</span>}
+                                  <span style={{ color: '#777' }}>=</span>
+                                  <span style={{ fontWeight: 700, color: '#c62828', minWidth: 60, textAlign: 'right' }}>−¥{phTotal.toLocaleString()}</span>
+                                </div>
                               </div>
                             </div>
                           )
@@ -1061,11 +1102,11 @@ export default function AdminBookingStatusPage() {
                             <span style={{ fontWeight: 700, color: '#c62828', minWidth: 70, textAlign: 'right' }}>−¥{(costs.studioCost || 0).toLocaleString()}</span>
                           </div>
                         </div>
-                        {/* スロット予約の販管費 */}
+                        {/* 撮影枠予約の販管費 */}
                         <div style={{ padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
                             <div>
-                              <div style={{ fontSize: 13, color: '#555', fontWeight: 600, marginBottom: 5 }}>スロット予約の販管費</div>
+                              <div style={{ fontSize: 13, color: '#555', fontWeight: 600, marginBottom: 5 }}>撮影枠予約の販管費</div>
                               <div style={{ display: 'flex', gap: 4 }}>
                                 {[['flat', '総額入力'], ['per_booking', '1件あたり×件数']].map(([v, lbl]) => (
                                   <button key={v} type="button"
@@ -1088,33 +1129,12 @@ export default function AdminBookingStatusPage() {
                             </div>
                           </div>
                         </div>
-                        {/* 特別予約商品の販管費 */}
-                        <div style={{ padding: '10px 0', borderBottom: '2px solid #ddd' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
-                            <div>
-                              <div style={{ fontSize: 13, color: '#555', fontWeight: 600, marginBottom: 5 }}>特別予約商品の販管費</div>
-                              <div style={{ display: 'flex', gap: 4 }}>
-                                {[['flat', '総額入力'], ['per_item', '1件あたり×件数']].map(([v, lbl]) => (
-                                  <button key={v} type="button"
-                                    onClick={() => updateCost('productHansellingMode', v)}
-                                    style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, border: `1px solid ${costs.productHansellingMode === v ? '#6a1b9a' : '#ddd'}`, background: costs.productHansellingMode === v ? '#6a1b9a' : '#fff', color: costs.productHansellingMode === v ? '#fff' : '#888', cursor: 'pointer', fontWeight: 600 }}>
-                                    {lbl}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-                              <input type="number" min="0" value={costs.productHanselling || 0}
-                                onChange={e => updateCost('productHanselling', e.target.value)}
-                                style={{ ...inp, width: 80 }} />
-                              {costs.productHansellingMode === 'per_item' && (
-                                <span style={{ color: '#aaa', fontSize: 12 }}>×{totalProductCount}件</span>
-                              )}
-                              <span style={{ color: '#777' }}>=</span>
-                              <span style={{ fontWeight: 700, color: '#c62828', minWidth: 70, textAlign: 'right' }}>−¥{productHanselling.toLocaleString()}</span>
-                            </div>
+                        {productHanselling > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
+                            <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>特別予約商品の販管費合計</span>
+                            <span style={{ fontWeight: 700, color: '#c62828' }}>−¥{productHanselling.toLocaleString()}</span>
                           </div>
-                        </div>
+                        )}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12 }}>
                           <span style={{ fontSize: 15, fontWeight: 700, color: '#1a3560' }}>粗利益</span>
                           <span style={{ fontSize: 22, fontWeight: 700, color: grossProfit >= 0 ? '#388e3c' : '#c62828' }}>

@@ -58,11 +58,17 @@ export default function AdminBookingsPage() {
       final_price: b.private_products?.price || 0,
     }))
 
-    // 特別予約商品
+    // 特別予約商品（eventsは別クエリで取得）
     const { data: epbRaw } = await supabase
       .from('event_product_bookings')
-      .select('id, customer_name, customer_email, customer_phone, sns_url, nickname, payment_method, qr_token, cancelled_at, created_at, product_id, event_id, selections, event_products(id, name, price), events(id, event_date, location_name)')
+      .select('id, customer_name, customer_email, customer_phone, sns_url, nickname, payment_method, qr_token, cancelled_at, created_at, product_id, event_id, selections, event_products(id, name, price)')
       .order('created_at', { ascending: false })
+
+    const epEventIds = [...new Set((epbRaw || []).map(b => b.event_id).filter(Boolean))]
+    const { data: epEvents } = epEventIds.length
+      ? await supabase.from('events').select('id, event_date, location_name').in('id', epEventIds)
+      : { data: [] }
+    const epEventMap = Object.fromEntries((epEvents || []).map(e => [e.id, e]))
 
     const epBookings = (epbRaw || []).map(b => ({
       ...b,
@@ -72,7 +78,7 @@ export default function AdminBookingsPage() {
       phone: b.customer_phone || null,
       product: b.event_products || {},
       model: {},
-      event: b.events || {},
+      event: epEventMap[b.event_id] || {},
       slot: { slot_label: b.selections?.slot || '' },
       final_price: b.event_products?.price || 0,
     }))
