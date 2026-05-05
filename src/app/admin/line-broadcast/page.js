@@ -209,11 +209,18 @@ function TabIndividual({ models }) {
   )
 }
 
+const DEFAULT_BIRTHDAY_MSG = `【PhotoFleur】
+お誕生日おめでとうございます🎂🌸
+
+いつも一緒に活動してくれてありがとうございます。
+素敵な一日になりますように！
+
+PhotoFleur運営`
+
 // ---- タブ3: 誕生日 ----
 function TabBirthday() {
   const [models, setModels] = useState([])
   const [loading, setLoading] = useState(true)
-  const [birthdayMsg, setBirthdayMsg] = useState('【PhotoFleur】\nお誕生日おめでとうございます🎂🌸\n\nいつもお世話になっています。\n素敵な一日になりますように！')
   const [sending, setSending] = useState(null)
   const [results, setResults] = useState({})
 
@@ -229,8 +236,9 @@ function TabBirthday() {
     const today = new Date()
     const thisYear = today.getFullYear()
     const bday = new Date(thisYear, month - 1, day)
-    if (bday < today) bday.setFullYear(thisYear + 1)
-    const diff = Math.ceil((bday - today) / (1000 * 60 * 60 * 24))
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    if (bday < todayMidnight) bday.setFullYear(thisYear + 1)
+    const diff = Math.round((bday - todayMidnight) / (1000 * 60 * 60 * 24))
     return { month, day, diff }
   }
 
@@ -244,7 +252,7 @@ function TabBirthday() {
     const res = await fetch('/api/admin/line-broadcast', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: birthdayMsg, model_ids: [model.id] }),
+      body: JSON.stringify({ message: DEFAULT_BIRTHDAY_MSG, model_ids: [model.id] }),
     })
     const json = await res.json()
     setSending(null)
@@ -254,10 +262,19 @@ function TabBirthday() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ background: '#e8f5e9', borderRadius: 12, border: '1px solid #a5d6a7', padding: '14px 18px', fontSize: 13 }}>
+          <div style={{ fontWeight: 700, color: '#2e7d32', marginBottom: 4 }}>🤖 自動送信が有効です</div>
+          <div style={{ color: '#388e3c', lineHeight: 1.7 }}>
+            モデルプロフィールに誕生日が登録されていれば、毎日0:00（JST）に当日誕生日のモデルへ自動でLINEを送信します。<br />
+            手動で送りたい場合は下の一覧から「LINE送信」を押してください。
+          </div>
+        </div>
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>誕生日メッセージテンプレート</div>
-          <textarea value={birthdayMsg} onChange={e => setBirthdayMsg(e.target.value)} rows={6}
-            style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.7, fontFamily: 'inherit' }} />
+          <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 4 }}>自動送信メッセージ</div>
+          <div style={{ fontSize: 11, color: '#aaa', marginBottom: 10 }}>※ メッセージを変更したい場合はコード（cron-send-birthday-line/route.js）を編集してください</div>
+          <pre style={{ margin: 0, padding: '10px 14px', background: '#f8fbff', borderRadius: 8, fontSize: 13, lineHeight: 1.7, color: '#333', whiteSpace: 'pre-wrap', wordBreak: 'break-word', border: '1px solid #e0e8f0' }}>
+            {DEFAULT_BIRTHDAY_MSG}
+          </pre>
         </div>
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
           <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>モデル誕生日一覧（近い順）</div>
@@ -269,16 +286,16 @@ function TabBirthday() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {sorted.map(m => {
                 const { month, day, diff } = m.bdInfo
-                const isToday = diff === 0 || diff === 365
+                const isToday = diff === 0
                 const isSoon = diff <= 7
                 return (
                   <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: isToday ? '#fff3e0' : isSoon ? '#f3e5f5' : '#f8fbff', border: `1px solid ${isToday ? '#ffb74d' : isSoon ? '#ce93d8' : '#e5e5e5'}` }}>
                     <div style={{ flex: 1 }}>
                       <span style={{ fontWeight: 700, fontSize: 14 }}>{m.name}</span>
                       <span style={{ fontSize: 13, color: '#888', marginLeft: 8 }}>{month}/{day}</span>
-                      {isToday && <span style={{ marginLeft: 8, fontSize: 12, color: '#e65100', fontWeight: 700 }}>🎂 今日！</span>}
+                      {isToday && <span style={{ marginLeft: 8, fontSize: 12, color: '#e65100', fontWeight: 700 }}>🎂 今日！自動送信済みのはず</span>}
                       {!isToday && isSoon && <span style={{ marginLeft: 8, fontSize: 12, color: '#7b1fa2' }}>あと{diff}日</span>}
-                      {!m.line_id && <span style={{ marginLeft: 8, fontSize: 11, color: '#aaa' }}>（LINE未登録）</span>}
+                      {!m.line_id && <span style={{ marginLeft: 8, fontSize: 11, color: '#aaa' }}>（LINE未登録・自動送信対象外）</span>}
                     </div>
                     {m.line_id && (
                       results[m.id] === 'ok' ? (
@@ -288,7 +305,7 @@ function TabBirthday() {
                       ) : (
                         <button onClick={() => sendBirthday(m)} disabled={sending === m.id}
                           style={{ padding: '5px 12px', borderRadius: 7, border: 'none', background: '#06c755', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: sending === m.id ? 0.6 : 1 }}>
-                          {sending === m.id ? '送信中...' : 'LINE送信'}
+                          {sending === m.id ? '送信中...' : '手動送信'}
                         </button>
                       )
                     )}
@@ -301,8 +318,8 @@ function TabBirthday() {
       </div>
       <div>
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>プレビュー</div>
-          <LinePreview message={birthdayMsg} accountName="PhotoFleur（モデル向け）" />
+          <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>プレビュー（自動送信メッセージ）</div>
+          <LinePreview message={DEFAULT_BIRTHDAY_MSG} accountName="PhotoFleur（モデル向け）" />
           <p style={{ fontSize: 11, color: '#aaa', marginTop: 10 }}>※ LINEはプレーンテキストのみ送信されます</p>
         </div>
       </div>
