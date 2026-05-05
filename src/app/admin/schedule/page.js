@@ -17,8 +17,6 @@ export default function AdminSchedulePage() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [tab, setTab] = useState('upcoming')
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ event_date: '', event_type: 'street', title: '' })
   const [saving, setSaving] = useState(false)
   const [reusing, setReusing] = useState(null)
 
@@ -37,18 +35,13 @@ export default function AdminSchedulePage() {
     setLoading(false)
   }
 
-  async function createEvent(e) {
-    e.preventDefault()
+  async function createNewEvent() {
     setSaving(true)
+    const today = new Date().toISOString().split('T')[0]
     const res = await fetch('/api/admin/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event_date: form.event_date,
-        event_type: form.event_type,
-        title: form.title,
-        status: 'active',
-      }),
+      body: JSON.stringify({ event_date: today, event_type: 'street', title: '', status: 'draft' }),
     })
     const data = await res.json()
     const created = data.event || data
@@ -118,8 +111,6 @@ export default function AdminSchedulePage() {
     window.location.href = `/admin/schedule/${created.id}`
   }
 
-  const inp = { width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }
-
   const upcoming = events.filter(ev => ev.event_date >= TODAY || !ev.event_date)
   const past = events.filter(ev => ev.event_date && ev.event_date < TODAY)
 
@@ -132,40 +123,11 @@ export default function AdminSchedulePage() {
       <Link href="/admin" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0 20px' }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: '#2f2244', margin: 0 }}>スケジュール管理</h1>
-        <button onClick={() => setShowForm(!showForm)}
+        <button onClick={createNewEvent} disabled={saving}
           style={{ background: '#2f2244', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
-          {showForm ? 'キャンセル' : '+ 新規作成'}
+          {saving ? '作成中...' : '+ 新規作成'}
         </button>
       </div>
-
-      {showForm && (
-        <form onSubmit={createEvent} style={{ background: '#fff', borderRadius: 16, padding: '24px', border: '2px solid #2f2244', marginBottom: 24 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#2f2244', marginBottom: 18 }}>新規イベント作成</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-            <div>
-              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>開催日 *</label>
-              <input type="date" required value={form.event_date} onChange={e => setForm(f => ({ ...f, event_date: e.target.value }))} style={inp} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>種類 *</label>
-              <select value={form.event_type} onChange={e => setForm(f => ({ ...f, event_type: e.target.value }))} style={inp}>
-                <option value="street">ストリート</option>
-                <option value="studio">スタジオ</option>
-                <option value="irregular">不定期</option>
-              </select>
-            </div>
-          </div>
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>タイトル *</label>
-            <input type="text" required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} style={inp} placeholder="着物で川越ぶらり撮影会" />
-          </div>
-          <p style={{ fontSize: 12, color: '#999', marginBottom: 16 }}>作成後に詳細設定・モデル追加・予約枠設定ができます</p>
-          <button type="submit" disabled={saving}
-            style={{ background: '#2f2244', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 24px', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
-            {saving ? '作成中...' : 'イベントを作成して編集へ'}
-          </button>
-        </form>
-      )}
 
       {loadError && <div style={{ background: '#fce4ec', border: '1px solid #ef9a9a', borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#c62828' }}>エラー: {loadError}</div>}
 
@@ -214,7 +176,9 @@ export default function AdminSchedulePage() {
                       {isPast && (
                         <span style={{ background: '#eeeeee', color: '#777', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>開催終了</span>
                       )}
-                      <span style={{ fontWeight: 700, fontSize: 17, color: '#2f2244' }}>{formatDate(ev.event_date)}</span>
+                      <span style={{ fontWeight: 700, fontSize: 17, color: '#2f2244' }}>
+                        {formatDate(ev.event_date)}{ev.event_end_date && ev.event_end_date !== ev.event_date ? `〜${formatDate(ev.event_end_date)}` : ''}
+                      </span>
                     </div>
                     <div style={{ fontSize: 14, color: '#333', fontWeight: 600 }}>{ev.title || ev.location_name}</div>
                     <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{ev.location_name}</div>

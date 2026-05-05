@@ -184,6 +184,7 @@ export default function EventEditPage() {
         subtitle: event.subtitle,
         description: event.description || null,
         event_date: event.event_date,
+        event_end_date: event.event_end_date || null,
         event_type: event.event_type,
         status: event.status,
         location_name: event.location_name,
@@ -669,7 +670,7 @@ export default function EventEditPage() {
             <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2f2244', marginBottom: 16, marginTop: 0 }}>基本設定</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               <div>
-                <label style={label}>開催日 *</label>
+                <label style={label}>{event.event_type === 'irregular' ? '開始日 *' : '開催日 *'}</label>
                 <input type="date" value={event.event_date || ''} onChange={e => updateField('event_date', e.target.value)} style={inp} />
               </div>
               <div>
@@ -681,6 +682,12 @@ export default function EventEditPage() {
                 </select>
               </div>
             </div>
+            {event.event_type === 'irregular' && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={label}>終了日（複数日の場合）</label>
+                <input type="date" value={event.event_end_date || ''} onChange={e => updateField('event_end_date', e.target.value)} style={inp} min={event.event_date || ''} />
+              </div>
+            )}
             <div style={{ marginBottom: 14 }}>
               <label style={label}>タイトル</label>
               <input type="text" value={event.title || ''} onChange={e => updateField('title', e.target.value)} style={inp} placeholder="木場エリア" />
