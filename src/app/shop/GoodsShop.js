@@ -225,30 +225,35 @@ function OrderModal({ goods, onClose, onComplete }) {
                 <label style={lbl}>{group.name} *</label>
                 {group.multiple ? (
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
-                    {group.choices.map(choice => {
-                      const selected = (optionsSelected[group.name] || []).includes(choice)
+                    {group.choices.map(rawChoice => {
+                      const choice = typeof rawChoice === 'string' ? { name: rawChoice, stock: -1 } : rawChoice
+                      const soldOut = choice.stock === 0
+                      const selected = (optionsSelected[group.name] || []).includes(choice.name)
                       return (
-                        <button key={choice} type="button"
+                        <button key={choice.name} type="button" disabled={soldOut}
                           onClick={() => {
+                            if (soldOut) return
                             const current = optionsSelected[group.name] || []
-                            const next = selected ? current.filter(c => c !== choice) : [...current, choice]
+                            const next = selected ? current.filter(c => c !== choice.name) : [...current, choice.name]
                             setOptionsSelected(prev => ({ ...prev, [group.name]: next }))
                           }}
-                          style={{ padding: '7px 14px', borderRadius: 8, border: `2px solid ${selected ? '#1a3560' : '#ddd'}`, background: selected ? '#1a3560' : '#fff', color: selected ? '#fff' : '#555', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
-                          {choice}
+                          style={{ padding: '7px 14px', borderRadius: 8, border: `2px solid ${selected ? '#1a3560' : soldOut ? '#eee' : '#ddd'}`, background: selected ? '#1a3560' : soldOut ? '#f5f5f5' : '#fff', color: selected ? '#fff' : soldOut ? '#bbb' : '#555', cursor: soldOut ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, position: 'relative' }}>
+                          {choice.name}{soldOut ? ' (売切)' : choice.stock > 0 && choice.stock <= 5 ? ` 残${choice.stock}` : ''}
                         </button>
                       )
                     })}
                   </div>
                 ) : (
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
-                    {group.choices.map(choice => {
-                      const selected = optionsSelected[group.name] === choice
+                    {group.choices.map(rawChoice => {
+                      const choice = typeof rawChoice === 'string' ? { name: rawChoice, stock: -1 } : rawChoice
+                      const soldOut = choice.stock === 0
+                      const selected = optionsSelected[group.name] === choice.name
                       return (
-                        <button key={choice} type="button"
-                          onClick={() => setOptionsSelected(prev => ({ ...prev, [group.name]: choice }))}
-                          style={{ padding: '7px 14px', borderRadius: 8, border: `2px solid ${selected ? '#1a3560' : '#ddd'}`, background: selected ? '#1a3560' : '#fff', color: selected ? '#fff' : '#555', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
-                          {choice}
+                        <button key={choice.name} type="button" disabled={soldOut}
+                          onClick={() => { if (!soldOut) setOptionsSelected(prev => ({ ...prev, [group.name]: choice.name })) }}
+                          style={{ padding: '7px 14px', borderRadius: 8, border: `2px solid ${selected ? '#1a3560' : soldOut ? '#eee' : '#ddd'}`, background: selected ? '#1a3560' : soldOut ? '#f5f5f5' : '#fff', color: selected ? '#fff' : soldOut ? '#bbb' : '#555', cursor: soldOut ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13 }}>
+                          {choice.name}{soldOut ? ' (売切)' : choice.stock > 0 && choice.stock <= 5 ? ` 残${choice.stock}` : ''}
                         </button>
                       )
                     })}

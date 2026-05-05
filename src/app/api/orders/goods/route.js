@@ -12,7 +12,7 @@ export async function POST(req) {
   const admin = await createSupabaseAdminClient()
   const { data: goods } = await admin
     .from('goods')
-    .select('id, stock, payment_method, is_active, title, price')
+    .select('id, stock, payment_method, is_active, title, price, options')
     .eq('id', goods_id)
     .single()
 
@@ -38,6 +38,29 @@ export async function POST(req) {
 
   if (goods.stock >= 0) {
     await admin.from('goods').update({ stock: goods.stock - qty }).eq('id', goods.id)
+  }
+
+  // 選択肢ごとの在庫デクリメント
+  if (options_selected && goods.options?.type === 'groups') {
+    const groups = goods.options.groups || []
+    let changed = false
+    const updatedGroups = groups.map(g => {
+      const selectedVal = options_selected[g.name]
+      if (!selectedVal) return g
+      const selected = Array.isArray(selectedVal) ? selectedVal : [selectedVal]
+      const updatedChoices = (g.choices || []).map(c => {
+        const cName = typeof c === 'string' ? c : c.name
+        if (selected.includes(cName) && typeof c !== 'string' && c.stock > 0) {
+          changed = true
+          return { ...c, stock: c.stock - 1 }
+        }
+        return c
+      })
+      return { ...g, choices: updatedChoices }
+    })
+    if (changed) {
+      await admin.from('goods').update({ options: { ...goods.options, groups: updatedGroups } }).eq('id', goods.id)
+    }
   }
 
   try {

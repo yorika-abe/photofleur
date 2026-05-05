@@ -227,7 +227,9 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
                     }
 
                     if (group.type === 'manual') {
-                      const choices = (group.choices || []).filter(Boolean)
+                      const rawChoices = (group.choices || []).filter(Boolean)
+                      const choices = rawChoices.map(c => typeof c === 'string' ? { name: c, stock: -1 } : c)
+                      const availableChoices = choices.filter(c => c.stock !== 0)
                       if (choices.length === 0) return null
                       const isMultiple = group.multiple === true
                       return (
@@ -237,19 +239,25 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
                           </label>
                           {isMultiple ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                              {choices.map(choice => (
-                                <label key={choice} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '7px 10px', borderRadius: 8, background: (val || []).includes(choice) ? '#e8f0fe' : '#f8f8f8' }}>
-                                  <input type="checkbox" checked={(val || []).includes(choice)} onChange={() => updateSelection(idx, choice, true)} />
-                                  <span style={{ fontSize: 13 }}>{choice}</span>
-                                </label>
-                              ))}
+                              {choices.map(choice => {
+                                const soldOut = choice.stock === 0
+                                return (
+                                  <label key={choice.name} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: soldOut ? 'not-allowed' : 'pointer', padding: '7px 10px', borderRadius: 8, background: soldOut ? '#f5f5f5' : (val || []).includes(choice.name) ? '#e8f0fe' : '#f8f8f8', opacity: soldOut ? 0.5 : 1 }}>
+                                    <input type="checkbox" checked={(val || []).includes(choice.name)} disabled={soldOut} onChange={() => !soldOut && updateSelection(idx, choice.name, true)} />
+                                    <span style={{ fontSize: 13 }}>{choice.name}{soldOut ? ' (売切)' : choice.stock > 0 && choice.stock <= 5 ? ` 残${choice.stock}` : ''}</span>
+                                  </label>
+                                )
+                              })}
                             </div>
                           ) : (
                             <select value={val || ''} onChange={e => updateSelection(idx, e.target.value, false)}
                               style={{ width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 14, background: '#fff' }}>
                               <option value="">選択してください</option>
-                              {choices.map(choice => (
-                                <option key={choice} value={choice}>{choice}</option>
+                              {availableChoices.map(choice => (
+                                <option key={choice.name} value={choice.name}>{choice.name}{choice.stock > 0 && choice.stock <= 5 ? ` (残${choice.stock})` : ''}</option>
+                              ))}
+                              {choices.filter(c => c.stock === 0).map(choice => (
+                                <option key={choice.name} value="" disabled>{choice.name} (売切)</option>
                               ))}
                             </select>
                           )}

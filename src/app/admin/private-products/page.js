@@ -12,7 +12,7 @@ const PAYMENT_OPTIONS = [
 
 const EMPTY_FORM = {
   title: '', description: '', price: 0, image: '', payment_method: 'both',
-  model_id: '', event_date: '', time_label: '', stock: 1,
+  model_ids: [], event_date: '', time_label: '', stock: 1,
   hansellingItems: [{ label: '', amount: 0 }],
 }
 
@@ -97,7 +97,7 @@ export default function PrivateProductsPage() {
       price: p.price || 0,
       image: p.image || '',
       payment_method: p.payment_method || 'both',
-      model_id: p.model_id || '',
+      model_ids: p.model_ids || (p.model_id ? [p.model_id] : []),
       event_date: p.event_date || '',
       time_label: p.time_label || '',
       stock: p.stock ?? 1,
@@ -252,12 +252,21 @@ export default function PrivateProductsPage() {
               ))}
             </div>
           </div>
-          <div>
-            <label style={lbl}>対応モデル（任意）</label>
-            <select value={form.model_id} onChange={e => setForm(f => ({ ...f, model_id: e.target.value }))} style={inp}>
-              <option value="">選択なし</option>
-              {models.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={lbl}>対応モデル（任意・複数可）</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+              {models.map(m => {
+                const checked = (form.model_ids || []).includes(m.id)
+                return (
+                  <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', background: checked ? '#c8e6c9' : '#f5f5f5', border: `1px solid ${checked ? '#4caf50' : '#ddd'}`, borderRadius: 20, padding: '5px 12px', fontSize: 13, fontWeight: checked ? 700 : 400 }}>
+                    <input type="checkbox" checked={checked} style={{ display: 'none' }}
+                      onChange={() => setForm(f => ({ ...f, model_ids: checked ? f.model_ids.filter(id => id !== m.id) : [...(f.model_ids || []), m.id] }))} />
+                    {checked ? '✓ ' : ''}{m.name}
+                  </label>
+                )
+              })}
+              {models.length === 0 && <span style={{ fontSize: 12, color: '#bbb' }}>モデルがいません</span>}
+            </div>
           </div>
           <div>
             <label style={lbl}>開催日（任意）</label>

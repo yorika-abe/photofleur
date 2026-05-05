@@ -77,6 +77,7 @@ export default function EventEditPage() {
   const [products, setProducts] = useState([])
   const [modelsSubTab, setModelsSubTab] = useState('models')
   const [newProduct, setNewProduct] = useState({ name: '', image: '', description: '', price: 0, stock: 1, option_groups: [] })
+  const [editingProductId, setEditingProductId] = useState(null)
 
   const [recalculating, setRecalculating] = useState(null) // entryId
   const [recalcDone, setRecalcDone] = useState(null) // entryId
@@ -413,6 +414,16 @@ export default function EventEditPage() {
     const options = newProduct.option_groups.length > 0
       ? { type: 'groups', groups: newProduct.option_groups }
       : null
+    if (editingProductId) {
+      await fetch(`/api/admin/events/${id}/products`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: editingProductId, name: newProduct.name, image: newProduct.image, description: newProduct.description, price: newProduct.price, stock: newProduct.stock, options }),
+      })
+      setProducts(prev => prev.map(p => p.id === editingProductId ? { ...p, name: newProduct.name, image: newProduct.image, description: newProduct.description, price: parseInt(newProduct.price) || 0, stock: parseInt(newProduct.stock) || 1, options } : p))
+      setEditingProductId(null)
+      setNewProduct({ name: '', image: '', description: '', price: 0, stock: 1, option_groups: [] })
+      return
+    }
     const res = await fetch(`/api/admin/events/${id}/products`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: newProduct.name, image: newProduct.image, description: newProduct.description, price: newProduct.price, stock: newProduct.stock, options }),
@@ -424,6 +435,12 @@ export default function EventEditPage() {
     } else if (data.error) {
       alert('エラー: ' + data.error)
     }
+  }
+
+  function startEditProduct(p) {
+    const option_groups = (p.options?.type === 'groups' ? p.options.groups : []).map(g => ({ ...g }))
+    setNewProduct({ name: p.name, image: p.image || '', description: p.description || '', price: p.price || 0, stock: p.stock || 1, option_groups })
+    setEditingProductId(p.id)
   }
 
   function addOptionGroup(type) {
@@ -915,7 +932,13 @@ export default function EventEditPage() {
                 <div>
                   {/* 商品追加フォーム */}
                   <div style={{ background: '#f8fbff', borderRadius: 10, padding: 16, marginBottom: 16, border: '1px solid #e0ecf8' }}>
-                    <p style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', marginBottom: 12, marginTop: 0 }}>新しい予約商品を追加</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', margin: 0 }}>{editingProductId ? '予約商品を編集' : '新しい予約商品を追加'}</p>
+                      {editingProductId && (
+                        <button type="button" onClick={() => { setEditingProductId(null); setNewProduct({ name: '', image: '', description: '', price: 0, stock: 1, option_groups: [] }) }}
+                          style={{ fontSize: 11, color: '#888', background: 'none', border: '1px solid #ddd', borderRadius: 5, padding: '3px 10px', cursor: 'pointer' }}>キャンセル</button>
+                      )}
+                    </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                         <div>
@@ -1033,7 +1056,7 @@ export default function EventEditPage() {
                       </div>
                       <button onClick={addProduct}
                         style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', cursor: 'pointer', fontWeight: 700, fontSize: 13, alignSelf: 'flex-start' }}>
-                        + 追加する
+                        {editingProductId ? '更新する' : '+ 追加する'}
                       </button>
                     </div>
                   </div>
@@ -1051,6 +1074,8 @@ export default function EventEditPage() {
                               {p.description && <div style={{ fontSize: 11, color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description}</div>}
                             </div>
                             <div style={{ fontSize: 13, fontWeight: 700, color: '#333', whiteSpace: 'nowrap' }}>¥{(p.price || 0).toLocaleString()}</div>
+                            <button onClick={() => startEditProduct(p)}
+                              style={{ background: '#e8f0fe', color: '#1a3560', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 12, flexShrink: 0 }}>編集</button>
                             <button onClick={() => removeProduct(p.id)}
                               style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 12, flexShrink: 0 }}>削除</button>
                           </div>

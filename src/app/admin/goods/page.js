@@ -88,13 +88,14 @@ export default function GoodsAdminPage() {
   function removeHansellingItem(i) { setForm(f => ({ ...f, hansellingItems: f.hansellingItems.filter((_, idx) => idx !== i) })) }
 
   // 選択肢グループ
-  function addOptionGroup() { setForm(f => ({ ...f, optionGroups: [...f.optionGroups, { type: 'manual', name: '', choices: [''], multiple: false }] })) }
-  function addModelsOptionGroup() { setForm(f => ({ ...f, optionGroups: [...f.optionGroups, { type: 'models', name: '担当モデル', selectedNames: [], multiple: false }] })) }
+  function addOptionGroup() { setForm(f => ({ ...f, optionGroups: [...f.optionGroups, { type: 'manual', name: '', choices: [{ name: '', stock: -1 }], multiple: false }] })) }
+  function addModelsOptionGroup() { setForm(f => ({ ...f, optionGroups: [...f.optionGroups, { type: 'models', name: '担当モデル', selectedNames: [], modelStocks: {}, multiple: true }] })) }
   function removeOptionGroup(i) { setForm(f => ({ ...f, optionGroups: f.optionGroups.filter((_, idx) => idx !== i) })) }
   function updateOptionGroup(i, key, val) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, [key]: val } : g) })) }
-  function addGroupChoice(i) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, choices: [...g.choices, ''] } : g) })) }
+  function addGroupChoice(i) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, choices: [...g.choices, { name: '', stock: -1 }] } : g) })) }
   function removeGroupChoice(i, ci) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, choices: g.choices.filter((_, j) => j !== ci) } : g) })) }
-  function updateGroupChoice(i, ci, val) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, choices: g.choices.map((c, j) => j === ci ? val : c) } : g) })) }
+  function updateGroupChoice(i, ci, val) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, choices: g.choices.map((c, j) => j === ci ? { ...c, name: val } : c) } : g) })) }
+  function updateGroupChoiceStock(i, ci, val) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, choices: g.choices.map((c, j) => j === ci ? { ...c, stock: val === '' ? -1 : Number(val) } : c) } : g) })) }
   function toggleModelSelection(i, name) {
     setForm(f => ({
       ...f,
@@ -104,6 +105,9 @@ export default function GoodsAdminPage() {
         return { ...g, selectedNames: selected ? g.selectedNames.filter(n => n !== name) : [...g.selectedNames, name] }
       })
     }))
+  }
+  function updateModelStock(i, name, val) {
+    setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, modelStocks: { ...g.modelStocks, [name]: val === '' ? -1 : Number(val) } } : g) }))
   }
   function selectAllModels(i) {
     setForm(f => ({
@@ -119,9 +123,14 @@ export default function GoodsAdminPage() {
     setEditId(g.id)
     const optionGroups = (g.options?.type === 'groups' ? g.options.groups : []).map(gr => {
       if (gr.type === 'models') {
-        return { type: 'models', name: gr.name || '担当モデル', selectedNames: gr.choices || [], multiple: gr.multiple || false }
+        const rawChoices = gr.choices || []
+        const selectedNames = rawChoices.map(c => typeof c === 'string' ? c : c.name)
+        const modelStocks = Object.fromEntries(rawChoices.map(c => [typeof c === 'string' ? c : c.name, typeof c === 'string' ? -1 : (c.stock ?? -1)]))
+        return { type: 'models', name: gr.name || '担当モデル', selectedNames, modelStocks, multiple: gr.multiple ?? true }
       }
-      return { type: 'manual', name: gr.name || '', choices: gr.choices?.length > 0 ? gr.choices : [''], multiple: gr.multiple || false }
+      const rawChoices = gr.choices?.length > 0 ? gr.choices : [{ name: '', stock: -1 }]
+      const choices = rawChoices.map(c => typeof c === 'string' ? { name: c, stock: -1 } : c)
+      return { type: 'manual', name: gr.name || '', choices, multiple: gr.multiple || false }
     })
     setForm({
       title: g.title || '',
@@ -146,15 +155,15 @@ export default function GoodsAdminPage() {
     setSaving(true)
     const hanselling = form.hansellingItems.reduce((s, item) => s + (Number(item.amount) || 0), 0)
     const validGroups = form.optionGroups.filter(g =>
-      g.name.trim() && (g.type === 'models' ? g.selectedNames.length > 0 : g.choices.some(c => c.trim()))
+      g.name.trim() && (g.type === 'models' ? g.selectedNames.length > 0 : g.choices.some(c => c.name.trim()))
     )
     const options = validGroups.length > 0
       ? {
           type: 'groups',
           groups: validGroups.map(g =>
             g.type === 'models'
-              ? { type: 'models', name: g.name, choices: g.selectedNames, multiple: g.multiple }
-              : { type: 'manual', name: g.name, choices: g.choices.filter(c => c.trim()), multiple: g.multiple }
+              ? { type: 'models', name: g.name, choices: g.selectedNames.map(n => ({ name: n, stock: g.modelStocks?.[n] ?? -1 })), multiple: g.multiple }
+              : { type: 'manual', name: g.name, choices: g.choices.filter(c => c.name.trim()).map(c => ({ name: c.name, stock: c.stock ?? -1 })), multiple: g.multiple }
           )
         }
       : null
@@ -334,11 +343,22 @@ export default function GoodsAdminPage() {
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                         {models.map(m => {
                           const checked = group.selectedNames.includes(m.name)
+                          const mstock = group.modelStocks?.[m.name] ?? -1
                           return (
-                            <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', background: checked ? '#c8e6c9' : '#fff', border: `1px solid ${checked ? '#4caf50' : '#ddd'}`, borderRadius: 20, padding: '5px 12px', fontSize: 13, fontWeight: checked ? 700 : 400 }}>
-                              <input type="checkbox" checked={checked} onChange={() => toggleModelSelection(i, m.name)} style={{ display: 'none' }} />
-                              {checked ? '✓ ' : ''}{m.name}
-                            </label>
+                            <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 4, background: checked ? '#f1f8e9' : '#fafafa', border: `1px solid ${checked ? '#4caf50' : '#ddd'}`, borderRadius: 8, padding: '4px 10px' }}>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontSize: 13, fontWeight: checked ? 700 : 400 }}>
+                                <input type="checkbox" checked={checked} onChange={() => toggleModelSelection(i, m.name)} style={{ display: 'none' }} />
+                                {checked ? '✓ ' : ''}{m.name}
+                              </label>
+                              {checked && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginLeft: 6, borderLeft: '1px solid #ddd', paddingLeft: 6 }}>
+                                  <span style={{ fontSize: 10, color: '#888' }}>在庫</span>
+                                  <input type="number" value={mstock < 0 ? '' : mstock} placeholder="∞"
+                                    onChange={e => updateModelStock(i, m.name, e.target.value)}
+                                    style={{ width: 44, padding: '2px 4px', border: '1px solid #ddd', borderRadius: 4, fontSize: 11, textAlign: 'center' }} />
+                                </div>
+                              )}
+                            </div>
                           )
                         })}
                         {models.length === 0 && <span style={{ fontSize: 12, color: '#bbb' }}>所属モデルがいません</span>}
@@ -348,9 +368,15 @@ export default function GoodsAdminPage() {
                     <div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {group.choices.map((choice, ci) => (
-                          <div key={ci} style={{ display: 'flex', gap: 6 }}>
-                            <input value={choice} onChange={e => updateGroupChoice(i, ci, e.target.value)}
+                          <div key={ci} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <input value={choice.name} onChange={e => updateGroupChoice(i, ci, e.target.value)}
                               placeholder={`選択肢 ${ci + 1}`} style={{ ...inp, flex: 1 }} />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+                              <span style={{ fontSize: 11, color: '#888', whiteSpace: 'nowrap' }}>在庫</span>
+                              <input type="number" value={choice.stock < 0 ? '' : choice.stock} placeholder="∞"
+                                onChange={e => updateGroupChoiceStock(i, ci, e.target.value)}
+                                style={{ width: 52, padding: '6px 4px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, textAlign: 'center' }} />
+                            </div>
                             {group.choices.length > 1 && (
                               <button type="button" onClick={() => removeGroupChoice(i, ci)}
                                 style={{ padding: '0 10px', border: '1px solid #ddd', borderRadius: 6, background: '#fff', color: '#e53935', cursor: 'pointer', fontSize: 16, flexShrink: 0 }}>×</button>
