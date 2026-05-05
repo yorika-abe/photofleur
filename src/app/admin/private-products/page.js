@@ -97,7 +97,7 @@ export default function PrivateProductsPage() {
       price: p.price || 0,
       image: p.image || '',
       payment_method: p.payment_method || 'both',
-      model_ids: p.model_ids || (p.model_id ? [p.model_id] : []),
+      model_ids: Array.isArray(p.model_ids) ? p.model_ids : (typeof p.model_ids === 'string' ? JSON.parse(p.model_ids) : (p.model_id ? [p.model_id] : [])),
       event_date: p.event_date || '',
       time_label: p.time_label || '',
       stock: p.stock ?? 1,
@@ -134,7 +134,11 @@ export default function PrivateProductsPage() {
       body: JSON.stringify({ ...restForm, price: Number(form.price), stock: Number(form.stock), hanselling }),
     })
     setSaving(false)
-    if (!res.ok) { alert('保存失敗'); return }
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}))
+      alert('保存失敗: ' + (d.error || res.status))
+      return
+    }
     showToast(editId ? '更新しました' : '作成しました')
     setEditId(null)
     setForm(EMPTY_FORM)
