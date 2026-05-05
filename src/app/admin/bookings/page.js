@@ -309,6 +309,7 @@ export default function AdminBookingsPage() {
         <Link href="/admin/booking-status" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>予約状況</Link>
         <div style={{ padding: '10px 24px', fontWeight: 700, fontSize: 15, color: '#2f2244', borderBottom: '2px solid #2f2244', marginBottom: -2, cursor: 'default' }}>予約一覧</div>
         <Link href="/admin/sales" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>売上管理</Link>
+        <Link href="/admin/booking-status?tab=nonevent" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>イベント外収益</Link>
         <Link href="/admin/booking-status?tab=history" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>履歴</Link>
       </div>
 
