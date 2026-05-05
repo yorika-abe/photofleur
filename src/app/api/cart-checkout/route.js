@@ -86,27 +86,32 @@ export async function POST(req) {
 
     } else if (item.type === 'product') {
       const productQrToken = randomUUID()
-      const { data: productBooking } = await admin.from('event_product_bookings').insert({
-        event_id: item.eventId,
-        product_id: item.productId,
-        customer_name: customer.name,
-        customer_email: customer.email,
-        customer_phone: customer.phone || null,
-        sns_url: customer.sns_url || null,
-        nickname: customer.nickname || null,
-        payment_method: paymentMethod,
-        square_payment_id: squarePaymentId || null,
-        selections: { ...(item.selections || {}), ...(item.deliveryAddress ? { delivery_address: item.deliveryAddress } : {}) },
-        qr_token: productQrToken,
-        cart_token: cartToken,
-      }).select('id').single().catch(() => ({ data: null }))
+      let productBooking = null
+      try {
+        const { data } = await admin.from('event_product_bookings').insert({
+          event_id: item.eventId,
+          product_id: item.productId,
+          customer_name: customer.name,
+          customer_email: customer.email,
+          customer_phone: customer.phone || null,
+          sns_url: customer.sns_url || null,
+          nickname: customer.nickname || null,
+          payment_method: paymentMethod,
+          square_payment_id: squarePaymentId || null,
+          selections: { ...(item.selections || {}), ...(item.deliveryAddress ? { delivery_address: item.deliveryAddress } : {}) },
+          qr_token: productQrToken,
+          cart_token: cartToken,
+        }).select('id').single()
+        productBooking = data
+      } catch {}
 
       if (productBooking) {
         qrTokens[item.cartId] = productQrToken
 
         let modelName = null
         if (item.selectedModelIds?.length > 0) {
-          const { data: firstModel } = await admin.from('models').select('name').eq('id', item.selectedModelIds[0]).single().catch(() => ({ data: null }))
+          let firstModel = null
+          try { const { data } = await admin.from('models').select('name').eq('id', item.selectedModelIds[0]).single(); firstModel = data } catch {}
           modelName = firstModel?.name || null
         }
         cartProductItems.push({

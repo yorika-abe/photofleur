@@ -6,7 +6,8 @@ const SQUARE_LOCATION_ID = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || ''
 
 export default function PrivateProductBookingForm({ token, paymentMethod, price = 0 }) {
   const [form, setForm] = useState({
-    last_name: '', first_name: '', email: '', phone: '',
+    last_name: '', first_name: '', last_name_kana: '', first_name_kana: '',
+    nickname: '', email: '', phone: '',
     payment_method: paymentMethod === 'both' ? 'card' : paymentMethod,
     notes: '',
   })
@@ -18,6 +19,25 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
   const paymentsRef = useRef(null)
 
   const selectedPayment = form.payment_method
+
+  useEffect(() => {
+    fetch('/api/customer/profile').then(r => r.json()).then(({ profile, email }) => {
+      if (!email) {
+        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`
+        return
+      }
+      setForm(f => ({
+        ...f,
+        last_name: profile?.last_name || f.last_name,
+        first_name: profile?.first_name || f.first_name,
+        last_name_kana: profile?.last_name_kana || f.last_name_kana,
+        first_name_kana: profile?.first_name_kana || f.first_name_kana,
+        nickname: profile?.nickname || f.nickname,
+        email: email || f.email,
+        phone: profile?.phone || f.phone,
+      }))
+    }).catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (selectedPayment === 'card') {
@@ -85,8 +105,18 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
         body: JSON.stringify({ token, ...form, square_payment_id: squarePaymentId }),
       })
       const d = await res.json()
-      if (res.ok) { setDone(true) }
-      else {
+      if (res.ok) {
+        setDone(true)
+        fetch('/api/customer/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            last_name: form.last_name, first_name: form.first_name,
+            last_name_kana: form.last_name_kana, first_name_kana: form.first_name_kana,
+            nickname: form.nickname, phone: form.phone,
+          }),
+        }).catch(() => {})
+      } else {
         setError(d.error === 'Out of stock' ? 'すでに申込済みです' : ('送信に失敗しました: ' + (d.error || res.status)))
       }
     } catch (err) {
@@ -121,6 +151,12 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
           <input value={form.first_name} onChange={e => setForm(f => ({ ...f, first_name: e.target.value }))}
             placeholder="太郎" style={inp} />
         </div>
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <label style={lbl}>ニックネーム（撮影会で使用する名前）</label>
+        <input value={form.nickname} onChange={e => setForm(f => ({ ...f, nickname: e.target.value }))}
+          placeholder="例: ゆきの" style={inp} />
       </div>
 
       <div style={{ marginBottom: 14 }}>

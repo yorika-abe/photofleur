@@ -32,6 +32,18 @@ function loadMiscExpenses() {
   try { return JSON.parse(localStorage.getItem('pf_misc_expenses') || '{}') } catch { return {} }
 }
 
+function loadNonEventRecords() {
+  try {
+    const list = JSON.parse(localStorage.getItem('pf_nonevent_list') || '[]')
+    const result = {}
+    for (const month of list) {
+      const rec = localStorage.getItem(`pf_nonevent_${month}`)
+      if (rec) result[month] = JSON.parse(rec)
+    }
+    return result
+  } catch { return {} }
+}
+
 const TIER_META = {
   staff:   { label: '運営', color: '#1a3560', bg: '#dce8ff' },
   '12000': { label: '12000', color: '#6a1b9a', bg: '#f3e5f5' },
@@ -47,8 +59,7 @@ export default function AdminSalesPage() {
   const [selectedMonth, setSelectedMonth] = useState(null)
   const [expandedYears, setExpandedYears] = useState({})
   const [expandedRecords, setExpandedRecords] = useState({})
-  const [privateData, setPrivateData] = useState([])
-  const [hansellingMode, setHansellingMode] = useState('per_booking')
+  const [nonEventRecords, setNonEventRecords] = useState({})
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -58,6 +69,7 @@ export default function AdminSalesPage() {
   useEffect(() => {
     setSavedRecords(loadSavedRecords())
     setMiscExpenses(loadMiscExpenses())
+    setNonEventRecords(loadNonEventRecords())
     load()
   }, [])
 
@@ -103,19 +115,6 @@ export default function AdminSalesPage() {
     })
 
     setData(enriched)
-
-    // 非公開商品予約を取得（キャンセル済み除外）
-    const { data: privateBookings } = await supabase
-      .from('private_bookings')
-      .select('id, last_name, first_name, email, payment_method, created_at, product_id, private_products(id, title, price, event_date, time_label, hanselling)')
-      .is('cancelled_at', null)
-      .order('created_at', { ascending: false })
-
-    setPrivateData((privateBookings || []).map(b => ({
-      ...b,
-      product: b.private_products || {},
-    })))
-
     setLoading(false)
   }
 
@@ -144,9 +143,8 @@ export default function AdminSalesPage() {
     const m = r.eventDate?.slice(0, 7)
     if (m) allMonthsSet.add(m)
   }
-  for (const b of privateData) {
-    const m = (b.product?.event_date || b.created_at)?.slice(0, 7)
-    if (m) allMonthsSet.add(m)
+  for (const m of Object.keys(nonEventRecords)) {
+    allMonthsSet.add(m)
   }
   const sortedMonths = [...allMonthsSet].sort().reverse()
   const prominentMonths = [nextMonth, currentMonth].filter(m => sortedMonths.includes(m))
@@ -166,33 +164,30 @@ export default function AdminSalesPage() {
   // Per-month calculations
   function monthData(month) {
     const bookingsInMonth = data.filter(b => b.event?.event_date?.slice(0, 7) === month)
-    const slotRevenue = bookingsInMonth.reduce((s, b) => s + b.revenue, 0)
     const recordsInMonth = savedRecords.filter(r => r.eventDate?.slice(0, 7) === month)
+    // 売上は保存済みレコードのみ反映
+    const slotRevenue = recordsInMonth.reduce((s, r) => s + (r.revenue || 0), 0)
     const productRevenue = recordsInMonth.reduce((s, r) => s + (r.productRevenue || 0), 0)
-    // 非公開商品
-    const privateBookingsInMonth = privateData.filter(b => {
-      const m = (b.product?.event_date || b.created_at)?.slice(0, 7)
-      return m === month
-    })
-    const privateRevenue = privateBookingsInMonth.reduce((s, b) => s + (b.product?.price || 0), 0)
-    const privateHanselling = hansellingMode === 'per_booking'
-      ? privateBookingsInMonth.reduce((s, b) => s + (b.product?.hanselling || 0), 0)
-      : [...new Set(privateBookingsInMonth.map(b => b.product_id))].reduce((s, pid) => {
-          const p = privateBookingsInMonth.find(b => b.product_id === pid)?.product
-          return s + (p?.hanselling || 0)
-        }, 0)
-    const privateGrossProfit = privateRevenue - privateHanselling
-    const revenue = slotRevenue + productRevenue + privateRevenue
-    const grossProfit = recordsInMonth.reduce((s, r) => s + (r.grossProfit || 0), 0) + privateGrossProfit
+
+    const neRecord = nonEventRecords[month] || null
+    const privateRevenue = neRecord ? (neRecord.privateRevenue || 0) : 0
+    const goodsRevenue = neRecord ? (neRecord.goodsRevenue || 0) : 0
+    const nonEventGrossProfit = neRecord ? (neRecord.grossProfit || 0) : 0
+
+    const revenue = slotRevenue + productRevenue + privateRevenue + goodsRevenue
+    const grossProfit = recordsInMonth.reduce((s, r) => s + (r.grossProfit || 0), 0) + nonEventGrossProfit
     const misc = miscExpenses[month] || 0
     const netProfit = grossProfit - Math.round(slotRevenue * 0.036) - misc
-    return { bookings: bookingsInMonth, revenue, slotRevenue, productRevenue, privateRevenue, privateBookings: privateBookingsInMonth, privateHanselling, privateGrossProfit, records: recordsInMonth, grossProfit, misc, netProfit }
+    return {
+      bookings: bookingsInMonth, revenue, slotRevenue, productRevenue,
+      privateRevenue, goodsRevenue, neRecord,
+      records: recordsInMonth, grossProfit, misc, netProfit,
+    }
   }
 
   const yearStr = String(currentYear)
-  const yearRevenue = data.filter(b => b.event?.event_date?.startsWith(yearStr)).reduce((s, b) => s + b.revenue, 0)
-    + savedRecords.filter(r => r.eventDate?.startsWith(yearStr)).reduce((s, r) => s + (r.productRevenue || 0), 0)
-    + privateData.filter(b => (b.product?.event_date || b.created_at?.slice(0, 10))?.startsWith(yearStr)).reduce((s, b) => s + (b.product?.price || 0), 0)
+  const yearRevenue = savedRecords.filter(r => r.eventDate?.startsWith(yearStr)).reduce((s, r) => s + (r.revenue || 0) + (r.productRevenue || 0), 0)
+    + Object.entries(nonEventRecords).filter(([m]) => m.startsWith(yearStr)).reduce((s, [, r]) => s + (r.totalRevenue || 0), 0)
 
   const activeData = monthData(activeMonth)
 
@@ -306,7 +301,7 @@ export default function AdminSalesPage() {
       {/* 月次サマリー */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 20 }}>
         {[
-          { label: '売上', value: yen(activeData.revenue), color: '#388e3c', note: [activeData.productRevenue > 0 && `うちイベント商品 ${yen(activeData.productRevenue)}`, activeData.privateRevenue > 0 && `うち非公開商品 ${yen(activeData.privateRevenue)}`].filter(Boolean).join(' / ') || null },
+          { label: '売上', value: yen(activeData.revenue), color: '#388e3c', note: [activeData.productRevenue > 0 && `イベント商品 ${yen(activeData.productRevenue)}`, activeData.privateRevenue > 0 && `非公開 ${yen(activeData.privateRevenue)}`, activeData.goodsRevenue > 0 && `グッズ ${yen(activeData.goodsRevenue)}`].filter(Boolean).join(' / ') || null },
           { label: '粗利益', value: yen(activeData.grossProfit), color: '#3949ab', note: '保存済み記録' },
           { label: '諸々経費', value: yen(activeData.misc), color: '#e65100', editable: true },
           { label: '純利益', value: yen(activeData.netProfit), color: activeData.netProfit >= 0 ? '#00695c' : '#c62828', note: `粗利−手数料(${yen(Math.round(activeData.slotRevenue * 0.036))})−経費` },
@@ -421,54 +416,35 @@ export default function AdminSalesPage() {
         </div>
       )}
 
-      {/* 非公開商品予約 */}
-      {activeData.privateBookings.length > 0 && (
-        <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e5e5', overflow: 'hidden', marginBottom: 24 }}>
-          <div style={{ padding: '14px 20px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#2f2244', margin: 0 }}>非公開商品予約</h3>
+      {/* イベント外収益（保存済） */}
+      {activeData.neRecord && (
+        <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e1bee7', overflow: 'hidden', marginBottom: 24 }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid #f3e5f5', background: '#fdf6ff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 12, color: '#aaa' }}>販管費:</span>
-              {[['per_booking', '在庫あたりの販管費'], ['per_product', '全在庫の販管費']].map(([v, label]) => (
-                <button key={v} onClick={() => setHansellingMode(v)}
-                  style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: `1px solid ${hansellingMode === v ? '#1a3560' : '#ddd'}`, background: hansellingMode === v ? '#1a3560' : '#fff', color: hansellingMode === v ? '#fff' : '#888', fontWeight: 600, cursor: 'pointer' }}>
-                  {label}
-                </button>
-              ))}
-              <span style={{ fontSize: 13, color: '#aaa', marginLeft: 8 }}>{activeData.privateBookings.length}件 / {yen(activeData.privateRevenue)}</span>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#7b1fa2', margin: 0 }}>イベント外収益（保存済）</h3>
+              <span style={{ fontSize: 11, background: '#7b1fa2', color: '#fff', borderRadius: 3, padding: '2px 7px', fontWeight: 600 }}>保存済</span>
             </div>
+            <span style={{ fontSize: 11, color: '#aaa' }}>保存日時：{new Date(activeData.neRecord.savedAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</span>
           </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
-              <thead>
-                <tr style={{ background: '#fafafa' }}>
-                  {['予約日', 'お名前', '商品', '開催日', '支払方法', '金額'].map(h => (
-                    <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#888', borderBottom: '1px solid #f0f0f0', whiteSpace: 'nowrap' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {activeData.privateBookings.map(b => (
-                  <tr key={b.id} style={{ borderBottom: '1px solid #f5f5f5' }}>
-                    <td style={{ padding: '10px 14px', fontSize: 12, color: '#aaa', whiteSpace: 'nowrap' }}>{new Date(b.created_at).toLocaleDateString('ja-JP')}</td>
-                    <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 600, color: '#333' }}>{b.last_name}{b.first_name ? ` ${b.first_name}` : ''}</td>
-                    <td style={{ padding: '10px 14px', fontSize: 13, color: '#555' }}>{b.product?.title || '—'}</td>
-                    <td style={{ padding: '10px 14px', fontSize: 12, color: '#555', whiteSpace: 'nowrap' }}>{b.product?.event_date || '—'}{b.product?.time_label ? ` ${b.product.time_label}` : ''}</td>
-                    <td style={{ padding: '10px 14px' }}>
-                      <span style={{ fontSize: 11, background: b.payment_method === 'card' ? '#e8f5e9' : '#fff3e0', color: b.payment_method === 'card' ? '#388e3c' : '#e65100', borderRadius: 3, padding: '2px 7px', fontWeight: 600 }}>
-                        {b.payment_method === 'card' ? 'カード' : '現金'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '10px 14px', fontSize: 14, fontWeight: 700, color: '#2f2244' }}>{yen(b.product?.price || 0)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {activeData.privateHanselling > 0 && (
-            <div style={{ padding: '10px 20px', borderTop: '1px solid #f0f0f0', fontSize: 12, color: '#888' }}>
-              販管費 <strong style={{ color: '#c62828' }}>−{yen(activeData.privateHanselling)}</strong>　粗利 <strong style={{ color: '#3949ab' }}>{yen(activeData.privateGrossProfit)}</strong>
+          <div style={{ padding: '16px 20px' }}>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#555', marginBottom: 12 }}>
+              <span>非公開商品 <strong style={{ color: '#2f2244' }}>{yen(activeData.neRecord.privateRevenue)}</strong>（{activeData.neRecord.privateCount || 0}件）</span>
+              <span>グッズ <strong style={{ color: '#2f2244' }}>{yen(activeData.neRecord.goodsRevenue)}</strong>（{activeData.neRecord.goodsCount || 0}件）</span>
+              <span>売上合計 <strong style={{ color: '#388e3c' }}>{yen(activeData.neRecord.totalRevenue)}</strong></span>
             </div>
-          )}
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#555' }}>
+              {(activeData.neRecord.privateHanselling > 0 || activeData.neRecord.goodsHanselling > 0)
+                ? <>
+                    {activeData.neRecord.privateHanselling > 0 && <span>非公開商品販管費 <strong style={{ color: '#c62828' }}>−{yen(activeData.neRecord.privateHanselling)}</strong></span>}
+                    {activeData.neRecord.goodsHanselling > 0 && <span>グッズ販管費 <strong style={{ color: '#c62828' }}>−{yen(activeData.neRecord.goodsHanselling)}</strong></span>}
+                  </>
+                : activeData.neRecord.hanselling > 0 && <span>販管費 <strong style={{ color: '#c62828' }}>−{yen(activeData.neRecord.hanselling)}</strong></span>
+              }
+              {(activeData.neRecord.otherCosts || 0) > 0 && <span>その他経費 <strong style={{ color: '#c62828' }}>−{yen(activeData.neRecord.otherCosts)}</strong></span>}
+              <span style={{ fontWeight: 700, fontSize: 14, color: activeData.neRecord.grossProfit >= 0 ? '#3949ab' : '#c62828' }}>粗利益 {yen(activeData.neRecord.grossProfit)}</span>
+            </div>
+            <div style={{ fontSize: 11, color: '#aaa', marginTop: 8 }}>※ 予約状況のイベント外収益タブから保存されたデータです。</div>
+          </div>
         </div>
       )}
 
