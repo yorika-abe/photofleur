@@ -30,6 +30,7 @@ export async function PUT(req) {
     first_name_kana: body.first_name_kana || null,
     phone: body.phone || null,
     sns_url: body.sns_url || null,
+    nickname: body.nickname || null,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id' })
 

@@ -40,7 +40,7 @@ export default function MyPage() {
   const [email, setEmail] = useState('')
   const [bookings, setBookings] = useState([])
   const [models, setModels] = useState([])
-  const [form, setForm] = useState({ last_name: '', first_name: '', last_name_kana: '', first_name_kana: '', phone: '', sns_url: '' })
+  const [form, setForm] = useState({ last_name: '', first_name: '', last_name_kana: '', first_name_kana: '', phone: '', sns_url: '', nickname: '' })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [savedProfile, setSavedProfile] = useState({})
@@ -82,6 +82,7 @@ export default function MyPage() {
           first_name_kana: profile.first_name_kana || '',
           phone: profile.phone || '',
           sns_url: profile.sns_url || '',
+          nickname: profile.nickname || '',
         }
         setForm(p)
         setSavedProfile(p)
@@ -179,6 +180,10 @@ export default function MyPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <div><label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#555' }}>姓（カナ）</label><input style={inp} value={form.last_name_kana} onChange={e => setForm(f => ({ ...f, last_name_kana: e.target.value }))} placeholder="ヤマダ" /></div>
             <div><label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#555' }}>名（カナ）</label><input style={inp} value={form.first_name_kana} onChange={e => setForm(f => ({ ...f, first_name_kana: e.target.value }))} placeholder="タロウ" /></div>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#555' }}>ニックネーム</label>
+            <input style={inp} value={form.nickname} onChange={e => setForm(f => ({ ...f, nickname: e.target.value }))} placeholder="撮影会で使用する名前" />
           </div>
           <div style={{ marginBottom: 12 }}>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#555' }}>電話番号</label>

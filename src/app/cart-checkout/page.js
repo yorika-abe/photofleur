@@ -41,6 +41,10 @@ export default function CartCheckoutPage() {
     if (!ready) return
     if (items.length === 0) { router.push('/schedule'); return }
     fetch('/api/customer/profile').then(r => r.json()).then(({ profile, email }) => {
+      if (!email) {
+        window.location.href = `/login?redirect=${encodeURIComponent('/cart-checkout')}`
+        return
+      }
       if (profile) setForm(f => ({
         ...f,
         last_name: profile.last_name || f.last_name,
@@ -49,6 +53,7 @@ export default function CartCheckoutPage() {
         first_name_kana: profile.first_name_kana || f.first_name_kana,
         phone: profile.phone || f.phone,
         sns_url: profile.sns_url || f.sns_url,
+        nickname: profile.nickname || f.nickname,
       }))
       if (email) setForm(f => ({ ...f, email: f.email || email }))
     }).catch(() => {})

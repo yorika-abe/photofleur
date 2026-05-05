@@ -162,7 +162,7 @@ export async function POST(req) {
     body: JSON.stringify({
       last_name: customer.last_name, first_name: customer.first_name,
       last_name_kana: customer.last_name_kana, first_name_kana: customer.first_name_kana,
-      phone: customer.phone, sns_url: customer.sns_url,
+      phone: customer.phone, sns_url: customer.sns_url, nickname: customer.nickname,
     }),
   }).catch(() => {})
 
