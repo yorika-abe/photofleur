@@ -40,7 +40,7 @@ export default function GoodsShop() {
           {goods.map(g => {
             const soldOut = g.stock === 0
             return (
-              <div key={g.id} style={{ background: '#fff', borderRadius: 16, border: '1px solid #eee', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+              <div key={g.id} style={{ background: '#fff', borderRadius: 16, border: '1px solid #eee', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', opacity: soldOut ? 0.75 : 1 }}>
                 {g.image ? (
                   <img src={g.image} alt={g.title} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
                 ) : (
@@ -57,7 +57,7 @@ export default function GoodsShop() {
                       )}
                     </div>
                     {soldOut ? (
-                      <span style={{ fontSize: 13, color: '#aaa', fontWeight: 600 }}>売り切れ</span>
+                      <span style={{ fontSize: 13, color: '#e53935', fontWeight: 700 }}>完売御礼</span>
                     ) : (
                       <button
                         onClick={() => setOrderTarget(g)}

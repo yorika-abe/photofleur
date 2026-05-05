@@ -96,7 +96,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
                 <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560', marginBottom: 2 }}>{model.name}</div>
                 {model.name_en && <div style={{ fontSize: 11, color: '#aaa', marginBottom: 6 }}>{model.name_en}</div>}
                 <div style={{ fontSize: 14, color: '#555', fontWeight: 600 }}>
-                  {allFull ? <span style={{ color: '#999' }}>満席</span> : `¥${cardMinPrice.toLocaleString()}${cardAllSame ? '' : '〜'}`}
+                  {allFull ? <span style={{ color: '#e53935', fontWeight: 700, fontSize: 12 }}>満枠御礼</span> : `¥${cardMinPrice.toLocaleString()}${cardAllSame ? '' : '〜'}`}
                 </div>
               </div>
             </div>
@@ -128,51 +128,60 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
                 ¥{displayPrice.toLocaleString()}{showPriceRange ? '〜' : ''}
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 8 }}>撮影時間を選択</label>
-                <select
-                  value={selectedSlotId}
-                  onChange={e => setSelectedSlotId(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 14, background: '#fff', cursor: 'pointer' }}
-                >
-                  <option value="">選択してください</option>
-                  {availableSlots.map(slot => (
-                    <option key={slot.id} value={slot.id} disabled={slot.indoorFull && !slot.fullyBooked}>
-                      {slot.slot_label}{slot.indoorFull ? '（企画定員超え割引）' : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {selectedSlotId ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <Link href={`/confirm?slot_id=${selectedSlotId}`}
-                    style={{ display: 'block', textAlign: 'center', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '13px 0', fontSize: 15, fontWeight: 700 }}>
-                    今すぐ予約する
-                  </Link>
-                  <button onClick={() => {
-                    const slot = availableSlots.find(s => s.id === selectedSlotId)
-                    addItem({
-                      type: 'slot',
-                      slotId: selectedSlotId,
-                      name: modal.models.name,
-                      image: modal.models.image,
-                      slotLabel: slot?.slot_label || '',
-                      eventDate,
-                      eventLocation,
-                      price: slot?.price || 0,
-                    })
-                    setCartAdded(true)
-                    setTimeout(() => setCartAdded(false), 2500)
-                  }}
-                    style={{ width: '100%', padding: '12px', borderRadius: 10, border: '2px solid #1a3560', background: cartAdded ? '#e8f5e9' : '#fff', color: cartAdded ? '#2e7d32' : '#1a3560', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-                    {cartAdded ? '✓ カートに追加しました' : '🛒 カートに追加'}
-                  </button>
+              {availableSlots.length === 0 ? (
+                <div style={{ background: '#fff3e0', border: '1px solid #ffb300', borderRadius: 10, padding: '20px', textAlign: 'center' }}>
+                  <div style={{ fontWeight: 800, fontSize: 20, color: '#e65100', letterSpacing: 2 }}>満枠御礼</div>
+                  <p style={{ fontSize: 13, color: '#888', margin: '8px 0 0' }}>ご予約可能な枠がございません。</p>
                 </div>
               ) : (
-                <div style={{ display: 'block', textAlign: 'center', background: '#ccc', color: '#fff', borderRadius: 10, padding: '13px 0', fontSize: 15, fontWeight: 700 }}>
-                  予約する
-                </div>
+                <>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 8 }}>撮影時間を選択</label>
+                    <select
+                      value={selectedSlotId}
+                      onChange={e => setSelectedSlotId(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 14, background: '#fff', cursor: 'pointer' }}
+                    >
+                      <option value="">選択してください</option>
+                      {modalSlots.map(slot => (
+                        <option key={slot.id} value={slot.id} disabled={slot.fullyBooked || (slot.indoorFull && !slot.fullyBooked)}>
+                          {slot.slot_label}{slot.fullyBooked ? '（在庫なし）' : slot.indoorFull ? '（企画定員超え割引）' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {selectedSlotId ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <Link href={`/confirm?slot_id=${selectedSlotId}`}
+                        style={{ display: 'block', textAlign: 'center', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '13px 0', fontSize: 15, fontWeight: 700 }}>
+                        今すぐ予約する
+                      </Link>
+                      <button onClick={() => {
+                        const slot = availableSlots.find(s => s.id === selectedSlotId)
+                        addItem({
+                          type: 'slot',
+                          slotId: selectedSlotId,
+                          name: modal.models.name,
+                          image: modal.models.image,
+                          slotLabel: slot?.slot_label || '',
+                          eventDate,
+                          eventLocation,
+                          price: slot?.price || 0,
+                        })
+                        setCartAdded(true)
+                        setTimeout(() => setCartAdded(false), 2500)
+                      }}
+                        style={{ width: '100%', padding: '12px', borderRadius: 10, border: '2px solid #1a3560', background: cartAdded ? '#e8f5e9' : '#fff', color: cartAdded ? '#2e7d32' : '#1a3560', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                        {cartAdded ? '✓ カートに追加しました' : '🛒 カートに追加'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'block', textAlign: 'center', background: '#ccc', color: '#fff', borderRadius: 10, padding: '13px 0', fontSize: 15, fontWeight: 700 }}>
+                      予約する
+                    </div>
+                  )}
+                </>
               )}
 
               <Link href={`/models/${modal.models.id}`} style={{ textAlign: 'center', fontSize: 13, color: '#1a3560', textDecoration: 'none' }}>

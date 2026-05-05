@@ -120,34 +120,42 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
       <div style={{ marginBottom: 40 }}>
         <h2 style={{ fontSize: 17, fontWeight: 700, color: '#333', marginBottom: 16 }}>予約商品</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
-          {products.map(p => (
-            <div key={p.id}
-              onClick={() => openModal(p)}
-              style={{ background: '#fff', borderRadius: 14, border: '1px solid #e0ecf8', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(26,53,96,0.12)' }}
-              onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}>
-              <div style={{ aspectRatio: '1/1', overflow: 'hidden', background: '#f0f4fb' }}>
-                {p.image
-                  ? <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48 }}>🛍️</div>
-                }
-              </div>
-              <div style={{ padding: '12px 14px' }}>
-                <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560', marginBottom: 2 }}>{p.name}</div>
-                {p.available_slots?.length > 0 && (
-                  <div style={{ fontSize: 11, color: '#5bbfd6', fontWeight: 600, marginBottom: 4 }}>
-                    🕐 {p.available_slots.join(' / ')}
+          {products.map(p => {
+            const soldOut = p.stock === 0
+            return (
+              <div key={p.id}
+                onClick={() => !soldOut && openModal(p)}
+                style={{ background: '#fff', borderRadius: 14, border: '1px solid #e0ecf8', overflow: 'hidden', cursor: soldOut ? 'default' : 'pointer', opacity: soldOut ? 0.75 : 1, transition: 'transform 0.15s, box-shadow 0.15s', position: 'relative' }}
+                onMouseEnter={e => { if (!soldOut) { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(26,53,96,0.12)' } }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}>
+                {soldOut && (
+                  <div style={{ position: 'absolute', top: 8, right: 8, background: '#e53935', color: '#fff', borderRadius: 6, padding: '2px 8px', fontSize: 10, fontWeight: 700, zIndex: 1 }}>
+                    完売御礼
                   </div>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: '#555' }}>¥{(p.price || 0).toLocaleString()}</span>
-                  <span style={{ fontSize: 11, color: p.stock > 0 ? '#999' : '#e53935', fontWeight: p.stock <= 0 ? 700 : 400 }}>
-                    {p.stock <= 0 ? '在庫なし' : `在庫 ${p.stock}`}
-                  </span>
+                <div style={{ aspectRatio: '1/1', overflow: 'hidden', background: '#f0f4fb' }}>
+                  {p.image
+                    ? <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48 }}>🛍️</div>
+                  }
+                </div>
+                <div style={{ padding: '12px 14px' }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560', marginBottom: 2 }}>{p.name}</div>
+                  {p.available_slots?.length > 0 && (
+                    <div style={{ fontSize: 11, color: '#5bbfd6', fontWeight: 600, marginBottom: 4 }}>
+                      🕐 {p.available_slots.join(' / ')}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#555' }}>¥{(p.price || 0).toLocaleString()}</span>
+                    <span style={{ fontSize: 11, color: soldOut ? '#e53935' : p.stock > 0 ? '#999' : '#e53935', fontWeight: p.stock <= 0 ? 700 : 400 }}>
+                      {soldOut ? '完売御礼' : p.stock > 0 ? `在庫 ${p.stock}` : '在庫なし'}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 
