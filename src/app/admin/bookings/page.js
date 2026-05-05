@@ -83,15 +83,32 @@ export default function AdminBookingsPage() {
       final_price: b.event_products?.price || 0,
     }))
 
+    // グッズ注文
+    const { data: goodsRaw } = await supabase
+      .from('goods_orders')
+      .select('id, last_name, first_name, email, phone, payment_method, qr_token, cancelled_at, created_at, goods_id, quantity, goods(id, title, price)')
+      .order('created_at', { ascending: false })
+
+    const goodsBookings = (goodsRaw || []).map(b => ({
+      ...b,
+      _type: 'goods',
+      name: `${b.last_name || ''}${b.first_name ? ` ${b.first_name}` : ''}`,
+      product: b.goods || {},
+      model: {},
+      event: {},
+      slot: { slot_label: '' },
+      final_price: (b.goods?.price || 0) * (b.quantity || 1),
+    }))
+
     if (!data) {
-      setBookings(privateBookings)
+      setBookings([...privateBookings, ...epBookings, ...goodsBookings].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)))
       setLoading(false)
       return
     }
 
     const slotIds = [...new Set(data.map(b => b.slot_id).filter(Boolean))]
     if (slotIds.length === 0) {
-      const merged = [...data.map(b => ({ ...b, _type: 'regular', slot: {}, event: {}, model: {} })), ...privateBookings]
+      const merged = [...data.map(b => ({ ...b, _type: 'regular', slot: {}, event: {}, model: {} })), ...privateBookings, ...epBookings, ...goodsBookings]
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
       setBookings(merged)
       setLoading(false)
@@ -129,7 +146,7 @@ export default function AdminBookingsPage() {
       return { ...b, _type: 'regular', slot, event, model }
     })
 
-    const merged = [...regularBookings, ...privateBookings, ...epBookings]
+    const merged = [...regularBookings, ...privateBookings, ...epBookings, ...goodsBookings]
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 
     setBookings(merged)
@@ -150,6 +167,8 @@ export default function AdminBookingsPage() {
       ? { private_booking_id: b.id }
       : b._type === 'event_product'
       ? { event_product_booking_id: b.id }
+      : b._type === 'goods'
+      ? { goods_order_id: b.id }
       : { booking_id: b.id }
 
     const res = await fetch('/api/admin/cancel-booking', {
@@ -331,7 +350,8 @@ export default function AdminBookingsPage() {
             const isCancelled = !!b.cancelled_at
             const isPrivate = b._type === 'private'
             const isEP = b._type === 'event_product'
-            const borderColor = isCancelled ? '1px solid #ffcdd2' : isPrivate ? '1px solid #e8d5f5' : isEP ? '1px solid #d5e8f5' : '1px solid #e5e5e5'
+            const isGoods = b._type === 'goods'
+            const borderColor = isCancelled ? '1px solid #ffcdd2' : isPrivate ? '1px solid #e8d5f5' : isEP ? '1px solid #d5e8f5' : isGoods ? '1px solid #ffd5b0' : '1px solid #e5e5e5'
             return (
               <div key={b.id} style={{ background: isCancelled ? '#fafafa' : '#fff', borderRadius: 12, border: borderColor, overflow: 'hidden', opacity: isCancelled ? 0.7 : 1 }}>
                 {/* Main row */}
@@ -344,6 +364,7 @@ export default function AdminBookingsPage() {
                       {isCancelled && <span style={{ background: '#ffcdd2', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>キャンセル済</span>}
                       {isPrivate && <span style={{ background: '#f3e5f5', color: '#7b1fa2', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>非公開商品</span>}
                       {isEP && <span style={{ background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>特別予約商品</span>}
+                      {isGoods && <span style={{ background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>グッズ注文</span>}
                     </div>
                     <div style={{ fontSize: 12, color: '#888' }}>{b.email}</div>
                   </div>
@@ -352,13 +373,13 @@ export default function AdminBookingsPage() {
                   </div>
                   <div style={{ fontSize: 13, color: '#555', minWidth: 80 }}>{b.model?.name || '—'}</div>
                   <div style={{ fontSize: 13, color: '#555', minWidth: 80 }}>
-                    {(isPrivate || isEP) ? (b.product?.name || b.product?.title || '—') : (b.slot?.slot_label || '—')}
+                    {(isPrivate || isEP || isGoods) ? (b.product?.name || b.product?.title || '—') : (b.slot?.slot_label || '—')}
                   </div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    {!isPrivate && !isEP && b.is_outdoor && (
+                    {!isPrivate && !isEP && !isGoods && b.is_outdoor && (
                       <span style={{ background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '2px 7px', fontSize: 11, fontWeight: 600 }}>屋外</span>
                     )}
-                    {!isPrivate && (
+                    {!isPrivate && !isGoods && (
                       <span style={{ background: b.event?.event_type === 'street' ? '#e8f5e9' : '#e8eaf6', color: b.event?.event_type === 'street' ? '#388e3c' : '#3949ab', borderRadius: 4, padding: '2px 7px', fontSize: 11, fontWeight: 600 }}>
                         {b.event?.event_type === 'street' ? 'スト' : 'スタ'}
                       </span>
@@ -401,6 +422,13 @@ export default function AdminBookingsPage() {
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>商品</span>{b.product?.title}</div>
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>モデル</span>{b.model?.name || '—'}</div>
                             {b.event?.event_date && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>開催日</span>{b.event.event_date}{b.product?.time_label ? ` ${b.product.time_label}` : ''}</div>}
+                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>支払</span>{b.payment_method === 'card' ? 'カード決済' : '当日現金'}</div>
+                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>金額</span>¥{price.toLocaleString()}</div>
+                          </>
+                        ) : isGoods ? (
+                          <>
+                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>商品</span>{b.product?.title || '—'}</div>
+                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>数量</span>{b.quantity || 1}個</div>
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>支払</span>{b.payment_method === 'card' ? 'カード決済' : '当日現金'}</div>
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>金額</span>¥{price.toLocaleString()}</div>
                           </>

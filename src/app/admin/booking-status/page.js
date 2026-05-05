@@ -782,7 +782,7 @@ export default function AdminBookingStatusPage() {
             </div>
           )}
         </div>
-      ) : (
+      ) : !showNonEvent ? (
         <>
           {visibleData.length === 0 ? (
             <p style={{ color: '#999' }}>表示するイベントはありません。</p>
@@ -1161,7 +1161,7 @@ export default function AdminBookingStatusPage() {
             </>
           )}
         </>
-      )}
+      ) : null}
     </div>
   )
 }

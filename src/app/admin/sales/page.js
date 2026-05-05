@@ -60,6 +60,7 @@ export default function AdminSalesPage() {
   const [expandedYears, setExpandedYears] = useState({})
   const [expandedRecords, setExpandedRecords] = useState({})
   const [nonEventRecords, setNonEventRecords] = useState({})
+  const [liveNeData, setLiveNeData] = useState(null)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -71,6 +72,10 @@ export default function AdminSalesPage() {
     setMiscExpenses(loadMiscExpenses())
     setNonEventRecords(loadNonEventRecords())
     load()
+    fetch('/api/admin/non-event-revenue')
+      .then(r => r.json())
+      .then(d => setLiveNeData(d))
+      .catch(() => {})
   }, [])
 
   async function load() {
@@ -146,6 +151,14 @@ export default function AdminSalesPage() {
   for (const m of Object.keys(nonEventRecords)) {
     allMonthsSet.add(m)
   }
+  for (const b of (liveNeData?.privateBookings || [])) {
+    const m = (b.product?.event_date || b.created_at)?.slice(0, 7)
+    if (m) allMonthsSet.add(m)
+  }
+  for (const o of (liveNeData?.goodsOrders || [])) {
+    const m = o.created_at?.slice(0, 7)
+    if (m) allMonthsSet.add(m)
+  }
   const sortedMonths = [...allMonthsSet].sort().reverse()
   const prominentMonths = [nextMonth, currentMonth].filter(m => sortedMonths.includes(m))
   const olderMonths = sortedMonths.filter(m => m !== currentMonth && m !== nextMonth)
@@ -165,14 +178,19 @@ export default function AdminSalesPage() {
   function monthData(month) {
     const bookingsInMonth = data.filter(b => b.event?.event_date?.slice(0, 7) === month)
     const recordsInMonth = savedRecords.filter(r => r.eventDate?.slice(0, 7) === month)
-    // 売上は保存済みレコードのみ反映
     const slotRevenue = recordsInMonth.reduce((s, r) => s + (r.revenue || 0), 0)
     const productRevenue = recordsInMonth.reduce((s, r) => s + (r.productRevenue || 0), 0)
 
     const neRecord = nonEventRecords[month] || null
-    const privateRevenue = neRecord ? (neRecord.privateRevenue || 0) : 0
-    const goodsRevenue = neRecord ? (neRecord.goodsRevenue || 0) : 0
-    const nonEventGrossProfit = neRecord ? (neRecord.grossProfit || 0) : 0
+    const livePriv = (liveNeData?.privateBookings || []).filter(b => (b.product?.event_date || b.created_at)?.slice(0, 7) === month)
+    const liveGds = (liveNeData?.goodsOrders || []).filter(o => o.created_at?.slice(0, 7) === month)
+    const livePrivateRevenue = livePriv.reduce((s, b) => s + (b.product?.price || 0), 0)
+    const liveGoodsRevenue = liveGds.reduce((s, o) => s + (o.goods?.price || 0) * (o.quantity || 1), 0)
+
+    const privateRevenue = neRecord ? (neRecord.privateRevenue || 0) : livePrivateRevenue
+    const goodsRevenue = neRecord ? (neRecord.goodsRevenue || 0) : liveGoodsRevenue
+    const nonEventGrossProfit = neRecord ? (neRecord.grossProfit || 0) : (livePrivateRevenue + liveGoodsRevenue)
+    const hasLiveNe = !neRecord && (livePrivateRevenue > 0 || liveGoodsRevenue > 0)
 
     const revenue = slotRevenue + productRevenue + privateRevenue + goodsRevenue
     const grossProfit = recordsInMonth.reduce((s, r) => s + (r.grossProfit || 0), 0) + nonEventGrossProfit
@@ -180,7 +198,8 @@ export default function AdminSalesPage() {
     const netProfit = grossProfit - Math.round(slotRevenue * 0.036) - misc
     return {
       bookings: bookingsInMonth, revenue, slotRevenue, productRevenue,
-      privateRevenue, goodsRevenue, neRecord,
+      privateRevenue, goodsRevenue, neRecord, hasLiveNe,
+      livePriv, liveGds, livePrivateRevenue, liveGoodsRevenue,
       records: recordsInMonth, grossProfit, misc, netProfit,
     }
   }
@@ -412,6 +431,27 @@ export default function AdminSalesPage() {
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* イベント外収益（ライブ・未保存） */}
+      {activeData.hasLiveNe && (
+        <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #ffe0b2', overflow: 'hidden', marginBottom: 24 }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid #fff3e0', background: '#fffde7', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#e65100', margin: 0 }}>イベント外収益</h3>
+              <span style={{ fontSize: 11, background: '#ff9800', color: '#fff', borderRadius: 3, padding: '2px 7px', fontWeight: 600 }}>未保存（ライブ）</span>
+            </div>
+            <span style={{ fontSize: 11, color: '#aaa' }}>予約状況→イベント外収益で保存すると確定されます</span>
+          </div>
+          <div style={{ padding: '16px 20px' }}>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#555', marginBottom: 8 }}>
+              <span>非公開商品 <strong style={{ color: '#2f2244' }}>{yen(activeData.livePrivateRevenue)}</strong>（{activeData.livePriv.length}件）</span>
+              <span>グッズ <strong style={{ color: '#2f2244' }}>{yen(activeData.liveGoodsRevenue)}</strong>（{activeData.liveGds.length}件）</span>
+              <span>売上合計 <strong style={{ color: '#388e3c' }}>{yen(activeData.livePrivateRevenue + activeData.liveGoodsRevenue)}</strong></span>
+            </div>
+            <div style={{ fontSize: 11, color: '#aaa' }}>※ 販管費未計算のため粗利益は予約状況のイベント外収益タブで確認してください。</div>
           </div>
         </div>
       )}
