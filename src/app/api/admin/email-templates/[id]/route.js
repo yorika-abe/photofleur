@@ -14,10 +14,11 @@ export async function GET(req, { params }) {
   const admin = await checkAdmin()
   if (!admin) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
+  const { id } = await params
   const { data } = await admin
     .from('email_templates')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single()
 
   if (!data) return Response.json({ template: null })
@@ -28,14 +29,15 @@ export async function PUT(req, { params }) {
   const admin = await checkAdmin()
   if (!admin) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
+  const { id } = await params
   const body = await req.json()
   const { name, subject, rows_json, header_json, footer } = body
 
   const { error } = await admin
     .from('email_templates')
     .upsert({
-      id: params.id,
-      name: name || params.id,
+      id,
+      name: name || id,
       subject: subject || '',
       rows_json: rows_json || [],
       header_json: header_json || {},

@@ -35,7 +35,10 @@ const TEMPLATE_DEFS = [
     ] },
   { id: 'cancellation', name: 'キャンセル', icon: '❌',
     defaultSubject: '【PhotoFleur】ご予約のキャンセルについて',
-    vars: [{ key: 'customer_name', desc: 'お客様名' }] },
+    vars: [
+      { key: 'customer_name', desc: 'お客様名' },
+      { key: 'cancel_reason', desc: 'キャンセル理由（空白の場合あり）' },
+    ] },
 ]
 
 const GOOGLE_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Montserrat:wght@300;400;600;700&family=Dancing+Script:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Josefin+Sans:wght@300;400;600&family=EB+Garamond:ital,wght@0,400;1,400&family=Noto+Sans+JP:wght@300;400;700&family=Noto+Serif+JP:wght@300;400;700&family=M+PLUS+Rounded+1c:wght@300;400;700&family=Zen+Kaku+Gothic+New:wght@300;400;700&family=Shippori+Mincho:wght@400;700&display=swap'

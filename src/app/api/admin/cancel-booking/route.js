@@ -141,7 +141,7 @@ export async function POST(req) {
     let mail_ok = false, mail_error = null
     if (epb.customer_email) {
       const customerName = epb.customer_name || '様'
-      const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName }).catch(() => null)
+      const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName, cancel_reason: cancel_reason || '' }).catch(() => null)
       const { error: me } = await resend.emails.send({
         from: 'Photo Fleur運営 <onboarding@resend.dev>',
         to: epb.customer_email,
@@ -177,7 +177,7 @@ export async function POST(req) {
 
     // メール送信（失敗してもキャンセル自体は完了）
     const customerName = `${pb.last_name || ''}${pb.first_name ? ` ${pb.first_name}` : ''}`.trim() || '様'
-    const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName }).catch(() => null)
+    const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName, cancel_reason: cancel_reason || '' }).catch(() => null)
     const { error: mail_err } = await resend.emails.send({
       from: 'Photo Fleur運営 <onboarding@resend.dev>',
       to: pb.email,
@@ -212,7 +212,7 @@ export async function POST(req) {
 
   // メール送信（失敗してもキャンセル自体は完了）
   const customerName = booking.name || `${booking.last_name || ''} ${booking.first_name || ''}`.trim() || '様'
-  const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName }).catch(() => null)
+  const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName, cancel_reason: cancel_reason || '' }).catch(() => null)
   const { error: mail_err } = await resend.emails.send({
     from: 'Photo Fleur運営 <onboarding@resend.dev>',
     to: booking.email,
