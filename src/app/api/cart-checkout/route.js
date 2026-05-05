@@ -3,6 +3,7 @@ import { sendLineMessage } from '@/lib/line'
 import { randomUUID } from 'crypto'
 
 export async function POST(req) {
+  try {
   const admin = await createSupabaseAdminClient()
   const { items, customer, paymentMethod, squarePaymentId, couponId } = await req.json()
 
@@ -166,4 +167,8 @@ export async function POST(req) {
   }).catch(() => {})
 
   return Response.json({ ok: true, qrTokens })
+  } catch (err) {
+    console.error('cart-checkout error:', err)
+    return Response.json({ error: 'サーバーエラーが発生しました: ' + (err?.message || String(err)) }, { status: 500 })
+  }
 }

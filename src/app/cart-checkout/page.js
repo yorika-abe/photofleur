@@ -111,56 +111,62 @@ export default function CartCheckoutPage() {
     setSaving(true)
     setError('')
 
-    let squarePaymentId = null
+    try {
+      let squarePaymentId = null
 
-    if (paymentMethod === 'card' && finalTotal > 0) {
-      if (!cardRef.current) { setError('カード情報を入力してください'); setSaving(false); return }
-      const result = await cardRef.current.tokenize()
-      if (result.status !== 'OK') {
-        setError('カード情報の処理に失敗しました。入力内容をご確認ください。')
-        setSaving(false); return
+      if (paymentMethod === 'card' && finalTotal > 0) {
+        if (!cardRef.current) { setError('カード情報を入力してください'); setSaving(false); return }
+        const result = await cardRef.current.tokenize()
+        if (result.status !== 'OK') {
+          setError('カード情報の処理に失敗しました。入力内容をご確認ください。')
+          setSaving(false); return
+        }
+        const chargeRes = await fetch('/api/square/charge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sourceId: result.token, amount: finalTotal, email: form.email }),
+        })
+        const chargeData = await chargeRes.json()
+        if (!chargeRes.ok) {
+          setError(chargeData.error || 'カード決済に失敗しました')
+          setSaving(false); return
+        }
+        squarePaymentId = chargeData.payment_id
       }
-      const chargeRes = await fetch('/api/square/charge', {
+
+      const res = await fetch('/api/cart-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceId: result.token, amount: finalTotal, email: form.email }),
+        body: JSON.stringify({
+          items,
+          customer: { ...form, name: `${last_name} ${first_name}` },
+          paymentMethod,
+          squarePaymentId,
+          couponId: coupon?.id || null,
+          finalTotal,
+        }),
       })
-      const chargeData = await chargeRes.json()
-      if (!chargeRes.ok) {
-        setError(chargeData.error || 'カード決済に失敗しました')
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'エラーが発生しました')
         setSaving(false); return
       }
-      squarePaymentId = chargeData.payment_id
-    }
 
-    const res = await fetch('/api/cart-checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        items,
-        customer: { ...form, name: `${last_name} ${first_name}` },
-        paymentMethod,
-        squarePaymentId,
-        couponId: coupon?.id || null,
-        finalTotal,
-      }),
-    })
+      clearCart()
 
-    const data = await res.json()
-
-    if (!res.ok) {
-      setError(data.error || 'エラーが発生しました')
-      setSaving(false); return
-    }
-
-    clearCart()
-
-    // スロット予約がある場合は最初のスロットの完了ページへ
-    const firstSlot = items.find(i => i.type === 'slot')
-    if (firstSlot && data.qrTokens?.[firstSlot.cartId]) {
-      window.location.href = `/complete?slot_id=${firstSlot.slotId}&email=${encodeURIComponent(form.email)}&qr=${data.qrTokens[firstSlot.cartId]}`
-    } else {
-      window.location.href = `/complete-cart?email=${encodeURIComponent(form.email)}`
+      // スロット予約がある場合は最初のスロットの完了ページへ
+      const firstSlot = items.find(i => i.type === 'slot')
+      if (firstSlot && data.qrTokens?.[firstSlot.cartId]) {
+        window.location.href = `/complete?slot_id=${firstSlot.slotId}&email=${encodeURIComponent(form.email)}&qr=${data.qrTokens[firstSlot.cartId]}`
+      } else {
+        window.location.href = `/complete-cart?email=${encodeURIComponent(form.email)}`
+      }
+    } catch (err) {
+      console.error('checkout error:', err)
+      setError('エラーが発生しました。もう一度お試しください。')
+      setSaving(false)
     }
   }
 
