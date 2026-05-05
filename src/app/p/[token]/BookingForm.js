@@ -78,16 +78,21 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
       squarePaymentId = chargeData.payment_id
     }
 
-    const res = await fetch('/api/bookings/private', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, ...form, square_payment_id: squarePaymentId }),
-    })
-    setSubmitting(false)
-    if (res.ok) { setDone(true) }
-    else {
+    try {
+      const res = await fetch('/api/bookings/private', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, ...form, square_payment_id: squarePaymentId }),
+      })
       const d = await res.json()
-      setError(d.error === 'Out of stock' ? 'すでに申込済みです' : '送信に失敗しました。もう一度お試しください。')
+      if (res.ok) { setDone(true) }
+      else {
+        setError(d.error === 'Out of stock' ? 'すでに申込済みです' : ('送信に失敗しました: ' + (d.error || res.status)))
+      }
+    } catch (err) {
+      setError('エラーが発生しました。もう一度お試しください。(' + err.message + ')')
+    } finally {
+      setSubmitting(false)
     }
   }
 
