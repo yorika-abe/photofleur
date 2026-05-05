@@ -87,16 +87,16 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
     if (res.ok) { setDone(true) }
     else {
       const d = await res.json()
-      setError(d.error === 'Out of stock' ? '申し訳ありませんが受付終了しました' : '送信に失敗しました。もう一度お試しください。')
+      setError(d.error === 'Out of stock' ? 'すでに申込済みです' : '送信に失敗しました。もう一度お試しください。')
     }
   }
 
   if (done) {
     return (
-      <div style={{ background: '#e8f5e9', borderRadius: 14, padding: '28px 24px', textAlign: 'center' }}>
+      <div style={{ background: '#e8f5e9', borderRadius: 14, padding: '32px 24px', textAlign: 'center' }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
-        <div style={{ fontWeight: 700, fontSize: 18, color: '#2e7d32', marginBottom: 8 }}>お申し込みありがとうございます</div>
-        <p style={{ fontSize: 14, color: '#555' }}>担当よりご連絡いたします。</p>
+        <div style={{ fontWeight: 800, fontSize: 22, color: '#2e7d32', marginBottom: 8 }}>申込完了</div>
+        <p style={{ fontSize: 14, color: '#555', marginBottom: 0 }}>お申し込みありがとうございます。担当よりご連絡いたします。</p>
       </div>
     )
   }
