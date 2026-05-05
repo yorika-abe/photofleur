@@ -228,6 +228,7 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
 
                     if (group.type === 'manual') {
                       const choices = (group.choices || []).filter(Boolean)
+                      if (choices.length === 0) return null
                       const isMultiple = group.multiple === true
                       return (
                         <div key={idx}>
