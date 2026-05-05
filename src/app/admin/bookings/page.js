@@ -132,16 +132,11 @@ export default function AdminBookingsPage() {
 
   function cancelBooking(b) {
     const price = b.final_price || b.slot?.price || 0
-    if (b.payment_method === 'card' && b.square_payment_id) {
-      setRefundModal({ booking: b, refundType: 'full', customAmount: String(price) })
-    } else {
-      const name = b.name || `${b.last_name} ${b.first_name}`
-      if (!confirm(`${name} 様の予約をキャンセルしてメールを送信しますか？`)) return
-      executeCancel(b, 0)
-    }
+    const hasCard = b.payment_method === 'card' && b.square_payment_id
+    setRefundModal({ booking: b, refundType: hasCard ? 'full' : 'none', customAmount: String(price), cancelReason: '' })
   }
 
-  async function executeCancel(b, refundAmount) {
+  async function executeCancel(b, refundAmount, cancelReason) {
     setRefundModal(null)
     setCancelling(b.id)
 
@@ -154,7 +149,7 @@ export default function AdminBookingsPage() {
     const res = await fetch('/api/admin/cancel-booking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...baseBody, refund_amount: refundAmount }),
+      body: JSON.stringify({ ...baseBody, refund_amount: refundAmount, cancel_reason: cancelReason || '' }),
     })
     setCancelling(null)
     if (!res.ok) {
@@ -164,12 +159,10 @@ export default function AdminBookingsPage() {
     }
 
     const data = await res.json()
-    let msg = 'キャンセルメールを発送しました。'
+    let msg = data.mail_ok ? 'キャンセルメールを発送しました。' : '⚠️ メール送信に失敗しました（キャンセル自体は完了）。'
     if (refundAmount > 0) {
       if (data.refund_ok) msg += `　Square返金（¥${Number(refundAmount).toLocaleString()}）が完了しました。`
       else if (data.refund_error) msg += `　※返金エラー: ${data.refund_error}`
-    } else {
-      msg += '返金・キャンセル料の対応は別途行ってください。'
     }
 
     setToast(msg)
@@ -214,50 +207,68 @@ export default function AdminBookingsPage() {
       {refundModal && (() => {
         const b = refundModal.booking
         const price = b.final_price || b.slot?.price || 0
+        const hasCard = b.payment_method === 'card' && b.square_payment_id
         const refundAmount = refundModal.refundType === 'full' ? price
           : refundModal.refundType === 'custom' ? Number(refundModal.customAmount) || 0
           : 0
         return (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ background: '#fff', borderRadius: 20, padding: 32, maxWidth: 420, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
-              <div style={{ fontSize: 17, fontWeight: 700, color: '#2f2244', marginBottom: 6 }}>予約キャンセル・返金</div>
+            <div style={{ background: '#fff', borderRadius: 20, padding: 32, maxWidth: 440, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)', maxHeight: '90vh', overflowY: 'auto' }}>
+              <div style={{ fontSize: 17, fontWeight: 700, color: '#2f2244', marginBottom: 6 }}>予約キャンセル</div>
               <div style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>{b.name || `${b.last_name} ${b.first_name}`} 様　決済額：¥{price.toLocaleString()}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-                {[
-                  { key: 'none', label: '返金なし（キャンセルメールのみ）' },
-                  { key: 'full', label: `全額返金　¥${price.toLocaleString()}` },
-                  { key: 'custom', label: '金額を指定して返金' },
-                ].map(opt => (
-                  <label key={opt.key} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, cursor: 'pointer', padding: '10px 14px', borderRadius: 10, border: `2px solid ${refundModal.refundType === opt.key ? '#2f2244' : '#e5e5e5'}`, background: refundModal.refundType === opt.key ? '#f0eeff' : '#fafafa' }}>
-                    <input type="radio" checked={refundModal.refundType === opt.key} onChange={() => setRefundModal({ ...refundModal, refundType: opt.key })} style={{ accentColor: '#2f2244' }} />
-                    {opt.label}
-                  </label>
-                ))}
-                {refundModal.refundType === 'custom' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
-                    <span style={{ fontSize: 14, color: '#555' }}>返金額</span>
-                    <span style={{ fontSize: 14 }}>¥</span>
-                    <input
-                      type="number"
-                      value={refundModal.customAmount}
-                      onChange={e => setRefundModal({ ...refundModal, customAmount: e.target.value })}
-                      style={{ width: 120, padding: '6px 10px', border: '1px solid #ccc', borderRadius: 8, fontSize: 14 }}
-                      min={0} max={price}
-                    />
-                  </div>
-                )}
+
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#2f2244', marginBottom: 6 }}>キャンセル理由（メールに記載されます）</label>
+                <textarea
+                  value={refundModal.cancelReason}
+                  onChange={e => setRefundModal({ ...refundModal, cancelReason: e.target.value })}
+                  rows={3}
+                  placeholder="例：イベント中止のため、定員超過のため、など"
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: 10, fontSize: 14, resize: 'vertical', boxSizing: 'border-box' }}
+                />
               </div>
-              {refundModal.refundType !== 'none' && (
-                <div style={{ fontSize: 12, color: '#e65100', background: '#fff3e0', borderRadius: 8, padding: '8px 12px', marginBottom: 16 }}>
-                  ⚠️ Square返金：¥{refundAmount.toLocaleString()} を実行します
-                </div>
+
+              {hasCard && (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+                    {[
+                      { key: 'none', label: '返金なし（キャンセルメールのみ）' },
+                      { key: 'full', label: `全額返金　¥${price.toLocaleString()}` },
+                      { key: 'custom', label: '金額を指定して返金' },
+                    ].map(opt => (
+                      <label key={opt.key} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, cursor: 'pointer', padding: '10px 14px', borderRadius: 10, border: `2px solid ${refundModal.refundType === opt.key ? '#2f2244' : '#e5e5e5'}`, background: refundModal.refundType === opt.key ? '#f0eeff' : '#fafafa' }}>
+                        <input type="radio" checked={refundModal.refundType === opt.key} onChange={() => setRefundModal({ ...refundModal, refundType: opt.key })} style={{ accentColor: '#2f2244' }} />
+                        {opt.label}
+                      </label>
+                    ))}
+                    {refundModal.refundType === 'custom' && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 8 }}>
+                        <span style={{ fontSize: 14, color: '#555' }}>返金額</span>
+                        <span style={{ fontSize: 14 }}>¥</span>
+                        <input
+                          type="number"
+                          value={refundModal.customAmount}
+                          onChange={e => setRefundModal({ ...refundModal, customAmount: e.target.value })}
+                          style={{ width: 120, padding: '6px 10px', border: '1px solid #ccc', borderRadius: 8, fontSize: 14 }}
+                          min={0} max={price}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {refundModal.refundType !== 'none' && (
+                    <div style={{ fontSize: 12, color: '#e65100', background: '#fff3e0', borderRadius: 8, padding: '8px 12px', marginBottom: 16 }}>
+                      ⚠️ Square返金：¥{refundAmount.toLocaleString()} を実行します
+                    </div>
+                  )}
+                </>
               )}
+
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => setRefundModal(null)} style={{ flex: 1, padding: '10px 0', border: '1px solid #ddd', borderRadius: 10, background: '#f5f5f5', color: '#555', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
                   戻る
                 </button>
                 <button
-                  onClick={() => executeCancel(b, refundAmount)}
+                  onClick={() => executeCancel(b, refundAmount, refundModal.cancelReason)}
                   disabled={cancelling === b.id}
                   style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: 10, background: '#c62828', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
                   キャンセル実行

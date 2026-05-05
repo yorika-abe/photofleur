@@ -34,7 +34,14 @@ async function checkAdmin(admin) {
   return roles.includes('admin')
 }
 
-function buildCancelHtml({ customerName }) {
+function buildCancelHtml({ customerName, cancelReason }) {
+  const reasonBlock = cancelReason ? `
+    <div style="background:#fff3e0; border-left:4px solid #e65100; border-radius:0 8px 8px 0; padding:14px 18px; margin:0 0 24px;">
+      <p style="margin:0 0 6px; font-size:13px; font-weight:700; color:#e65100;">キャンセル理由</p>
+      <p style="margin:0; font-size:14px; line-height:1.8; color:#555; white-space:pre-wrap;">${cancelReason}</p>
+    </div>
+  ` : ''
+
   return `
     <div style="margin:0; padding:0; background:#f5f5f7; font-family:Arial, sans-serif; color:#2f2244;">
       <div style="max-width:640px; margin:0 auto; padding:32px 16px;">
@@ -48,6 +55,8 @@ function buildCancelHtml({ customerName }) {
               この度はphotofleur撮影会をご予約いただき誠にありがとうございました。<br>
               本メールにてご予約はキャンセルとさせていただきます。
             </p>
+
+            ${reasonBlock}
 
             <p style="margin:0 0 20px; font-size:15px; line-height:1.9; color:#444;">
               こちら都合でキャンセルとなり返金のある方はクレジットカード宛に返金させていただきますのでご確認ください。
@@ -104,7 +113,7 @@ export async function POST(req) {
   const admin = await createSupabaseAdminClient()
   if (!(await checkAdmin(admin))) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { booking_id, private_booking_id, event_product_booking_id, refund_amount } = await req.json()
+  const { booking_id, private_booking_id, event_product_booking_id, refund_amount, cancel_reason } = await req.json()
   const resend = new Resend(process.env.RESEND_API_KEY)
 
   // 特別予約商品のキャンセル
@@ -129,18 +138,20 @@ export async function POST(req) {
     await admin.from('event_products').update({ stock: currentStock + 1 }).eq('id', epb.product_id).catch(() => {})
 
     // メール送信（失敗してもキャンセル自体は完了）
+    let mail_ok = false, mail_error = null
     if (epb.customer_email) {
       const customerName = epb.customer_name || '様'
       const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName }).catch(() => null)
-      await resend.emails.send({
+      const { error: me } = await resend.emails.send({
         from: 'Photo Fleur運営 <onboarding@resend.dev>',
         to: epb.customer_email,
         subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
-        html: templateResult?.html ?? buildCancelHtml({ customerName }),
-      }).catch(() => {})
+        html: templateResult?.html ?? buildCancelHtml({ customerName, cancelReason: cancel_reason }),
+      }).catch(e => ({ error: e }))
+      mail_ok = !me; mail_error = me ? String(me) : null
     }
 
-    return Response.json({ ok: true, refund_ok, refund_error })
+    return Response.json({ ok: true, refund_ok, refund_error, mail_ok, mail_error })
   }
 
   // 非公開商品予約のキャンセル
@@ -167,14 +178,14 @@ export async function POST(req) {
     // メール送信（失敗してもキャンセル自体は完了）
     const customerName = `${pb.last_name || ''}${pb.first_name ? ` ${pb.first_name}` : ''}`.trim() || '様'
     const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName }).catch(() => null)
-    await resend.emails.send({
+    const { error: mail_err } = await resend.emails.send({
       from: 'Photo Fleur運営 <onboarding@resend.dev>',
       to: pb.email,
       subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
-      html: templateResult?.html ?? buildCancelHtml({ customerName }),
-    }).catch(() => {})
+      html: templateResult?.html ?? buildCancelHtml({ customerName, cancelReason: cancel_reason }),
+    }).catch(e => ({ error: e }))
 
-    return Response.json({ ok: true, refund_ok, refund_error })
+    return Response.json({ ok: true, refund_ok, refund_error, mail_ok: !mail_err, mail_error: mail_err ? String(mail_err) : null })
   }
 
   if (!booking_id) return Response.json({ error: 'booking_id required' }, { status: 400 })
@@ -202,14 +213,14 @@ export async function POST(req) {
   // メール送信（失敗してもキャンセル自体は完了）
   const customerName = booking.name || `${booking.last_name || ''} ${booking.first_name || ''}`.trim() || '様'
   const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName }).catch(() => null)
-  await resend.emails.send({
+  const { error: mail_err } = await resend.emails.send({
     from: 'Photo Fleur運営 <onboarding@resend.dev>',
     to: booking.email,
     subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
-    html: templateResult?.html ?? buildCancelHtml({ customerName }),
-  }).catch(() => {})
+    html: templateResult?.html ?? buildCancelHtml({ customerName, cancelReason: cancel_reason }),
+  }).catch(e => ({ error: e }))
 
-  return Response.json({ ok: true, refund_ok, refund_error })
+  return Response.json({ ok: true, refund_ok, refund_error, mail_ok: !mail_err, mail_error: mail_err ? String(mail_err) : null })
   } catch (err) {
     console.error('cancel-booking error:', err)
     return Response.json({ error: 'サーバーエラー: ' + (err?.message || String(err)) }, { status: 500 })
