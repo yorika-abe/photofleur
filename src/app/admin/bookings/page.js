@@ -157,7 +157,11 @@ export default function AdminBookingsPage() {
       body: JSON.stringify({ ...baseBody, refund_amount: refundAmount }),
     })
     setCancelling(null)
-    if (!res.ok) { alert('エラーが発生しました'); return }
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}))
+      alert('エラーが発生しました: ' + (d.error || res.status))
+      return
+    }
 
     const data = await res.json()
     let msg = 'キャンセルメールを発送しました。'

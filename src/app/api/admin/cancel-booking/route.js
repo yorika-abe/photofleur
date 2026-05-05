@@ -100,6 +100,7 @@ function buildCancelHtml({ customerName }) {
 }
 
 export async function POST(req) {
+  try {
   const admin = await createSupabaseAdminClient()
   if (!(await checkAdmin(admin))) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
@@ -122,20 +123,22 @@ export async function POST(req) {
       refund_ok = r.ok; refund_error = r.error || null
     }
 
-    const customerName = epb.customer_name || '様'
+    // DB更新を先に実行（メール失敗に関係なく）
+    await admin.from('event_product_bookings').update({ cancelled_at: new Date().toISOString() }).eq('id', event_product_booking_id)
+    const currentStock = epb.event_products?.stock ?? 0
+    await admin.from('event_products').update({ stock: currentStock + 1 }).eq('id', epb.product_id).catch(() => {})
+
+    // メール送信（失敗してもキャンセル自体は完了）
     if (epb.customer_email) {
-      const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName })
+      const customerName = epb.customer_name || '様'
+      const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName }).catch(() => null)
       await resend.emails.send({
         from: 'Photo Fleur運営 <onboarding@resend.dev>',
         to: epb.customer_email,
         subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
         html: templateResult?.html ?? buildCancelHtml({ customerName }),
-      })
+      }).catch(() => {})
     }
-
-    await admin.from('event_product_bookings').update({ cancelled_at: new Date().toISOString() }).eq('id', event_product_booking_id)
-    const currentStock = epb.event_products?.stock ?? 0
-    await admin.from('event_products').update({ stock: currentStock + 1 }).eq('id', epb.product_id).catch(() => {})
 
     return Response.json({ ok: true, refund_ok, refund_error })
   }
@@ -156,18 +159,20 @@ export async function POST(req) {
       refund_ok = r.ok; refund_error = r.error || null
     }
 
+    // DB更新を先に実行（メール失敗に関係なく）
+    await admin.from('private_bookings').update({ cancelled_at: new Date().toISOString() }).eq('id', private_booking_id)
+    const currentStock = pb.private_products?.stock ?? 0
+    await admin.from('private_products').update({ stock: currentStock + 1 }).eq('id', pb.product_id).catch(() => {})
+
+    // メール送信（失敗してもキャンセル自体は完了）
     const customerName = `${pb.last_name || ''}${pb.first_name ? ` ${pb.first_name}` : ''}`.trim() || '様'
-    const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName })
+    const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName }).catch(() => null)
     await resend.emails.send({
       from: 'Photo Fleur運営 <onboarding@resend.dev>',
       to: pb.email,
       subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
       html: templateResult?.html ?? buildCancelHtml({ customerName }),
-    })
-
-    await admin.from('private_bookings').update({ cancelled_at: new Date().toISOString() }).eq('id', private_booking_id)
-    const currentStock = pb.private_products?.stock ?? 0
-    await admin.from('private_products').update({ stock: currentStock + 1 }).eq('id', pb.product_id).catch(() => {})
+    }).catch(() => {})
 
     return Response.json({ ok: true, refund_ok, refund_error })
   }
@@ -188,21 +193,25 @@ export async function POST(req) {
     refund_ok = r.ok; refund_error = r.error || null
   }
 
-  const customerName = booking.name || `${booking.last_name || ''} ${booking.first_name || ''}`.trim() || '様'
-  const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName })
-  const { error: mailError } = await resend.emails.send({
-    from: 'Photo Fleur運営 <onboarding@resend.dev>',
-    to: booking.email,
-    subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
-    html: templateResult?.html ?? buildCancelHtml({ customerName }),
-  })
-
-  if (mailError) return Response.json({ error: String(mailError) }, { status: 500 })
-
+  // DB更新を先に実行（メール失敗に関係なく）
   await admin.from('bookings').update({ cancelled_at: new Date().toISOString() }).eq('id', booking_id)
   if (booking.slot_id) {
     await admin.from('booking_slots').update({ is_reserved: false }).eq('id', booking.slot_id)
   }
 
+  // メール送信（失敗してもキャンセル自体は完了）
+  const customerName = booking.name || `${booking.last_name || ''} ${booking.first_name || ''}`.trim() || '様'
+  const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName }).catch(() => null)
+  await resend.emails.send({
+    from: 'Photo Fleur運営 <onboarding@resend.dev>',
+    to: booking.email,
+    subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
+    html: templateResult?.html ?? buildCancelHtml({ customerName }),
+  }).catch(() => {})
+
   return Response.json({ ok: true, refund_ok, refund_error })
+  } catch (err) {
+    console.error('cancel-booking error:', err)
+    return Response.json({ error: 'サーバーエラー: ' + (err?.message || String(err)) }, { status: 500 })
+  }
 }
