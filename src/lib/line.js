@@ -1,30 +1,38 @@
 const LINE_CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN
 const LINE_GROUP_ID = process.env.LINE_GROUP_ID
+const LINE_CAMERA_CHANNEL_ACCESS_TOKEN = process.env.LINE_CAMERA_CHANNEL_ACCESS_TOKEN
 
-async function pushMessage(to, message) {
-  if (!LINE_CHANNEL_ACCESS_TOKEN || !to) return { ok: false, reason: 'missing config' }
-
+async function pushMessage(token, to, message) {
+  if (!token || !to) return { ok: false, reason: 'missing config' }
   const res = await fetch('https://api.line.me/v2/bot/message/push', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`,
-    },
-    body: JSON.stringify({
-      to,
-      messages: [{ type: 'text', text: message }],
-    }),
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ to, messages: [{ type: 'text', text: message }] }),
+  })
+  return { ok: res.ok, status: res.status }
+}
+
+async function broadcastMessage(token, message) {
+  if (!token) return { ok: false, reason: 'missing config' }
+  const res = await fetch('https://api.line.me/v2/bot/message/broadcast', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ messages: [{ type: 'text', text: message }] }),
   })
   return { ok: res.ok, status: res.status }
 }
 
 export async function sendLineMessage(lineUserId, message) {
-  return pushMessage(lineUserId, message)
+  return pushMessage(LINE_CHANNEL_ACCESS_TOKEN, lineUserId, message)
 }
 
 export async function sendLineGroupMessage(message) {
   if (!LINE_GROUP_ID) return { ok: false, reason: 'no group id' }
-  return pushMessage(LINE_GROUP_ID, message)
+  return pushMessage(LINE_CHANNEL_ACCESS_TOKEN, LINE_GROUP_ID, message)
+}
+
+export async function broadcastCameraLine(message) {
+  return broadcastMessage(LINE_CAMERA_CHANNEL_ACCESS_TOKEN, message)
 }
 
 export function buildBookingNoticeMessage({ modelName, eventDate, slotLabel, customerName }) {
