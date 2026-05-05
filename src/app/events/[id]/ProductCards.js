@@ -52,9 +52,18 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
     groups.forEach((group, idx) => {
       const val = selections[idx]
       if (group.type === 'models') {
-        const ids = Array.isArray(val) ? val : (val ? [val] : [])
-        selectedModelIds.push(...ids)
-        selectionData['model'] = ids.map(id => eventModels.find(m => m.id === id)?.name).filter(Boolean)
+        if (group.model_choices) {
+          // 新形式: {model_id, model_name, choice}
+          if (val && val.model_id) {
+            selectedModelIds.push(val.model_id)
+            selectionData['model'] = [val.model_name]
+            if (val.choice) selectionData['時間帯'] = val.choice
+          }
+        } else {
+          const ids = Array.isArray(val) ? val : (val ? [val] : [])
+          selectedModelIds.push(...ids)
+          selectionData['model'] = ids.map(id => eventModels.find(m => m.id === id)?.name).filter(Boolean)
+        }
       } else if (group.type === 'slots') {
         selectionData['slot'] = Array.isArray(val) ? val.join(', ') : (val || '')
       } else if (group.type === 'manual') {
@@ -197,6 +206,51 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
                     }
 
                     if (group.type === 'models') {
+                      if (group.model_choices) {
+                        // 新形式: model_choices
+                        const sel = val // {model_id, model_name, choice} or null
+                        const selectedModelData = sel ? group.model_choices.find(mc => mc.model_id === sel.model_id) : null
+                        return (
+                          <div key={idx}>
+                            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#1a3560', marginBottom: 8 }}>
+                              👤 モデルを選択
+                            </label>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              {group.model_choices.map(mc => {
+                                const modelSoldOut = mc.choices.length === 0 && mc.stock === 0
+                                const isSelected = sel?.model_id === mc.model_id
+                                const m = eventModels.find(em => em.id === mc.model_id)
+                                return (
+                                  <label key={mc.model_id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: modelSoldOut ? 'not-allowed' : 'pointer', padding: '8px 10px', borderRadius: 8, background: isSelected ? '#e8f5e9' : modelSoldOut ? '#f5f5f5' : '#f8f8f8', opacity: modelSoldOut ? 0.5 : 1 }}>
+                                    <input type="checkbox" checked={isSelected} disabled={modelSoldOut}
+                                      onChange={() => !modelSoldOut && updateSelection(idx, isSelected ? null : { model_id: mc.model_id, model_name: mc.model_name, choice: null }, false)} />
+                                    {m?.image && <img src={m.image} alt={mc.model_name} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />}
+                                    <span style={{ fontSize: 13, fontWeight: 600 }}>{mc.model_name}{modelSoldOut ? ' (満員)' : ''}</span>
+                                  </label>
+                                )
+                              })}
+                            </div>
+                            {selectedModelData && selectedModelData.choices.length > 0 && (
+                              <div style={{ marginTop: 10 }}>
+                                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#1a3560', marginBottom: 8 }}>
+                                  🕐 時間帯・内容を選択
+                                </label>
+                                <select value={sel?.choice || ''} onChange={e => updateSelection(idx, { ...sel, choice: e.target.value }, false)}
+                                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 14, background: '#fff' }}>
+                                  <option value="">選択してください</option>
+                                  {selectedModelData.choices.map(c => (
+                                    <option key={c.name} value={c.name} disabled={c.stock === 0}>
+                                      {c.name}{c.stock === 0 ? ' (売切)' : c.stock > 0 && c.stock <= 5 ? ` 残${c.stock}` : ''}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      }
+
+                      // 旧形式
                       const isMultiple = group.multiple !== false
                       return (
                         <div key={idx}>

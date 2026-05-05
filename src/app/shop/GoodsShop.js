@@ -220,47 +220,95 @@ function OrderModal({ goods, onClose, onComplete }) {
               <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                 placeholder="090-0000-0000" style={inp} />
             </div>
-            {optionGroups.map((group, i) => (
-              <div key={i} style={{ marginBottom: 14 }}>
-                <label style={lbl}>{group.name} *</label>
-                {group.multiple ? (
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
-                    {group.choices.map(rawChoice => {
-                      const choice = typeof rawChoice === 'string' ? { name: rawChoice, stock: -1 } : rawChoice
-                      const soldOut = choice.stock === 0
-                      const selected = (optionsSelected[group.name] || []).includes(choice.name)
-                      return (
-                        <button key={choice.name} type="button" disabled={soldOut}
-                          onClick={() => {
-                            if (soldOut) return
-                            const current = optionsSelected[group.name] || []
-                            const next = selected ? current.filter(c => c !== choice.name) : [...current, choice.name]
-                            setOptionsSelected(prev => ({ ...prev, [group.name]: next }))
-                          }}
-                          style={{ padding: '7px 14px', borderRadius: 8, border: `2px solid ${selected ? '#1a3560' : soldOut ? '#eee' : '#ddd'}`, background: selected ? '#1a3560' : soldOut ? '#f5f5f5' : '#fff', color: selected ? '#fff' : soldOut ? '#bbb' : '#555', cursor: soldOut ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13, position: 'relative' }}>
-                          {choice.name}{soldOut ? ' (売切)' : choice.stock > 0 && choice.stock <= 5 ? ` 残${choice.stock}` : ''}
-                        </button>
-                      )
-                    })}
+            {optionGroups.map((group, i) => {
+              // 新形式: モデルごとに選択肢が違う
+              if (group.type === 'models' && group.model_choices) {
+                const sel = optionsSelected[group.name] // {model_id, model_name, choice}
+                const selectedModelData = sel ? group.model_choices.find(mc => mc.model_id === sel.model_id) : null
+                return (
+                  <div key={i} style={{ marginBottom: 14 }}>
+                    <label style={lbl}>{group.name} *</label>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                      {group.model_choices.map(mc => {
+                        const modelSoldOut = mc.choices.length === 0 && mc.stock === 0
+                        const isSelected = sel?.model_id === mc.model_id
+                        return (
+                          <button key={mc.model_id} type="button" disabled={modelSoldOut}
+                            onClick={() => {
+                              if (modelSoldOut) return
+                              setOptionsSelected(prev => ({ ...prev, [group.name]: { model_id: mc.model_id, model_name: mc.model_name, choice: null } }))
+                            }}
+                            style={{ padding: '7px 14px', borderRadius: 8, border: `2px solid ${isSelected ? '#1a3560' : modelSoldOut ? '#eee' : '#ddd'}`, background: isSelected ? '#1a3560' : modelSoldOut ? '#f5f5f5' : '#fff', color: isSelected ? '#fff' : modelSoldOut ? '#bbb' : '#555', cursor: modelSoldOut ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13 }}>
+                            {mc.model_name}{modelSoldOut ? ' (満員)' : ''}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {selectedModelData && selectedModelData.choices.length > 0 && (
+                      <div style={{ marginTop: 10 }}>
+                        <label style={{ ...lbl, marginBottom: 6 }}>時間帯・内容を選択 *</label>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          {selectedModelData.choices.map(c => {
+                            const soldOut = c.stock === 0
+                            const isChoiceSelected = sel?.choice === c.name
+                            return (
+                              <button key={c.name} type="button" disabled={soldOut}
+                                onClick={() => { if (!soldOut) setOptionsSelected(prev => ({ ...prev, [group.name]: { ...prev[group.name], choice: c.name } })) }}
+                                style={{ padding: '7px 14px', borderRadius: 8, border: `2px solid ${isChoiceSelected ? '#1a3560' : soldOut ? '#eee' : '#ddd'}`, background: isChoiceSelected ? '#1a3560' : soldOut ? '#f5f5f5' : '#fff', color: isChoiceSelected ? '#fff' : soldOut ? '#bbb' : '#555', cursor: soldOut ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13 }}>
+                                {c.name}{soldOut ? ' (売切)' : c.stock > 0 && c.stock <= 5 ? ` 残${c.stock}` : ''}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
-                    {group.choices.map(rawChoice => {
-                      const choice = typeof rawChoice === 'string' ? { name: rawChoice, stock: -1 } : rawChoice
-                      const soldOut = choice.stock === 0
-                      const selected = optionsSelected[group.name] === choice.name
-                      return (
-                        <button key={choice.name} type="button" disabled={soldOut}
-                          onClick={() => { if (!soldOut) setOptionsSelected(prev => ({ ...prev, [group.name]: choice.name })) }}
-                          style={{ padding: '7px 14px', borderRadius: 8, border: `2px solid ${selected ? '#1a3560' : soldOut ? '#eee' : '#ddd'}`, background: selected ? '#1a3560' : soldOut ? '#f5f5f5' : '#fff', color: selected ? '#fff' : soldOut ? '#bbb' : '#555', cursor: soldOut ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13 }}>
-                          {choice.name}{soldOut ? ' (売切)' : choice.stock > 0 && choice.stock <= 5 ? ` 残${choice.stock}` : ''}
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
+                )
+              }
+
+              // 手動選択肢（従来形式）
+              return (
+                <div key={i} style={{ marginBottom: 14 }}>
+                  <label style={lbl}>{group.name} *</label>
+                  {group.multiple ? (
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                      {group.choices.map(rawChoice => {
+                        const choice = typeof rawChoice === 'string' ? { name: rawChoice, stock: -1 } : rawChoice
+                        const soldOut = choice.stock === 0
+                        const selected = (optionsSelected[group.name] || []).includes(choice.name)
+                        return (
+                          <button key={choice.name} type="button" disabled={soldOut}
+                            onClick={() => {
+                              if (soldOut) return
+                              const current = optionsSelected[group.name] || []
+                              const next = selected ? current.filter(c => c !== choice.name) : [...current, choice.name]
+                              setOptionsSelected(prev => ({ ...prev, [group.name]: next }))
+                            }}
+                            style={{ padding: '7px 14px', borderRadius: 8, border: `2px solid ${selected ? '#1a3560' : soldOut ? '#eee' : '#ddd'}`, background: selected ? '#1a3560' : soldOut ? '#f5f5f5' : '#fff', color: selected ? '#fff' : soldOut ? '#bbb' : '#555', cursor: soldOut ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13 }}>
+                            {choice.name}{soldOut ? ' (売切)' : choice.stock > 0 && choice.stock <= 5 ? ` 残${choice.stock}` : ''}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                      {group.choices.map(rawChoice => {
+                        const choice = typeof rawChoice === 'string' ? { name: rawChoice, stock: -1 } : rawChoice
+                        const soldOut = choice.stock === 0
+                        const selected = optionsSelected[group.name] === choice.name
+                        return (
+                          <button key={choice.name} type="button" disabled={soldOut}
+                            onClick={() => { if (!soldOut) setOptionsSelected(prev => ({ ...prev, [group.name]: choice.name })) }}
+                            style={{ padding: '7px 14px', borderRadius: 8, border: `2px solid ${selected ? '#1a3560' : soldOut ? '#eee' : '#ddd'}`, background: selected ? '#1a3560' : soldOut ? '#f5f5f5' : '#fff', color: selected ? '#fff' : soldOut ? '#bbb' : '#555', cursor: soldOut ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 13 }}>
+                            {choice.name}{soldOut ? ' (売切)' : choice.stock > 0 && choice.stock <= 5 ? ` 残${choice.stock}` : ''}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
 
             <div style={{ marginBottom: 14 }}>
               <label style={lbl}>数量</label>

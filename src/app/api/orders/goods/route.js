@@ -45,15 +45,33 @@ export async function POST(req) {
     const groups = goods.options.groups || []
     let changed = false
     const updatedGroups = groups.map(g => {
+      if (g.type === 'models' && g.model_choices) {
+        // 新形式: model_choices
+        const sel = options_selected[g.name] // {model_id, model_name, choice}
+        if (!sel) return g
+        const updatedModelChoices = g.model_choices.map(mc => {
+          if (mc.model_id !== sel.model_id) return mc
+          if (sel.choice && mc.choices?.length > 0) {
+            const updatedChoices = mc.choices.map(c => {
+              if (c.name === sel.choice && c.stock > 0) { changed = true; return { ...c, stock: c.stock - 1 } }
+              return c
+            })
+            return { ...mc, choices: updatedChoices }
+          } else if (mc.stock > 0) {
+            changed = true
+            return { ...mc, stock: mc.stock - 1 }
+          }
+          return mc
+        })
+        return { ...g, model_choices: updatedModelChoices }
+      }
+      // 手動選択肢（旧形式）
       const selectedVal = options_selected[g.name]
       if (!selectedVal) return g
       const selected = Array.isArray(selectedVal) ? selectedVal : [selectedVal]
       const updatedChoices = (g.choices || []).map(c => {
         const cName = typeof c === 'string' ? c : c.name
-        if (selected.includes(cName) && typeof c !== 'string' && c.stock > 0) {
-          changed = true
-          return { ...c, stock: c.stock - 1 }
-        }
+        if (selected.includes(cName) && typeof c !== 'string' && c.stock > 0) { changed = true; return { ...c, stock: c.stock - 1 } }
         return c
       })
       return { ...g, choices: updatedChoices }

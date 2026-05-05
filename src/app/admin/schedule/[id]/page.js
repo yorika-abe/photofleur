@@ -438,13 +438,26 @@ export default function EventEditPage() {
   }
 
   function startEditProduct(p) {
-    const option_groups = (p.options?.type === 'groups' ? p.options.groups : []).map(g => ({ ...g }))
+    const option_groups = (p.options?.type === 'groups' ? p.options.groups : []).map(g => {
+      if (g.type === 'models' && g.model_choices) {
+        return {
+          ...g,
+          model_choices: g.model_choices.map(mc => ({
+            model_id: mc.model_id || '',
+            model_name: mc.model_name,
+            stock: mc.stock ?? -1,
+            choices: (mc.choices || []).map(c => typeof c === 'string' ? { name: c, stock: -1 } : c),
+          })),
+        }
+      }
+      return { ...g }
+    })
     setNewProduct({ name: p.name, image: p.image || '', description: p.description || '', price: p.price || 0, stock: p.stock || 1, option_groups })
     setEditingProductId(p.id)
   }
 
   function addOptionGroup(type) {
-    const defaults = { slots: { type: 'slots', multiple: false }, models: { type: 'models', multiple: true }, manual: { type: 'manual', name: '', choices: [''], multiple: null } }
+    const defaults = { slots: { type: 'slots', multiple: false }, models: { type: 'models', model_choices: [], multiple: false }, manual: { type: 'manual', name: '', choices: [''], multiple: null } }
     setNewProduct(p => ({ ...p, option_groups: [...p.option_groups, { ...defaults[type] }] }))
   }
   function removeOptionGroup(idx) {
@@ -461,6 +474,66 @@ export default function EventEditPage() {
   }
   function updateGroupChoice(idx, ci, val) {
     setNewProduct(p => ({ ...p, option_groups: p.option_groups.map((g, i) => i === idx ? { ...g, choices: g.choices.map((c, j) => j === ci ? val : c) } : g) }))
+  }
+
+  // モデルグループ用関数（model_choices形式）
+  function toggleModelInProductGroup(idx, model) {
+    setNewProduct(p => ({
+      ...p,
+      option_groups: p.option_groups.map((g, i) => {
+        if (i !== idx) return g
+        const exists = (g.model_choices || []).some(m => m.model_id === model.id)
+        if (exists) return { ...g, model_choices: g.model_choices.filter(m => m.model_id !== model.id) }
+        return { ...g, model_choices: [...(g.model_choices || []), { model_id: model.id, model_name: model.name, stock: -1, choices: [] }] }
+      })
+    }))
+  }
+  function addAllEventModelsToGroup(idx) {
+    const eventModelIds = new Set(entries.map(e => e.model_id))
+    const eventMods = models.filter(m => eventModelIds.has(m.id))
+    setNewProduct(p => ({
+      ...p,
+      option_groups: p.option_groups.map((g, i) => {
+        if (i !== idx) return g
+        const existingIds = new Set((g.model_choices || []).map(m => m.model_id))
+        const newMods = eventMods.filter(m => !existingIds.has(m.id)).map(m => ({ model_id: m.id, model_name: m.name, stock: -1, choices: [] }))
+        return { ...g, model_choices: [...(g.model_choices || []), ...newMods] }
+      })
+    }))
+  }
+  function addProductModelChoice(idx, modelId) {
+    setNewProduct(p => ({
+      ...p,
+      option_groups: p.option_groups.map((g, i) => i !== idx ? g : {
+        ...g, model_choices: (g.model_choices || []).map(m => m.model_id !== modelId ? m : { ...m, choices: [...m.choices, { name: '', stock: -1 }] })
+      })
+    }))
+  }
+  function removeProductModelChoice(idx, modelId, ci) {
+    setNewProduct(p => ({
+      ...p,
+      option_groups: p.option_groups.map((g, i) => i !== idx ? g : {
+        ...g, model_choices: (g.model_choices || []).map(m => m.model_id !== modelId ? m : { ...m, choices: m.choices.filter((_, j) => j !== ci) })
+      })
+    }))
+  }
+  function updateProductModelChoice(idx, modelId, ci, field, val) {
+    setNewProduct(p => ({
+      ...p,
+      option_groups: p.option_groups.map((g, i) => i !== idx ? g : {
+        ...g, model_choices: (g.model_choices || []).map(m => m.model_id !== modelId ? m : {
+          ...m, choices: m.choices.map((c, j) => j !== ci ? c : { ...c, [field]: val })
+        })
+      })
+    }))
+  }
+  function updateProductModelLevelStock(idx, modelId, val) {
+    setNewProduct(p => ({
+      ...p,
+      option_groups: p.option_groups.map((g, i) => i !== idx ? g : {
+        ...g, model_choices: (g.model_choices || []).map(m => m.model_id !== modelId ? m : { ...m, stock: val === '' ? -1 : Number(val) })
+      })
+    }))
   }
 
   async function removeProduct(productId) {
@@ -1016,7 +1089,93 @@ export default function EventEditPage() {
                                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 18, padding: 0 }}>×</button>
                                 </div>
                                 {group.type === 'slots' && <p style={{ fontSize: 11, color: '#888', margin: 0 }}>イベントの予約受付枠が自動で表示されます（単体選択デフォルト）</p>}
-                                {group.type === 'models' && <p style={{ fontSize: 11, color: '#888', margin: 0 }}>エントリーモデルが自動で表示されます（複数選択デフォルト）</p>}
+                                {group.type === 'models' && (() => {
+                                  const eventModelIds = new Set(entries.map(e => e.model_id))
+                                  const mc = group.model_choices || []
+                                  return (
+                                    <div>
+                                      {/* モデル選択ボタン群 */}
+                                      <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+                                        <button type="button" onClick={() => addAllEventModelsToGroup(idx)}
+                                          style={{ fontSize: 11, color: '#2e7d32', background: 'none', border: '1px solid #2e7d32', borderRadius: 5, padding: '3px 8px', cursor: 'pointer', fontWeight: 600 }}>
+                                          参加モデル全員追加
+                                        </button>
+                                        <button type="button" onClick={() => setNewProduct(p => ({ ...p, option_groups: p.option_groups.map((g2, i2) => i2 !== idx ? g2 : { ...g2, model_choices: [] }) }))}
+                                          style={{ fontSize: 11, color: '#888', background: 'none', border: '1px solid #ddd', borderRadius: 5, padding: '3px 8px', cursor: 'pointer' }}>
+                                          クリア
+                                        </button>
+                                        <span style={{ fontSize: 11, color: '#888', alignSelf: 'center' }}>{mc.length}名選択中</span>
+                                      </div>
+                                      {/* 全モデル一覧（参加モデル + 他のモデル） */}
+                                      <div style={{ marginBottom: 8 }}>
+                                        <div style={{ fontSize: 11, color: '#2e7d32', fontWeight: 600, marginBottom: 4 }}>参加モデル</div>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 6 }}>
+                                          {models.filter(m => eventModelIds.has(m.id)).map(m => {
+                                            const isSelected = mc.some(md => md.model_id === m.id)
+                                            return (
+                                              <button key={m.id} type="button" onClick={() => toggleModelInProductGroup(idx, m)}
+                                                style={{ padding: '3px 10px', borderRadius: 7, border: `2px solid ${isSelected ? '#4caf50' : '#ddd'}`, background: isSelected ? '#f1f8e9' : '#fafafa', cursor: 'pointer', fontWeight: isSelected ? 700 : 400, fontSize: 12 }}>
+                                                {isSelected ? '✓ ' : ''}{m.name}
+                                              </button>
+                                            )
+                                          })}
+                                          {models.filter(m => eventModelIds.has(m.id)).length === 0 && <span style={{ fontSize: 11, color: '#bbb' }}>参加モデルなし</span>}
+                                        </div>
+                                        <div style={{ fontSize: 11, color: '#888', fontWeight: 600, marginBottom: 4 }}>その他のモデル</div>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                                          {models.filter(m => !eventModelIds.has(m.id)).map(m => {
+                                            const isSelected = mc.some(md => md.model_id === m.id)
+                                            return (
+                                              <button key={m.id} type="button" onClick={() => toggleModelInProductGroup(idx, m)}
+                                                style={{ padding: '3px 10px', borderRadius: 7, border: `2px solid ${isSelected ? '#4caf50' : '#ddd'}`, background: isSelected ? '#f1f8e9' : '#fafafa', cursor: 'pointer', fontWeight: isSelected ? 700 : 400, fontSize: 12 }}>
+                                                {isSelected ? '✓ ' : ''}{m.name}
+                                              </button>
+                                            )
+                                          })}
+                                          {models.filter(m => !eventModelIds.has(m.id)).length === 0 && <span style={{ fontSize: 11, color: '#bbb' }}>-</span>}
+                                        </div>
+                                      </div>
+                                      {/* 選択済みモデルごとの時間枠・在庫 */}
+                                      {mc.length > 0 && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                          {mc.map(md => (
+                                            <div key={md.model_id} style={{ background: '#f9fff9', border: '1px solid #c5e1a5', borderRadius: 7, padding: '8px 10px' }}>
+                                              <div style={{ fontWeight: 700, fontSize: 12, color: '#2e7d32', marginBottom: 6 }}>{md.model_name}</div>
+                                              {md.choices.length === 0 ? (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+                                                  <span style={{ fontSize: 11, color: '#888' }}>在庫</span>
+                                                  <input type="number" value={md.stock < 0 ? '' : md.stock} placeholder="∞"
+                                                    onChange={e => updateProductModelLevelStock(idx, md.model_id, e.target.value)}
+                                                    style={{ width: 58, padding: '3px 5px', border: '1px solid #ddd', borderRadius: 5, fontSize: 12, textAlign: 'center' }} />
+                                                </div>
+                                              ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 5 }}>
+                                                  {md.choices.map((c, ci) => (
+                                                    <div key={ci} style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                                                      <input value={c.name} onChange={e => updateProductModelChoice(idx, md.model_id, ci, 'name', e.target.value)}
+                                                        placeholder="時間枠・内容"
+                                                        style={{ flex: 1, padding: '4px 6px', border: '1px solid #ddd', borderRadius: 5, fontSize: 12 }} />
+                                                      <span style={{ fontSize: 10, color: '#888', whiteSpace: 'nowrap' }}>在庫</span>
+                                                      <input type="number" value={c.stock < 0 ? '' : c.stock} placeholder="∞"
+                                                        onChange={e => updateProductModelChoice(idx, md.model_id, ci, 'stock', e.target.value === '' ? -1 : Number(e.target.value))}
+                                                        style={{ width: 46, padding: '4px 3px', border: '1px solid #ddd', borderRadius: 5, fontSize: 12, textAlign: 'center' }} />
+                                                      <button type="button" onClick={() => removeProductModelChoice(idx, md.model_id, ci)}
+                                                        style={{ background: 'none', border: 'none', color: '#bbb', fontSize: 15, cursor: 'pointer', padding: '0 2px' }}>×</button>
+                                                    </div>
+                                                  ))}
+                                                </div>
+                                              )}
+                                              <button type="button" onClick={() => addProductModelChoice(idx, md.model_id)}
+                                                style={{ fontSize: 11, color: '#2e7d32', background: 'none', border: '1px solid #c5e1a5', borderRadius: 5, padding: '2px 8px', cursor: 'pointer' }}>
+                                                + 時間枠を追加
+                                              </button>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )
+                                })()}
                                 {group.type === 'manual' && (
                                   <div style={{ marginTop: 6 }}>
                                     <input value={group.name} onChange={e => updateOptionGroup(idx, 'name', e.target.value)}
