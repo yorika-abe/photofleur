@@ -519,7 +519,7 @@ export default function EventEditPage() {
               image={cropSrc}
               crop={crop}
               zoom={zoom}
-              aspect={cropTarget === 'portrait' ? 4 / 5 : cropTarget === 'product' ? 4 / 3 : 16 / 9}
+              aspect={cropTarget === 'portrait' ? 4 / 5 : cropTarget === 'product' ? 1 / 1 : 16 / 9}
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={onCropComplete}
