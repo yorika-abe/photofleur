@@ -87,6 +87,7 @@ export async function POST(req) {
     const templateResult = await renderEmailTemplate(supabase, 'booking-confirmation', {
       customer_name: customerName,
       model_name: modelName,
+      model_image: modelImage,
       event_date: eventDate,
       slot_label: slotLabel,
       price: `¥${Number(displayPrice).toLocaleString()}${is_outdoor ? '（屋外撮影・スタジオ料金割引適用済み）' : ''}`,

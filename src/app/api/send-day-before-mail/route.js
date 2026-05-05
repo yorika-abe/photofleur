@@ -89,10 +89,12 @@ export async function POST(req) {
     const templateResult = await renderEmailTemplate(supabase, 'day-before-reminder', {
       customer_name: customerName,
       model_name: modelName,
+      model_image: modelImage,
       event_date: eventDate,
       slot_label: slotLabel,
       qr_block: qrBlock,
       location_block: buildLocationBlock(event),
+      rules_block: buildRulesBlock(event),
     })
 
     const html = templateResult?.html ?? `
