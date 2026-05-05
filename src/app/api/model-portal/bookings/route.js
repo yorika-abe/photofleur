@@ -39,7 +39,7 @@ export async function GET(req) {
     .select('id, event_id')
     .eq('model_id', model.id)
 
-  if (!entries || entries.length === 0) return Response.json({ events: [] })
+  if (!entries || entries.length === 0) return Response.json({ events: [], past: [] })
 
   const eventIds = entries.map(e => e.event_id).filter(Boolean)
   const { data: eventsData } = eventIds.length
@@ -48,16 +48,20 @@ export async function GET(req) {
 
   const eventMap = Object.fromEntries((eventsData || []).map(ev => [ev.id, ev]))
 
-  const upcomingEntries = entries
+  const allEntries = entries
     .map(e => ({ ...e, events: eventMap[e.event_id] || null }))
-    .filter(e =>
-      e.events && e.events.status !== 'cancelled' && e.events.event_date >= today
-    )
+    .filter(e => e.events && e.events.status !== 'cancelled')
+
+  const upcomingEntries = allEntries
+    .filter(e => e.events.event_date >= today)
     .sort((a, b) => a.events.event_date.localeCompare(b.events.event_date))
 
-  if (upcomingEntries.length === 0) return Response.json({ events: [] })
+  const pastEntries = allEntries
+    .filter(e => e.events.event_date < today)
+    .sort((a, b) => b.events.event_date.localeCompare(a.events.event_date)) // 新しい順
 
-  const entryIds = upcomingEntries.map(e => e.id)
+  const entryIds = allEntries.map(e => e.id)
+  if (entryIds.length === 0) return Response.json({ events: [], past: [] })
 
   // 予約枠を取得
   const { data: slots } = await admin
@@ -91,10 +95,13 @@ export async function GET(req) {
     })
   }
 
-  const events = upcomingEntries.map(e => ({
+  const toEventItem = e => ({
     event: e.events,
     slots: (slotsByEntry[e.id] || []).filter(s => s.slot_order !== 0),
-  }))
+  })
 
-  return Response.json({ events })
+  return Response.json({
+    events: upcomingEntries.map(toEventItem),
+    past: pastEntries.map(toEventItem),
+  })
 }
