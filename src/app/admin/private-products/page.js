@@ -101,7 +101,9 @@ export default function PrivateProductsPage() {
       event_date: p.event_date || '',
       time_label: p.time_label || '',
       stock: p.stock ?? 1,
-      hansellingItems: p.hanselling > 0 ? [{ label: '', amount: p.hanselling }] : [{ label: '', amount: 0 }],
+      hansellingItems: Array.isArray(p.hanselling_items) && p.hanselling_items.length > 0
+        ? p.hanselling_items
+        : (p.hanselling > 0 ? [{ label: '', amount: p.hanselling }] : [{ label: '', amount: 0 }]),
     })
     setExpanded(p.id)
   }
@@ -131,7 +133,7 @@ export default function PrivateProductsPage() {
     const res = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...restForm, price: Number(form.price), stock: Number(form.stock), hanselling }),
+      body: JSON.stringify({ ...restForm, price: Number(form.price), stock: Number(form.stock), hanselling, hanselling_items: form.hansellingItems }),
     })
     setSaving(false)
     if (!res.ok) {

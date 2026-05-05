@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Fragment } from 'react'
 import Link from 'next/link'
 
 const TIER_META = {
@@ -66,6 +66,7 @@ export default function AdminBookingStatusPage() {
   const [neExpandedHistory, setNeExpandedHistory] = useState(null)
   const [neExpandedPrivate, setNeExpandedPrivate] = useState(false)
   const [neExpandedGoods, setNeExpandedGoods] = useState(false)
+  const [neExpandedCosts, setNeExpandedCosts] = useState(new Set())
   const [productHansellingMap, setProductHansellingMap] = useState({})
 
   const todayStr = new Date().toISOString().split('T')[0]
@@ -307,20 +308,26 @@ export default function AdminBookingStatusPage() {
     const goodsRevenue = gds.reduce((s, o) => s + (o.goods?.price || 0) * (o.quantity || 1), 0)
     const totalRevenue = privateRevenue + goodsRevenue
     const c = costs[month] || {}
-    const privateHansellingMode = c.privateHansellingMode || 'auto'
-    const goodsHansellingMode = c.goodsHansellingMode || 'auto'
-    const privateHansellingAuto = priv.reduce((s, b) => s + (b.product?.hanselling || 0), 0)
-    const goodsHansellingAuto = gds.reduce((s, o) => s + (o.goods?.hanselling || 0) * (o.quantity || 1), 0)
-    const privateHanselling = privateHansellingMode === 'auto' ? privateHansellingAuto : (c.privateHansellingFlat || 0)
-    const goodsHanselling = goodsHansellingMode === 'auto' ? goodsHansellingAuto : (c.goodsHansellingFlat || 0)
+
+    function getPrivTotal(b) {
+      const saved = c.privateCosts?.[b.id]
+      if (saved) return saved.reduce((s, i) => s + (Number(i.amount) || 0), 0)
+      const items = b.product?.hanselling_items
+      if (Array.isArray(items) && items.length > 0) return items.reduce((s, i) => s + (Number(i.amount) || 0), 0)
+      return b.product?.hanselling || 0
+    }
+    function getGoodsTotal(o) {
+      const saved = c.goodsCosts?.[o.id]
+      if (saved) return saved.reduce((s, i) => s + (Number(i.amount) || 0), 0)
+      return (o.goods?.hanselling || 0) * (o.quantity || 1)
+    }
+
+    const privateHanselling = priv.reduce((s, b) => s + getPrivTotal(b), 0)
+    const goodsHanselling = gds.reduce((s, o) => s + getGoodsTotal(o), 0)
     const hanselling = privateHanselling + goodsHanselling
     const otherCosts = c.otherCosts || 0
     const grossProfit = totalRevenue - hanselling - otherCosts
-    return {
-      priv, gds, privateRevenue, goodsRevenue, totalRevenue,
-      privateHanselling, goodsHanselling, hanselling, otherCosts, grossProfit,
-      privateHansellingAuto, goodsHansellingAuto, privateHansellingMode, goodsHansellingMode,
-    }
+    return { priv, gds, privateRevenue, goodsRevenue, totalRevenue, privateHanselling, goodsHanselling, hanselling, otherCosts, grossProfit }
   }
 
   function updateNeCost(month, key, value) {
@@ -328,6 +335,33 @@ export default function AdminBookingStatusPage() {
     const next = { ...neCosts, [month]: { ...(neCosts[month] || {}), [key]: isMode ? value : (Number(value) || 0) } }
     setNeCosts(next)
     try { localStorage.setItem('pf_nonevent_costs', JSON.stringify(next)) } catch {}
+  }
+
+  function getNeCostItems(month, type, id, defaultItemsFn) {
+    const key = type === 'private' ? 'privateCosts' : 'goodsCosts'
+    return neCosts[month]?.[key]?.[id] || defaultItemsFn()
+  }
+
+  function updateNeCostItems(month, type, id, items) {
+    const key = type === 'private' ? 'privateCosts' : 'goodsCosts'
+    const next = {
+      ...neCosts,
+      [month]: {
+        ...(neCosts[month] || {}),
+        [key]: { ...(neCosts[month]?.[key] || {}), [id]: items },
+      }
+    }
+    setNeCosts(next)
+    try { localStorage.setItem('pf_nonevent_costs', JSON.stringify(next)) } catch {}
+  }
+
+  function toggleNeCostExpand(id) {
+    setNeExpandedCosts(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
 
   function handleNeSave(month, stats) {
@@ -489,7 +523,7 @@ export default function AdminBookingStatusPage() {
                     const active = m === month
                     const saved = neSavedList.includes(m)
                     return (
-                      <button key={m} onClick={() => { setNeSelectedMonth(m); setNeExpandedPrivate(false); setNeExpandedGoods(false) }}
+                      <button key={m} onClick={() => { setNeSelectedMonth(m); setNeExpandedPrivate(false); setNeExpandedGoods(false); setNeExpandedCosts(new Set()) }}
                         style={{ padding: '7px 14px', borderRadius: 16, border: `2px solid ${active ? '#7b1fa2' : '#e5e5e5'}`, background: active ? '#f3e5f5' : '#fff', color: active ? '#7b1fa2' : '#666', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
                         {m.replace('-', '年').replace(/(\d{2})$/, mo => parseInt(mo) + '月')}
                         {saved && <span style={{ marginLeft: 4, fontSize: 10, background: '#ce93d8', color: '#fff', borderRadius: 3, padding: '1px 5px' }}>保存済</span>}
@@ -524,29 +558,72 @@ export default function AdminBookingStatusPage() {
                     </button>
                     {neExpandedPrivate && (
                       <div style={{ overflowX: 'auto', borderTop: '1px solid #f0f0f0' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 460, fontSize: 13 }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560, fontSize: 13 }}>
                           <thead>
                             <tr style={{ background: '#fafafa' }}>
-                              {['予約日', 'お名前', '商品', '開催日', '支払', '金額'].map(h => (
+                              {['予約日', 'お名前', '商品', '開催日', '支払', '金額', '販管費'].map(h => (
                                 <th key={h} style={{ padding: '9px 14px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#888', borderBottom: '1px solid #f0f0f0', whiteSpace: 'nowrap' }}>{h}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody>
-                            {stats.priv.map(b => (
-                              <tr key={b.id} style={{ borderBottom: '1px solid #f5f5f5' }}>
-                                <td style={{ padding: '9px 14px', color: '#aaa', whiteSpace: 'nowrap' }}>{new Date(b.created_at).toLocaleDateString('ja-JP')}</td>
-                                <td style={{ padding: '9px 14px', fontWeight: 600, color: '#333' }}>{b.last_name}{b.first_name ? ` ${b.first_name}` : ''}</td>
-                                <td style={{ padding: '9px 14px', color: '#555' }}>{b.product?.title || '—'}</td>
-                                <td style={{ padding: '9px 14px', color: '#555', whiteSpace: 'nowrap' }}>{b.product?.event_date || '—'}</td>
-                                <td style={{ padding: '9px 14px' }}>
-                                  <span style={{ fontSize: 11, background: b.payment_method === 'card' ? '#e8f5e9' : '#fff3e0', color: b.payment_method === 'card' ? '#388e3c' : '#e65100', borderRadius: 3, padding: '2px 6px', fontWeight: 600 }}>
-                                    {b.payment_method === 'card' ? 'カード' : '現金'}
-                                  </span>
-                                </td>
-                                <td style={{ padding: '9px 14px', fontWeight: 700, color: '#7b1fa2' }}>¥{(b.product?.price || 0).toLocaleString()}</td>
-                              </tr>
-                            ))}
+                            {stats.priv.map(b => {
+                              const defaultItems = (() => {
+                                const items = b.product?.hanselling_items
+                                if (Array.isArray(items) && items.length > 0) return items
+                                const h = b.product?.hanselling || 0
+                                return [{ label: '販管費', amount: h }]
+                              })()
+                              const costItems = getNeCostItems(month, 'private', b.id, () => defaultItems)
+                              const costTotal = costItems.reduce((s, i) => s + (Number(i.amount) || 0), 0)
+                              const isCostExp = neExpandedCosts.has('p_' + b.id)
+                              return (
+                                <Fragment key={b.id}>
+                                  <tr style={{ borderBottom: isCostExp ? 'none' : '1px solid #f5f5f5' }}>
+                                    <td style={{ padding: '9px 14px', color: '#aaa', whiteSpace: 'nowrap' }}>{new Date(b.created_at).toLocaleDateString('ja-JP')}</td>
+                                    <td style={{ padding: '9px 14px', fontWeight: 600, color: '#333' }}>{b.last_name}{b.first_name ? ` ${b.first_name}` : ''}</td>
+                                    <td style={{ padding: '9px 14px', color: '#555' }}>{b.product?.title || '—'}</td>
+                                    <td style={{ padding: '9px 14px', color: '#555', whiteSpace: 'nowrap' }}>{b.product?.event_date || '—'}</td>
+                                    <td style={{ padding: '9px 14px' }}>
+                                      <span style={{ fontSize: 11, background: b.payment_method === 'card' ? '#e8f5e9' : '#fff3e0', color: b.payment_method === 'card' ? '#388e3c' : '#e65100', borderRadius: 3, padding: '2px 6px', fontWeight: 600 }}>
+                                        {b.payment_method === 'card' ? 'カード' : '現金'}
+                                      </span>
+                                    </td>
+                                    <td style={{ padding: '9px 14px', fontWeight: 700, color: '#7b1fa2' }}>¥{(b.product?.price || 0).toLocaleString()}</td>
+                                    <td style={{ padding: '9px 14px' }}>
+                                      <button onClick={() => toggleNeCostExpand('p_' + b.id)}
+                                        style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, border: '1px solid #ddd', background: isCostExp ? '#f3e5f5' : '#fff', color: '#555', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                        −¥{costTotal.toLocaleString()} {isCostExp ? '▲' : '▼'}
+                                      </button>
+                                    </td>
+                                  </tr>
+                                  {isCostExp && (
+                                    <tr>
+                                      <td colSpan={7} style={{ padding: '8px 14px 12px', background: '#fdf8ff', borderBottom: '1px solid #f0f0f0' }}>
+                                        <div style={{ fontSize: 12, color: '#7b1fa2', fontWeight: 600, marginBottom: 8 }}>{b.product?.title || '商品'} の販管費</div>
+                                        {costItems.map((item, i) => (
+                                          <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 5, alignItems: 'center' }}>
+                                            <input value={item.label} onChange={e => updateNeCostItems(month, 'private', b.id, costItems.map((it, idx) => idx === i ? { ...it, label: e.target.value } : it))}
+                                              placeholder="項目名" style={{ padding: '4px 6px', border: '1px solid #ddd', borderRadius: 5, fontSize: 12, flex: 2 }} />
+                                            <input type="number" min="0" value={item.amount} onChange={e => updateNeCostItems(month, 'private', b.id, costItems.map((it, idx) => idx === i ? { ...it, amount: Number(e.target.value) || 0 } : it))}
+                                              style={{ padding: '4px 6px', border: '1px solid #ddd', borderRadius: 5, fontSize: 12, width: 90, textAlign: 'right' }} />
+                                            {costItems.length > 1 && (
+                                              <button onClick={() => updateNeCostItems(month, 'private', b.id, costItems.filter((_, idx) => idx !== i))}
+                                                style={{ padding: '2px 7px', border: '1px solid #ddd', borderRadius: 4, background: '#fff', color: '#e53935', cursor: 'pointer', fontSize: 14 }}>×</button>
+                                            )}
+                                          </div>
+                                        ))}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                                          <button onClick={() => updateNeCostItems(month, 'private', b.id, [...costItems, { label: '', amount: 0 }])}
+                                            style={{ fontSize: 11, color: '#7b1fa2', background: 'none', border: '1px solid #7b1fa2', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>+ 追加</button>
+                                          <span style={{ fontSize: 12, fontWeight: 700, color: '#c62828' }}>合計 −¥{costTotal.toLocaleString()}</span>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </Fragment>
+                              )
+                            })}
                           </tbody>
                         </table>
                       </div>
@@ -564,29 +641,68 @@ export default function AdminBookingStatusPage() {
                     </button>
                     {neExpandedGoods && (
                       <div style={{ overflowX: 'auto', borderTop: '1px solid #f0f0f0' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 460, fontSize: 13 }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560, fontSize: 13 }}>
                           <thead>
                             <tr style={{ background: '#fafafa' }}>
-                              {['注文日', 'お名前', '商品', '数量', '支払', '金額'].map(h => (
+                              {['注文日', 'お名前', '商品', '数量', '支払', '金額', '販管費'].map(h => (
                                 <th key={h} style={{ padding: '9px 14px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#888', borderBottom: '1px solid #f0f0f0', whiteSpace: 'nowrap' }}>{h}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody>
-                            {stats.gds.map(o => (
-                              <tr key={o.id} style={{ borderBottom: '1px solid #f5f5f5' }}>
-                                <td style={{ padding: '9px 14px', color: '#aaa', whiteSpace: 'nowrap' }}>{new Date(o.created_at).toLocaleDateString('ja-JP')}</td>
-                                <td style={{ padding: '9px 14px', fontWeight: 600, color: '#333' }}>{o.last_name}{o.first_name ? ` ${o.first_name}` : ''}</td>
-                                <td style={{ padding: '9px 14px', color: '#555' }}>{o.goods?.title || '—'}</td>
-                                <td style={{ padding: '9px 14px', textAlign: 'center', color: '#555' }}>{o.quantity || 1}</td>
-                                <td style={{ padding: '9px 14px' }}>
-                                  <span style={{ fontSize: 11, background: o.payment_method === 'card' ? '#e8f5e9' : '#fff3e0', color: o.payment_method === 'card' ? '#388e3c' : '#e65100', borderRadius: 3, padding: '2px 6px', fontWeight: 600 }}>
-                                    {o.payment_method === 'card' ? 'カード' : '現金'}
-                                  </span>
-                                </td>
-                                <td style={{ padding: '9px 14px', fontWeight: 700, color: '#e65100' }}>¥{((o.goods?.price || 0) * (o.quantity || 1)).toLocaleString()}</td>
-                              </tr>
-                            ))}
+                            {stats.gds.map(o => {
+                              const h = (o.goods?.hanselling || 0) * (o.quantity || 1)
+                              const defaultItems = [{ label: '販管費', amount: h }]
+                              const costItems = getNeCostItems(month, 'goods', o.id, () => defaultItems)
+                              const costTotal = costItems.reduce((s, i) => s + (Number(i.amount) || 0), 0)
+                              const isCostExp = neExpandedCosts.has('g_' + o.id)
+                              return (
+                                <Fragment key={o.id}>
+                                  <tr style={{ borderBottom: isCostExp ? 'none' : '1px solid #f5f5f5' }}>
+                                    <td style={{ padding: '9px 14px', color: '#aaa', whiteSpace: 'nowrap' }}>{new Date(o.created_at).toLocaleDateString('ja-JP')}</td>
+                                    <td style={{ padding: '9px 14px', fontWeight: 600, color: '#333' }}>{o.last_name}{o.first_name ? ` ${o.first_name}` : ''}</td>
+                                    <td style={{ padding: '9px 14px', color: '#555' }}>{o.goods?.title || '—'}</td>
+                                    <td style={{ padding: '9px 14px', textAlign: 'center', color: '#555' }}>{o.quantity || 1}</td>
+                                    <td style={{ padding: '9px 14px' }}>
+                                      <span style={{ fontSize: 11, background: o.payment_method === 'card' ? '#e8f5e9' : '#fff3e0', color: o.payment_method === 'card' ? '#388e3c' : '#e65100', borderRadius: 3, padding: '2px 6px', fontWeight: 600 }}>
+                                        {o.payment_method === 'card' ? 'カード' : '現金'}
+                                      </span>
+                                    </td>
+                                    <td style={{ padding: '9px 14px', fontWeight: 700, color: '#e65100' }}>¥{((o.goods?.price || 0) * (o.quantity || 1)).toLocaleString()}</td>
+                                    <td style={{ padding: '9px 14px' }}>
+                                      <button onClick={() => toggleNeCostExpand('g_' + o.id)}
+                                        style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, border: '1px solid #ddd', background: isCostExp ? '#fff3e0' : '#fff', color: '#555', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                        −¥{costTotal.toLocaleString()} {isCostExp ? '▲' : '▼'}
+                                      </button>
+                                    </td>
+                                  </tr>
+                                  {isCostExp && (
+                                    <tr>
+                                      <td colSpan={7} style={{ padding: '8px 14px 12px', background: '#fffbe6', borderBottom: '1px solid #f0f0f0' }}>
+                                        <div style={{ fontSize: 12, color: '#e65100', fontWeight: 600, marginBottom: 8 }}>{o.goods?.title || 'グッズ'} の販管費</div>
+                                        {costItems.map((item, i) => (
+                                          <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 5, alignItems: 'center' }}>
+                                            <input value={item.label} onChange={e => updateNeCostItems(month, 'goods', o.id, costItems.map((it, idx) => idx === i ? { ...it, label: e.target.value } : it))}
+                                              placeholder="項目名" style={{ padding: '4px 6px', border: '1px solid #ddd', borderRadius: 5, fontSize: 12, flex: 2 }} />
+                                            <input type="number" min="0" value={item.amount} onChange={e => updateNeCostItems(month, 'goods', o.id, costItems.map((it, idx) => idx === i ? { ...it, amount: Number(e.target.value) || 0 } : it))}
+                                              style={{ padding: '4px 6px', border: '1px solid #ddd', borderRadius: 5, fontSize: 12, width: 90, textAlign: 'right' }} />
+                                            {costItems.length > 1 && (
+                                              <button onClick={() => updateNeCostItems(month, 'goods', o.id, costItems.filter((_, idx) => idx !== i))}
+                                                style={{ padding: '2px 7px', border: '1px solid #ddd', borderRadius: 4, background: '#fff', color: '#e53935', cursor: 'pointer', fontSize: 14 }}>×</button>
+                                            )}
+                                          </div>
+                                        ))}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                                          <button onClick={() => updateNeCostItems(month, 'goods', o.id, [...costItems, { label: '', amount: 0 }])}
+                                            style={{ fontSize: 11, color: '#e65100', background: 'none', border: '1px solid #e65100', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>+ 追加</button>
+                                          <span style={{ fontSize: 12, fontWeight: 700, color: '#c62828' }}>合計 −¥{costTotal.toLocaleString()}</span>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </Fragment>
+                              )
+                            })}
                           </tbody>
                         </table>
                       </div>
@@ -610,55 +726,19 @@ export default function AdminBookingStatusPage() {
                       <span style={{ fontSize: 13, color: '#1a3560', fontWeight: 700 }}>売上合計</span>
                       <span style={{ fontWeight: 700, color: '#1a3560', fontSize: 16 }}>¥{stats.totalRevenue.toLocaleString()}</span>
                     </div>
-                    {/* 非公開商品の販管費 */}
-                    <div style={{ padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
-                        <div>
-                          <div style={{ fontSize: 13, color: '#555', fontWeight: 600, marginBottom: 5 }}>非公開商品の販管費</div>
-                          <div style={{ display: 'flex', gap: 4 }}>
-                            {[['auto', '1在庫あたり（自動）'], ['flat', '総額入力']].map(([v, lbl]) => (
-                              <button key={v} type="button"
-                                onClick={() => updateNeCost(month, 'privateHansellingMode', v)}
-                                style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, border: `1px solid ${stats.privateHansellingMode === v ? '#7b1fa2' : '#ddd'}`, background: stats.privateHansellingMode === v ? '#7b1fa2' : '#fff', color: stats.privateHansellingMode === v ? '#fff' : '#888', cursor: 'pointer', fontWeight: 600 }}>
-                                {lbl}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {stats.privateHansellingMode === 'auto'
-                            ? <span style={{ fontSize: 12, color: '#aaa' }}>{stats.priv.length}件 自動計算</span>
-                            : <input type="number" min="0" value={neCosts[month]?.privateHansellingFlat || 0}
-                                onChange={e => updateNeCost(month, 'privateHansellingFlat', e.target.value)}
-                                style={{ ...cinp, width: 100 }} />}
-                          <span style={{ fontSize: 13, color: '#c62828', fontWeight: 700, minWidth: 80, textAlign: 'right' }}>−¥{stats.privateHanselling.toLocaleString()}</span>
-                        </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
+                      <div>
+                        <div style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>非公開商品の販管費</div>
+                        <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{stats.priv.length}件 合計（各予約の▼から編集）</div>
                       </div>
+                      <span style={{ fontSize: 13, color: '#c62828', fontWeight: 700, minWidth: 80, textAlign: 'right' }}>−¥{stats.privateHanselling.toLocaleString()}</span>
                     </div>
-                    {/* グッズの販管費 */}
-                    <div style={{ padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
-                        <div>
-                          <div style={{ fontSize: 13, color: '#555', fontWeight: 600, marginBottom: 5 }}>グッズの販管費</div>
-                          <div style={{ display: 'flex', gap: 4 }}>
-                            {[['auto', '1在庫あたり（自動）'], ['flat', '総額入力']].map(([v, lbl]) => (
-                              <button key={v} type="button"
-                                onClick={() => updateNeCost(month, 'goodsHansellingMode', v)}
-                                style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, border: `1px solid ${stats.goodsHansellingMode === v ? '#e65100' : '#ddd'}`, background: stats.goodsHansellingMode === v ? '#e65100' : '#fff', color: stats.goodsHansellingMode === v ? '#fff' : '#888', cursor: 'pointer', fontWeight: 600 }}>
-                                {lbl}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {stats.goodsHansellingMode === 'auto'
-                            ? <span style={{ fontSize: 12, color: '#aaa' }}>{stats.gds.length}件 自動計算</span>
-                            : <input type="number" min="0" value={neCosts[month]?.goodsHansellingFlat || 0}
-                                onChange={e => updateNeCost(month, 'goodsHansellingFlat', e.target.value)}
-                                style={{ ...cinp, width: 100 }} />}
-                          <span style={{ fontSize: 13, color: '#c62828', fontWeight: 700, minWidth: 80, textAlign: 'right' }}>−¥{stats.goodsHanselling.toLocaleString()}</span>
-                        </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
+                      <div>
+                        <div style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>グッズの販管費</div>
+                        <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{stats.gds.length}件 合計（各注文の▼から編集）</div>
                       </div>
+                      <span style={{ fontSize: 13, color: '#c62828', fontWeight: 700, minWidth: 80, textAlign: 'right' }}>−¥{stats.goodsHanselling.toLocaleString()}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '2px solid #ddd', flexWrap: 'wrap', gap: 8 }}>
                       <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>その他経費</span>

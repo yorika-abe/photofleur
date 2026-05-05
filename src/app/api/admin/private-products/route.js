@@ -55,6 +55,7 @@ export async function POST(req) {
       time_label: body.time_label || null,
       stock: body.stock ?? 1,
       hanselling: body.hanselling || 0,
+      hanselling_items: body.hanselling_items || null,
       is_active: true,
     })
     .select()

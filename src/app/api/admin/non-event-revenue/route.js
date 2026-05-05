@@ -17,7 +17,7 @@ export async function GET() {
 
   const [{ data: privateBookings }, { data: goodsOrders }] = await Promise.all([
     admin.from('private_bookings')
-      .select('id, last_name, first_name, email, payment_method, created_at, product_id, private_products(id, title, price, event_date, time_label, hanselling)')
+      .select('id, last_name, first_name, email, payment_method, created_at, product_id, private_products(id, title, price, event_date, time_label, hanselling, hanselling_items)')
       .is('cancelled_at', null)
       .order('created_at', { ascending: false }),
     admin.from('goods_orders')

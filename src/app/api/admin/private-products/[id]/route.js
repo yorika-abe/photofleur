@@ -63,6 +63,7 @@ export async function PATCH(req, { params }) {
       time_label: body.time_label || null,
       stock: body.stock,
       hanselling: body.hanselling,
+      hanselling_items: body.hanselling_items,
       is_active: body.is_active,
     })
     .eq('id', id)
