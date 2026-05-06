@@ -12,10 +12,12 @@ export async function GET(req) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
-  // 明日（JST基準）= UTCで10:00に実行するので、tomorrow UTCがJSTの締め切り日と一致する
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const tomorrowStr = tomorrow.toISOString().split('T')[0]
+  // 22:00 UTC = 07:00 JST（翌日）→ JSTで「明日」の日付を取得
+  const now = new Date()
+  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000)
+  const jstTomorrow = new Date(jst)
+  jstTomorrow.setUTCDate(jstTomorrow.getUTCDate() + 1)
+  const tomorrowStr = jstTomorrow.toISOString().split('T')[0]
 
   const { data: deadlines } = await supabase
     .from('shift_request_dates')

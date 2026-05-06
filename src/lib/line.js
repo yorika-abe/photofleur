@@ -46,7 +46,7 @@ export function buildBookingNoticeMessage({ modelName, eventDate, slotLabel, cus
 詳細は管理画面をご確認ください。`
 }
 
-export function buildDayBeforeNoticeMessage({ modelName, eventDate, slotLabel, locationName }) {
+export function buildDayBeforeNoticeMessage({ eventDate, slotLabel, locationName }) {
   return `【PhotoFleur】明日の撮影のお知らせ🌸
 
 ${eventDate}（明日）の撮影があります。
@@ -68,9 +68,6 @@ export function buildShiftOpenMessage() {
 }
 
 export function buildShiftDeadlineReminderMessage() {
-  return `お疲れ様です🎀🫧
-📢シフト提出締め切り前日になりました。
-
-未提出者は連絡確認次第モデルポータルからシフト提出日お願いします🙇‍♂️
-🔗${SITE_URL}`
+  return `🗓️シフト提出締め切りの前日になりました。
+シフト未提出の子は提出をお願いします🙇‍♂️`
 }

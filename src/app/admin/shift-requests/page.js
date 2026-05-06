@@ -98,6 +98,9 @@ export default function ShiftRequestsPage() {
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
   const [listFilter, setListFilter] = useState('active')
+  const [lineNotify, setLineNotify] = useState(null) // { deadline: 'YYYY-MM-DD' } | null
+  const [lineSending, setLineSending] = useState(false)
+  const [lineSent, setLineSent] = useState(false)
 
   async function load() {
     const res = await fetch('/api/admin/shift-requests')
@@ -159,10 +162,28 @@ export default function ShiftRequestsPage() {
     }
 
     setSaving(false)
+    const savedDeadline = common.deadline
     setSelected({})
     setCommon({ deadline: '', notes: '' })
     setShowForm(false)
+    setLineSent(false)
+    setLineNotify(savedDeadline ? { deadline: savedDeadline } : null)
     load()
+  }
+
+  async function sendShiftLineNotify() {
+    if (!lineNotify) return
+    setLineSending(true)
+    const d = new Date(lineNotify.deadline + 'T00:00:00')
+    const deadlineLabel = `${d.getMonth() + 1}月${d.getDate()}日`
+    const message = `🗓️シフト提出が解放されました。\nモデル画面から確認して提出してください。\n締め切りは${deadlineLabel}までです！`
+    await fetch('/api/admin/line-broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, channel: 'group' }),
+    })
+    setLineSending(false)
+    setLineSent(true)
   }
 
   async function deleteRequest(id) {
@@ -289,6 +310,32 @@ export default function ShiftRequestsPage() {
             {saving ? '保存中...' : `${selectedEntries.length}日分を登録する`}
           </button>
         </form>
+      )}
+
+      {/* LINE告知バナー */}
+      {lineNotify && (
+        <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 12, padding: '14px 18px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <div style={{ fontWeight: 700, color: '#2e7d32', fontSize: 14, marginBottom: 4 }}>💬 モデフルでLINE告知しますか？</div>
+            <div style={{ fontSize: 13, color: '#388e3c' }}>
+              🗓️シフト提出が解放されました。モデル画面から確認して提出してください。締め切りは{(() => { const d = new Date(lineNotify.deadline + 'T00:00:00'); return `${d.getMonth() + 1}月${d.getDate()}日` })()}までです！
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            {lineSent ? (
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#2e7d32' }}>✅ 送信済み</span>
+            ) : (
+              <button onClick={sendShiftLineNotify} disabled={lineSending}
+                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: lineSending ? '#ccc' : '#06c755', color: '#fff', fontWeight: 700, fontSize: 13, cursor: lineSending ? 'not-allowed' : 'pointer' }}>
+                {lineSending ? '送信中...' : 'はい、送信する'}
+              </button>
+            )}
+            <button onClick={() => setLineNotify(null)}
+              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', color: '#888', fontSize: 13, cursor: 'pointer' }}>
+              閉じる
+            </button>
+          </div>
+        </div>
       )}
 
       {/* 登録済みリスト */}
