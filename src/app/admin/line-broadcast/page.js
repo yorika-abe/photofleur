@@ -5,9 +5,9 @@ import Link from 'next/link'
 const MAX_CHARS = 500
 
 const TABS = [
-  { id: 'all', label: 'モデル全体', icon: '👥', from: 'モデル向けLINEアカウント', desc: 'モデル全体グループLINEに送信' },
-  { id: 'individual', label: 'モデル個人', icon: '👤', from: 'モデル向けLINEアカウント', desc: '1人のモデルを選んで個別グループLINEに送信' },
-  { id: 'birthday', label: '誕生日', icon: '🎂', from: 'モデル向けLINEアカウント', desc: 'モデルの誕生日にグループLINEでお祝いメッセージを送信' },
+  { id: 'all', label: 'モデル全体', icon: '👥', from: 'モデフル', desc: 'モデル全体グループLINEに送信' },
+  { id: 'individual', label: 'モデル個人', icon: '👤', from: 'モデフル', desc: '1人のモデルを選んで個別グループLINEに送信' },
+  { id: 'birthday', label: '誕生日', icon: '🎂', from: 'モデフル', desc: 'モデルの誕生日にグループLINEでお祝いメッセージを送信' },
   { id: 'camera', label: '公式LINE', icon: '📣', from: 'カメラマン向け公式LINEアカウント', desc: '公式LINEの全フォロワーに一斉ブロードキャスト' },
 ]
 
