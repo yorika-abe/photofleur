@@ -30,7 +30,7 @@ export async function GET() {
 
   const { data: models } = await admin
     .from('models')
-    .select('id, name')
+    .select('id, name, image')
     .order('name')
 
   return Response.json({ products, models: models || [] })
@@ -56,6 +56,7 @@ export async function POST(req) {
       stock: body.stock ?? 1,
       hanselling: body.hanselling || 0,
       hanselling_items: body.hanselling_items || null,
+      require_event_details: body.require_event_details ?? false,
       is_active: true,
     })
     .select()

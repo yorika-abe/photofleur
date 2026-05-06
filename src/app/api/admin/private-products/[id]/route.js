@@ -26,7 +26,7 @@ export async function GET(_req, { params }) {
 
   const { data: bookings } = await admin
     .from('private_bookings')
-    .select('*')
+    .select('id, last_name, first_name, email, phone, nickname, sns_url, payment_method, notes, event_date_input, meeting_place, shooting_time, is_cancelled, created_at')
     .eq('product_id', id)
     .order('created_at', { ascending: false })
 
@@ -64,6 +64,7 @@ export async function PATCH(req, { params }) {
       stock: body.stock,
       hanselling: body.hanselling,
       hanselling_items: body.hanselling_items,
+      require_event_details: body.require_event_details,
       is_active: body.is_active,
     })
     .eq('id', id)

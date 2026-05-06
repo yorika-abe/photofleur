@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from 'react'
 const SQUARE_APP_ID = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID
 const SQUARE_LOCATION_ID = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || ''
 
-export default function PrivateProductBookingForm({ token, paymentMethod, price = 0 }) {
+export default function PrivateProductBookingForm({ token, paymentMethod, price = 0, requireEventDetails = false }) {
   const [form, setForm] = useState({
     last_name: '', first_name: '', last_name_kana: '', first_name_kana: '',
-    nickname: '', email: '', phone: '',
+    nickname: '', email: '', phone: '', sns_url: '',
     payment_method: paymentMethod === 'both' ? 'card' : paymentMethod,
+    event_date_input: '', meeting_place: '', shooting_time: '',
     notes: '',
   })
   const [submitting, setSubmitting] = useState(false)
@@ -35,14 +36,13 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
         nickname: profile?.nickname || f.nickname,
         email: email || f.email,
         phone: profile?.phone || f.phone,
+        sns_url: profile?.sns_url || f.sns_url,
       }))
     }).catch(() => {})
   }, [])
 
   useEffect(() => {
-    if (selectedPayment === 'card') {
-      loadSquareSDK()
-    }
+    if (selectedPayment === 'card') loadSquareSDK()
   }, [selectedPayment])
 
   async function loadSquareSDK() {
@@ -73,6 +73,11 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
   async function submit(e) {
     e.preventDefault()
     if (!form.last_name || !form.email) { setError('氏名・メールアドレスは必須です'); return }
+    if (requireEventDetails) {
+      if (!form.event_date_input) { setError('開催日を入力してください'); return }
+      if (!form.meeting_place) { setError('集合・解散場所を入力してください'); return }
+      if (!form.shooting_time) { setError('撮影時間を入力してください'); return }
+    }
     setSubmitting(true)
     setError('')
 
@@ -171,6 +176,12 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
           placeholder="090-0000-0000" style={inp} />
       </div>
 
+      <div style={{ marginBottom: 14 }}>
+        <label style={lbl}>SNS URL（Instagram等）</label>
+        <input value={form.sns_url} onChange={e => setForm(f => ({ ...f, sns_url: e.target.value }))}
+          placeholder="https://www.instagram.com/..." style={inp} />
+      </div>
+
       {paymentMethod === 'both' && (
         <div style={{ marginBottom: 14 }}>
           <label style={lbl}>お支払方法 *</label>
@@ -200,6 +211,27 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
         <div style={{ marginBottom: 14 }}>
           <div id="card-container-private" style={{ minHeight: 90 }}></div>
           {!squareReady && <p style={{ color: '#999', fontSize: 13, marginTop: 8 }}>カード入力フォームを読み込み中...</p>}
+        </div>
+      )}
+
+      {requireEventDetails && (
+        <div style={{ background: '#f3f6ff', border: '1px solid #c5cae9', borderRadius: 10, padding: '14px 16px', marginBottom: 14 }}>
+          <div style={{ fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 12 }}>撮影詳細（必須）</div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={lbl}>開催日 *</label>
+            <input type="date" value={form.event_date_input} onChange={e => setForm(f => ({ ...f, event_date_input: e.target.value }))}
+              required style={inp} />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={lbl}>集合・解散場所 *</label>
+            <input value={form.meeting_place} onChange={e => setForm(f => ({ ...f, meeting_place: e.target.value }))}
+              placeholder="例: 渋谷駅ハチ公前" required style={inp} />
+          </div>
+          <div>
+            <label style={lbl}>撮影時間 *</label>
+            <input value={form.shooting_time} onChange={e => setForm(f => ({ ...f, shooting_time: e.target.value }))}
+              placeholder="例: 13:00〜15:00" required style={inp} />
+          </div>
         </div>
       )}
 

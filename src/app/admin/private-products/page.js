@@ -12,7 +12,7 @@ const PAYMENT_OPTIONS = [
 
 const EMPTY_FORM = {
   title: '', description: '', price: 0, image: '', payment_method: 'both',
-  model_ids: [], event_date: '', time_label: '', stock: 1,
+  model_ids: [], stock: 1, require_event_details: false,
   hansellingItems: [{ label: '', amount: 0 }],
 }
 
@@ -32,6 +32,7 @@ export default function PrivateProductsPage() {
   const [toast, setToast] = useState(null)
   const [copiedToken, setCopiedToken] = useState(null)
   const fileRef = useRef()
+  const formRef = useRef()
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -57,9 +58,7 @@ export default function PrivateProductsPage() {
     if (fileRef.current) fileRef.current.value = ''
   }
 
-  const onCropComplete = useCallback((_, pixels) => {
-    setCroppedAreaPixels(pixels)
-  }, [])
+  const onCropComplete = useCallback((_, pixels) => { setCroppedAreaPixels(pixels) }, [])
 
   async function confirmCrop() {
     if (!cropSrc || !croppedAreaPixels) return
@@ -98,19 +97,32 @@ export default function PrivateProductsPage() {
       image: p.image || '',
       payment_method: p.payment_method || 'both',
       model_ids: Array.isArray(p.model_ids) ? p.model_ids : (typeof p.model_ids === 'string' ? JSON.parse(p.model_ids) : (p.model_id ? [p.model_id] : [])),
-      event_date: p.event_date || '',
-      time_label: p.time_label || '',
       stock: p.stock ?? 1,
+      require_event_details: p.require_event_details ?? false,
       hansellingItems: Array.isArray(p.hanselling_items) && p.hanselling_items.length > 0
         ? p.hanselling_items
         : (p.hanselling > 0 ? [{ label: '', amount: p.hanselling }] : [{ label: '', amount: 0 }]),
     })
     setExpanded(p.id)
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
 
   function cancelEdit() {
     setEditId(null)
     setForm(EMPTY_FORM)
+  }
+
+  function toggleModel(m) {
+    setForm(f => {
+      const checked = (f.model_ids || []).includes(m.id)
+      const newIds = checked ? f.model_ids.filter(id => id !== m.id) : [...(f.model_ids || []), m.id]
+      // モデルが1人だけ選択された場合、そのモデルの画像を自動セット
+      let newImage = f.image
+      if (!checked && newIds.length === 1 && m.image) {
+        newImage = m.image
+      }
+      return { ...f, model_ids: newIds, image: newImage }
+    })
   }
 
   function updateHansellingItem(i, key, value) {
@@ -183,22 +195,14 @@ export default function PrivateProductsPage() {
       {cropSrc && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column' }}>
           <div style={{ flex: 1, position: 'relative' }}>
-            <Cropper
-              image={cropSrc}
-              crop={crop}
-              zoom={zoom}
-              aspect={4 / 3}
-              onCropChange={setCrop}
-              onZoomChange={setZoom}
-              onCropComplete={onCropComplete}
-            />
+            <Cropper image={cropSrc} crop={crop} zoom={zoom} aspect={4 / 3}
+              onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={onCropComplete} />
           </div>
           <div style={{ background: '#1a1a2e', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, whiteSpace: 'nowrap' }}>ズーム</span>
               <input type="range" min={1} max={3} step={0.01} value={zoom}
-                onChange={e => setZoom(Number(e.target.value))}
-                style={{ flex: 1, accentColor: '#1a3560' }} />
+                onChange={e => setZoom(Number(e.target.value))} style={{ flex: 1, accentColor: '#1a3560' }} />
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => { URL.revokeObjectURL(cropSrc); setCropSrc(null) }}
@@ -224,7 +228,7 @@ export default function PrivateProductsPage() {
       <p style={{ color: '#888', fontSize: 13, marginBottom: 28 }}>リンクを共有した相手だけが予約できる商品を管理します</p>
 
       {/* 作成・編集フォーム */}
-      <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e5e5', padding: '20px 24px', marginBottom: 28 }}>
+      <div ref={formRef} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e5e5', padding: '20px 24px', marginBottom: 28 }}>
         <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560', marginBottom: 16 }}>{formTitle}</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           <div style={{ gridColumn: '1 / -1' }}>
@@ -265,8 +269,7 @@ export default function PrivateProductsPage() {
                 const checked = (form.model_ids || []).includes(m.id)
                 return (
                   <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', background: checked ? '#c8e6c9' : '#f5f5f5', border: `1px solid ${checked ? '#4caf50' : '#ddd'}`, borderRadius: 20, padding: '5px 12px', fontSize: 13, fontWeight: checked ? 700 : 400 }}>
-                    <input type="checkbox" checked={checked} style={{ display: 'none' }}
-                      onChange={() => setForm(f => ({ ...f, model_ids: checked ? f.model_ids.filter(id => id !== m.id) : [...(f.model_ids || []), m.id] }))} />
+                    <input type="checkbox" checked={checked} style={{ display: 'none' }} onChange={() => toggleModel(m)} />
                     {checked ? '✓ ' : ''}{m.name}
                   </label>
                 )
@@ -274,14 +277,17 @@ export default function PrivateProductsPage() {
               {models.length === 0 && <span style={{ fontSize: 12, color: '#bbb' }}>モデルがいません</span>}
             </div>
           </div>
-          <div>
-            <label style={lbl}>開催日（任意）</label>
-            <input type="date" value={form.event_date} onChange={e => setForm(f => ({ ...f, event_date: e.target.value }))} style={inp} />
-          </div>
-          <div>
-            <label style={lbl}>時間枠（任意）</label>
-            <input value={form.time_label} onChange={e => setForm(f => ({ ...f, time_label: e.target.value }))}
-              placeholder="13:00〜14:00" style={inp} />
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
+              <input type="checkbox" checked={form.require_event_details}
+                onChange={e => setForm(f => ({ ...f, require_event_details: e.target.checked }))} />
+              <span style={{ fontWeight: 600 }}>予約者に開催日・集合場所・撮影時間の入力を必須にする</span>
+            </label>
+            {form.require_event_details && (
+              <p style={{ fontSize: 12, color: '#888', marginTop: 4, marginLeft: 24 }}>
+                予約フォームに「開催日・集合解散場所・撮影時間」欄が必須項目として表示されます
+              </p>
+            )}
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={lbl}>販管費 <span style={{ fontWeight: 400, color: '#bbb', fontSize: 11 }}>（モデル報酬、スタッフ報酬、モデル交通費往復、スタッフ交通費往復）</span></label>
@@ -355,12 +361,11 @@ export default function PrivateProductsPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <span style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>{p.title}</span>
                       {!p.is_active && <span style={{ fontSize: 11, background: '#ffcdd2', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>非公開</span>}
+                      {p.require_event_details && <span style={{ fontSize: 11, background: '#e8f5e9', color: '#2e7d32', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>詳細入力必須</span>}
                     </div>
                     <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
                       ¥{p.price.toLocaleString()} ／ {payLabel} ／ 残{p.stock}件
                       {p.models && <span> ／ {p.models.name}</span>}
-                      {p.event_date && <span> ／ {p.event_date}</span>}
-                      {p.time_label && <span> {p.time_label}</span>}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
@@ -389,7 +394,7 @@ export default function PrivateProductsPage() {
                     {p.booking_count > 0 && (
                       <div style={{ marginBottom: 12 }}>
                         <div style={{ fontWeight: 600, fontSize: 13, color: '#1a3560', marginBottom: 8 }}>予約一覧</div>
-                        <BookingList productId={p.id} />
+                        <BookingList productId={p.id} onCancel={load} />
                       </div>
                     )}
                     <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
@@ -413,27 +418,60 @@ export default function PrivateProductsPage() {
   )
 }
 
-function BookingList({ productId }) {
+function BookingList({ productId, onCancel }) {
   const [bookings, setBookings] = useState(null)
-  useEffect(() => {
-    fetch(`/api/admin/private-products/${productId}`)
-      .then(r => r.json())
-      .then(d => setBookings(d.bookings || []))
-  }, [productId])
+
+  async function load() {
+    const d = await fetch(`/api/admin/private-products/${productId}`).then(r => r.json())
+    setBookings(d.bookings || [])
+  }
+
+  useEffect(() => { load() }, [productId])
+
+  async function cancelBooking(b) {
+    if (!confirm(`${b.last_name} ${b.first_name || ''}さんの予約をキャンセルしますか？在庫が1件戻ります。`)) return
+    await fetch(`/api/admin/private-bookings/${b.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cancel: true }),
+    })
+    await load()
+    onCancel?.()
+  }
 
   if (!bookings) return <p style={{ fontSize: 12, color: '#aaa' }}>読み込み中...</p>
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {bookings.map(b => (
-        <div key={b.id} style={{ background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: '8px 12px', fontSize: 13, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 600 }}>{b.last_name} {b.first_name}</span>
-          <span style={{ color: '#888' }}>{b.email}</span>
-          {b.phone && <span style={{ color: '#888' }}>{b.phone}</span>}
-          <span style={{ fontSize: 11, background: b.payment_method === 'card' ? '#e8f5e9' : '#fff3e0', color: b.payment_method === 'card' ? '#388e3c' : '#e65100', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>
-            {b.payment_method === 'card' ? 'カード' : '現金'}
-          </span>
-          {b.notes && <span style={{ color: '#999', fontSize: 12 }}>{b.notes}</span>}
-          <span style={{ marginLeft: 'auto', color: '#bbb', fontSize: 11 }}>{new Date(b.created_at).toLocaleDateString('ja-JP')}</span>
+        <div key={b.id} style={{ background: b.is_cancelled ? '#fafafa' : '#fff', border: `1px solid ${b.is_cancelled ? '#eee' : '#e5e5e5'}`, borderRadius: 8, padding: '8px 12px', fontSize: 13, opacity: b.is_cancelled ? 0.6 : 1 }}>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontWeight: 600 }}>{b.last_name} {b.first_name}</span>
+            {b.nickname && <span style={{ color: '#888' }}>({b.nickname})</span>}
+            <span style={{ color: '#888' }}>{b.email}</span>
+            {b.phone && <span style={{ color: '#888' }}>{b.phone}</span>}
+            <span style={{ fontSize: 11, background: b.payment_method === 'card' ? '#e8f5e9' : '#fff3e0', color: b.payment_method === 'card' ? '#388e3c' : '#e65100', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>
+              {b.payment_method === 'card' ? 'カード' : '現金'}
+            </span>
+            {b.is_cancelled && (
+              <span style={{ fontSize: 11, background: '#ffebee', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontWeight: 700 }}>キャンセル</span>
+            )}
+            {!b.is_cancelled && (
+              <button onClick={() => cancelBooking(b)}
+                style={{ marginLeft: 'auto', fontSize: 11, padding: '2px 10px', borderRadius: 6, border: '1px solid #e53935', background: '#fff', color: '#e53935', cursor: 'pointer', fontWeight: 600 }}>
+                キャンセル
+              </button>
+            )}
+            <span style={{ color: '#bbb', fontSize: 11, marginLeft: b.is_cancelled ? 'auto' : 0 }}>{new Date(b.created_at).toLocaleDateString('ja-JP')}</span>
+          </div>
+          {(b.event_date_input || b.meeting_place || b.shooting_time) && (
+            <div style={{ marginTop: 6, fontSize: 12, color: '#666', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              {b.event_date_input && <span>📅 {b.event_date_input}</span>}
+              {b.meeting_place && <span>📍 {b.meeting_place}</span>}
+              {b.shooting_time && <span>⏰ {b.shooting_time}</span>}
+            </div>
+          )}
+          {b.sns_url && <div style={{ marginTop: 4, fontSize: 12, color: '#1a3560' }}>{b.sns_url}</div>}
+          {b.notes && <div style={{ marginTop: 4, fontSize: 12, color: '#999' }}>{b.notes}</div>}
         </div>
       ))}
     </div>

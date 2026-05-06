@@ -141,6 +141,30 @@ const CAMERA_TEMPLATES = [
 
 const INDIVIDUAL_TEMPLATES = [
   {
+    key: 'private_booking_notify',
+    label: '非公開予約通知',
+    trigger: '非公開リンクから予約が入った時（自動）',
+    vars: [
+      { key: '{{event_date}}', desc: '撮影日（顧客入力）' },
+      { key: '{{meeting_place}}', desc: '集合・解散場所（顧客入力）' },
+      { key: '{{shooting_time}}', desc: '撮影時間（顧客入力）' },
+      { key: '{{nickname}}', desc: 'ニックネーム' },
+      { key: '{{sns_url}}', desc: 'SNS URL' },
+    ],
+  },
+  {
+    key: 'private_day_before',
+    label: '非公開予約前日案内',
+    trigger: '撮影前日の夜23時（自動cron）',
+    vars: [
+      { key: '{{event_date}}', desc: '撮影日' },
+      { key: '{{meeting_place}}', desc: '集合・解散場所' },
+      { key: '{{shooting_time}}', desc: '撮影時間' },
+      { key: '{{nickname}}', desc: 'ニックネーム' },
+      { key: '{{sns_url}}', desc: 'SNS URL' },
+    ],
+  },
+  {
     key: 'model_booking_notify',
     label: '予約通知',
     trigger: '予約が入った時（自動）',

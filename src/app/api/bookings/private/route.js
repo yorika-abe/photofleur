@@ -1,10 +1,27 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import { sendLineMessage } from '@/lib/line'
+import { DEFAULTS } from '@/app/api/admin/line-templates/route'
 import { randomUUID } from 'crypto'
+
+function applyVars(template, vars) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '')
+}
+
+const days = ['日', '月', '火', '水', '木', '金', '土']
+
+function formatDate(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr + 'T00:00:00')
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}（${days[d.getDay()]}）`
+}
 
 export async function POST(req) {
   const body = await req.json()
-  const { token, last_name, first_name, email, phone, payment_method, notes, square_payment_id } = body
+  const {
+    token, last_name, first_name, email, phone, nickname, sns_url,
+    payment_method, notes, square_payment_id,
+    event_date_input, meeting_place, shooting_time,
+  } = body
 
   if (!token || !last_name || !email) {
     return Response.json({ error: 'Missing required fields' }, { status: 400 })
@@ -14,7 +31,7 @@ export async function POST(req) {
 
   const { data: product } = await admin
     .from('private_products')
-    .select('id, stock, payment_method, is_active, title, price, event_date, time_label, model_id, models(id, name, line_id, image)')
+    .select('id, stock, payment_method, is_active, title, price, model_id, require_event_details, models(id, name, line_id, image)')
     .eq('token', token)
     .single()
 
@@ -25,7 +42,13 @@ export async function POST(req) {
     return Response.json({ error: 'Out of stock' }, { status: 409 })
   }
 
-  // 支払方法チェック
+  // require_event_details のバリデーション
+  if (product.require_event_details) {
+    if (!event_date_input) return Response.json({ error: '開催日を入力してください' }, { status: 400 })
+    if (!meeting_place) return Response.json({ error: '集合・解散場所を入力してください' }, { status: 400 })
+    if (!shooting_time) return Response.json({ error: '撮影時間を入力してください' }, { status: 400 })
+  }
+
   const allowed = product.payment_method
   if (allowed === 'cash' && payment_method !== 'cash') {
     return Response.json({ error: 'Invalid payment method' }, { status: 400 })
@@ -43,33 +66,30 @@ export async function POST(req) {
     first_name: first_name || null,
     email,
     phone: phone || null,
+    nickname: nickname || null,
+    sns_url: sns_url || null,
     payment_method,
     notes: notes || null,
+    event_date_input: event_date_input || null,
+    meeting_place: meeting_place || null,
+    shooting_time: shooting_time || null,
     qr_token: qrToken,
     square_payment_id: square_payment_id || null,
+    is_cancelled: false,
   })
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
-  // 在庫を1減らす
-  await admin
-    .from('private_products')
-    .update({ stock: product.stock - 1 })
-    .eq('id', product.id)
+  await admin.from('private_products').update({ stock: product.stock - 1 }).eq('id', product.id)
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || ''
 
-  // 確定メール送信
   fetch(`${baseUrl}/api/send-private-booking-mail`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      customerName,
-      email,
-      qr_token: qrToken,
+      customerName, email, qr_token: qrToken,
       productTitle: product.title,
-      eventDate: product.event_date || null,
-      timeLabel: product.time_label || null,
       price: product.price || 0,
       modelName: product.models?.name || null,
       modelImage: product.models?.image || null,
@@ -78,27 +98,22 @@ export async function POST(req) {
 
   // モデルにLINE通知
   const model = product.models
-  if (model) {
-    const days = ['日', '月', '火', '水', '木', '金', '土']
-    const dateStr = product.event_date
-      ? (() => { const d = new Date(product.event_date + 'T00:00:00'); return `${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）` })()
-      : '日程未定'
-    const message = `【PhotoFleur】非公開商品の予約が入りました🌸
+  if (model?.line_id) {
+    const { data: tmplRow } = await admin.from('line_templates').select('body').eq('key', 'private_booking_notify').single()
+    const template = tmplRow?.body ?? DEFAULTS.private_booking_notify
 
-モデル名：${model.name}
-商品名：${product.title}
-日程：${dateStr}${product.time_label ? ` ${product.time_label}` : ''}
-お客様名：${customerName}
+    const message = applyVars(template, {
+      event_date: formatDate(event_date_input),
+      meeting_place: meeting_place || '',
+      shooting_time: shooting_time || '',
+      nickname: nickname || customerName,
+      sns_url: sns_url || '',
+    })
 
-詳細は管理画面をご確認ください。`
-
-    const result = model.line_id
-      ? await sendLineMessage(model.line_id, message)
-      : { ok: false, reason: 'no line_id' }
-
+    const result = await sendLineMessage(model.line_id, message)
     await admin.from('line_notifications').insert({
       model_id: model.id,
-      type: 'booking',
+      type: 'private_booking',
       message,
       status: result.ok ? 'sent' : 'failed',
     }).catch(() => {})

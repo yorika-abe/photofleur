@@ -131,5 +131,44 @@ export async function GET(req) {
     }
   }
 
+  // 非公開予約の前日通知
+  const { data: tmplPrivate } = await supabase.from('line_templates').select('body').eq('key', 'private_day_before').single()
+  const privateTemplate = tmplPrivate?.body ?? DEFAULTS.private_day_before
+
+  const { data: privateBookings } = await supabase
+    .from('private_bookings')
+    .select(`
+      id, nickname, sns_url, event_date_input, meeting_place, shooting_time,
+      private_products(model_id, models(id, name, line_id))
+    `)
+    .eq('is_cancelled', false)
+    .eq('event_date_input', tomorrowStr)
+
+  for (const pb of privateBookings || []) {
+    const model = pb.private_products?.models
+    if (!model?.line_id) continue
+
+    const d = new Date(pb.event_date_input + 'T00:00:00')
+    const dateStr = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}（${days[d.getDay()]}）`
+
+    const message = applyVars(privateTemplate, {
+      event_date: dateStr,
+      meeting_place: pb.meeting_place || '',
+      shooting_time: pb.shooting_time || '',
+      nickname: pb.nickname || '',
+      sns_url: pb.sns_url || '',
+    }).trim()
+
+    const result = await sendLineMessage(model.line_id, message)
+    await supabase.from('line_notifications').insert({
+      model_id: model.id,
+      type: 'private_day_before',
+      message,
+      status: result.ok ? 'sent' : 'failed',
+    }).catch(() => {})
+
+    if (result.ok) sentCount++
+  }
+
   return Response.json({ ok: true, sent: sentCount })
 }
