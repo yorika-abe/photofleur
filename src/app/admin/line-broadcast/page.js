@@ -145,10 +145,11 @@ const INDIVIDUAL_TEMPLATES = [
     label: '予約通知',
     trigger: '予約が入った時（自動）',
     vars: [
-      { key: '{{model_name}}', desc: 'モデル名' },
       { key: '{{event_date}}', desc: '撮影日' },
+      { key: '{{event_title}}', desc: 'イベントタイトル' },
       { key: '{{slot_label}}', desc: '時間枠' },
-      { key: '{{customer_name}}', desc: 'お客様名' },
+      { key: '{{nickname}}', desc: 'ニックネーム' },
+      { key: '{{sns_url}}', desc: 'SNS URL' },
     ],
   },
   {

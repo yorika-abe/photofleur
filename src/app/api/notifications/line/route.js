@@ -81,14 +81,13 @@ export async function POST(request) {
   }
 
   if (type === 'booking' && slot_id) {
-    // Send booking notification to model
     const { data: slot } = await supabase
       .from('booking_slots')
       .select(`
         slot_label,
         event_entries(
           models(id, name, line_id),
-          events(event_date, location_name)
+          events(event_date, title)
         )
       `)
       .eq('id', slot_id)
@@ -108,22 +107,23 @@ export async function POST(request) {
 
     const { data: booking } = await supabase
       .from('bookings')
-      .select('name')
+      .select('name, nickname, sns_url')
       .eq('slot_id', slot_id)
       .order('created_at', { ascending: false })
       .limit(1)
       .single()
 
     const days = ['日', '月', '火', '水', '木', '金', '土']
-    const d = new Date(event.event_date)
+    const d = new Date(event.event_date + 'T00:00:00')
     const dateStr = `${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`
 
     const tmpl = await getTemplate(supabase, 'model_booking_notify')
     const message = applyVars(tmpl, {
-      model_name: model.name,
       event_date: dateStr,
+      event_title: event.title || '',
       slot_label: slot.slot_label,
-      customer_name: booking?.name || '不明',
+      nickname: booking?.nickname || booking?.name || '不明',
+      sns_url: booking?.sns_url || '',
     })
 
     // モデル個人に送信（line_idがある場合）
