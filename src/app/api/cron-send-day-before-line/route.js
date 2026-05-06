@@ -48,9 +48,8 @@ function buildVars(event, entry) {
 
   const event_page_url = event.event_page_url ?? ''
 
-  const model_lunch_note = event.model_lunch_note
-    ? `【🍽ランチ】\n${event.model_lunch_note}\n\n`
-    : ''
+  const lunchText = event.model_lunch_note || '昼食代として　1000円支給もしくは撮影会にてご用意（飲食店の場合あり）します。'
+  const model_lunch_note = `【🍽ランチ】\n${lunchText}\n\n`
 
   let extra_sections = ''
   if (event.model_extra_note) {
