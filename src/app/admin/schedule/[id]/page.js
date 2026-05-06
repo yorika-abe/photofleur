@@ -1407,8 +1407,8 @@ export default function EventEditPage() {
 
             <div>
               <label style={label}>伝達事項（都度変更）</label>
-              <textarea value={event.model_extra_note || ''} onChange={e => updateField('model_extra_note', e.target.value)} rows={4} style={{ ...inp, resize: 'vertical' }}
-                placeholder="当日の特記事項、注意事項など..." />
+              <textarea value={event.model_extra_note || ''} onChange={e => updateField('model_extra_note', e.target.value)} rows={6} style={{ ...inp, resize: 'vertical' }}
+                placeholder={'追加セクションは【タイトル】形式で入力してください。\n例：\n【注意事項】\n遅刻の場合はご連絡ください。\n\n【持ち物】\n動きやすい服装でお越しください。'} />
             </div>
           </div>
 
