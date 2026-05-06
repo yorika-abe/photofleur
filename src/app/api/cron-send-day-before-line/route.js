@@ -26,12 +26,16 @@ function buildVars(event, entry) {
     ? toJSTTimeStr(reservedSlots[0].start_time, event.model_assembly_offset_minutes ?? 30)
     : ''
 
+  // 集合場所: meeting_* が未入力なら公開の address にフォールバック
+  const placeName = event.meeting_place || event.location_name || ''
+  const streetAddress = event.meeting_address || event.address || ''
+  const mapUrl = event.meeting_map_url || event.map_address || ''
   let location_info = ''
-  if (event.location_name || event.meeting_address) {
-    if (event.location_name) location_info += `【📍集合場所】\n場所：${event.location_name}\n`
-    else location_info += `【📍集合場所】\n`
-    if (event.meeting_address) location_info += `住所：${event.meeting_address}\n`
-    if (event.meeting_map_url) location_info += `Google MAP：${event.meeting_map_url}\n`
+  if (placeName || streetAddress) {
+    location_info += `【📍集合場所】\n`
+    if (placeName) location_info += `場所：${placeName}\n`
+    if (streetAddress) location_info += `住所：${streetAddress}\n`
+    if (mapUrl) location_info += `Google MAP：${mapUrl}\n`
     location_info += `（集合場所）\n\n`
   }
 
@@ -86,7 +90,8 @@ export async function GET(req) {
   const { data: events } = await supabase
     .from('events')
     .select(`
-      id, event_date, location_name, meeting_address, meeting_map_url,
+      id, event_date, location_name, address, map_address,
+      meeting_place, meeting_address, meeting_map_url,
       event_page_url, model_lunch_note, model_extra_note, model_assembly_offset_minutes,
       event_entries(
         id,
