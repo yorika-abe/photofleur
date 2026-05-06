@@ -44,7 +44,7 @@ export default function AdminBookingsPage() {
     // 非公開商品予約
     const { data: privateBookingsRaw } = await supabase
       .from('private_bookings')
-      .select('id, last_name, first_name, email, phone, payment_method, notes, qr_token, cancelled_at, created_at, product_id, private_products(id, title, price, event_date, time_label, model_id, models(id, name))')
+      .select('id, last_name, first_name, last_name_kana, first_name_kana, email, phone, sns_url, nickname, payment_method, notes, qr_token, cancelled_at, created_at, product_id, event_date_input, meeting_place, shooting_time, private_products(id, title, price, event_date, time_label, model_id, models(id, name))')
       .order('created_at', { ascending: false })
 
     const privateBookings = (privateBookingsRaw || []).map(b => ({
@@ -422,7 +422,9 @@ export default function AdminBookingsPage() {
                           <>
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>商品</span>{b.product?.title}</div>
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>モデル</span>{b.model?.name || '—'}</div>
-                            {b.event?.event_date && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>開催日</span>{b.event.event_date}{b.product?.time_label ? ` ${b.product.time_label}` : ''}</div>}
+                            {b.event_date_input && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>開催日</span>{b.event_date_input}</div>}
+                            {b.meeting_place && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>集合場所</span>{b.meeting_place}</div>}
+                            {b.shooting_time && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>撮影時間</span>{b.shooting_time}</div>}
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>支払</span>{b.payment_method === 'card' ? 'カード決済' : '当日現金'}</div>
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>金額</span>¥{price.toLocaleString()}</div>
                           </>
