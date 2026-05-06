@@ -86,6 +86,7 @@ export default function EventEditPage() {
 
   const [recalculating, setRecalculating] = useState(null) // entryId
   const [recalcDone, setRecalcDone] = useState(null) // entryId
+  const [lineTemplates, setLineTemplates] = useState(null)
 
   const [cropSrc, setCropSrc] = useState(null)
   const [cropTarget, setCropTarget] = useState(null) // 'main' | 'portrait'
@@ -95,6 +96,11 @@ export default function EventEditPage() {
 
 
   useEffect(() => { load() }, [id])
+  useEffect(() => {
+    if (activeTab === 'notify' && !lineTemplates) {
+      fetch('/api/admin/line-templates').then(r => r.json()).then(d => setLineTemplates(d.templates || {}))
+    }
+  }, [activeTab])
 
   async function load() {
     try {
@@ -514,6 +520,17 @@ export default function EventEditPage() {
       body: JSON.stringify({ productId, stock: parseInt(stock) || 1 }),
     })
     setProducts(prev => prev.map(p => p.id === productId ? { ...p, stock: parseInt(stock) || 1 } : p))
+  }
+
+  async function updateProductNotifyModel(productId, notifyModel) {
+    const product = products.find(p => p.id === productId)
+    if (!product) return
+    const updatedOptions = { ...(product.options || {}), notify_model: notifyModel }
+    await fetch(`/api/admin/events/${id}/products`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId, options: updatedOptions }),
+    })
+    setProducts(prev => prev.map(p => p.id === productId ? { ...p, options: updatedOptions } : p))
   }
 
 
@@ -1066,7 +1083,15 @@ export default function EventEditPage() {
               {products.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       <p style={{ fontSize: 12, fontWeight: 600, color: '#555', margin: 0 }}>登録済み予約商品</p>
-                      {products.map(p => (
+                      {products.map(p => {
+                        const hasModelLayer = (() => {
+                          const opts = p.options
+                          if (opts?.type === 'layers') return (opts.layers || []).some(l => l.type === 'models')
+                          if (opts?.type === 'groups') return (opts.groups || []).some(g => g.type === 'models')
+                          return false
+                        })()
+                        const notifyModel = p.options?.notify_model !== false
+                        return (
                         <div key={p.id} style={{ background: '#f8f8f8', borderRadius: 8, padding: '10px 12px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             {p.image && <img src={p.image} style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
@@ -1075,6 +1100,12 @@ export default function EventEditPage() {
                               {p.description && <div style={{ fontSize: 11, color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description}</div>}
                             </div>
                             <div style={{ fontSize: 13, fontWeight: 700, color: '#333', whiteSpace: 'nowrap' }}>¥{(p.price || 0).toLocaleString()}</div>
+                            {hasModelLayer && (
+                              <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#555', whiteSpace: 'nowrap', cursor: 'pointer' }}>
+                                <input type="checkbox" checked={notifyModel} onChange={e => updateProductNotifyModel(p.id, e.target.checked)} />
+                                対応モデルに連絡
+                              </label>
+                            )}
                             <button onClick={() => startEditProduct(p)}
                               style={{ background: '#e8f0fe', color: '#1a3560', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 12, flexShrink: 0 }}>編集</button>
                             <button onClick={() => removeProduct(p.id)}
@@ -1133,7 +1164,8 @@ export default function EventEditPage() {
                             })()}
                           </div>
                         </div>
-                      ))}
+                        )
+                      })}
                 </div>
               )}
             </div>
@@ -1277,6 +1309,27 @@ export default function EventEditPage() {
               style={{ background: '#2e7d32', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
               今すぐ前日通知を送信
             </button>
+            {lineTemplates?.model_day_before && (
+              <div style={{ marginTop: 16, background: 'rgba(255,255,255,0.7)', borderRadius: 8, padding: '10px 14px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#2e7d32', marginBottom: 8 }}>📋 前日LINE テンプレート</div>
+                <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 12, color: '#1b5e20', whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{lineTemplates.model_day_before}</pre>
+              </div>
+            )}
+          </div>
+
+          <div style={{ background: '#e3f2fd', borderRadius: 12, padding: 20, border: '1px solid #90caf9' }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1565c0', marginBottom: 4, marginTop: 0 }}>予約時モデル通知テンプレート</h3>
+            <p style={{ fontSize: 12, color: '#1976d2', marginBottom: 12 }}>特別予約商品でモデルが選択された際に自動送信されます</p>
+            {lineTemplates?.model_booking_notify && (
+              <div style={{ marginBottom: 16, background: 'rgba(255,255,255,0.7)', borderRadius: 8, padding: '10px 14px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#1565c0', marginBottom: 6 }}>📋 スロット予約時テンプレート</div>
+                <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 12, color: '#0d47a1', whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{lineTemplates.model_booking_notify}</pre>
+              </div>
+            )}
+            <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 8, padding: '10px 14px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#1565c0', marginBottom: 6 }}>📋 商品予約時テンプレート（固定）</div>
+              <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 12, color: '#0d47a1', whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{`【指定あり】\n{開催日} {商品名}\n{時間帯} ※時間帯選択がある場合\n{その他選択肢} ※手動選択肢がある場合\nニックネーム：{ニックネーム}\nSNS URL：{SNS URL}`}</pre>
+            </div>
           </div>
         </div>
       )}
