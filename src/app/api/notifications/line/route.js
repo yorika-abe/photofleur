@@ -65,13 +65,7 @@ function buildDayBeforeVars(event, entry) {
     extra_sections = sections.join('\n\n')
   }
 
-  // 企画書（モデル向け）- HTMLタグを除去してプレーンテキスト化
-  let planning_note_model = ''
-  if (event.planning_note_model) {
-    planning_note_model = `\n【📋企画書】\n${event.planning_note_model.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').trim()}\n\n`
-  }
-
-  return { event_date, assembly_time, location_info, photographer_slots, event_page_url, model_lunch_note, extra_sections, planning_note_model }
+  return { event_date, assembly_time, location_info, photographer_slots, event_page_url, model_lunch_note, extra_sections }
 }
 
 export async function POST(request) {
@@ -155,7 +149,7 @@ export async function POST(request) {
       .select(`
         id, event_date, location_name, address, map_address,
         meeting_place, meeting_address, meeting_map_url,
-        event_page_url, model_lunch_note, model_extra_note, model_assembly_offset_minutes, planning_note_model,
+        event_page_url, model_lunch_note, model_extra_note, model_assembly_offset_minutes,
         event_entries(
           id,
           models(id, name, line_id),
