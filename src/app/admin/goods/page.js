@@ -91,14 +91,23 @@ export default function GoodsAdminPage() {
   function removeHansellingItem(i) { setForm(f => ({ ...f, hansellingItems: f.hansellingItems.filter((_, idx) => idx !== i) })) }
 
   // 選択肢グループ
-  function addOptionGroup() { setForm(f => ({ ...f, optionGroups: [...f.optionGroups, { type: 'manual', name: '', choices: [{ name: '', stock: -1 }], multiple: false }] })) }
+  function addOptionGroup() { setForm(f => ({ ...f, optionGroups: [...f.optionGroups, { type: 'manual', name: '', choices: [{ name: '', stock: -1, sub_choices: [] }], multiple: false }] })) }
   function addModelsOptionGroup() { setForm(f => ({ ...f, optionGroups: [...f.optionGroups, { type: 'models', name: '担当モデル', modelData: [], multiple: false }] })) }
   function removeOptionGroup(i) { setForm(f => ({ ...f, optionGroups: f.optionGroups.filter((_, idx) => idx !== i) })) }
   function updateOptionGroup(i, key, val) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, [key]: val } : g) })) }
-  function addGroupChoice(i) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, choices: [...g.choices, { name: '', stock: -1 }] } : g) })) }
+  function addGroupChoice(i) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, choices: [...g.choices, { name: '', stock: -1, sub_choices: [] }] } : g) })) }
   function removeGroupChoice(i, ci) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, choices: g.choices.filter((_, j) => j !== ci) } : g) })) }
   function updateGroupChoice(i, ci, val) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, choices: g.choices.map((c, j) => j === ci ? { ...c, name: val } : c) } : g) })) }
   function updateGroupChoiceStock(i, ci, val) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, choices: g.choices.map((c, j) => j === ci ? { ...c, stock: val === '' ? -1 : Number(val) } : c) } : g) })) }
+  function addManualSubChoice(gi, ci) {
+    setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, gIdx) => gIdx !== gi ? g : { ...g, choices: g.choices.map((c, cIdx) => cIdx !== ci ? c : { ...c, sub_choices: [...(c.sub_choices || []), { name: '', stock: -1 }] }) }) }))
+  }
+  function removeManualSubChoice(gi, ci, si) {
+    setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, gIdx) => gIdx !== gi ? g : { ...g, choices: g.choices.map((c, cIdx) => cIdx !== ci ? c : { ...c, sub_choices: (c.sub_choices || []).filter((_, j) => j !== si) }) }) }))
+  }
+  function updateManualSubChoice(gi, ci, si, field, val) {
+    setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, gIdx) => gIdx !== gi ? g : { ...g, choices: g.choices.map((c, cIdx) => cIdx !== ci ? c : { ...c, sub_choices: (c.sub_choices || []).map((s, j) => j !== si ? s : { ...s, [field]: val }) }) }) }))
+  }
 
   // モデルグループ用関数（新構造: modelData）
   function toggleModelInData(i, model) {
@@ -186,7 +195,10 @@ export default function GoodsAdminPage() {
         return { type: 'models', name: gr.name || '担当モデル', modelData, multiple: gr.multiple ?? false }
       }
       const rawChoices = gr.choices?.length > 0 ? gr.choices : [{ name: '', stock: -1 }]
-      const choices = rawChoices.map(c => typeof c === 'string' ? { name: c, stock: -1 } : c)
+      const choices = rawChoices.map(c => {
+        const base = typeof c === 'string' ? { name: c, stock: -1 } : c
+        return { ...base, sub_choices: (base.sub_choices || []).map(s => typeof s === 'string' ? { name: s, stock: -1 } : s) }
+      })
       return { type: 'manual', name: gr.name || '', choices, multiple: gr.multiple || false }
     })
     setForm({
@@ -230,7 +242,7 @@ export default function GoodsAdminPage() {
                 choices: m.choices.filter(c => c.name.trim()).map(c => ({ name: c.name, stock: c.stock ?? -1 })),
               })),
             }
-          : { type: 'manual', name: g.name, choices: g.choices.filter(c => c.name.trim()).map(c => ({ name: c.name, stock: c.stock ?? -1 })), multiple: g.multiple }
+          : { type: 'manual', name: g.name, multiple: g.multiple, choices: g.choices.filter(c => c.name.trim()).map(c => ({ name: c.name, stock: c.stock ?? -1, sub_choices: (c.sub_choices || []).filter(s => s.name.trim()).map(s => ({ name: s.name, stock: s.stock ?? -1 })) })) }
       )
     }
     const options = Object.keys(optionsObj).length > 0 ? optionsObj : null
@@ -460,21 +472,36 @@ export default function GoodsAdminPage() {
                     </div>
                   ) : (
                     <div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {group.choices.map((choice, ci) => (
-                          <div key={ci} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                            <input value={choice.name} onChange={e => updateGroupChoice(i, ci, e.target.value)}
-                              placeholder={`選択肢 ${ci + 1}`} style={{ ...inp, flex: 1 }} />
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+                          <div key={ci} style={{ background: '#f8f9ff', border: '1px solid #e8eaf6', borderRadius: 8, padding: '8px 10px' }}>
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: (choice.sub_choices || []).length > 0 ? 6 : 0 }}>
+                              <input value={choice.name} onChange={e => updateGroupChoice(i, ci, e.target.value)}
+                                placeholder={`選択肢 ${ci + 1}`} style={{ ...inp, flex: 1 }} />
                               <span style={{ fontSize: 11, color: '#888', whiteSpace: 'nowrap' }}>在庫</span>
                               <input type="number" value={choice.stock < 0 ? '' : choice.stock} placeholder="∞"
                                 onChange={e => updateGroupChoiceStock(i, ci, e.target.value)}
                                 style={{ width: 52, padding: '6px 4px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, textAlign: 'center' }} />
+                              <button type="button" onClick={() => addManualSubChoice(i, ci)}
+                                style={{ fontSize: 11, color: '#1a3560', background: 'none', border: '1px solid #c5cae9', borderRadius: 5, padding: '3px 7px', cursor: 'pointer', whiteSpace: 'nowrap' }}>+ サブ</button>
+                              {group.choices.length > 1 && (
+                                <button type="button" onClick={() => removeGroupChoice(i, ci)}
+                                  style={{ padding: '0 8px', border: 'none', background: 'none', color: '#bbb', cursor: 'pointer', fontSize: 16, flexShrink: 0 }}>×</button>
+                              )}
                             </div>
-                            {group.choices.length > 1 && (
-                              <button type="button" onClick={() => removeGroupChoice(i, ci)}
-                                style={{ padding: '0 10px', border: '1px solid #ddd', borderRadius: 6, background: '#fff', color: '#e53935', cursor: 'pointer', fontSize: 16, flexShrink: 0 }}>×</button>
-                            )}
+                            {(choice.sub_choices || []).map((sub, si) => (
+                              <div key={si} style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4, paddingLeft: 16 }}>
+                                <span style={{ fontSize: 11, color: '#bbb' }}>└</span>
+                                <input value={sub.name} onChange={e => updateManualSubChoice(i, ci, si, 'name', e.target.value)}
+                                  placeholder={`サブ選択肢 ${si + 1}`} style={{ ...inp, flex: 1, fontSize: 12 }} />
+                                <span style={{ fontSize: 11, color: '#888', whiteSpace: 'nowrap' }}>在庫</span>
+                                <input type="number" value={sub.stock < 0 ? '' : sub.stock} placeholder="∞"
+                                  onChange={e => updateManualSubChoice(i, ci, si, 'stock', e.target.value === '' ? -1 : Number(e.target.value))}
+                                  style={{ width: 52, padding: '6px 4px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, textAlign: 'center' }} />
+                                <button type="button" onClick={() => removeManualSubChoice(i, ci, si)}
+                                  style={{ padding: '0 8px', border: 'none', background: 'none', color: '#bbb', cursor: 'pointer', fontSize: 16, flexShrink: 0 }}>×</button>
+                              </div>
+                            ))}
                           </div>
                         ))}
                       </div>

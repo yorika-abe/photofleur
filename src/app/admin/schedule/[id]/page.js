@@ -419,7 +419,18 @@ export default function EventEditPage() {
     if (!newProduct.name.trim()) { alert('商品名を入力してください'); return }
     const optionsObj = {}
     if (newProduct.is_delivery) optionsObj.is_delivery = true
-    if (newProduct.option_groups.length > 0) { optionsObj.type = 'groups'; optionsObj.groups = newProduct.option_groups }
+    if (newProduct.option_groups.length > 0) {
+      optionsObj.type = 'groups'
+      optionsObj.groups = newProduct.option_groups.map(g => {
+        if (g.type === 'manual') {
+          return { ...g, choices: (g.choices || []).filter(c => c.name?.trim()).map(c => ({ name: c.name, stock: c.stock ?? -1, sub_choices: (c.sub_choices || []).filter(s => s.name?.trim()).map(s => ({ name: s.name, stock: s.stock ?? -1 })) })) }
+        }
+        if (g.type === 'models') {
+          return { ...g, model_choices: (g.model_choices || []).map(mc => ({ ...mc, choices: (mc.choices || []).filter(c => c.name?.trim()) })) }
+        }
+        return g
+      })
+    }
     if (newProduct.option_groups.some(g => g.type === 'models')) optionsObj.notify_model = newProduct.notify_model
     const options = Object.keys(optionsObj).length > 0 ? optionsObj : null
     const RESET_PRODUCT = { name: '', image: '', description: '', price: 0, stock: 1, option_groups: [], is_delivery: false, notify_model: true }
@@ -460,7 +471,10 @@ export default function EventEditPage() {
         }
       }
       if (g.type === 'manual') {
-        return { ...g, choices: (g.choices || []).map(c => typeof c === 'string' ? { name: c, stock: -1 } : c) }
+        return { ...g, choices: (g.choices || []).map(c => {
+          const base = typeof c === 'string' ? { name: c, stock: -1 } : c
+          return { ...base, sub_choices: (base.sub_choices || []).map(s => typeof s === 'string' ? { name: s, stock: -1 } : s) }
+        }) }
       }
       return { ...g }
     })
@@ -470,7 +484,7 @@ export default function EventEditPage() {
   }
 
   function addOptionGroup(type) {
-    const defaults = { slots: { type: 'slots', multiple: false }, models: { type: 'models', model_choices: [], multiple: false }, manual: { type: 'manual', name: '', choices: [{ name: '', stock: -1 }], multiple: null } }
+    const defaults = { slots: { type: 'slots', multiple: false }, models: { type: 'models', model_choices: [], multiple: false }, manual: { type: 'manual', name: '', choices: [{ name: '', stock: -1, sub_choices: [] }], multiple: null } }
     setNewProduct(p => ({ ...p, option_groups: [...p.option_groups, { ...defaults[type] }] }))
   }
   function removeOptionGroup(idx) {
@@ -480,7 +494,16 @@ export default function EventEditPage() {
     setNewProduct(p => ({ ...p, option_groups: p.option_groups.map((g, i) => i === idx ? { ...g, [key]: val } : g) }))
   }
   function addGroupChoice(idx) {
-    setNewProduct(p => ({ ...p, option_groups: p.option_groups.map((g, i) => i === idx ? { ...g, choices: [...(g.choices || []), { name: '', stock: -1 }] } : g) }))
+    setNewProduct(p => ({ ...p, option_groups: p.option_groups.map((g, i) => i === idx ? { ...g, choices: [...(g.choices || []), { name: '', stock: -1, sub_choices: [] }] } : g) }))
+  }
+  function addManualSubChoice(idx, ci) {
+    setNewProduct(p => ({ ...p, option_groups: p.option_groups.map((g, i) => i !== idx ? g : { ...g, choices: g.choices.map((c, j) => j !== ci ? c : { ...(typeof c === 'string' ? { name: c, stock: -1 } : c), sub_choices: [...((c.sub_choices) || []), { name: '', stock: -1 }] }) }) }))
+  }
+  function removeManualSubChoice(idx, ci, si) {
+    setNewProduct(p => ({ ...p, option_groups: p.option_groups.map((g, i) => i !== idx ? g : { ...g, choices: g.choices.map((c, j) => j !== ci ? c : { ...(typeof c === 'string' ? { name: c, stock: -1 } : c), sub_choices: (c.sub_choices || []).filter((_, k) => k !== si) }) }) }))
+  }
+  function updateManualSubChoice(idx, ci, si, field, val) {
+    setNewProduct(p => ({ ...p, option_groups: p.option_groups.map((g, i) => i !== idx ? g : { ...g, choices: g.choices.map((c, j) => j !== ci ? c : { ...(typeof c === 'string' ? { name: c, stock: -1 } : c), sub_choices: (c.sub_choices || []).map((s, k) => k !== si ? s : { ...s, [field]: val }) }) }) }))
   }
   function removeGroupChoice(idx, ci) {
     setNewProduct(p => ({ ...p, option_groups: p.option_groups.map((g, i) => i === idx ? { ...g, choices: g.choices.filter((_, j) => j !== ci) } : g) }))
@@ -1209,26 +1232,46 @@ export default function EventEditPage() {
                                     <input value={group.name} onChange={e => updateOptionGroup(idx, 'name', e.target.value)}
                                       placeholder="選択肢のタイトル（例：カラー・時間帯）"
                                       style={{ width: '100%', padding: '5px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12, marginBottom: 5, boxSizing: 'border-box' }} />
-                                    {(group.choices || []).map((choice, ci) => {
-                                      const c = typeof choice === 'string' ? { name: choice, stock: -1 } : choice
-                                      return (
-                                        <div key={ci} style={{ display: 'flex', gap: 5, marginBottom: 4, alignItems: 'center' }}>
-                                          <input value={c.name} onChange={e => updateGroupChoice(idx, ci, 'name', e.target.value)}
-                                            placeholder={`選択肢 ${ci + 1}`}
-                                            style={{ flex: 1, padding: '4px 7px', border: '1px solid #ddd', borderRadius: 5, fontSize: 12 }} />
-                                          <span style={{ fontSize: 10, color: '#888', whiteSpace: 'nowrap' }}>在庫</span>
-                                          <input type="number" value={c.stock < 0 ? '' : c.stock} placeholder="∞"
-                                            onChange={e => updateGroupChoice(idx, ci, 'stock', e.target.value === '' ? -1 : Number(e.target.value))}
-                                            style={{ width: 46, padding: '4px 3px', border: '1px solid #ddd', borderRadius: 5, fontSize: 12, textAlign: 'center' }} />
-                                          {(group.choices || []).length > 1 && (
-                                            <button type="button" onClick={() => removeGroupChoice(idx, ci)}
-                                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 16, padding: '0 2px' }}>×</button>
-                                          )}
-                                        </div>
-                                      )
-                                    })}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                      {(group.choices || []).map((choice, ci) => {
+                                        const c = typeof choice === 'string' ? { name: choice, stock: -1 } : choice
+                                        return (
+                                          <div key={ci} style={{ background: '#f8f9ff', border: '1px solid #e8eaf6', borderRadius: 7, padding: '7px 8px' }}>
+                                            <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: (c.sub_choices || []).length > 0 ? 5 : 0 }}>
+                                              <input value={c.name} onChange={e => updateGroupChoice(idx, ci, 'name', e.target.value)}
+                                                placeholder={`選択肢 ${ci + 1}`}
+                                                style={{ flex: 1, padding: '4px 7px', border: '1px solid #ddd', borderRadius: 5, fontSize: 12 }} />
+                                              <span style={{ fontSize: 10, color: '#888', whiteSpace: 'nowrap' }}>在庫</span>
+                                              <input type="number" value={c.stock < 0 ? '' : c.stock} placeholder="∞"
+                                                onChange={e => updateGroupChoice(idx, ci, 'stock', e.target.value === '' ? -1 : Number(e.target.value))}
+                                                style={{ width: 44, padding: '4px 3px', border: '1px solid #ddd', borderRadius: 5, fontSize: 12, textAlign: 'center' }} />
+                                              <button type="button" onClick={() => addManualSubChoice(idx, ci)}
+                                                style={{ fontSize: 10, color: '#1a3560', background: 'none', border: '1px solid #c5cae9', borderRadius: 4, padding: '2px 6px', cursor: 'pointer', whiteSpace: 'nowrap' }}>+ サブ</button>
+                                              {(group.choices || []).length > 1 && (
+                                                <button type="button" onClick={() => removeGroupChoice(idx, ci)}
+                                                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 15, padding: '0 2px' }}>×</button>
+                                              )}
+                                            </div>
+                                            {(c.sub_choices || []).map((sub, si) => (
+                                              <div key={si} style={{ display: 'flex', gap: 5, alignItems: 'center', marginTop: 4, paddingLeft: 12 }}>
+                                                <span style={{ fontSize: 10, color: '#bbb' }}>└</span>
+                                                <input value={sub.name} onChange={e => updateManualSubChoice(idx, ci, si, 'name', e.target.value)}
+                                                  placeholder={`サブ選択肢 ${si + 1}`}
+                                                  style={{ flex: 1, padding: '3px 6px', border: '1px solid #ddd', borderRadius: 5, fontSize: 11 }} />
+                                                <span style={{ fontSize: 10, color: '#888', whiteSpace: 'nowrap' }}>在庫</span>
+                                                <input type="number" value={sub.stock < 0 ? '' : sub.stock} placeholder="∞"
+                                                  onChange={e => updateManualSubChoice(idx, ci, si, 'stock', e.target.value === '' ? -1 : Number(e.target.value))}
+                                                  style={{ width: 44, padding: '3px 3px', border: '1px solid #ddd', borderRadius: 5, fontSize: 11, textAlign: 'center' }} />
+                                                <button type="button" onClick={() => removeManualSubChoice(idx, ci, si)}
+                                                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 15, padding: '0 2px' }}>×</button>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )
+                                      })}
+                                    </div>
                                     <button type="button" onClick={() => addGroupChoice(idx)}
-                                      style={{ fontSize: 11, color: '#555', background: 'none', border: '1px dashed #bbb', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', marginTop: 2 }}>
+                                      style={{ fontSize: 11, color: '#555', background: 'none', border: '1px dashed #bbb', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', marginTop: 6 }}>
                                       + 選択肢を追加
                                     </button>
                                   </div>
