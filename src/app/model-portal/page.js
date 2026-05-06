@@ -6,6 +6,83 @@ import { createBrowserClient } from '@supabase/ssr'
 
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
+const days = ['日', '月', '火', '水', '木', '金', '土']
+
+function formatReportDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00')
+  return `${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`
+}
+
+function ActivityReportCard() {
+  const [reports, setReports] = useState([])
+  const [date, setDate] = useState('')
+  const [content, setContent] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    fetch('/api/model-portal/activity-reports')
+      .then(r => r.json())
+      .then(d => Array.isArray(d) ? setReports(d) : null)
+  }, [])
+
+  async function submit(e) {
+    e.preventDefault()
+    if (!date || !content.trim()) { setError('日付と内容を入力してください'); return }
+    setSubmitting(true); setError('')
+    const res = await fetch('/api/model-portal/activity-reports', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ report_date: date, content }),
+    })
+    const data = await res.json()
+    if (!res.ok) { setError(data.error || '送信エラー'); setSubmitting(false); return }
+    setReports(prev => [data, ...prev])
+    setDate(''); setContent('')
+    setSubmitting(false)
+  }
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #d6ecf5', marginTop: 24 }}>
+      <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0d1f3a', marginTop: 0, marginBottom: 16 }}>外部活動報告</h2>
+
+      {/* 報告フォーム */}
+      <form onSubmit={submit} style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+          <input
+            type="date" value={date} onChange={e => setDate(e.target.value)}
+            style={{ border: '1px solid #d0e8f5', borderRadius: 8, padding: '8px 12px', fontSize: 14, color: '#0d1f3a' }}
+          />
+        </div>
+        <textarea
+          value={content} onChange={e => setContent(e.target.value)}
+          rows={3} placeholder="例：出版物に載りました　/ 動画撮影をしてきます"
+          style={{ width: '100%', border: '1px solid #d0e8f5', borderRadius: 8, padding: '10px 12px', fontSize: 14, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
+        />
+        {error && <div style={{ color: '#e53935', fontSize: 13, marginTop: 4 }}>{error}</div>}
+        <button type="submit" disabled={submitting}
+          style={{ marginTop: 8, background: submitting ? '#ccc' : '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontWeight: 700, fontSize: 14, cursor: submitting ? 'not-allowed' : 'pointer' }}>
+          {submitting ? '送信中...' : '報告する'}
+        </button>
+      </form>
+
+      {/* 報告一覧 */}
+      {reports.length === 0 ? (
+        <p style={{ color: '#aaa', fontSize: 14, margin: 0 }}>まだ報告はありません。</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {reports.map(r => (
+            <div key={r.id} style={{ background: '#f8fbff', borderRadius: 8, padding: '10px 14px', border: '1px solid #e8f4fb' }}>
+              <div style={{ fontSize: 12, color: '#5bbfd6', fontWeight: 600, marginBottom: 2 }}>{formatReportDate(r.report_date)}</div>
+              <div style={{ fontSize: 14, color: '#333', whiteSpace: 'pre-wrap' }}>{r.content}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const TYPE_LABEL = { street: 'ストリート', studio: 'スタジオ', irregular: '不定期' }
 const TYPE_COLOR = { street: { color: '#388e3c', bg: '#e8f5e9' }, studio: { color: '#3949ab', bg: '#e8eaf6' }, irregular: { color: '#e65100', bg: '#fff3e0' } }
 
@@ -252,6 +329,9 @@ export default function ModelPortalHome() {
 
         {/* 参加予定イベント */}
         <UpcomingEvents events={upcomingEvents} />
+
+        {/* 外部活動報告 */}
+        {!isAdminView && <ActivityReportCard />}
       </div>
     </div>
   )

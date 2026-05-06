@@ -20,6 +20,7 @@ export default async function AdminPage() {
     { count: pendingPrivateInfo },
     { count: unreadFeedback },
     { count: newPhotos },
+    { count: unreadActivityReports },
   ] = await Promise.all([
     supabase.from('model_shifts').select('*', { count: 'exact', head: true }).eq('status', 'pending_approval').gte('event_date', today),
     supabase.from('models').select('*', { count: 'exact', head: true }).not('pending_data', 'is', null),
@@ -31,6 +32,7 @@ export default async function AdminPage() {
     lastViewedPhotos
       ? supabase.from('contributed_photos').select('*', { count: 'exact', head: true }).gt('created_at', lastViewedPhotos)
       : supabase.from('contributed_photos').select('*', { count: 'exact', head: true }),
+    supabase.from('external_activity_reports').select('*', { count: 'exact', head: true }).eq('is_read', false),
   ])
 
   return (
@@ -57,6 +59,7 @@ export default async function AdminPage() {
           { href: '/admin/annual-events', label: '年間イベント一覧', icon: '🌱' },
           { href: '/admin/private-products', label: '非公開商品管理', icon: '🔗' },
           { href: '/admin/goods', label: 'グッズ管理', icon: '🛍️' },
+          { href: '/admin/activity-reports', label: '外部活動報告', icon: '📣', badge: unreadActivityReports ?? 0 },
         ].map(link => (
           <Link key={link.href} href={link.href} style={{ textDecoration: 'none' }}>
             <div style={{ background: '#1a3560', color: '#fff', borderRadius: 12, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
