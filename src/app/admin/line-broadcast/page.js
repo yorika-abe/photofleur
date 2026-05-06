@@ -153,12 +153,16 @@ const INDIVIDUAL_TEMPLATES = [
   },
   {
     key: 'model_day_before',
-    label: '撮影前日案内',
+    label: '撮影前日案内（モデル個人）',
     trigger: '撮影前日の夜23時（自動cron）',
     vars: [
-      { key: '{{event_date}}', desc: '撮影日' },
-      { key: '{{slot_label}}', desc: '時間枠' },
-      { key: '{{location_name}}', desc: '集合場所' },
+      { key: '{{event_date}}', desc: '撮影日（例: 2026/5/31（土））' },
+      { key: '{{assembly_time}}', desc: '集合時間（スロット開始時間 − オフセット分）' },
+      { key: '{{location_info}}', desc: '集合場所・住所・Google Maps URLの複数行' },
+      { key: '{{photographer_slots}}', desc: 'スロットごとのカメラマンSNS URL（空き→🈳）' },
+      { key: '{{event_page_url}}', desc: 'イベントページURL' },
+      { key: '{{model_lunch_note}}', desc: 'ランチ情報（イベント通知設定より）' },
+      { key: '{{extra_sections}}', desc: '追加セクション（伝達事項の【タイトル】形式）' },
     ],
   },
 ]
