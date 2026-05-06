@@ -5,8 +5,12 @@
       "schedule": "0 13 * * *"
     },
     {
+      "path": "/api/cron-send-day-before-line?secret=photofleur_super_secret_2026",
+      "schedule": "0 14 * * *"
+    },
+    {
       "path": "/api/cron-shift-deadline-reminder?secret=photofleur_super_secret_2026",
-      "schedule": "0 22 * * *"
+      "schedule": "0 0 * * *"
     },
     {
       "path": "/api/cron-send-birthday-line?secret=photofleur_super_secret_2026",
@@ -14,11 +18,11 @@
     },
     {
       "path": "/api/cron-booking-open-line?secret=photofleur_super_secret_2026",
-      "schedule": "0 22 * * *"
+      "schedule": "0 3 * * *"
     },
     {
       "path": "/api/cron-friday-lineup?secret=photofleur_super_secret_2026",
-      "schedule": "0 22 * * 4"
+      "schedule": "0 23 * * 4"
     },
     {
       "path": "/api/cron-monthly-events?secret=photofleur_super_secret_2026",

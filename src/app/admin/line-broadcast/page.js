@@ -7,7 +7,7 @@ const MAX_CHARS = 500
 const TABS = [
   { id: 'all', label: 'モデル全体', icon: '👥', from: 'モデフル', desc: 'モデル全体グループLINEに送信' },
   { id: 'individual', label: 'モデル個人', icon: '👤', from: 'モデフル', desc: '1人のモデルを選んで個別グループLINEに送信' },
-  { id: 'birthday', label: '誕生日', icon: '🎂', from: 'モデフル', desc: 'モデルの誕生日にグループLINEでお祝いメッセージを送信' },
+  { id: 'birthday', label: '雑談', icon: '🎂', from: 'モデフル', desc: 'モデルの誕生日にグループLINEでお祝いメッセージを送信' },
   { id: 'camera', label: '公式LINE', icon: '📣', from: 'カメラマン向け公式LINEアカウント', desc: '公式LINEの全フォロワーに一斉ブロードキャスト' },
 ]
 
@@ -79,7 +79,7 @@ const AUTO_TEMPLATES = [
   {
     key: 'shift_deadline_reminder',
     label: 'シフト締め切り前日',
-    trigger: '締め切り前日の朝7時（自動cron）',
+    trigger: '締め切り前日の朝9時（自動cron）',
     vars: [],
   },
   {
@@ -121,7 +121,7 @@ const CAMERA_TEMPLATES = [
   {
     key: 'camera_booking_open',
     label: '予約受付開始',
-    trigger: '予約受付開始日の朝7時（自動cron・毎日）',
+    trigger: '予約受付開始日の昼12時（自動cron・毎日）',
     vars: [
       { key: '{{event_date}}', desc: '開催日' },
       { key: '{{title}}', desc: 'タイトル' },
@@ -132,7 +132,7 @@ const CAMERA_TEMPLATES = [
   {
     key: 'camera_friday_lineup',
     label: '金曜日週間告知',
-    trigger: '毎週金曜日 朝7時（自動cron）',
+    trigger: '毎週金曜日 朝8時（自動cron）',
     vars: [
       { key: '{{events_list}}', desc: '今週末〜翌金曜日のイベント一覧（自動生成）' },
     ],
@@ -154,7 +154,7 @@ const INDIVIDUAL_TEMPLATES = [
   {
     key: 'model_day_before',
     label: '撮影前日案内',
-    trigger: '撮影前日（自動cron）',
+    trigger: '撮影前日の夜23時（自動cron）',
     vars: [
       { key: '{{event_date}}', desc: '撮影日' },
       { key: '{{slot_label}}', desc: '時間枠' },
