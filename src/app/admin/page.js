@@ -54,6 +54,7 @@ export default async function AdminPage() {
           { href: '/admin/photos', label: 'ご提供写真', icon: '📸', badge: newPhotos ?? 0 },
           { href: '/admin/newsletter', label: 'メルマガ配信', icon: '📧' },
           { href: '/admin/line-broadcast', label: 'LINE一斉送信', icon: '💬' },
+          { href: '/admin/annual-events', label: '年間イベント一覧', icon: '🗓️' },
           { href: '/admin/private-products', label: '非公開商品管理', icon: '🔗' },
           { href: '/admin/goods', label: 'グッズ管理', icon: '🛍️' },
         ].map(link => (

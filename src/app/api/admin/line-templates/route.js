@@ -11,6 +11,8 @@ export const DEFAULTS = {
   camera_event_publish: `【イベント公開のお知らせ📸】\n\n{{event_date}}📍{{title}}\n{{subtitle}}\nのイベント詳細が公開されました！\n\n{{description}}\n\n予約受付開始は\n🗓️{{booking_open_at}}〜\n\nイベント詳細はリンクからご確認ください💖\n🔗{{event_url}}`,
   camera_booking_open: `【📢本日予約受付が開始します】\n\n{{event_date}}📍{{title}}\n{{subtitle}}\nのイベント予約本日{{booking_open_time}}に開始されます！\n\nぜひ皆様のご予約お待ちしております🫧`,
   camera_friday_lineup: `おはようございます☀️\n金曜日、頑張りましょう！\n\n今週末のフォトフルの開催イベントは\n{{events_list}}`,
+  monthly_events_model: `【今月のイベントのお知らせ】\nおはようございます☀️\n{{month}}月がスタートしましたね！\n\n今月の季節のイベントをお知らせします❤︎\n{{events_list}}\n\n今月も楽しくみんなが過ごせますように🙏`,
+  monthly_events_camera: `【今月のイベントのお知らせ】\nおはようございます☀️\n{{month}}月がスタートしましたね！\n\n今月の季節のイベントをお知らせします❤︎\n{{events_list}}\n\n今月も楽しくみんなが過ごせますように🙏`,
 }
 
 export async function GET() {

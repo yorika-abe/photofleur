@@ -62,6 +62,15 @@ function SendButtons({ canSend, recipientLabel, sending, confirmed, onConfirm, o
 
 const AUTO_TEMPLATES = [
   {
+    key: 'monthly_events_model',
+    label: '今月のイベントお知らせ（モデル全体）',
+    trigger: '毎月1日 朝7時（自動cron）',
+    vars: [
+      { key: '{{month}}', desc: '月（例: 5）' },
+      { key: '{{events_list}}', desc: '当月のイベント一覧（年間イベント管理から自動生成）' },
+    ],
+  },
+  {
     key: 'shift_open',
     label: 'シフト提出開放',
     trigger: 'シフト指定日を登録した時（手動で「はい」を押した場合）',
@@ -87,6 +96,15 @@ const AUTO_TEMPLATES = [
 ]
 
 const CAMERA_TEMPLATES = [
+  {
+    key: 'monthly_events_camera',
+    label: '今月のイベントお知らせ（公式LINE）',
+    trigger: '毎月1日 朝7時（自動cron）',
+    vars: [
+      { key: '{{month}}', desc: '月（例: 5）' },
+      { key: '{{events_list}}', desc: '当月のイベント一覧（年間イベント管理から自動生成）' },
+    ],
+  },
   {
     key: 'camera_event_publish',
     label: 'イベント公開告知',
