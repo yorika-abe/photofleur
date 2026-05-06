@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createSupabaseAdminClient } from '@/lib/supabase-server'
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import BookingSection from './BookingSection'
 import GalleryMarquee from './GalleryMarquee'
@@ -32,6 +32,18 @@ export async function generateMetadata({ params }) {
 export default async function EventDetailPage({ params }) {
   const { id } = await params
   const supabase = await createSupabaseAdminClient()
+
+  // Check current user role for model-only sections
+  let isModelOrAdmin = false
+  try {
+    const serverClient = await createSupabaseServerClient()
+    const { data: { user } } = await serverClient.auth.getUser()
+    if (user) {
+      const { data: profile } = await supabase.from('user_profiles').select('role, roles').eq('id', user.id).single()
+      const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
+      isModelOrAdmin = roles.includes('model') || roles.includes('admin')
+    }
+  } catch {}
 
   const { data: eventRaw } = await supabase
     .from('events')
@@ -238,6 +250,21 @@ export default async function EventDetailPage({ params }) {
         </div>
       )}
 
+      {/* 企画書（一般公開） */}
+      {event.planning_note && (
+        <div className="blog-content" dangerouslySetInnerHTML={{ __html: event.planning_note }}
+          style={{ fontSize: 15, color: '#444', lineHeight: 2, marginBottom: 32 }} />
+      )}
+
+      {/* 企画書（モデル向け） */}
+      {isModelOrAdmin && event.planning_note_model && (
+        <div style={{ background: '#fffde7', border: '1px solid #ffe082', borderRadius: 12, padding: '16px 20px', marginBottom: 32 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#a07800', marginBottom: 10, letterSpacing: 1 }}>モデルにのみ表示</div>
+          <div className="blog-content" dangerouslySetInnerHTML={{ __html: event.planning_note_model }}
+            style={{ fontSize: 15, color: '#444', lineHeight: 2 }} />
+        </div>
+      )}
+
       {/* Entry Models */}
       {entries.filter(e => e.models).length > 0 && (
         <div style={{ marginBottom: 32 }}>
@@ -306,6 +333,13 @@ export default async function EventDetailPage({ params }) {
         eventDate={event.event_date}
         eventLocation={event.location_name || ''}
       />
+
+      <style>{`
+        .blog-content img { max-width: 100%; border-radius: 8px; margin: 8px 0; }
+        .blog-content video { max-width: 100%; border-radius: 8px; margin: 8px 0; }
+        .blog-content a { color: #1a3560; }
+        .blog-content p { margin: 0 0 12px; }
+      `}</style>
     </div>
   )
 }

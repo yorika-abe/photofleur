@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Cropper from 'react-easy-crop'
 import LayerOptionBuilder from '@/components/LayerOptionBuilder'
 import { genId } from '@/lib/product-layers'
+import RichEditor from '@/components/RichEditor'
 
 async function compressImage(file, maxW = 1600, maxH = 1600, quality = 0.85) {
   return new Promise(resolve => {
@@ -213,6 +214,8 @@ export default function EventEditPage() {
         studio_rules: event.studio_rules,
         street_notes: event.street_notes,
         reminder_extra_note: event.reminder_extra_note,
+        planning_note: event.planning_note || null,
+        planning_note_model: event.planning_note_model || null,
       }),
     })
     setSaving(false)
@@ -547,6 +550,7 @@ export default function EventEditPage() {
     { key: 'basic', label: '基本情報' },
     { key: 'gallery', label: 'ギャラリー' },
     { key: 'models', label: 'モデル・枠' },
+    { key: 'plan', label: '企画書' },
     { key: 'notify', label: '通知設定' },
   ]
 
@@ -1200,6 +1204,32 @@ export default function EventEditPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* 企画書タブ */}
+      {activeTab === 'plan' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e5e5e5' }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2f2244', marginBottom: 4, marginTop: 0 }}>企画書（一般公開）</h3>
+            <p style={{ fontSize: 12, color: '#999', marginBottom: 16 }}>イベント詳細ページのエントリーモデルの上に表示されます。</p>
+            <RichEditor
+              value={event.planning_note || ''}
+              onChange={v => updateField('planning_note', v)}
+              uploadPath={`events/${id}/plan`}
+              uploadEndpoint="/api/admin/upload"
+            />
+          </div>
+          <div style={{ background: '#fffde7', borderRadius: 12, padding: 20, border: '1px solid #ffe082' }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#7a5f00', marginBottom: 4, marginTop: 0 }}>企画書（モデル向け）</h3>
+            <p style={{ fontSize: 12, color: '#a07800', marginBottom: 16 }}>モデル・運営としてログイン中のユーザーにのみ表示されます。</p>
+            <RichEditor
+              value={event.planning_note_model || ''}
+              onChange={v => updateField('planning_note_model', v)}
+              uploadPath={`events/${id}/plan-model`}
+              uploadEndpoint="/api/admin/upload"
+            />
+          </div>
         </div>
       )}
 
