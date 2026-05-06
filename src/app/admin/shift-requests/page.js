@@ -176,7 +176,10 @@ export default function ShiftRequestsPage() {
     setLineSending(true)
     const d = new Date(lineNotify.deadline + 'T00:00:00')
     const deadlineLabel = `${d.getMonth() + 1}月${d.getDate()}日`
-    const message = `🗓️シフト提出が解放されました。\nモデル画面から確認して提出してください。\n締め切りは${deadlineLabel}までです！`
+    const tmplRes = await fetch('/api/admin/line-templates')
+    const tmplData = await tmplRes.json()
+    const template = tmplData.templates?.shift_open ?? `🗓️シフト提出が解放されました。\nモデル画面から確認して提出してください。\n締め切りは{{deadline}}までです！`
+    const message = template.replace('{{deadline}}', deadlineLabel)
     await fetch('/api/admin/line-broadcast', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

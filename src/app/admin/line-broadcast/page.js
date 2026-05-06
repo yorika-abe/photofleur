@@ -60,6 +60,107 @@ function SendButtons({ canSend, recipientLabel, sending, confirmed, onConfirm, o
   )
 }
 
+const AUTO_TEMPLATES = [
+  {
+    key: 'shift_open',
+    label: 'シフト提出開放',
+    trigger: 'シフト指定日を登録した時（手動で「はい」を押した場合）',
+    vars: [{ key: '{{deadline}}', desc: '締め切り日（例: 5月31日）' }],
+  },
+  {
+    key: 'shift_deadline_reminder',
+    label: 'シフト締め切り前日',
+    trigger: '締め切り前日の朝7時（自動cron）',
+    vars: [],
+  },
+  {
+    key: 'event_publish',
+    label: 'イベント公開',
+    trigger: 'イベントをdraft→公開に切り替えた時（自動）',
+    vars: [
+      { key: '{{event_date}}', desc: '開催日（例: 5/31（日））' },
+      { key: '{{title}}', desc: 'イベントタイトル' },
+      { key: '{{booking_open_at}}', desc: '予約受付開始日時（例: 5/20 20:00）' },
+      { key: '{{event_url}}', desc: 'イベント詳細URL' },
+    ],
+  },
+]
+
+function AutoTemplateSection() {
+  const [templates, setTemplates] = useState(null)
+  const [editing, setEditing] = useState({})
+  const [saving, setSaving] = useState({})
+  const [saved, setSaved] = useState({})
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/admin/line-templates')
+      .then(r => r.json())
+      .then(d => {
+        setTemplates(d.templates || {})
+        setEditing(d.templates || {})
+      })
+  }, [])
+
+  async function saveTemplate(key) {
+    setSaving(s => ({ ...s, [key]: true }))
+    await fetch('/api/admin/line-templates', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, body: editing[key] }),
+    })
+    setTemplates(t => ({ ...t, [key]: editing[key] }))
+    setSaving(s => ({ ...s, [key]: false }))
+    setSaved(s => ({ ...s, [key]: true }))
+    setTimeout(() => setSaved(s => ({ ...s, [key]: false })), 2000)
+  }
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
+      <button onClick={() => setOpen(v => !v)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>🤖 自動送信メッセージ設定</div>
+        <span style={{ fontSize: 12, color: '#aaa' }}>{open ? '▲ 閉じる' : '▼ 開く'}</span>
+      </button>
+      {open && (
+        <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {AUTO_TEMPLATES.map(tmpl => (
+            <div key={tmpl.key} style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 2 }}>{tmpl.label}</div>
+              <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>送信タイミング：{tmpl.trigger}</div>
+              {tmpl.vars.length > 0 && (
+                <div style={{ fontSize: 11, color: '#555', marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {tmpl.vars.map(v => (
+                    <span key={v.key} style={{ background: '#f0f4ff', borderRadius: 4, padding: '2px 7px', fontFamily: 'monospace' }}>
+                      {v.key} <span style={{ fontFamily: 'inherit', color: '#888' }}>= {v.desc}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <textarea
+                value={editing[tmpl.key] ?? ''}
+                onChange={e => setEditing(ed => ({ ...ed, [tmpl.key]: e.target.value }))}
+                rows={5}
+                style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.7, fontFamily: 'inherit' }}
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, justifyContent: 'flex-end' }}>
+                {saved[tmpl.key] && <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 600 }}>✅ 保存しました</span>}
+                <button
+                  onClick={() => saveTemplate(tmpl.key)}
+                  disabled={saving[tmpl.key] || editing[tmpl.key] === templates?.[tmpl.key]}
+                  style={{ padding: '6px 16px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                    background: (saving[tmpl.key] || editing[tmpl.key] === templates?.[tmpl.key]) ? '#e0e0e0' : '#1a3560',
+                    color: (saving[tmpl.key] || editing[tmpl.key] === templates?.[tmpl.key]) ? '#999' : '#fff' }}>
+                  {saving[tmpl.key] ? '保存中...' : '保存'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ---- タブ1: モデル全体 ----
 function TabAll() {
   const [message, setMessage] = useState('')
@@ -82,40 +183,43 @@ function TabAll() {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ background: '#e3f2fd', borderRadius: 12, border: '1px solid #90caf9', padding: '14px 18px', fontSize: 13 }}>
-          <div style={{ fontWeight: 700, color: '#1565c0', marginBottom: 4 }}>👥 モデル全体グループLINE</div>
-          <div style={{ color: '#1976d2', lineHeight: 1.7 }}>
-            全モデル・運営が参加しているグループLINEに送信します。<br />
-            イベント公開・シフト提出案内などに使用してください。
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ background: '#e3f2fd', borderRadius: 12, border: '1px solid #90caf9', padding: '14px 18px', fontSize: 13 }}>
+            <div style={{ fontWeight: 700, color: '#1565c0', marginBottom: 4 }}>👥 モデル全体グループLINE</div>
+            <div style={{ color: '#1976d2', lineHeight: 1.7 }}>
+              全モデル・運営が参加しているグループLINEに送信します。<br />
+              イベント公開・シフト提出案内などに使用してください。
+            </div>
+          </div>
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>メッセージ本文</div>
+              <span style={{ fontSize: 12, color: message.length > MAX_CHARS ? '#e53935' : '#aaa' }}>{message.length} / {MAX_CHARS}</span>
+            </div>
+            <textarea value={message} onChange={e => { setMessage(e.target.value); setConfirmed(false); setResult(null) }}
+              rows={12} placeholder={'例：\n【PhotoFleur】お知らせ🌸\n\n来月のシフト提出期限は〇月〇日です。\nよろしくお願いいたします。'}
+              style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.7, fontFamily: 'inherit' }} />
+          </div>
+          {result && (
+            <div style={{ padding: '10px 14px', borderRadius: 8, background: result.error ? '#ffebee' : '#e8f5e9', border: `1px solid ${result.error ? '#ef9a9a' : '#a5d6a7'}`, fontSize: 13 }}>
+              {result.error ? <span style={{ color: '#c62828' }}>エラー: {result.error}</span>
+                : <span style={{ color: '#2e7d32', fontWeight: 600 }}>✅ モデル全体グループへの送信が完了しました</span>}
+            </div>
+          )}
+          <SendButtons canSend={canSend} recipientLabel="モデル全体グループ" sending={sending} confirmed={confirmed}
+            onConfirm={() => setConfirmed(true)} onSend={handleSend} onBack={() => setConfirmed(false)} />
+        </div>
+        <div>
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>プレビュー</div>
+            <LinePreview message={message} accountName="モデフル" />
+            <p style={{ fontSize: 11, color: '#aaa', marginTop: 10 }}>※ LINEはプレーンテキストのみ送信されます</p>
           </div>
         </div>
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>メッセージ本文</div>
-            <span style={{ fontSize: 12, color: message.length > MAX_CHARS ? '#e53935' : '#aaa' }}>{message.length} / {MAX_CHARS}</span>
-          </div>
-          <textarea value={message} onChange={e => { setMessage(e.target.value); setConfirmed(false); setResult(null) }}
-            rows={12} placeholder={'例：\n【PhotoFleur】お知らせ🌸\n\n来月のシフト提出期限は〇月〇日です。\nよろしくお願いいたします。'}
-            style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.7, fontFamily: 'inherit' }} />
-        </div>
-        {result && (
-          <div style={{ padding: '10px 14px', borderRadius: 8, background: result.error ? '#ffebee' : '#e8f5e9', border: `1px solid ${result.error ? '#ef9a9a' : '#a5d6a7'}`, fontSize: 13 }}>
-            {result.error ? <span style={{ color: '#c62828' }}>エラー: {result.error}</span>
-              : <span style={{ color: '#2e7d32', fontWeight: 600 }}>✅ モデル全体グループへの送信が完了しました</span>}
-          </div>
-        )}
-        <SendButtons canSend={canSend} recipientLabel="モデル全体グループ" sending={sending} confirmed={confirmed}
-          onConfirm={() => setConfirmed(true)} onSend={handleSend} onBack={() => setConfirmed(false)} />
       </div>
-      <div>
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>プレビュー</div>
-          <LinePreview message={message} accountName="PhotoFleur（モデル向け）" />
-          <p style={{ fontSize: 11, color: '#aaa', marginTop: 10 }}>※ LINEはプレーンテキストのみ送信されます</p>
-        </div>
-      </div>
+      <AutoTemplateSection />
     </div>
   )
 }

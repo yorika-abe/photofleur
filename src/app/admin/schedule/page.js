@@ -60,7 +60,7 @@ export default function AdminSchedulePage() {
     setEvents(prev => prev.map(e => e.id === ev.id ? { ...e, status: newStatus } : e))
 
     if (newStatus === 'active') {
-      const siteUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://photofleur.vercel.app'
+      const siteUrl = (typeof window !== 'undefined' ? window.location.origin : 'https://photofleur.vercel.app')
       const days = ['日', '月', '火', '水', '木', '金', '土']
       const eventD = ev.event_date ? new Date(ev.event_date + 'T00:00:00') : null
       const eventLabel = eventD ? `${eventD.getMonth() + 1}/${eventD.getDate()}（${days[eventD.getDay()]}）` : ''
@@ -70,19 +70,21 @@ export default function AdminSchedulePage() {
         bookingLabel = `${bd.getMonth() + 1}/${bd.getDate()} ${String(bd.getHours()).padStart(2, '0')}:${String(bd.getMinutes()).padStart(2, '0')}`
       }
       const title = ev.title || ev.location_name || ''
-      const lines = [
-        '📢開催イベントが解放されました。',
-        '',
-        `📍${eventLabel}${title ? ' ' + title : ''}`,
-      ]
-      if (bookingLabel) lines.push(`予約受付開始日→${bookingLabel}~`)
-      lines.push(`\n詳細は🔗${siteUrl}/schedule/${ev.id}`)
-      const message = lines.join('\n')
-      fetch('/api/admin/line-broadcast', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, channel: 'group' }),
-      })
+      fetch('/api/admin/line-templates')
+        .then(r => r.json())
+        .then(({ templates }) => {
+          const template = templates?.event_publish ?? `📢開催イベントが解放されました。\n\n📍{{event_date}} {{title}}\n予約受付開始日→{{booking_open_at}}~\n\n詳細は🔗{{event_url}}`
+          const message = template
+            .replace('{{event_date}}', eventLabel)
+            .replace('{{title}}', title)
+            .replace('{{booking_open_at}}', bookingLabel)
+            .replace('{{event_url}}', `${siteUrl}/schedule/${ev.id}`)
+          fetch('/api/admin/line-broadcast', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, channel: 'group' }),
+          })
+        })
     }
   }
 

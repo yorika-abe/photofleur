@@ -68,6 +68,9 @@ export function buildShiftOpenMessage() {
 }
 
 export function buildShiftDeadlineReminderMessage() {
-  return `🗓️シフト提出締め切りの前日になりました。
-シフト未提出の子は提出をお願いします🙇‍♂️`
+  return `お疲れ様です🎀🫧
+📢シフト提出締め切り前日になりました。
+
+未提出者は連絡確認次第モデルポータルからシフト提出日お願いします🙇‍♂️
+🔗${SITE_URL}`
 }

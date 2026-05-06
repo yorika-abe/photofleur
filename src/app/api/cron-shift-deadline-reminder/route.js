@@ -28,7 +28,11 @@ export async function GET(req) {
     return Response.json({ ok: true, sent: false, reason: 'no deadlines tomorrow' })
   }
 
-  await sendLineGroupMessage(buildShiftDeadlineReminderMessage())
+  // DBにカスタムテンプレートがあれば使用、なければデフォルト
+  const { data: tmpl } = await supabase.from('line_templates').select('body').eq('key', 'shift_deadline_reminder').single()
+  const message = tmpl?.body ?? buildShiftDeadlineReminderMessage()
+
+  await sendLineGroupMessage(message)
 
   return Response.json({ ok: true, sent: true })
 }
