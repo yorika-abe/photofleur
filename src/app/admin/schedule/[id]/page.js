@@ -459,6 +459,9 @@ export default function EventEditPage() {
           })),
         }
       }
+      if (g.type === 'manual') {
+        return { ...g, choices: (g.choices || []).map(c => typeof c === 'string' ? { name: c, stock: -1 } : c) }
+      }
       return { ...g }
     })
     setNewProduct({ name: p.name, image: p.image || '', description: p.description || '', price: p.price || 0, stock: p.stock || 1, option_groups, is_delivery: p.options?.is_delivery || false, notify_model: p.options?.notify_model !== false })
@@ -467,7 +470,7 @@ export default function EventEditPage() {
   }
 
   function addOptionGroup(type) {
-    const defaults = { slots: { type: 'slots', multiple: false }, models: { type: 'models', model_choices: [], multiple: false }, manual: { type: 'manual', name: '', choices: [''], multiple: null } }
+    const defaults = { slots: { type: 'slots', multiple: false }, models: { type: 'models', model_choices: [], multiple: false }, manual: { type: 'manual', name: '', choices: [{ name: '', stock: -1 }], multiple: null } }
     setNewProduct(p => ({ ...p, option_groups: [...p.option_groups, { ...defaults[type] }] }))
   }
   function removeOptionGroup(idx) {
@@ -477,13 +480,13 @@ export default function EventEditPage() {
     setNewProduct(p => ({ ...p, option_groups: p.option_groups.map((g, i) => i === idx ? { ...g, [key]: val } : g) }))
   }
   function addGroupChoice(idx) {
-    setNewProduct(p => ({ ...p, option_groups: p.option_groups.map((g, i) => i === idx ? { ...g, choices: [...(g.choices || []), ''] } : g) }))
+    setNewProduct(p => ({ ...p, option_groups: p.option_groups.map((g, i) => i === idx ? { ...g, choices: [...(g.choices || []), { name: '', stock: -1 }] } : g) }))
   }
   function removeGroupChoice(idx, ci) {
     setNewProduct(p => ({ ...p, option_groups: p.option_groups.map((g, i) => i === idx ? { ...g, choices: g.choices.filter((_, j) => j !== ci) } : g) }))
   }
-  function updateGroupChoice(idx, ci, val) {
-    setNewProduct(p => ({ ...p, option_groups: p.option_groups.map((g, i) => i === idx ? { ...g, choices: g.choices.map((c, j) => j === ci ? val : c) } : g) }))
+  function updateGroupChoice(idx, ci, field, val) {
+    setNewProduct(p => ({ ...p, option_groups: p.option_groups.map((g, i) => i === idx ? { ...g, choices: g.choices.map((c, j) => j === ci ? { ...(typeof c === 'string' ? { name: c, stock: -1 } : c), [field]: val } : c) } : g) }))
   }
 
   // モデルグループ用関数（model_choices形式）
@@ -1074,19 +1077,21 @@ export default function EventEditPage() {
                             {!newProduct.option_groups.some(g => g.type === 'slots') && (
                               <button type="button" onClick={() => addOptionGroup('slots')}
                                 style={{ fontSize: 11, background: '#e0f7fa', color: '#0097a7', border: '1px solid #b2ebf2', borderRadius: 5, padding: '3px 8px', cursor: 'pointer', fontWeight: 700 }}>
-                                + 予約受付枠
+                                + 時間枠
                               </button>
                             )}
                             {!newProduct.option_groups.some(g => g.type === 'models') && (
                               <button type="button" onClick={() => addOptionGroup('models')}
                                 style={{ fontSize: 11, background: '#e8f5e9', color: '#2e7d32', border: '1px solid #c8e6c9', borderRadius: 5, padding: '3px 8px', cursor: 'pointer', fontWeight: 700 }}>
-                                + 対応モデル枠
+                                + モデル枠
                               </button>
                             )}
-                            <button type="button" onClick={() => addOptionGroup('manual')}
-                              style={{ fontSize: 11, background: '#e8f0fe', color: '#1a3560', border: 'none', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', fontWeight: 700 }}>
-                              + 選択肢を追加
-                            </button>
+                            {!newProduct.option_groups.some(g => g.type === 'manual') && (
+                              <button type="button" onClick={() => addOptionGroup('manual')}
+                                style={{ fontSize: 11, background: '#e8f0fe', color: '#1a3560', border: '1px solid #c5cae9', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', fontWeight: 700 }}>
+                                + 手動
+                              </button>
+                            )}
                           </div>
                         </div>
                         {newProduct.option_groups.length === 0 ? (
@@ -1102,7 +1107,7 @@ export default function EventEditPage() {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                     <span style={{ fontSize: 12, fontWeight: 700, color: group.type === 'slots' ? '#0097a7' : group.type === 'models' ? '#2e7d32' : '#1a3560' }}>
-                                      {group.type === 'slots' ? '📅 予約受付枠' : group.type === 'models' ? '👤 対応モデル枠' : '📝 手動選択肢'}
+                                      {group.type === 'slots' ? '📅 時間枠' : group.type === 'models' ? '👤 モデル枠' : '📝 手動選択肢'}
                                     </span>
                                     <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontSize: 11, color: '#666' }}>
                                       <input type="checkbox" checked={group.multiple === true}
@@ -1113,7 +1118,7 @@ export default function EventEditPage() {
                                   <button type="button" onClick={() => removeOptionGroup(idx)}
                                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 18, padding: 0 }}>×</button>
                                 </div>
-                                {group.type === 'slots' && <p style={{ fontSize: 11, color: '#888', margin: 0 }}>イベントの予約受付枠が自動で表示されます（単体選択デフォルト）</p>}
+                                {group.type === 'slots' && <p style={{ fontSize: 11, color: '#888', margin: 0 }}>イベントの予約受付枠が自動で表示されます（在庫はスロット設定に従います）</p>}
                                 {group.type === 'models' && (() => {
                                   const eventModelIds = new Set(entries.map(e => e.model_id))
                                   const mc = group.model_choices || []
@@ -1204,19 +1209,26 @@ export default function EventEditPage() {
                                 {group.type === 'manual' && (
                                   <div style={{ marginTop: 6 }}>
                                     <input value={group.name} onChange={e => updateOptionGroup(idx, 'name', e.target.value)}
-                                      placeholder="選択肢のタイトル（例：カラー）"
+                                      placeholder="選択肢のタイトル（例：カラー・時間帯）"
                                       style={{ width: '100%', padding: '5px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12, marginBottom: 5, boxSizing: 'border-box' }} />
-                                    {(group.choices || []).map((choice, ci) => (
-                                      <div key={ci} style={{ display: 'flex', gap: 5, marginBottom: 4 }}>
-                                        <input value={choice} onChange={e => updateGroupChoice(idx, ci, e.target.value)}
-                                          placeholder={`選択肢 ${ci + 1}`}
-                                          style={{ flex: 1, padding: '4px 7px', border: '1px solid #ddd', borderRadius: 5, fontSize: 12 }} />
-                                        {(group.choices || []).length > 1 && (
-                                          <button type="button" onClick={() => removeGroupChoice(idx, ci)}
-                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 16, padding: '0 2px' }}>×</button>
-                                        )}
-                                      </div>
-                                    ))}
+                                    {(group.choices || []).map((choice, ci) => {
+                                      const c = typeof choice === 'string' ? { name: choice, stock: -1 } : choice
+                                      return (
+                                        <div key={ci} style={{ display: 'flex', gap: 5, marginBottom: 4, alignItems: 'center' }}>
+                                          <input value={c.name} onChange={e => updateGroupChoice(idx, ci, 'name', e.target.value)}
+                                            placeholder={`選択肢 ${ci + 1}`}
+                                            style={{ flex: 1, padding: '4px 7px', border: '1px solid #ddd', borderRadius: 5, fontSize: 12 }} />
+                                          <span style={{ fontSize: 10, color: '#888', whiteSpace: 'nowrap' }}>在庫</span>
+                                          <input type="number" value={c.stock < 0 ? '' : c.stock} placeholder="∞"
+                                            onChange={e => updateGroupChoice(idx, ci, 'stock', e.target.value === '' ? -1 : Number(e.target.value))}
+                                            style={{ width: 46, padding: '4px 3px', border: '1px solid #ddd', borderRadius: 5, fontSize: 12, textAlign: 'center' }} />
+                                          {(group.choices || []).length > 1 && (
+                                            <button type="button" onClick={() => removeGroupChoice(idx, ci)}
+                                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 16, padding: '0 2px' }}>×</button>
+                                          )}
+                                        </div>
+                                      )
+                                    })}
                                     <button type="button" onClick={() => addGroupChoice(idx)}
                                       style={{ fontSize: 11, color: '#555', background: 'none', border: '1px dashed #bbb', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', marginTop: 2 }}>
                                       + 選択肢を追加
@@ -1285,7 +1297,7 @@ export default function EventEditPage() {
                                     <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
                                       {(opts.groups || []).map((g, gi) => (
                                         <span key={gi} style={{ fontSize: 11, background: g.type === 'slots' ? '#e0f7fa' : g.type === 'models' ? '#e8f5e9' : '#e8f0fe', color: g.type === 'slots' ? '#0097a7' : g.type === 'models' ? '#2e7d32' : '#1a3560', borderRadius: 4, padding: '2px 8px', fontWeight: 600 }}>
-                                          {g.type === 'slots' ? '📅 予約受付枠' : g.type === 'models' ? '👤 モデル枠' : `📝 ${g.name}`}
+                                          {g.type === 'slots' ? '📅 時間枠' : g.type === 'models' ? '👤 モデル枠' : `📝 ${g.name}`}
                                           {g.multiple === true ? '（複数）' : g.multiple === false ? '（単一）' : ''}
                                         </span>
                                       ))}
