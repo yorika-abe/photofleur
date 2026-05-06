@@ -86,6 +86,9 @@ export async function GET(req) {
   const { data: tmplRow } = await supabase.from('line_templates').select('body').eq('key', 'model_day_before').single()
   const template = tmplRow?.body ?? DEFAULTS.model_day_before
 
+  const { data: productTmplRow } = await supabase.from('line_templates').select('body').eq('key', 'event_product_day_before_section').single()
+  const productSectionTemplate = productTmplRow?.body ?? DEFAULTS.event_product_day_before_section
+
   const { data: events } = await supabase
     .from('events')
     .select(`
@@ -164,21 +167,37 @@ export async function GET(req) {
           return modelArr.some(m => m === modelName || m === model.id || m === model.name)
         })
 
-        const lines = [`\n【👗${product.name}】`]
-        if (pBookings.length === 0) {
-          lines.push('（予約なし）')
+        // スロット型かどうか判定
+        const layers = product.options?.type === 'layers'
+          ? (product.options.layers || [])
+          : (product.options?.groups || [])
+        const hasSlotLayer = layers.some(l => l.type === 'slots')
+
+        let bookings_list
+        if (hasSlotLayer) {
+          // イベントの予約枠ごとに表示（❌ = 予約なし）
+          bookings_list = sortedSlots.map(s => {
+            const b = pBookings.find(b => {
+              const t = b.selections?.['時間帯'] || b.selections?.slot
+              return t === s.slot_label
+            })
+            if (!b) return `${s.slot_label}　❌`
+            const lines = [`${s.slot_label}　${b.nickname || ''}`]
+            if (b.sns_url) lines.push(`　　　${b.sns_url}`)
+            return lines.join('\n')
+          }).join('\n')
+        } else if (pBookings.length === 0) {
+          bookings_list = '（予約なし）'
         } else {
-          for (const booking of pBookings) {
-            const timeSlot = booking.selections?.['時間帯'] || booking.selections?.slot
-            const extra = Object.entries(booking.selections || {})
-              .filter(([k]) => !['model', 'モデル', '時間帯', 'slot', 'delivery_address'].includes(k))
-              .map(([_, v]) => Array.isArray(v) ? v.join(' ') : String(v)).join(' ')
-            const parts = [...(timeSlot ? [timeSlot] : []), booking.sns_url || '', extra].filter(Boolean)
-            lines.push(parts.join(' ').trim() || '（予約あり）')
-          }
+          // フラット表示（ニックネーム + SNS URL を羅列）
+          bookings_list = pBookings.map(b => {
+            const lines = [b.nickname || ''].filter(Boolean)
+            if (b.sns_url) lines.push(b.sns_url)
+            return lines.join('\n')
+          }).join('\n')
         }
 
-        message += lines.join('\n')
+        message += applyVars(productSectionTemplate, { product_name: product.name, bookings_list })
       }
 
       const result = await sendLineMessage(model.line_id, message)

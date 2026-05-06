@@ -189,6 +189,15 @@ const INDIVIDUAL_TEMPLATES = [
     ],
   },
   {
+    key: 'event_product_day_before_section',
+    label: '特別予約商品セクション（前日案内に挿入）',
+    trigger: '撮影前日の夜23時（自動cron）の前日案内メッセージに商品ごとに追記',
+    vars: [
+      { key: '{{product_name}}', desc: '商品名' },
+      { key: '{{bookings_list}}', desc: '予約一覧（時間帯・SNS URL等）' },
+    ],
+  },
+  {
     key: 'model_day_before',
     label: '撮影前日案内（モデル個人）',
     trigger: '撮影前日の夜23時（自動cron）',

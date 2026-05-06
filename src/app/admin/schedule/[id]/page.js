@@ -1287,23 +1287,6 @@ export default function EventEditPage() {
             </div>
           </div>
 
-          <div style={{ background: '#e8f5e9', borderRadius: 12, padding: 20, border: '1px solid #a5d6a7' }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2e7d32', marginBottom: 4, marginTop: 0 }}>手動LINE送信</h3>
-            <p style={{ fontSize: 12, color: '#388e3c', marginBottom: 16 }}>エントリーモデル全員に今すぐLINEを送信します（当日予約対応等）</p>
-            <button
-              onClick={async () => {
-                if (!confirm('エントリーモデル全員にLINE前日通知を送信しますか？')) return
-                await fetch('/api/notifications/line', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ type: 'day_before', event_id: id })
-                })
-                alert('送信しました')
-              }}
-              style={{ background: '#2e7d32', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
-              今すぐ前日通知を送信
-            </button>
-          </div>
         </div>
       )}
 
