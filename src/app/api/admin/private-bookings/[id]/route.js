@@ -21,14 +21,14 @@ export async function PATCH(req, { params }) {
   if (cancel) {
     const { data: booking } = await admin
       .from('private_bookings')
-      .select('product_id, is_cancelled')
+      .select('product_id, cancelled_at')
       .eq('id', id)
       .single()
 
     if (!booking) return Response.json({ error: 'Not found' }, { status: 404 })
-    if (booking.is_cancelled) return Response.json({ ok: true, already: true })
+    if (booking.cancelled_at) return Response.json({ ok: true, already: true })
 
-    await admin.from('private_bookings').update({ is_cancelled: true }).eq('id', id)
+    await admin.from('private_bookings').update({ cancelled_at: new Date().toISOString() }).eq('id', id)
 
     // 在庫を1戻す
     const { data: product } = await admin

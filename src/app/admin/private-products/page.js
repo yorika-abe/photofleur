@@ -443,7 +443,7 @@ function BookingList({ productId, onCancel }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {bookings.map(b => (
-        <div key={b.id} style={{ background: b.is_cancelled ? '#fafafa' : '#fff', border: `1px solid ${b.is_cancelled ? '#eee' : '#e5e5e5'}`, borderRadius: 8, padding: '8px 12px', fontSize: 13, opacity: b.is_cancelled ? 0.6 : 1 }}>
+        <div key={b.id} style={{ background: b.cancelled_at ? '#fafafa' : '#fff', border: `1px solid ${b.cancelled_at ? '#eee' : '#e5e5e5'}`, borderRadius: 8, padding: '8px 12px', fontSize: 13, opacity: b.cancelled_at ? 0.6 : 1 }}>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ fontWeight: 600 }}>{b.last_name} {b.first_name}</span>
             {b.nickname && <span style={{ color: '#888' }}>({b.nickname})</span>}
@@ -452,16 +452,16 @@ function BookingList({ productId, onCancel }) {
             <span style={{ fontSize: 11, background: b.payment_method === 'card' ? '#e8f5e9' : '#fff3e0', color: b.payment_method === 'card' ? '#388e3c' : '#e65100', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>
               {b.payment_method === 'card' ? 'カード' : '現金'}
             </span>
-            {b.is_cancelled && (
+            {b.cancelled_at && (
               <span style={{ fontSize: 11, background: '#ffebee', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontWeight: 700 }}>キャンセル</span>
             )}
-            {!b.is_cancelled && (
+            {!b.cancelled_at && (
               <button onClick={() => cancelBooking(b)}
                 style={{ marginLeft: 'auto', fontSize: 11, padding: '2px 10px', borderRadius: 6, border: '1px solid #e53935', background: '#fff', color: '#e53935', cursor: 'pointer', fontWeight: 600 }}>
                 キャンセル
               </button>
             )}
-            <span style={{ color: '#bbb', fontSize: 11, marginLeft: b.is_cancelled ? 'auto' : 0 }}>{new Date(b.created_at).toLocaleDateString('ja-JP')}</span>
+            <span style={{ color: '#bbb', fontSize: 11, marginLeft: b.cancelled_at ? 'auto' : 0 }}>{new Date(b.created_at).toLocaleDateString('ja-JP')}</span>
           </div>
           {(b.event_date_input || b.meeting_place || b.shooting_time) && (
             <div style={{ marginTop: 6, fontSize: 12, color: '#666', display: 'flex', gap: 12, flexWrap: 'wrap' }}>

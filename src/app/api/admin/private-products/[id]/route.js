@@ -26,7 +26,7 @@ export async function GET(_req, { params }) {
 
   const { data: bookings } = await admin
     .from('private_bookings')
-    .select('id, last_name, first_name, email, phone, nickname, sns_url, payment_method, notes, event_date_input, meeting_place, shooting_time, is_cancelled, created_at')
+    .select('id, last_name, first_name, email, phone, nickname, sns_url, payment_method, notes, event_date_input, meeting_place, shooting_time, cancelled_at, created_at')
     .eq('product_id', id)
     .order('created_at', { ascending: false })
 
