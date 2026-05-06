@@ -1,5 +1,5 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
-import { sendLineMessage, sendLineGroupMessage, broadcastCameraLine } from '@/lib/line'
+import { sendLineMessage, sendLineGroupMessage, broadcastCameraLine, broadcastCameraLineWithImage } from '@/lib/line'
 
 async function checkAdmin() {
   const server = await createSupabaseServerClient()
@@ -41,12 +41,14 @@ export async function POST(req) {
   const admin = await checkAdmin()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { message, model_ids, channel } = await req.json()
+  const { message, model_ids, channel, image_url } = await req.json()
   if (!message?.trim()) return Response.json({ error: 'メッセージを入力してください' }, { status: 400 })
 
   // カメラマン公式LINE（broadcastAPI）
   if (channel === 'camera') {
-    const result = await broadcastCameraLine(message)
+    const result = image_url
+      ? await broadcastCameraLineWithImage(message, image_url)
+      : await broadcastCameraLine(message)
     return Response.json({ ok: result.ok, error: result.ok ? null : result.reason })
   }
 

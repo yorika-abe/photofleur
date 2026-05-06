@@ -12,12 +12,12 @@ async function pushMessage(token, to, message) {
   return { ok: res.ok, status: res.status }
 }
 
-async function broadcastMessage(token, message) {
+async function broadcastMessages(token, messages) {
   if (!token) return { ok: false, reason: 'missing config' }
   const res = await fetch('https://api.line.me/v2/bot/message/broadcast', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ messages: [{ type: 'text', text: message }] }),
+    body: JSON.stringify({ messages }),
   })
   return { ok: res.ok, status: res.status }
 }
@@ -32,7 +32,13 @@ export async function sendLineGroupMessage(message) {
 }
 
 export async function broadcastCameraLine(message) {
-  return broadcastMessage(LINE_CAMERA_CHANNEL_ACCESS_TOKEN, message)
+  return broadcastMessages(LINE_CAMERA_CHANNEL_ACCESS_TOKEN, [{ type: 'text', text: message }])
+}
+
+export async function broadcastCameraLineWithImage(message, imageUrl) {
+  const msgs = [{ type: 'text', text: message }]
+  if (imageUrl) msgs.push({ type: 'image', originalContentUrl: imageUrl, previewImageUrl: imageUrl })
+  return broadcastMessages(LINE_CAMERA_CHANNEL_ACCESS_TOKEN, msgs)
 }
 
 export function buildBookingNoticeMessage({ modelName, eventDate, slotLabel, customerName }) {

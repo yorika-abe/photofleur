@@ -86,6 +86,40 @@ const AUTO_TEMPLATES = [
   },
 ]
 
+const CAMERA_TEMPLATES = [
+  {
+    key: 'camera_event_publish',
+    label: 'イベント公開告知',
+    trigger: 'イベントを公開した時（スケジュール管理画面で手動確認）',
+    vars: [
+      { key: '{{event_date}}', desc: '開催日（〜開催終了日）' },
+      { key: '{{title}}', desc: 'タイトル' },
+      { key: '{{subtitle}}', desc: '小見出し' },
+      { key: '{{description}}', desc: '魅惑文' },
+      { key: '{{booking_open_at}}', desc: '予約受付開始日時' },
+      { key: '{{event_url}}', desc: 'イベント詳細URL' },
+    ],
+  },
+  {
+    key: 'camera_booking_open',
+    label: '予約受付開始',
+    trigger: '予約受付開始日時になった時（自動cron・毎時）',
+    vars: [
+      { key: '{{event_date}}', desc: '開催日' },
+      { key: '{{title}}', desc: 'タイトル' },
+      { key: '{{subtitle}}', desc: '小見出し' },
+    ],
+  },
+  {
+    key: 'camera_friday_lineup',
+    label: '金曜日週間告知',
+    trigger: '毎週金曜日 朝7時（自動cron）',
+    vars: [
+      { key: '{{events_list}}', desc: '今週末〜翌金曜日のイベント一覧（自動生成）' },
+    ],
+  },
+]
+
 const INDIVIDUAL_TEMPLATES = [
   {
     key: 'model_booking_notify',
@@ -491,6 +525,9 @@ function TabCamera() {
           <LinePreview message={message} accountName="PhotoFleur公式（カメラマン向け）" />
           <p style={{ fontSize: 11, color: '#aaa', marginTop: 10 }}>※ LINEはプレーンテキストのみ送信されます</p>
         </div>
+      </div>
+      <div style={{ gridColumn: '1 / -1' }}>
+        <AutoTemplateSection templateDefs={CAMERA_TEMPLATES} />
       </div>
     </div>
   )

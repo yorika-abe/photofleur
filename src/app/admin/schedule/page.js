@@ -19,6 +19,9 @@ export default function AdminSchedulePage() {
   const [tab, setTab] = useState('upcoming')
   const [saving, setSaving] = useState(false)
   const [reusing, setReusing] = useState(null)
+  const [cameraNotify, setCameraNotify] = useState(null)
+  const [cameraNotifySending, setCameraNotifySending] = useState(false)
+  const [cameraNotifySent, setCameraNotifySent] = useState(false)
 
   useEffect(() => { load() }, [])
 
@@ -50,6 +53,22 @@ export default function AdminSchedulePage() {
     setSaving(false)
   }
 
+  function buildEventDateLabel(eventDate, eventEndDate) {
+    if (!eventDate) return ''
+    const days = ['日', '月', '火', '水', '木', '金', '土']
+    const d = new Date(eventDate + 'T00:00:00')
+    const base = `${d.getMonth() + 1}/${d.getDate()}（${days[d.getDay()]}）`
+    if (!eventEndDate || eventEndDate === eventDate) return base
+    const ed = new Date(eventEndDate + 'T00:00:00')
+    return `${base}〜${ed.getMonth() + 1}/${ed.getDate()}（${days[ed.getDay()]}）`
+  }
+
+  function buildBookingLabel(bookingOpenAt) {
+    if (!bookingOpenAt) return ''
+    const bd = new Date(bookingOpenAt)
+    return `${bd.getMonth() + 1}/${bd.getDate()} ${String(bd.getHours()).padStart(2, '0')}:${String(bd.getMinutes()).padStart(2, '0')}`
+  }
+
   async function toggleStatus(ev) {
     const newStatus = ev.status === 'active' ? 'draft' : 'active'
     await fetch('/api/admin/events', {
@@ -60,16 +79,11 @@ export default function AdminSchedulePage() {
     setEvents(prev => prev.map(e => e.id === ev.id ? { ...e, status: newStatus } : e))
 
     if (newStatus === 'active') {
-      const siteUrl = (typeof window !== 'undefined' ? window.location.origin : 'https://photofleur.vercel.app')
-      const days = ['日', '月', '火', '水', '木', '金', '土']
-      const eventD = ev.event_date ? new Date(ev.event_date + 'T00:00:00') : null
-      const eventLabel = eventD ? `${eventD.getMonth() + 1}/${eventD.getDate()}（${days[eventD.getDay()]}）` : ''
-      let bookingLabel = ''
-      if (ev.booking_open_at) {
-        const bd = new Date(ev.booking_open_at)
-        bookingLabel = `${bd.getMonth() + 1}/${bd.getDate()} ${String(bd.getHours()).padStart(2, '0')}:${String(bd.getMinutes()).padStart(2, '0')}`
-      }
+      const siteUrl = window.location.origin
+      const eventLabel = buildEventDateLabel(ev.event_date, ev.event_end_date)
+      const bookingLabel = buildBookingLabel(ev.booking_open_at)
       const title = ev.title || ev.location_name || ''
+      // モデフル（全体グループ）へ自動送信
       fetch('/api/admin/line-templates')
         .then(r => r.json())
         .then(({ templates }) => {
@@ -85,7 +99,35 @@ export default function AdminSchedulePage() {
             body: JSON.stringify({ message, channel: 'group' }),
           })
         })
+      // 公式LINEバナーを表示
+      setCameraNotifySent(false)
+      setCameraNotify({ ev })
     }
+  }
+
+  async function sendCameraNotify() {
+    if (!cameraNotify) return
+    setCameraNotifySending(true)
+    const ev = cameraNotify.ev
+    const siteUrl = window.location.origin
+    const eventLabel = buildEventDateLabel(ev.event_date, ev.event_end_date)
+    const bookingLabel = buildBookingLabel(ev.booking_open_at)
+    const { templates } = await fetch('/api/admin/line-templates').then(r => r.json())
+    const template = templates?.camera_event_publish ?? `【イベント公開のお知らせ📸】\n\n{{event_date}}📍{{title}}\n{{subtitle}}\nのイベント詳細が公開されました！\n\n{{description}}\n\n予約受付開始は\n🗓️{{booking_open_at}}〜\n\nイベント詳細はリンクからご確認ください💖\n🔗{{event_url}}`
+    const message = template
+      .replace('{{event_date}}', eventLabel)
+      .replace('{{title}}', ev.title || '')
+      .replace('{{subtitle}}', ev.subtitle || '')
+      .replace('{{description}}', ev.description || '')
+      .replace('{{booking_open_at}}', bookingLabel)
+      .replace('{{event_url}}', `${siteUrl}/schedule/${ev.id}`)
+    await fetch('/api/admin/line-broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, channel: 'camera', image_url: ev.thumbnail_image || null }),
+    })
+    setCameraNotifySending(false)
+    setCameraNotifySent(true)
   }
 
   async function deleteEvent(id) {
@@ -158,6 +200,29 @@ export default function AdminSchedulePage() {
       </div>
 
       {loadError && <div style={{ background: '#fce4ec', border: '1px solid #ef9a9a', borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#c62828' }}>エラー: {loadError}</div>}
+
+      {cameraNotify && (
+        <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 12, padding: '14px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <div style={{ fontWeight: 700, color: '#e65100', fontSize: 14, marginBottom: 4 }}>📣 公式LINE（カメラマン向け）でも告知しますか？</div>
+            <div style={{ fontSize: 13, color: '#795548' }}>「{cameraNotify.ev.title || cameraNotify.ev.location_name}」を公開告知します{cameraNotify.ev.thumbnail_image ? '（サムネイル画像も送信）' : ''}</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            {cameraNotifySent ? (
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#2e7d32' }}>✅ 送信済み</span>
+            ) : (
+              <button onClick={sendCameraNotify} disabled={cameraNotifySending}
+                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: cameraNotifySending ? '#ccc' : '#f57c00', color: '#fff', fontWeight: 700, fontSize: 13, cursor: cameraNotifySending ? 'not-allowed' : 'pointer' }}>
+                {cameraNotifySending ? '送信中...' : 'はい、送信する'}
+              </button>
+            )}
+            <button onClick={() => setCameraNotify(null)}
+              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', color: '#888', fontSize: 13, cursor: 'pointer' }}>
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* タブ */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #e5e5e5' }}>
