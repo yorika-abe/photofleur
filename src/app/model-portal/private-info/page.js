@@ -75,6 +75,81 @@ function ContractModal({ form, onClose, onAgree, readOnly, agreedAt }) {
   )
 }
 
+const RULES_ARTICLES = [
+  { title: '第1条（掛け持ちの禁止）', body: '他撮影会との掛け持ちは禁止とします。' },
+  { title: '第2条（カメラマンとの個別接触の禁止）', body: '撮影会に参加されたカメラマンと、撮影会外で個人的に会い、直接撮影を受ける行為を禁止します。\n※撮影会の運営維持のため、厳守してください。' },
+  { title: '第3条（作品撮りの例外）', body: '同年代の友人関係にある方との、私的な作品撮り（食事や交流を伴うもの）は許可します。\n※営利目的や継続的な撮影は対象外とします。' },
+  { title: '第4条（写真の利用について）', body: '撮影会で撮影された写真の二次利用（販売・他媒体への提供等）は禁止します。\nただし、個人のSNSでの使用は可能とします。' },
+  { title: '第5条（キャンセルについて）', body: '撮影枠に予約が入った後のキャンセルは原則できません。やむを得ない場合を除き、責任を持って対応してください。' },
+  { title: '第6条（情報漏洩の禁止）', body: '報酬や運営内容など、撮影会の内部情報を外部へ漏らす行為を禁止します。' },
+  { title: '第7条（欠勤について）', body: '当日の無断欠勤は禁止とします。\n事前連絡がある場合でも、当日欠勤が継続する場合は登録解除の対象となります。' },
+  { title: '第8条（活動制限）', body: 'ラウンジ、キャバクラ等の水商売での勤務をされている方の登録はお断りしております。' },
+  { title: '第9条（勧誘行為の禁止）', body: '他コミュニティ、団体、事業への勧誘行為を禁止します。\n違反が確認された場合、必要に応じて法的措置を検討します。' },
+  { title: '第10条（将来的な起用について）', body: '当撮影会では、今後アパレル事業等の展開を予定しており、専属モデルとしてスカウトさせていただく可能性があります。' },
+  { title: '第11条（衣装および表現の禁止）', body: 'モデルは、以下に該当する衣装・表現での撮影活動を一切行ってはなりません。\n・水着（ビキニ、ワンピース水着等すべてを含む）\n・過度な露出のあるコスプレ衣装\n・下着、または下着と誤認される可能性のある衣装\n・過度な露出を伴う服装（胸部・臀部・腹部等の露出が大きいもの）\n・性的表現を含む撮影およびコンテンツ' },
+  { title: '第12条（適用範囲）', body: '上記は撮影会内外、媒体（SNS公開アカウント・個人活動含む）を問わず適用されます。' },
+  { title: '第13条（違反時の措置）', body: '本条項に違反した場合、登録解除とさせていただく場合があります。' },
+]
+
+function RulesModal({ onClose, onAgree, readOnly, agreedAt }) {
+  const [scrolled, setScrolled] = useState(readOnly)
+  const [checked, setChecked] = useState(false)
+  const agreedDate = agreedAt
+    ? new Date(agreedAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
+    : null
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 680, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid #e5e5e5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1a3560' }}>フォトフルール モデル登録規約</h2>
+            {readOnly && <div style={{ fontSize: 12, color: '#388e3c', fontWeight: 600, marginTop: 4 }}>✅ 同意済み・閲覧専用</div>}
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#888' }}>×</button>
+        </div>
+        <div
+          onScroll={e => { const el = e.currentTarget; if (el.scrollTop + el.clientHeight >= el.scrollHeight - 20) setScrolled(true) }}
+          style={{ overflowY: 'auto', padding: '24px', flex: 1, fontSize: 13, lineHeight: 2, color: '#333' }}
+        >
+          {!readOnly && <p style={{ color: '#888', fontSize: 12, marginTop: 0 }}>※ 最後までスクロールして内容をご確認ください</p>}
+          {RULES_ARTICLES.map((a, i) => (
+            <div key={i} style={{ marginBottom: 20 }}>
+              <div style={{ fontWeight: 700, color: '#1a3560', fontSize: 14, marginBottom: 4 }}>{a.title}</div>
+              <div style={{ whiteSpace: 'pre-wrap' }}>{a.body}</div>
+            </div>
+          ))}
+          {agreedDate && <p style={{ color: '#555', fontSize: 12, marginTop: 16 }}>同意日：{agreedDate}</p>}
+        </div>
+        <div style={{ padding: '16px 24px', borderTop: '1px solid #e5e5e5', background: '#f8fbff' }}>
+          {readOnly ? (
+            <button onClick={onClose} style={{ width: '100%', background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '13px', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+              閉じる
+            </button>
+          ) : (
+            <>
+              {!scrolled && <p style={{ fontSize: 12, color: '#e65100', margin: '0 0 12px', fontWeight: 600 }}>↓ 最後までスクロールすると同意できます</p>}
+              {scrolled && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1a3560' }}>
+                  <input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer' }} />
+                  上記の撮影会規約に同意します
+                </label>
+              )}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={onClose} style={{ flex: 1, background: '#f5f5f5', color: '#555', border: 'none', borderRadius: 8, padding: '12px', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>キャンセル</button>
+                <button onClick={() => checked && onAgree()} disabled={!checked}
+                  style={{ flex: 2, background: checked ? '#1a3560' : '#ccc', color: '#fff', border: 'none', borderRadius: 8, padding: '12px', cursor: checked ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: 14 }}>
+                  同意する
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function Field({ label, required, value, editing, onChange, placeholder }) {
   return (
     <div>
@@ -98,11 +173,13 @@ export default function PrivateInfoPage() {
   const [liveData, setLiveData] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [contractAgreedAt, setContractAgreedAt] = useState(null)
+  const [rulesAgreedAt, setRulesAgreedAt] = useState(null)
   const [pendingChanges, setPendingChanges] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [showContract, setShowContract] = useState(null) // null | 'view' | 'agree'
+  const [showRules, setShowRules] = useState(null) // null | 'view' | 'agree'
   const [editMode, setEditMode] = useState(false)
 
   useEffect(() => {
@@ -117,6 +194,7 @@ export default function PrivateInfoPage() {
         setLiveData(live)
         setForm(live)
         setContractAgreedAt(data.contract_agreed_at || null)
+        setRulesAgreedAt(data.rules_agreed_at || null)
         setPendingChanges(data.pending_changes || null)
       }
       setLoading(false)
@@ -154,6 +232,19 @@ export default function PrivateInfoPage() {
     setSaving(false)
   }
 
+  async function handleAgreeRules() {
+    const now = new Date().toISOString()
+    setSaving(true)
+    await fetch('/api/model-portal/private-info', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...form, rules_agreed_at: now }),
+    })
+    setRulesAgreedAt(now)
+    setShowRules(null)
+    setSaving(false)
+  }
+
   async function submitChangeRequest() {
     setSaving(true)
     await fetch('/api/model-portal/private-info', {
@@ -179,6 +270,7 @@ export default function PrivateInfoPage() {
   return (
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '40px 20px' }}>
       {showContract && <ContractModal form={form} onClose={() => setShowContract(null)} onAgree={handleAgree} readOnly={showContract === 'view'} agreedAt={contractAgreedAt} />}
+      {showRules && <RulesModal onClose={() => setShowRules(null)} onAgree={handleAgreeRules} readOnly={showRules === 'view'} agreedAt={rulesAgreedAt} />}
 
       <Link href="/model-portal" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← モデルポータル</Link>
       <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: '16px 0 6px' }}>非公開登録情報</h1>
@@ -259,6 +351,36 @@ export default function PrivateInfoPage() {
                 契約書・同意書を確認して締結する
               </button>
               {!canAgree && <p style={{ fontSize: 12, color: '#e53935', marginTop: 8 }}>※ 本名・住所・最寄り駅・電話番号・メールアドレスを入力してください</p>}
+            </>
+          )}
+        </div>
+
+        {/* 撮影会規約同意 */}
+        <div style={{ background: '#fff', border: rulesAgreedAt ? '2px solid #a5d6a7' : '1px solid #d6ecf5', borderRadius: 14, padding: '24px' }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 12 }}>撮影会規約への同意</h2>
+          {rulesAgreedAt ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: '#e8f5e9', borderRadius: 10, padding: '16px 20px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 36 }}>✅</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, color: '#2e7d32', fontSize: 16 }}>同意済み</div>
+                <div style={{ fontSize: 12, color: '#555', marginTop: 4 }}>
+                  同意日：{new Date(rulesAgreedAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+              <button onClick={() => setShowRules('view')}
+                style={{ background: '#fff', color: '#2e7d32', border: '1px solid #a5d6a7', borderRadius: 8, padding: '8px 18px', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                規約を確認する →
+              </button>
+            </div>
+          ) : (
+            <>
+              <p style={{ fontSize: 13, color: '#555', lineHeight: 1.8, marginBottom: 16 }}>
+                フォトフルール モデル登録規約への同意が必要です。
+              </p>
+              <button onClick={() => setShowRules('agree')}
+                style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 24px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                規約を確認して同意する
+              </button>
             </>
           )}
         </div>

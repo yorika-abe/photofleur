@@ -50,6 +50,7 @@ export async function POST(req) {
     updated_at: new Date().toISOString(),
   }
   if (body.contract_agreed_at) payload.contract_agreed_at = body.contract_agreed_at
+  if (body.rules_agreed_at) payload.rules_agreed_at = body.rules_agreed_at
 
   const { error } = await admin.from('model_private_info').upsert(payload, { onConflict: 'model_id' })
   if (error) return Response.json({ error: error.message }, { status: 500 })
