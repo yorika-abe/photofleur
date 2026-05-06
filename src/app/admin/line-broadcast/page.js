@@ -5,9 +5,9 @@ import Link from 'next/link'
 const MAX_CHARS = 500
 
 const TABS = [
-  { id: 'all', label: 'モデル全体', icon: '👥', from: 'モデル向けLINEアカウント', desc: 'LINE登録済みモデル全員または選択したモデルに送信' },
-  { id: 'individual', label: 'モデル個人', icon: '👤', from: 'モデル向けLINEアカウント', desc: '特定のモデル1人に送信' },
-  { id: 'birthday', label: '誕生日', icon: '🎂', from: 'モデル向けLINEアカウント', desc: 'モデルの誕生日にお祝いLINEを送信' },
+  { id: 'all', label: 'モデル全体', icon: '👥', from: 'モデル向けLINEアカウント', desc: 'モデル全体グループLINEに送信' },
+  { id: 'individual', label: 'モデル個人', icon: '👤', from: 'モデル向けLINEアカウント', desc: '1人のモデルを選んで個別グループLINEに送信' },
+  { id: 'birthday', label: '誕生日', icon: '🎂', from: 'モデル向けLINEアカウント', desc: 'モデルの誕生日にグループLINEでお祝いメッセージを送信' },
   { id: 'camera', label: '公式LINE', icon: '📣', from: 'カメラマン向け公式LINEアカウント', desc: '公式LINEの全フォロワーに一斉ブロードキャスト' },
 ]
 
@@ -61,56 +61,35 @@ function SendButtons({ canSend, recipientLabel, sending, confirmed, onConfirm, o
 }
 
 // ---- タブ1: モデル全体 ----
-function TabAll({ models }) {
+function TabAll() {
   const [message, setMessage] = useState('')
-  const [selectedIds, setSelectedIds] = useState([])
-  const [selectAll, setSelectAll] = useState(true)
   const [sending, setSending] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
   const [result, setResult] = useState(null)
 
-  const recipientCount = selectAll ? models.length : selectedIds.length
-  const canSend = message.trim().length > 0 && recipientCount > 0
-
-  function toggleModel(id) {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-  }
+  const canSend = message.trim().length > 0
 
   async function handleSend() {
     setSending(true); setResult(null)
     const res = await fetch('/api/admin/line-broadcast', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, model_ids: selectAll ? [] : selectedIds }),
+      body: JSON.stringify({ message, channel: 'group' }),
     })
     const json = await res.json()
     setSending(false); setConfirmed(false)
-    setResult(res.ok ? { ok: true, sent: json.sent, failed: json.failed } : { error: json.error })
+    setResult(res.ok && json.ok ? { ok: true } : { error: json.error || '送信に失敗しました' })
   }
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 12 }}>送信先</div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 10 }}>
-            <input type="checkbox" checked={selectAll} onChange={() => { setSelectAll(v => !v); setSelectedIds([]) }} />
-            <span style={{ fontSize: 14, fontWeight: 600 }}>全員（{models.length}名）</span>
-          </label>
-          {!selectAll && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 8, maxHeight: 200, overflowY: 'auto' }}>
-              {models.length === 0
-                ? <p style={{ color: '#aaa', fontSize: 13 }}>LINE登録済みモデルがいません</p>
-                : models.map(m => (
-                  <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                    <input type="checkbox" checked={selectedIds.includes(m.id)} onChange={() => toggleModel(m.id)} />
-                    <span style={{ fontSize: 14 }}>{m.name}</span>
-                  </label>
-                ))
-              }
-            </div>
-          )}
-          <div style={{ marginTop: 10, fontSize: 12, color: '#1a3560', fontWeight: 600 }}>→ {recipientCount}名に送信</div>
+        <div style={{ background: '#e3f2fd', borderRadius: 12, border: '1px solid #90caf9', padding: '14px 18px', fontSize: 13 }}>
+          <div style={{ fontWeight: 700, color: '#1565c0', marginBottom: 4 }}>👥 モデル全体グループLINE</div>
+          <div style={{ color: '#1976d2', lineHeight: 1.7 }}>
+            全モデル・運営が参加しているグループLINEに送信します。<br />
+            イベント公開・シフト提出案内などに使用してください。
+          </div>
         </div>
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -118,16 +97,16 @@ function TabAll({ models }) {
             <span style={{ fontSize: 12, color: message.length > MAX_CHARS ? '#e53935' : '#aaa' }}>{message.length} / {MAX_CHARS}</span>
           </div>
           <textarea value={message} onChange={e => { setMessage(e.target.value); setConfirmed(false); setResult(null) }}
-            rows={10} placeholder={'例：\n【PhotoFleur】お知らせ🌸\n\n来月のシフト提出期限は〇月〇日です。\nよろしくお願いいたします。'}
+            rows={12} placeholder={'例：\n【PhotoFleur】お知らせ🌸\n\n来月のシフト提出期限は〇月〇日です。\nよろしくお願いいたします。'}
             style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.7, fontFamily: 'inherit' }} />
         </div>
         {result && (
           <div style={{ padding: '10px 14px', borderRadius: 8, background: result.error ? '#ffebee' : '#e8f5e9', border: `1px solid ${result.error ? '#ef9a9a' : '#a5d6a7'}`, fontSize: 13 }}>
             {result.error ? <span style={{ color: '#c62828' }}>エラー: {result.error}</span>
-              : <span style={{ color: '#2e7d32', fontWeight: 600 }}>✅ 送信完了：{result.sent}件成功{result.failed > 0 ? ` / ${result.failed}件失敗` : ''}</span>}
+              : <span style={{ color: '#2e7d32', fontWeight: 600 }}>✅ モデル全体グループへの送信が完了しました</span>}
           </div>
         )}
-        <SendButtons canSend={canSend} recipientLabel={`${recipientCount}名`} sending={sending} confirmed={confirmed}
+        <SendButtons canSend={canSend} recipientLabel="モデル全体グループ" sending={sending} confirmed={confirmed}
           onConfirm={() => setConfirmed(true)} onSend={handleSend} onBack={() => setConfirmed(false)} />
       </div>
       <div>
@@ -167,6 +146,12 @@ function TabIndividual({ models }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ background: '#f3e5f5', borderRadius: 12, border: '1px solid #ce93d8', padding: '14px 18px', fontSize: 13 }}>
+          <div style={{ fontWeight: 700, color: '#6a1b9a', marginBottom: 4 }}>👤 モデル個別グループLINE</div>
+          <div style={{ color: '#7b1fa2', lineHeight: 1.7 }}>
+            選択したモデルと運営が参加している個別グループLINEに送信します。
+          </div>
+        </div>
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
           <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 12 }}>送信先モデルを選択</div>
           {models.length === 0
@@ -209,13 +194,7 @@ function TabIndividual({ models }) {
   )
 }
 
-const DEFAULT_BIRTHDAY_MSG = `【PhotoFleur】
-お誕生日おめでとうございます🎂🌸
-
-いつも一緒に活動してくれてありがとうございます。
-素敵な一日になりますように！
-
-PhotoFleur運営`
+const DEFAULT_BIRTHDAY_MSG = `今日は○○ちゃんの誕生日！\nお誕生日おめでとうございます💖\n素敵な1日になりますように❣️\n\nPhotoFleur運営`
 
 // ---- タブ3: 誕生日 ----
 function TabBirthday() {
@@ -249,14 +228,15 @@ function TabBirthday() {
 
   async function sendBirthday(model) {
     setSending(model.id)
+    const msg = `今日は${model.name}ちゃんの誕生日！\nお誕生日おめでとうございます💖\n素敵な1日になりますように❣️\n\nPhotoFleur運営`
     const res = await fetch('/api/admin/line-broadcast', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: DEFAULT_BIRTHDAY_MSG, model_ids: [model.id] }),
+      body: JSON.stringify({ message: msg, channel: 'group' }),
     })
     const json = await res.json()
     setSending(null)
-    setResults(prev => ({ ...prev, [model.id]: res.ok && json.sent > 0 ? 'ok' : 'fail' }))
+    setResults(prev => ({ ...prev, [model.id]: res.ok && json.ok ? 'ok' : 'fail' }))
   }
 
   return (
@@ -265,8 +245,8 @@ function TabBirthday() {
         <div style={{ background: '#e8f5e9', borderRadius: 12, border: '1px solid #a5d6a7', padding: '14px 18px', fontSize: 13 }}>
           <div style={{ fontWeight: 700, color: '#2e7d32', marginBottom: 4 }}>🤖 自動送信が有効です</div>
           <div style={{ color: '#388e3c', lineHeight: 1.7 }}>
-            モデルプロフィールに誕生日が登録されていれば、毎日0:00（JST）に当日誕生日のモデルへ自動でLINEを送信します。<br />
-            手動で送りたい場合は下の一覧から「LINE送信」を押してください。
+            モデルプロフィールに誕生日が登録されていれば、毎日0:00（JST）にモデルグループLINEへ自動でお祝いメッセージを送信します。<br />
+            手動で送りたい場合は下の一覧から「手動送信」を押してください。
           </div>
         </div>
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
@@ -293,21 +273,18 @@ function TabBirthday() {
                     <div style={{ flex: 1 }}>
                       <span style={{ fontWeight: 700, fontSize: 14 }}>{m.name}</span>
                       <span style={{ fontSize: 13, color: '#888', marginLeft: 8 }}>{month}/{day}</span>
-                      {isToday && <span style={{ marginLeft: 8, fontSize: 12, color: '#e65100', fontWeight: 700 }}>🎂 今日！自動送信済みのはず</span>}
+                      {isToday && <span style={{ marginLeft: 8, fontSize: 12, color: '#e65100', fontWeight: 700 }}>🎂 今日！</span>}
                       {!isToday && isSoon && <span style={{ marginLeft: 8, fontSize: 12, color: '#7b1fa2' }}>あと{diff}日</span>}
-                      {!m.line_id && <span style={{ marginLeft: 8, fontSize: 11, color: '#aaa' }}>（LINE未登録・自動送信対象外）</span>}
                     </div>
-                    {m.line_id && (
-                      results[m.id] === 'ok' ? (
-                        <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 700 }}>✅ 送信済</span>
-                      ) : results[m.id] === 'fail' ? (
-                        <span style={{ fontSize: 12, color: '#c62828', fontWeight: 700 }}>❌ 失敗</span>
-                      ) : (
-                        <button onClick={() => sendBirthday(m)} disabled={sending === m.id}
-                          style={{ padding: '5px 12px', borderRadius: 7, border: 'none', background: '#06c755', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: sending === m.id ? 0.6 : 1 }}>
-                          {sending === m.id ? '送信中...' : '手動送信'}
-                        </button>
-                      )
+                    {results[m.id] === 'ok' ? (
+                      <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 700 }}>✅ 送信済</span>
+                    ) : results[m.id] === 'fail' ? (
+                      <span style={{ fontSize: 12, color: '#c62828', fontWeight: 700 }}>❌ 失敗</span>
+                    ) : (
+                      <button onClick={() => sendBirthday(m)} disabled={sending === m.id}
+                        style={{ padding: '5px 12px', borderRadius: 7, border: 'none', background: '#06c755', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: sending === m.id ? 0.6 : 1 }}>
+                        {sending === m.id ? '送信中...' : '手動送信'}
+                      </button>
                     )}
                   </div>
                 )
@@ -429,7 +406,7 @@ export default function LineBroadcastPage() {
       </div>
 
       {/* タブコンテンツ */}
-      {activeTab === 'all' && <TabAll models={models} />}
+      {activeTab === 'all' && <TabAll />}
       {activeTab === 'individual' && <TabIndividual models={models} />}
       {activeTab === 'birthday' && <TabBirthday />}
       {activeTab === 'camera' && <TabCamera />}

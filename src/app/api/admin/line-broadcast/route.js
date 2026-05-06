@@ -1,5 +1,5 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
-import { sendLineMessage, broadcastCameraLine } from '@/lib/line'
+import { sendLineMessage, sendLineGroupMessage, broadcastCameraLine } from '@/lib/line'
 
 async function checkAdmin() {
   const server = await createSupabaseServerClient()
@@ -47,6 +47,12 @@ export async function POST(req) {
   // カメラマン公式LINE（broadcastAPI）
   if (channel === 'camera') {
     const result = await broadcastCameraLine(message)
+    return Response.json({ ok: result.ok, error: result.ok ? null : result.reason })
+  }
+
+  // モデルグループLINE
+  if (channel === 'group') {
+    const result = await sendLineGroupMessage(message)
     return Response.json({ ok: result.ok, error: result.ok ? null : result.reason })
   }
 

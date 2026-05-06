@@ -1,13 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
-import { sendLineMessage } from '@/lib/line'
+import { sendLineGroupMessage } from '@/lib/line'
 
-const BIRTHDAY_MESSAGE = `【PhotoFleur】
-お誕生日おめでとうございます🎂🌸
-
-いつも一緒に活動してくれてありがとうございます。
-素敵な一日になりますように！
-
-PhotoFleur運営`
+function buildBirthdayMessage(name) {
+  return `今日は${name}ちゃんの誕生日！\nお誕生日おめでとうございます💖\n素敵な1日になりますように❣️\n\nPhotoFleur運営`
+}
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url)
@@ -28,10 +24,9 @@ export async function GET(req) {
 
   const { data: models } = await supabase
     .from('models')
-    .select('id, name, birthday, line_id')
+    .select('id, name, birthday')
     .eq('is_active', true)
     .not('birthday', 'is', null)
-    .not('line_id', 'is', null)
 
   const targets = (models || []).filter(m => {
     const [, bMonth, bDay] = (m.birthday || '').split('-').map(Number)
@@ -44,13 +39,14 @@ export async function GET(req) {
 
   let sent = 0, failed = 0
   for (const model of targets) {
-    const result = await sendLineMessage(model.line_id, BIRTHDAY_MESSAGE)
+    const message = buildBirthdayMessage(model.name)
+    const result = await sendLineGroupMessage(message)
     if (result.ok) sent++
     else failed++
     await supabase.from('line_notifications').insert({
       model_id: model.id,
       type: 'birthday',
-      message: BIRTHDAY_MESSAGE,
+      message,
       status: result.ok ? 'sent' : 'failed',
     }).catch(() => {})
   }
