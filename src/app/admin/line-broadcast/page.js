@@ -187,6 +187,7 @@ const INDIVIDUAL_TEMPLATES = [
       { key: '{{photographer_slots}}', desc: 'スロットごとのカメラマンSNS URL（空き→🈳）' },
       { key: '{{event_page_url}}', desc: 'イベントページURL' },
       { key: '{{model_lunch_note}}', desc: 'ランチ情報（イベント通知設定より）' },
+      { key: '{{planning_note_model}}', desc: '企画書（モデル向け）の内容（イベント企画書タブより）' },
       { key: '{{extra_sections}}', desc: '追加セクション（伝達事項の【タイトル】形式）' },
     ],
   },

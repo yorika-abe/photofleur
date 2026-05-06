@@ -86,7 +86,6 @@ export default function EventEditPage() {
 
   const [recalculating, setRecalculating] = useState(null) // entryId
   const [recalcDone, setRecalcDone] = useState(null) // entryId
-  const [lineTemplates, setLineTemplates] = useState(null)
 
   const [cropSrc, setCropSrc] = useState(null)
   const [cropTarget, setCropTarget] = useState(null) // 'main' | 'portrait'
@@ -96,11 +95,6 @@ export default function EventEditPage() {
 
 
   useEffect(() => { load() }, [id])
-  useEffect(() => {
-    if (activeTab === 'notify' && !lineTemplates) {
-      fetch('/api/admin/line-templates').then(r => r.json()).then(d => setLineTemplates(d.templates || {}))
-    }
-  }, [activeTab])
 
   async function load() {
     try {
@@ -1309,27 +1303,6 @@ export default function EventEditPage() {
               style={{ background: '#2e7d32', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
               今すぐ前日通知を送信
             </button>
-            {lineTemplates?.model_day_before && (
-              <div style={{ marginTop: 16, background: 'rgba(255,255,255,0.7)', borderRadius: 8, padding: '10px 14px' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#2e7d32', marginBottom: 8 }}>📋 前日LINE テンプレート</div>
-                <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 12, color: '#1b5e20', whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{lineTemplates.model_day_before}</pre>
-              </div>
-            )}
-          </div>
-
-          <div style={{ background: '#e3f2fd', borderRadius: 12, padding: 20, border: '1px solid #90caf9' }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1565c0', marginBottom: 4, marginTop: 0 }}>予約時モデル通知テンプレート</h3>
-            <p style={{ fontSize: 12, color: '#1976d2', marginBottom: 12 }}>特別予約商品でモデルが選択された際に自動送信されます</p>
-            {lineTemplates?.model_booking_notify && (
-              <div style={{ marginBottom: 16, background: 'rgba(255,255,255,0.7)', borderRadius: 8, padding: '10px 14px' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#1565c0', marginBottom: 6 }}>📋 スロット予約時テンプレート</div>
-                <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 12, color: '#0d47a1', whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{lineTemplates.model_booking_notify}</pre>
-              </div>
-            )}
-            <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 8, padding: '10px 14px' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#1565c0', marginBottom: 6 }}>📋 商品予約時テンプレート（固定）</div>
-              <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 12, color: '#0d47a1', whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{`【指定あり】\n{開催日} {商品名}\n{時間帯} ※時間帯選択がある場合\n{その他選択肢} ※手動選択肢がある場合\nニックネーム：{ニックネーム}\nSNS URL：{SNS URL}`}</pre>
-            </div>
           </div>
         </div>
       )}
