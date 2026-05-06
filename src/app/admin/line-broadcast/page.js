@@ -86,7 +86,31 @@ const AUTO_TEMPLATES = [
   },
 ]
 
-function AutoTemplateSection() {
+const INDIVIDUAL_TEMPLATES = [
+  {
+    key: 'model_booking_notify',
+    label: '予約通知',
+    trigger: '予約が入った時（自動）',
+    vars: [
+      { key: '{{model_name}}', desc: 'モデル名' },
+      { key: '{{event_date}}', desc: '撮影日' },
+      { key: '{{slot_label}}', desc: '時間枠' },
+      { key: '{{customer_name}}', desc: 'お客様名' },
+    ],
+  },
+  {
+    key: 'model_day_before',
+    label: '撮影前日案内',
+    trigger: '撮影前日（自動cron）',
+    vars: [
+      { key: '{{event_date}}', desc: '撮影日' },
+      { key: '{{slot_label}}', desc: '時間枠' },
+      { key: '{{location_name}}', desc: '集合場所' },
+    ],
+  },
+]
+
+function AutoTemplateSection({ templateDefs }) {
   const [templates, setTemplates] = useState(null)
   const [editing, setEditing] = useState({})
   const [saving, setSaving] = useState({})
@@ -123,7 +147,7 @@ function AutoTemplateSection() {
       </button>
       {open && (
         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {AUTO_TEMPLATES.map(tmpl => (
+          {templateDefs.map(tmpl => (
             <div key={tmpl.key} style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
               <div style={{ fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 2 }}>{tmpl.label}</div>
               <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>送信タイミング：{tmpl.trigger}</div>
@@ -219,7 +243,7 @@ function TabAll() {
           </div>
         </div>
       </div>
-      <AutoTemplateSection />
+      <AutoTemplateSection templateDefs={AUTO_TEMPLATES} />
     </div>
   )
 }
@@ -290,9 +314,12 @@ function TabIndividual({ models }) {
       <div>
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
           <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>プレビュー</div>
-          <LinePreview message={message} accountName="PhotoFleur（モデル向け）" />
+          <LinePreview message={message} accountName="モデフル" />
           <p style={{ fontSize: 11, color: '#aaa', marginTop: 10 }}>※ LINEはプレーンテキストのみ送信されます</p>
         </div>
+      </div>
+      <div style={{ gridColumn: '1 / -1' }}>
+        <AutoTemplateSection templateDefs={INDIVIDUAL_TEMPLATES} />
       </div>
     </div>
   )

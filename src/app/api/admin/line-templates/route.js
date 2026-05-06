@@ -6,6 +6,8 @@ export const DEFAULTS = {
   shift_open: `🗓️シフト提出が解放されました。\nモデル画面から確認して提出してください。\n締め切りは{{deadline}}までです！`,
   shift_deadline_reminder: `お疲れ様です🎀🫧\n📢シフト提出締め切り前日になりました。\n\n未提出者は連絡確認次第モデルポータルからシフト提出日お願いします🙇‍♂️\n🔗${SITE_URL}`,
   event_publish: `📢開催イベントが解放されました。\n\n📍{{event_date}} {{title}}\n予約受付開始日→{{booking_open_at}}~\n\n詳細は🔗{{event_url}}`,
+  model_booking_notify: `【PhotoFleur】予約が入りました🌸\n\nモデル名：{{model_name}}\n撮影日：{{event_date}}\n時間枠：{{slot_label}}\nお客様名：{{customer_name}}\n\n詳細は管理画面をご確認ください。`,
+  model_day_before: `【PhotoFleur】明日の撮影のお知らせ🌸\n\n{{event_date}}（明日）の撮影があります。\n\n時間枠：{{slot_label}}\n集合場所：{{location_name}}\n\nよろしくお願いいたします。`,
 }
 
 export async function GET() {

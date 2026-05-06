@@ -1,5 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
-import { sendLineMessage, buildBookingNoticeMessage, buildDayBeforeNoticeMessage } from '@/lib/line'
+import { sendLineMessage } from '@/lib/line'
+import { DEFAULTS } from '@/app/api/admin/line-templates/route'
+
+function applyVars(template, vars) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '')
+}
+
+async function getTemplate(supabase, key) {
+  const { data } = await supabase.from('line_templates').select('body').eq('key', key).single()
+  return data?.body ?? DEFAULTS[key]
+}
 
 export async function POST(request) {
   const supabase = createClient(
@@ -51,11 +61,12 @@ export async function POST(request) {
     const d = new Date(event.event_date)
     const dateStr = `${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`
 
-    const message = buildBookingNoticeMessage({
-      modelName: model.name,
-      eventDate: dateStr,
-      slotLabel: slot.slot_label,
-      customerName: booking?.name || '不明',
+    const tmpl = await getTemplate(supabase, 'model_booking_notify')
+    const message = applyVars(tmpl, {
+      model_name: model.name,
+      event_date: dateStr,
+      slot_label: slot.slot_label,
+      customer_name: booking?.name || '不明',
     })
 
     // モデル個人に送信（line_idがある場合）
@@ -111,11 +122,11 @@ export async function POST(request) {
         if (reservedSlots.length === 0) continue
 
         const slotLabels = reservedSlots.map(s => s.slot_label).join('、')
-        const message = buildDayBeforeNoticeMessage({
-          modelName: model.name,
-          eventDate: dateStr,
-          slotLabel: slotLabels,
-          locationName: event.location_name,
+        const tmplDay = await getTemplate(supabase, 'model_day_before')
+        const message = applyVars(tmplDay, {
+          event_date: dateStr,
+          slot_label: slotLabels,
+          location_name: event.location_name ?? '',
         })
 
         const result = await sendLineMessage(model.line_id, message)
