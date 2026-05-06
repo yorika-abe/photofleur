@@ -76,8 +76,9 @@ export default function EventEditPage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [products, setProducts] = useState([])
   const [modelsSubTab, setModelsSubTab] = useState('models')
-  const [newProduct, setNewProduct] = useState({ name: '', image: '', description: '', price: 0, stock: 1, option_groups: [], is_delivery: false })
+  const [newProduct, setNewProduct] = useState({ name: '', image: '', description: '', price: 0, stock: 1, option_groups: [], is_delivery: false, notify_model: true })
   const [editingProductId, setEditingProductId] = useState(null)
+  const productFormRef = useRef(null)
 
   const [recalculating, setRecalculating] = useState(null) // entryId
   const [recalcDone, setRecalcDone] = useState(null) // entryId
@@ -415,8 +416,9 @@ export default function EventEditPage() {
     const optionsObj = {}
     if (newProduct.is_delivery) optionsObj.is_delivery = true
     if (newProduct.option_groups.length > 0) { optionsObj.type = 'groups'; optionsObj.groups = newProduct.option_groups }
+    if (newProduct.option_groups.some(g => g.type === 'models')) optionsObj.notify_model = newProduct.notify_model
     const options = Object.keys(optionsObj).length > 0 ? optionsObj : null
-    const RESET_PRODUCT = { name: '', image: '', description: '', price: 0, stock: 1, option_groups: [], is_delivery: false }
+    const RESET_PRODUCT = { name: '', image: '', description: '', price: 0, stock: 1, option_groups: [], is_delivery: false, notify_model: true }
     if (editingProductId) {
       await fetch(`/api/admin/events/${id}/products`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -455,8 +457,9 @@ export default function EventEditPage() {
       }
       return { ...g }
     })
-    setNewProduct({ name: p.name, image: p.image || '', description: p.description || '', price: p.price || 0, stock: p.stock || 1, option_groups, is_delivery: p.options?.is_delivery || false })
+    setNewProduct({ name: p.name, image: p.image || '', description: p.description || '', price: p.price || 0, stock: p.stock || 1, option_groups, is_delivery: p.options?.is_delivery || false, notify_model: p.options?.notify_model !== false })
     setEditingProductId(p.id)
+    setTimeout(() => productFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
 
   function addOptionGroup(type) {
@@ -1013,11 +1016,17 @@ export default function EventEditPage() {
               {modelsSubTab === 'products' && (
                 <div>
                   {/* 商品追加フォーム */}
-                  <div style={{ background: '#f8fbff', borderRadius: 10, padding: 16, marginBottom: 16, border: '1px solid #e0ecf8' }}>
+                  <div ref={productFormRef} style={{ background: '#f8fbff', borderRadius: 10, padding: 16, marginBottom: 16, border: '1px solid #e0ecf8' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      <p style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', margin: 0 }}>{editingProductId ? '予約商品を編集' : '新しい予約商品を追加'}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', margin: 0 }}>{editingProductId ? '予約商品を編集' : '新しい予約商品を追加'}</p>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontSize: 11, color: '#555', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                          <input type="checkbox" checked={newProduct.notify_model} onChange={e => setNewProduct(p => ({ ...p, notify_model: e.target.checked }))} />
+                          対応モデルに連絡
+                        </label>
+                      </div>
                       {editingProductId && (
-                        <button type="button" onClick={() => { setEditingProductId(null); setNewProduct({ name: '', image: '', description: '', price: 0, stock: 1, option_groups: [], is_delivery: false }) }}
+                        <button type="button" onClick={() => { setEditingProductId(null); setNewProduct({ name: '', image: '', description: '', price: 0, stock: 1, option_groups: [], is_delivery: false, notify_model: true }) }}
                           style={{ fontSize: 11, color: '#888', background: 'none', border: '1px solid #ddd', borderRadius: 5, padding: '3px 10px', cursor: 'pointer' }}>キャンセル</button>
                       )}
                     </div>
@@ -1041,7 +1050,7 @@ export default function EventEditPage() {
                               <div style={{ position: 'relative' }}>
                                 <img src={newProduct.image} alt="" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6, border: '1px solid #ddd' }} />
                                 <button type="button" onClick={() => setNewProduct(p => ({ ...p, image: '' }))}
-                                  style={{ position: 'absolute', top: -6, right: -6, background: '#e53935', color: '#fff', border: 'none', borderRadius: '50%', width: 16, height: 16, cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>×</button>
+                                  style={{ position: 'absolute', top: -6, right: -6, background: 'rgba(0,0,0,0.45)', color: '#fff', border: 'none', borderRadius: '50%', width: 16, height: 16, cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>×</button>
                               </div>
                             )}
                             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: uploading === 'product' ? '#ccc' : '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 12px', cursor: uploading === 'product' ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600 }}>

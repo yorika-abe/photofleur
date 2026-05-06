@@ -110,6 +110,27 @@ export async function GET(req) {
   let sentCount = 0
 
   for (const event of events) {
+    // イベント商品（モデル通知あり）の取得
+    const { data: eventProducts } = await supabase
+      .from('event_products')
+      .select('id, name, options')
+      .eq('event_id', event.id)
+
+    const modelNotifyProducts = (eventProducts || []).filter(p => {
+      if (p.options?.notify_model === false) return false
+      return (p.options?.groups || []).some(g => g.type === 'models' && (g.model_choices || []).length > 0)
+    })
+
+    let productBookings = []
+    if (modelNotifyProducts.length > 0) {
+      const { data: pBookings } = await supabase
+        .from('event_product_bookings')
+        .select('product_id, selections, sns_url, nickname')
+        .in('product_id', modelNotifyProducts.map(p => p.id))
+        .is('cancelled_at', null)
+      productBookings = pBookings || []
+    }
+
     for (const entry of event.event_entries || []) {
       const model = entry.models
       if (!model?.line_id) continue
@@ -117,7 +138,44 @@ export async function GET(req) {
       const vars = buildVars(event, entry)
       if (!vars) continue
 
-      const message = applyVars(template, vars).trim()
+      let message = applyVars(template, vars).trim()
+
+      // 商品予約セクションを追加
+      for (const product of modelNotifyProducts) {
+        const modelGroup = (product.options?.groups || []).find(g => g.type === 'models')
+        const modelChoice = (modelGroup?.model_choices || []).find(mc => mc.model_id === model.id)
+        if (!modelChoice) continue
+
+        const pBookings = productBookings.filter(b => {
+          if (b.product_id !== product.id) return false
+          return (b.selections?.model || []).includes(modelChoice.model_name)
+        })
+
+        const lines = [`\n【👗${product.name}】`]
+        if (modelChoice.choices && modelChoice.choices.length > 0) {
+          for (const tc of modelChoice.choices) {
+            const booking = pBookings.find(b => b.selections?.['時間帯'] === tc.name)
+            if (booking) {
+              const extra = Object.entries(booking.selections || {})
+                .filter(([k]) => !['model', 'モデル', '時間帯', 'slot', 'delivery_address'].includes(k))
+                .map(([_, v]) => Array.isArray(v) ? v.join(' ') : String(v)).join(' ')
+              lines.push(`${tc.name} ${booking.sns_url || ''}${extra ? ' ' + extra : ''}`.trim())
+            } else {
+              lines.push(`${tc.name} ❌`)
+            }
+          }
+        } else {
+          for (const booking of pBookings) {
+            const extra = Object.entries(booking.selections || {})
+              .filter(([k]) => !['model', 'モデル', '時間帯', 'slot', 'delivery_address'].includes(k))
+              .map(([_, v]) => Array.isArray(v) ? v.join(' ') : String(v)).join(' ')
+            lines.push(`${booking.sns_url || ''}${extra ? ' ' + extra : ''}`.trim() || '（予約あり）')
+          }
+          if (pBookings.length === 0) lines.push('（予約なし）')
+        }
+
+        message += lines.join('\n')
+      }
 
       const result = await sendLineMessage(model.line_id, message)
       await supabase.from('line_notifications').insert({

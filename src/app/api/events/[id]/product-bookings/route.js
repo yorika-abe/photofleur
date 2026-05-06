@@ -54,15 +54,33 @@ export async function POST(req, { params }) {
 
   // Send LINE to selected models
   if (selected_model_ids?.length > 0) {
-    const { data: modelList } = await admin.from('models').select('id, name, line_id').in('id', selected_model_ids)
-    for (const model of modelList || []) {
-      if (!model.line_id) continue
-      const slotText = selections?.slot ? `\n時間枠：${selections.slot}` : ''
-      const message = `【PhotoFleur】予約商品のご予約🌸\n\n商品名：${product_name}${slotText}\nお名前：${customer_name}${customer_email ? `\nメール：${customer_email}` : ''}`
-      const result = await sendLineMessage(model.line_id, message).catch(() => ({ ok: false }))
-      await admin.from('line_notifications').insert({
-        model_id: model.id, type: 'booking', message, status: result.ok ? 'sent' : 'failed',
-      }).catch(() => {})
+    let notifyModel = true
+    try {
+      const { data: prodData } = await admin.from('event_products').select('options').eq('id', product_id).single()
+      if (prodData?.options?.notify_model === false) notifyModel = false
+    } catch {}
+
+    if (notifyModel) {
+      const { data: modelList } = await admin.from('models').select('id, name, line_id').in('id', selected_model_ids)
+      for (const model of modelList || []) {
+        if (!model.line_id) continue
+        const lines = ['【指定あり】']
+        if (eventData?.event_date) lines.push(eventData.event_date + ' ' + product_name)
+        else lines.push(product_name)
+        const timeSlot = selections?.['時間帯'] || selections?.slot
+        if (timeSlot) lines.push(timeSlot)
+        const manualParts = Object.entries(selections || {})
+          .filter(([k]) => !['model', 'モデル', '時間帯', 'slot', 'delivery_address'].includes(k))
+          .map(([k, v]) => `${k}：${Array.isArray(v) ? v.join(', ') : v}`)
+        if (manualParts.length > 0) lines.push(manualParts.join('\n'))
+        lines.push(`ニックネーム：${customer_name}`)
+        lines.push(`SNS URL：`)
+        const message = lines.filter(Boolean).join('\n')
+        const result = await sendLineMessage(model.line_id, message).catch(() => ({ ok: false }))
+        await admin.from('line_notifications').insert({
+          model_id: model.id, type: 'booking', message, status: result.ok ? 'sent' : 'failed',
+        }).catch(() => {})
+      }
     }
   }
 

@@ -125,16 +125,35 @@ export async function POST(req) {
 
       // モデルへのLINE通知
       if (item.selectedModelIds?.length > 0) {
-        const { data: modelList } = await admin.from('models')
-          .select('id, name, line_id').in('id', item.selectedModelIds)
-        for (const model of modelList || []) {
-          if (!model.line_id) continue
-          const slotText = item.selections?.slot ? `\n時間枠：${item.selections.slot}` : ''
-          const message = `【PhotoFleur】予約商品のご予約🌸\n\n商品名：${item.name}${slotText}\nお名前：${customer.name}${customer.email ? `\nメール：${customer.email}` : ''}`
-          const result = await sendLineMessage(model.line_id, message).catch(() => ({ ok: false }))
-          await admin.from('line_notifications').insert({
-            model_id: model.id, type: 'booking', message, status: result.ok ? 'sent' : 'failed',
-          }).catch(() => {})
+        let notifyModel = true
+        try {
+          const { data: prodData } = await admin.from('event_products').select('options').eq('id', item.productId).single()
+          if (prodData?.options?.notify_model === false) notifyModel = false
+        } catch {}
+
+        if (notifyModel) {
+          const { data: modelList } = await admin.from('models')
+            .select('id, name, line_id').in('id', item.selectedModelIds)
+          for (const model of modelList || []) {
+            if (!model.line_id) continue
+            const lines = ['【指定あり】']
+            const datePart = item.eventDate || ''
+            const namePart = item.name || ''
+            lines.push([datePart, namePart].filter(Boolean).join(' '))
+            const timeSlot = item.selections?.['時間帯'] || item.selections?.slot
+            if (timeSlot) lines.push(timeSlot)
+            const manualParts = Object.entries(item.selections || {})
+              .filter(([k]) => !['model', 'モデル', '時間帯', 'slot', 'delivery_address'].includes(k))
+              .map(([k, v]) => `${k}：${Array.isArray(v) ? v.join(', ') : v}`)
+            if (manualParts.length > 0) lines.push(manualParts.join('\n'))
+            lines.push(`ニックネーム：${customer.nickname || ''}`)
+            lines.push(`SNS URL：${customer.sns_url || ''}`)
+            const message = lines.filter(Boolean).join('\n')
+            const result = await sendLineMessage(model.line_id, message).catch(() => ({ ok: false }))
+            await admin.from('line_notifications').insert({
+              model_id: model.id, type: 'booking', message, status: result.ok ? 'sent' : 'failed',
+            }).catch(() => {})
+          }
         }
       }
     }
