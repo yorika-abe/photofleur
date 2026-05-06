@@ -166,12 +166,24 @@ const INDIVIDUAL_TEMPLATES = [
   },
   {
     key: 'model_booking_notify',
-    label: '予約通知',
-    trigger: '予約が入った時（自動）',
+    label: '予約通知（スロット予約）',
+    trigger: '撮影枠に予約が入った時（自動）',
     vars: [
       { key: '{{event_date}}', desc: '撮影日' },
       { key: '{{event_title}}', desc: 'イベントタイトル' },
       { key: '{{slot_label}}', desc: '時間枠' },
+      { key: '{{nickname}}', desc: 'ニックネーム' },
+      { key: '{{sns_url}}', desc: 'SNS URL' },
+    ],
+  },
+  {
+    key: 'event_product_booking_notify',
+    label: '予約通知（特別予約商品）',
+    trigger: '特別予約商品（モデル選択あり）に予約が入った時（自動）',
+    vars: [
+      { key: '{{event_date}}', desc: '開催日' },
+      { key: '{{product_name}}', desc: '商品名' },
+      { key: '{{details}}', desc: '時間帯・選択内容など（自動生成）' },
       { key: '{{nickname}}', desc: 'ニックネーム' },
       { key: '{{sns_url}}', desc: 'SNS URL' },
     ],
