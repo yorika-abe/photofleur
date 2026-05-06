@@ -1243,9 +1243,16 @@ export default function EventEditPage() {
                     </div>
                   </div>
 
-                  {/* 登録済み商品リスト */}
-                  {products.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {/* 登録済み商品リスト（productsタブ内） - プレースホルダー */}
+                  {products.length === 0 && (
+                    <p style={{ color: '#aaa', fontSize: 13, margin: 0 }}>まだ予約商品がありません</p>
+                  )}
+                </div>
+              )}
+
+              {/* 登録済み商品リスト - 両タブで常時表示 */}
+              {products.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       <p style={{ fontSize: 12, fontWeight: 600, color: '#555', margin: 0 }}>登録済み予約商品</p>
                       {products.map(p => (
                         <div key={p.id} style={{ background: '#f8f8f8', borderRadius: 8, padding: '10px 12px' }}>
@@ -1315,11 +1322,6 @@ export default function EventEditPage() {
                           </div>
                         </div>
                       ))}
-                    </div>
-                  )}
-                  {products.length === 0 && (
-                    <p style={{ color: '#aaa', fontSize: 13, margin: 0 }}>まだ予約商品がありません</p>
-                  )}
                 </div>
               )}
             </div>
