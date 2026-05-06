@@ -74,6 +74,7 @@ export default function EventEditPage() {
   const [autoAdding, setAutoAdding] = useState(false)
   const [uploading, setUploading] = useState(null)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadCount, setUploadCount] = useState({ current: 0, total: 0 })
   const [products, setProducts] = useState([])
   const [modelsSubTab, setModelsSubTab] = useState('models')
   const [newProduct, setNewProduct] = useState({ name: '', image: '', description: '', price: 0, stock: 1, option_groups: [], is_delivery: false, notify_model: true })
@@ -307,9 +308,11 @@ export default function EventEditPage() {
   async function uploadGalleryImages(files) {
     setUploading('gallery')
     setUploadProgress(0)
+    setUploadCount({ current: 0, total: files.length })
     try {
       const urls = []
       for (let i = 0; i < files.length; i++) {
+        setUploadCount({ current: i + 1, total: files.length })
         const compressed = await compressImage(files[i], 1600, 1600, 0.85)
         const path = `events/${id}/gallery-${Date.now()}-${i}.jpg`
         const url = await uploadWithProgress(compressed, path)
@@ -319,6 +322,7 @@ export default function EventEditPage() {
     } catch (e) { alert('アップロードエラー: ' + e) }
     setUploading(null)
     setUploadProgress(0)
+    setUploadCount({ current: 0, total: 0 })
   }
 
   async function addModelToEvent(modelId) {
@@ -899,7 +903,10 @@ export default function EventEditPage() {
 
           {uploading === 'gallery' && (
             <div style={{ marginTop: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888', marginBottom: 3 }}><span>アップロード中...</span><span>{uploadProgress}%</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#888', marginBottom: 3 }}>
+                <span>アップロード中... {uploadCount.current}/{uploadCount.total}枚</span>
+                <span>{uploadProgress}%</span>
+              </div>
               <div style={{ background: '#eee', borderRadius: 99, height: 6 }}><div style={{ height: '100%', background: '#2f2244', borderRadius: 99, width: `${uploadProgress}%`, transition: 'width 0.2s' }} /></div>
             </div>
           )}
