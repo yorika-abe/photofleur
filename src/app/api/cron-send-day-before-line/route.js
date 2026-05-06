@@ -62,7 +62,12 @@ function buildVars(event, entry) {
     extra_sections = sections.join('\n\n')
   }
 
-  return { event_date, assembly_time, location_info, photographer_slots, event_page_url, model_lunch_note, extra_sections }
+  let planning_note_model = ''
+  if (event.planning_note_model) {
+    planning_note_model = `\n【📋企画書】\n${event.planning_note_model.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').trim()}\n\n`
+  }
+
+  return { event_date, assembly_time, location_info, photographer_slots, event_page_url, model_lunch_note, planning_note_model, extra_sections }
 }
 
 export async function GET(req) {
@@ -91,7 +96,7 @@ export async function GET(req) {
     .select(`
       id, event_date, location_name, address, map_address,
       meeting_place, meeting_address, meeting_map_url,
-      event_page_url, model_lunch_note, model_extra_note, model_assembly_offset_minutes,
+      event_page_url, model_lunch_note, model_extra_note, model_assembly_offset_minutes, planning_note_model,
       event_entries(
         id,
         models(id, name, line_id),
