@@ -14,7 +14,7 @@
     },
     {
       "path": "/api/cron-booking-open-line?secret=photofleur_super_secret_2026",
-      "schedule": "0 * * * *"
+      "schedule": "0 22 * * *"
     },
     {
       "path": "/api/cron-friday-lineup?secret=photofleur_super_secret_2026",

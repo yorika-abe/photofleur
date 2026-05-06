@@ -9,7 +9,7 @@ export const DEFAULTS = {
   model_booking_notify: `【PhotoFleur】予約が入りました🌸\n\nモデル名：{{model_name}}\n撮影日：{{event_date}}\n時間枠：{{slot_label}}\nお客様名：{{customer_name}}\n\n詳細は管理画面をご確認ください。`,
   model_day_before: `【PhotoFleur】明日の撮影のお知らせ🌸\n\n{{event_date}}（明日）の撮影があります。\n\n時間枠：{{slot_label}}\n集合場所：{{location_name}}\n\nよろしくお願いいたします。`,
   camera_event_publish: `【イベント公開のお知らせ📸】\n\n{{event_date}}📍{{title}}\n{{subtitle}}\nのイベント詳細が公開されました！\n\n{{description}}\n\n予約受付開始は\n🗓️{{booking_open_at}}〜\n\nイベント詳細はリンクからご確認ください💖\n🔗{{event_url}}`,
-  camera_booking_open: `【📢予約受付が開始されました】\n\n{{event_date}}📍{{title}}\n{{subtitle}}\nのイベント予約が開始されました！\n\nぜひ皆様のご予約お待ちしております🫧`,
+  camera_booking_open: `【📢本日予約受付が開始します】\n\n{{event_date}}📍{{title}}\n{{subtitle}}\nのイベント予約本日{{booking_open_time}}に開始されます！\n\nぜひ皆様のご予約お待ちしております🫧`,
   camera_friday_lineup: `おはようございます☀️\n金曜日、頑張りましょう！\n\n今週末のフォトフルの開催イベントは\n{{events_list}}`,
 }
 

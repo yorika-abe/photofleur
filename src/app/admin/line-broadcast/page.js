@@ -103,11 +103,12 @@ const CAMERA_TEMPLATES = [
   {
     key: 'camera_booking_open',
     label: '予約受付開始',
-    trigger: '予約受付開始日時になった時（自動cron・毎時）',
+    trigger: '予約受付開始日の朝7時（自動cron・毎日）',
     vars: [
       { key: '{{event_date}}', desc: '開催日' },
       { key: '{{title}}', desc: 'タイトル' },
       { key: '{{subtitle}}', desc: '小見出し' },
+      { key: '{{booking_open_time}}', desc: '予約開始時刻（例: 20:00）' },
     ],
   },
   {

@@ -16,6 +16,13 @@ function formatDateRange(eventDate, eventEndDate) {
   return `${base}〜${ed.getMonth() + 1}/${ed.getDate()}（${days[ed.getDay()]}）`
 }
 
+function toJSTTimeStr(isoStr) {
+  if (!isoStr) return ''
+  const d = new Date(isoStr)
+  const jst = new Date(d.getTime() + 9 * 60 * 60 * 1000)
+  return `${String(jst.getUTCHours()).padStart(2, '0')}:${String(jst.getUTCMinutes()).padStart(2, '0')}`
+}
+
 export async function GET(req) {
   const { searchParams } = new URL(req.url)
   if (searchParams.get('secret') !== process.env.CRON_SECRET) {
@@ -27,25 +34,29 @@ export async function GET(req) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
-  // 現在時刻の1時間前〜現在の間にbooking_open_atがあるイベントを取得
+  // 22:00 UTC = 7:00 JST翌日。JSTの「今日」のbooking_open_atを持つイベントを取得
   const now = new Date()
-  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
+  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000)
+  const todayJST = jst.toISOString().slice(0, 10)
+  const [year, month, day] = todayJST.split('-').map(Number)
+  // JST 00:00 〜 23:59:59 をUTCに変換
+  const jstDayStartUTC = new Date(Date.UTC(year, month - 1, day, -9, 0, 0))
+  const jstDayEndUTC = new Date(Date.UTC(year, month - 1, day, 15, 0, 0))
 
   const { data: events } = await supabase
     .from('events')
     .select('id, title, subtitle, event_date, event_end_date, booking_open_at')
     .eq('status', 'active')
-    .gte('booking_open_at', oneHourAgo.toISOString())
-    .lte('booking_open_at', now.toISOString())
+    .gte('booking_open_at', jstDayStartUTC.toISOString())
+    .lt('booking_open_at', jstDayEndUTC.toISOString())
 
   if (!events || events.length === 0) {
-    return Response.json({ ok: true, sent: 0, reason: 'no booking open events' })
+    return Response.json({ ok: true, sent: 0, reason: 'no booking open events today' })
   }
 
   const { data: tmpl } = await supabase.from('line_templates').select('body').eq('key', 'camera_booking_open').single()
   const template = tmpl?.body ?? DEFAULTS.camera_booking_open
 
-  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://photofleur.vercel.app'
   let sent = 0
 
   for (const ev of events) {
@@ -53,7 +64,7 @@ export async function GET(req) {
       event_date: formatDateRange(ev.event_date, ev.event_end_date),
       title: ev.title || '',
       subtitle: ev.subtitle || '',
-      event_url: `${siteUrl}/schedule/${ev.id}`,
+      booking_open_time: toJSTTimeStr(ev.booking_open_at),
     })
     const result = await broadcastCameraLine(message)
     if (result.ok) sent++
