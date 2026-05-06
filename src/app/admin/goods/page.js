@@ -3,6 +3,8 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
 import Cropper from 'react-easy-crop'
+import LayerOptionBuilder from '@/components/LayerOptionBuilder'
+import { genId } from '@/lib/product-layers'
 
 const PAYMENT_OPTIONS = [
   { value: 'cash', label: '現金のみ' },
@@ -13,7 +15,7 @@ const PAYMENT_OPTIONS = [
 const EMPTY_FORM = {
   title: '', description: '', price: 0, image: '', payment_method: 'both', stock: -1,
   hansellingItems: [{ label: '', amount: 0 }],
-  optionGroups: [],
+  layers: [],
   hasSalePeriod: false, sale_start: '', sale_end: '',
   is_delivery: false,
 }
@@ -90,117 +92,35 @@ export default function GoodsAdminPage() {
   function addHansellingItem() { setForm(f => ({ ...f, hansellingItems: [...f.hansellingItems, { label: '', amount: 0 }] })) }
   function removeHansellingItem(i) { setForm(f => ({ ...f, hansellingItems: f.hansellingItems.filter((_, idx) => idx !== i) })) }
 
-  // 選択肢グループ
-  function addOptionGroup() { setForm(f => ({ ...f, optionGroups: [...f.optionGroups, { type: 'manual', name: '', choices: [{ name: '', stock: -1, sub_choices: [] }], multiple: false }] })) }
-  function addModelsOptionGroup() { setForm(f => ({ ...f, optionGroups: [...f.optionGroups, { type: 'models', name: '担当モデル', modelData: [], multiple: false }] })) }
-  function removeOptionGroup(i) { setForm(f => ({ ...f, optionGroups: f.optionGroups.filter((_, idx) => idx !== i) })) }
-  function updateOptionGroup(i, key, val) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, [key]: val } : g) })) }
-  function addGroupChoice(i) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, choices: [...g.choices, { name: '', stock: -1, sub_choices: [] }] } : g) })) }
-  function removeGroupChoice(i, ci) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, choices: g.choices.filter((_, j) => j !== ci) } : g) })) }
-  function updateGroupChoice(i, ci, val) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, choices: g.choices.map((c, j) => j === ci ? { ...c, name: val } : c) } : g) })) }
-  function updateGroupChoiceStock(i, ci, val) { setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx === i ? { ...g, choices: g.choices.map((c, j) => j === ci ? { ...c, stock: val === '' ? -1 : Number(val) } : c) } : g) })) }
-  function addManualSubChoice(gi, ci) {
-    setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, gIdx) => gIdx !== gi ? g : { ...g, choices: g.choices.map((c, cIdx) => cIdx !== ci ? c : { ...c, sub_choices: [...(c.sub_choices || []), { name: '', stock: -1 }] }) }) }))
-  }
-  function removeManualSubChoice(gi, ci, si) {
-    setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, gIdx) => gIdx !== gi ? g : { ...g, choices: g.choices.map((c, cIdx) => cIdx !== ci ? c : { ...c, sub_choices: (c.sub_choices || []).filter((_, j) => j !== si) }) }) }))
-  }
-  function updateManualSubChoice(gi, ci, si, field, val) {
-    setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, gIdx) => gIdx !== gi ? g : { ...g, choices: g.choices.map((c, cIdx) => cIdx !== ci ? c : { ...c, sub_choices: (c.sub_choices || []).map((s, j) => j !== si ? s : { ...s, [field]: val }) }) }) }))
-  }
-
-  // モデルグループ用関数（新構造: modelData）
-  function toggleModelInData(i, model) {
-    setForm(f => ({
-      ...f,
-      optionGroups: f.optionGroups.map((g, idx) => {
-        if (idx !== i) return g
-        const exists = g.modelData.some(m => m.model_id === model.id)
-        if (exists) return { ...g, modelData: g.modelData.filter(m => m.model_id !== model.id) }
-        return { ...g, modelData: [...g.modelData, { model_id: model.id, model_name: model.name, stock: -1, choices: [] }] }
-      })
-    }))
-  }
-  function addModelChoice(i, modelId) {
-    setForm(f => ({
-      ...f,
-      optionGroups: f.optionGroups.map((g, idx) => idx !== i ? g : {
-        ...g, modelData: g.modelData.map(m => m.model_id !== modelId ? m : { ...m, choices: [...m.choices, { name: '', stock: -1 }] })
-      })
-    }))
-  }
-  function removeModelChoice(i, modelId, ci) {
-    setForm(f => ({
-      ...f,
-      optionGroups: f.optionGroups.map((g, idx) => idx !== i ? g : {
-        ...g, modelData: g.modelData.map(m => m.model_id !== modelId ? m : { ...m, choices: m.choices.filter((_, j) => j !== ci) })
-      })
-    }))
-  }
-  function updateModelChoice(i, modelId, ci, field, val) {
-    setForm(f => ({
-      ...f,
-      optionGroups: f.optionGroups.map((g, idx) => idx !== i ? g : {
-        ...g, modelData: g.modelData.map(m => m.model_id !== modelId ? m : {
-          ...m, choices: m.choices.map((c, j) => j !== ci ? c : { ...c, [field]: val })
-        })
-      })
-    }))
-  }
-  function updateModelLevelStock(i, modelId, val) {
-    setForm(f => ({
-      ...f,
-      optionGroups: f.optionGroups.map((g, idx) => idx !== i ? g : {
-        ...g, modelData: g.modelData.map(m => m.model_id !== modelId ? m : { ...m, stock: val === '' ? -1 : Number(val) })
-      })
-    }))
-  }
-  function selectAllModels(i) {
-    setForm(f => ({
-      ...f,
-      optionGroups: f.optionGroups.map((g, idx) => {
-        if (idx !== i) return g
-        const existingIds = new Set(g.modelData.map(m => m.model_id))
-        const newModels = models.filter(m => !existingIds.has(m.id)).map(m => ({ model_id: m.id, model_name: m.name, stock: -1, choices: [] }))
-        return { ...g, modelData: [...g.modelData, ...newModels] }
-      })
-    }))
-  }
-  function clearModelSelection(i) {
-    setForm(f => ({ ...f, optionGroups: f.optionGroups.map((g, idx) => idx !== i ? g : { ...g, modelData: [] }) }))
-  }
-
   function startEdit(g) {
     setEditId(g.id)
-    const optionGroups = (g.options?.type === 'groups' ? g.options.groups : []).map(gr => {
-      if (gr.type === 'models') {
-        let modelData
-        if (gr.model_choices) {
-          // 新形式
-          modelData = gr.model_choices.map(mc => ({
-            model_id: mc.model_id || '',
-            model_name: mc.model_name,
-            stock: mc.stock ?? -1,
-            choices: (mc.choices || []).map(c => typeof c === 'string' ? { name: c, stock: -1 } : c),
-          }))
-        } else {
-          // 旧形式: choices配列にモデル名だけ入っていた
-          modelData = (gr.choices || []).map(c => {
-            const name = typeof c === 'string' ? c : c.name
-            const stock = typeof c === 'string' ? -1 : (c.stock ?? -1)
-            const m = models.find(mod => mod.name === name)
-            return { model_id: m?.id || '', model_name: name, stock, choices: [] }
-          })
+    let layers = []
+    if (g.options?.type === 'layers') {
+      layers = g.options.layers || []
+    } else if (g.options?.type === 'groups') {
+      layers = (g.options.groups || []).map(gr => {
+        const id = genId()
+        if (gr.type === 'models') {
+          return {
+            id, type: 'models', name: gr.name || '', multiple: gr.multiple || false, no_duplicate: false,
+            model_choices: (gr.model_choices || gr.choices || []).map(mc => ({
+              id: genId(),
+              model_id: typeof mc === 'object' ? (mc.model_id || '') : '',
+              model_name: typeof mc === 'object' ? (mc.model_name || '') : mc,
+              stock: typeof mc === 'object' ? (mc.stock ?? -1) : -1,
+            }))
+          }
         }
-        return { type: 'models', name: gr.name || '担当モデル', modelData, multiple: gr.multiple ?? false }
-      }
-      const rawChoices = gr.choices?.length > 0 ? gr.choices : [{ name: '', stock: -1 }]
-      const choices = rawChoices.map(c => {
-        const base = typeof c === 'string' ? { name: c, stock: -1 } : c
-        return { ...base, sub_choices: (base.sub_choices || []).map(s => typeof s === 'string' ? { name: s, stock: -1 } : s) }
+        return {
+          id, type: 'manual', name: gr.name || '', multiple: gr.multiple || false, no_duplicate: false,
+          choices: (gr.choices || []).map(c => ({
+            id: genId(),
+            name: typeof c === 'string' ? c : (c.name || ''),
+            stock: typeof c === 'object' ? (c.stock ?? -1) : -1,
+          }))
+        }
       })
-      return { type: 'manual', name: gr.name || '', choices, multiple: gr.multiple || false }
-    })
+    }
     setForm({
       title: g.title || '',
       description: g.description || '',
@@ -209,7 +129,7 @@ export default function GoodsAdminPage() {
       payment_method: g.payment_method || 'both',
       stock: g.stock ?? -1,
       hansellingItems: g.hanselling > 0 ? [{ label: '', amount: g.hanselling }] : [{ label: '', amount: 0 }],
-      optionGroups,
+      layers,
       hasSalePeriod: !!(g.sale_start || g.sale_end),
       sale_start: g.sale_start ? g.sale_start.slice(0, 16) : '',
       sale_end: g.sale_end ? g.sale_end.slice(0, 16) : '',
@@ -224,26 +144,17 @@ export default function GoodsAdminPage() {
     if (!form.title.trim()) { alert('商品名を入力してください'); return }
     setSaving(true)
     const hanselling = form.hansellingItems.reduce((s, item) => s + (Number(item.amount) || 0), 0)
-    const validGroups = form.optionGroups.filter(g =>
-      g.name.trim() && (g.type === 'models' ? g.modelData.length > 0 : g.choices.some(c => c.name.trim()))
-    )
+    const validLayers = (form.layers || []).filter(l => {
+      if (l.type === 'manual') return (l.choices || []).some(c => c.name?.trim())
+      if (l.type === 'models') return (l.model_choices || []).length > 0
+      if (l.type === 'slots') return true
+      return false
+    })
     const optionsObj = {}
     if (form.is_delivery) optionsObj.is_delivery = true
-    if (validGroups.length > 0) {
-      optionsObj.type = 'groups'
-      optionsObj.groups = validGroups.map(g =>
-        g.type === 'models'
-          ? {
-              type: 'models', name: g.name, multiple: g.multiple,
-              model_choices: g.modelData.map(m => ({
-                model_id: m.model_id,
-                model_name: m.model_name,
-                stock: m.stock ?? -1,
-                choices: m.choices.filter(c => c.name.trim()).map(c => ({ name: c.name, stock: c.stock ?? -1 })),
-              })),
-            }
-          : { type: 'manual', name: g.name, multiple: g.multiple, choices: g.choices.filter(c => c.name.trim()).map(c => ({ name: c.name, stock: c.stock ?? -1, sub_choices: (c.sub_choices || []).filter(s => s.name.trim()).map(s => ({ name: s.name, stock: s.stock ?? -1 })) })) }
-      )
+    if (validLayers.length > 0) {
+      optionsObj.type = 'layers'
+      optionsObj.layers = validLayers
     }
     const options = Object.keys(optionsObj).length > 0 ? optionsObj : null
     const url = editId ? `/api/admin/goods/${editId}` : '/api/admin/goods'
@@ -365,155 +276,12 @@ export default function GoodsAdminPage() {
 
           {/* 選択肢グループ */}
           <div style={{ gridColumn: '1 / -1' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <label style={lbl}>選択肢グループ <span style={{ fontWeight: 400, color: '#bbb', fontSize: 11 }}>（カラー・サイズ・担当モデルなど）</span></label>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {!form.optionGroups.some(g => g.type === 'models') && (
-                  <button type="button" onClick={addModelsOptionGroup}
-                    style={{ fontSize: 12, color: '#2e7d32', background: 'none', border: '1px solid #2e7d32', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontWeight: 600 }}>
-                    👤 所属モデルを追加
-                  </button>
-                )}
-                <button type="button" onClick={addOptionGroup}
-                  style={{ fontSize: 12, color: '#1a3560', background: 'none', border: '1px solid #1a3560', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontWeight: 600 }}>
-                  + 手動選択肢を追加
-                </button>
-              </div>
-            </div>
-            {form.optionGroups.length === 0 && (
-              <p style={{ fontSize: 12, color: '#bbb', margin: 0 }}>選択肢グループなし</p>
-            )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {form.optionGroups.map((group, i) => (
-                <div key={i} style={{ background: group.type === 'models' ? '#f1f8e9' : '#f8f8fc', border: `1px solid ${group.type === 'models' ? '#c5e1a5' : '#e0e0e0'}`, borderRadius: 10, padding: '12px 14px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: group.type === 'models' ? '#2e7d32' : '#1a3560' }}>
-                        {group.type === 'models' ? '👤 所属モデル選択肢' : '📝 手動選択肢'}
-                      </span>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontSize: 12, color: '#666' }}>
-                        <input type="checkbox" checked={group.multiple === true}
-                          onChange={e => updateOptionGroup(i, 'multiple', e.target.checked)} />
-                        複数選択可
-                      </label>
-                    </div>
-                    <button type="button" onClick={() => removeOptionGroup(i)}
-                      style={{ background: 'none', border: 'none', color: '#c62828', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
-                  </div>
-                  <input value={group.name} onChange={e => updateOptionGroup(i, 'name', e.target.value)}
-                    placeholder={group.type === 'models' ? 'グループ名（例：担当モデル）' : 'グループ名（例：カラー）'}
-                    style={{ ...inp, marginBottom: 8 }} />
-
-                  {group.type === 'models' ? (
-                    <div>
-                      {/* モデル選択エリア */}
-                      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                        <button type="button" onClick={() => selectAllModels(i)}
-                          style={{ fontSize: 12, color: '#2e7d32', background: 'none', border: '1px solid #2e7d32', borderRadius: 5, padding: '3px 10px', cursor: 'pointer' }}>
-                          全員選択
-                        </button>
-                        <button type="button" onClick={() => clearModelSelection(i)}
-                          style={{ fontSize: 12, color: '#888', background: 'none', border: '1px solid #ddd', borderRadius: 5, padding: '3px 10px', cursor: 'pointer' }}>
-                          クリア
-                        </button>
-                        <span style={{ fontSize: 12, color: '#888', alignSelf: 'center' }}>
-                          {group.modelData.length}名選択中
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-                        {models.map(m => {
-                          const isSelected = group.modelData.some(md => md.model_id === m.id)
-                          return (
-                            <button key={m.id} type="button" onClick={() => toggleModelInData(i, m)}
-                              style={{ padding: '5px 12px', borderRadius: 8, border: `2px solid ${isSelected ? '#4caf50' : '#ddd'}`, background: isSelected ? '#f1f8e9' : '#fafafa', cursor: 'pointer', fontWeight: isSelected ? 700 : 400, fontSize: 13 }}>
-                              {isSelected ? '✓ ' : ''}{m.name}
-                            </button>
-                          )
-                        })}
-                        {models.length === 0 && <span style={{ fontSize: 12, color: '#bbb' }}>所属モデルがいません</span>}
-                      </div>
-                      {/* 選択済みモデルごとの選択肢・在庫設定 */}
-                      {group.modelData.length > 0 && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                          {group.modelData.map(md => (
-                            <div key={md.model_id} style={{ background: '#fff', border: '1px solid #c5e1a5', borderRadius: 8, padding: '10px 12px' }}>
-                              <div style={{ fontWeight: 700, fontSize: 13, color: '#2e7d32', marginBottom: 8 }}>{md.model_name}</div>
-                              {md.choices.length === 0 ? (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                                  <span style={{ fontSize: 12, color: '#888' }}>在庫（-1で無制限）</span>
-                                  <input type="number" value={md.stock < 0 ? '' : md.stock} placeholder="∞"
-                                    onChange={e => updateModelLevelStock(i, md.model_id, e.target.value)}
-                                    style={{ width: 64, padding: '4px 6px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12, textAlign: 'center' }} />
-                                </div>
-                              ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
-                                  {md.choices.map((c, ci) => (
-                                    <div key={ci} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                                      <input value={c.name} onChange={e => updateModelChoice(i, md.model_id, ci, 'name', e.target.value)}
-                                        placeholder="時間枠・内容" style={{ ...inp, flex: 1 }} />
-                                      <span style={{ fontSize: 11, color: '#888', whiteSpace: 'nowrap' }}>在庫</span>
-                                      <input type="number" value={c.stock < 0 ? '' : c.stock} placeholder="∞"
-                                        onChange={e => updateModelChoice(i, md.model_id, ci, 'stock', e.target.value === '' ? -1 : Number(e.target.value))}
-                                        style={{ width: 52, padding: '6px 4px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, textAlign: 'center' }} />
-                                      <button type="button" onClick={() => removeModelChoice(i, md.model_id, ci)}
-                                        style={{ padding: '0 8px', border: '1px solid #ddd', borderRadius: 6, background: '#fff', color: '#e53935', cursor: 'pointer', fontSize: 16, flexShrink: 0 }}>×</button>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                              <button type="button" onClick={() => addModelChoice(i, md.model_id)}
-                                style={{ fontSize: 12, color: '#2e7d32', background: 'none', border: '1px solid #c5e1a5', borderRadius: 5, padding: '3px 10px', cursor: 'pointer' }}>
-                                + 時間枠・選択肢を追加
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {group.choices.map((choice, ci) => (
-                          <div key={ci} style={{ background: '#f8f9ff', border: '1px solid #e8eaf6', borderRadius: 8, padding: '8px 10px' }}>
-                            <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: (choice.sub_choices || []).length > 0 ? 6 : 0 }}>
-                              <input value={choice.name} onChange={e => updateGroupChoice(i, ci, e.target.value)}
-                                placeholder={`選択肢 ${ci + 1}`} style={{ ...inp, flex: 1 }} />
-                              <span style={{ fontSize: 11, color: '#888', whiteSpace: 'nowrap' }}>在庫</span>
-                              <input type="number" value={choice.stock < 0 ? '' : choice.stock} placeholder="∞"
-                                onChange={e => updateGroupChoiceStock(i, ci, e.target.value)}
-                                style={{ width: 52, padding: '6px 4px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, textAlign: 'center' }} />
-                              <button type="button" onClick={() => addManualSubChoice(i, ci)}
-                                style={{ fontSize: 11, color: '#1a3560', background: 'none', border: '1px solid #c5cae9', borderRadius: 5, padding: '3px 7px', cursor: 'pointer', whiteSpace: 'nowrap' }}>+ サブ</button>
-                              {group.choices.length > 1 && (
-                                <button type="button" onClick={() => removeGroupChoice(i, ci)}
-                                  style={{ padding: '0 8px', border: 'none', background: 'none', color: '#bbb', cursor: 'pointer', fontSize: 16, flexShrink: 0 }}>×</button>
-                              )}
-                            </div>
-                            {(choice.sub_choices || []).map((sub, si) => (
-                              <div key={si} style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4, paddingLeft: 16 }}>
-                                <span style={{ fontSize: 11, color: '#bbb' }}>└</span>
-                                <input value={sub.name} onChange={e => updateManualSubChoice(i, ci, si, 'name', e.target.value)}
-                                  placeholder={`サブ選択肢 ${si + 1}`} style={{ ...inp, flex: 1, fontSize: 12 }} />
-                                <span style={{ fontSize: 11, color: '#888', whiteSpace: 'nowrap' }}>在庫</span>
-                                <input type="number" value={sub.stock < 0 ? '' : sub.stock} placeholder="∞"
-                                  onChange={e => updateManualSubChoice(i, ci, si, 'stock', e.target.value === '' ? -1 : Number(e.target.value))}
-                                  style={{ width: 52, padding: '6px 4px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, textAlign: 'center' }} />
-                                <button type="button" onClick={() => removeManualSubChoice(i, ci, si)}
-                                  style={{ padding: '0 8px', border: 'none', background: 'none', color: '#bbb', cursor: 'pointer', fontSize: 16, flexShrink: 0 }}>×</button>
-                              </div>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                      <button type="button" onClick={() => addGroupChoice(i)}
-                        style={{ marginTop: 6, fontSize: 12, color: '#555', background: 'none', border: '1px solid #ddd', borderRadius: 5, padding: '3px 10px', cursor: 'pointer' }}>
-                        + 選択肢を追加
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            <label style={{ ...lbl, marginBottom: 8 }}>選択肢グループ <span style={{ fontWeight: 400, color: '#bbb', fontSize: 11 }}>（カラー・サイズ・モデルなど）</span></label>
+            <LayerOptionBuilder
+              layers={form.layers}
+              onChange={newLayers => setForm(f => ({ ...f, layers: newLayers }))}
+              models={models}
+            />
           </div>
 
           {/* 販管費 */}

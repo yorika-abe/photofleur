@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import LayerOptionPicker from '@/components/LayerOptionPicker'
 
 const SQUARE_APP_ID = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID
 const SQUARE_LOCATION_ID = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || ''
@@ -86,6 +87,7 @@ export default function GoodsShop() {
 
 function OrderModal({ goods, onClose, onComplete }) {
   const isDelivery = !!goods.options?.is_delivery
+  const isLayers = goods.options?.type === 'layers'
   const [form, setForm] = useState({
     last_name: '', first_name: '', email: '', phone: '',
     payment_method: goods.payment_method === 'both' ? 'card' : goods.payment_method,
@@ -97,10 +99,11 @@ function OrderModal({ goods, onClose, onComplete }) {
   const [error, setError] = useState('')
   const [squareReady, setSquareReady] = useState(false)
   const [optionsSelected, setOptionsSelected] = useState({})
+  const [layerPath, setLayerPath] = useState([])
   const cardRef = useRef(null)
   const paymentsRef = useRef(null)
 
-  const optionGroups = goods.options?.type === 'groups' ? goods.options.groups : []
+  const optionGroups = !isLayers && goods.options?.type === 'groups' ? goods.options.groups : []
 
   const selectedPayment = form.payment_method
 
@@ -164,7 +167,7 @@ function OrderModal({ goods, onClose, onComplete }) {
     const res = await fetch('/api/orders/goods', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ goods_id: goods.id, ...form, square_payment_id: squarePaymentId, options_selected: Object.keys(optionsSelected).length > 0 ? optionsSelected : null, delivery_address: form.delivery_address || null }),
+      body: JSON.stringify({ goods_id: goods.id, ...form, square_payment_id: squarePaymentId, options_selected: Object.keys(optionsSelected).length > 0 ? optionsSelected : null, layers_path: isLayers && layerPath.length > 0 ? layerPath : null, delivery_address: form.delivery_address || null }),
     })
     setSubmitting(false)
     if (res.ok) {
@@ -230,7 +233,16 @@ function OrderModal({ goods, onClose, onComplete }) {
                   rows={3} placeholder="〒000-0000&#10;東京都〇〇区〇〇 1-2-3&#10;マンション名 部屋番号" style={{ ...inp, resize: 'vertical' }} />
               </div>
             )}
-            {optionGroups.map((group, i) => {
+            {isLayers && (
+              <div style={{ marginBottom: 14 }}>
+                <LayerOptionPicker
+                  options={goods.options}
+                  value={layerPath}
+                  onChange={setLayerPath}
+                />
+              </div>
+            )}
+            {!isLayers && optionGroups.map((group, i) => {
               // 新形式: モデルごとに選択肢が違う
               if (group.type === 'models' && group.model_choices) {
                 const sel = optionsSelected[group.name] // {model_id, model_name, choice}

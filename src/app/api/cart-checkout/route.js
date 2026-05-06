@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import { sendLineMessage } from '@/lib/line'
 import { randomUUID } from 'crypto'
+import { decrementLayersStock } from '@/lib/product-layers'
 
 export async function POST(req) {
   try {
@@ -107,6 +108,19 @@ export async function POST(req) {
 
       if (productBooking) {
         qrTokens[item.cartId] = productQrToken
+
+        // layers形式の在庫デクリメント
+        if (item.layersPath?.length > 0) {
+          try {
+            const { data: prodOpts } = await admin.from('event_products').select('options').eq('id', item.productId).single()
+            if (prodOpts?.options?.type === 'layers') {
+              const updated = decrementLayersStock(prodOpts.options, item.layersPath)
+              if (updated !== prodOpts.options) {
+                await admin.from('event_products').update({ options: updated }).eq('id', item.productId)
+              }
+            }
+          } catch {}
+        }
 
         let modelName = null
         if (item.selectedModelIds?.length > 0) {

@@ -2,6 +2,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/context/CartContext'
+import LayerOptionPicker from '@/components/LayerOptionPicker'
+import { buildSelectionsLabel } from '@/lib/product-layers'
 
 function getOptionGroups(product) {
   const opts = product.options
@@ -14,6 +16,7 @@ function getOptionGroups(product) {
 export default function ProductCards({ products, eventId, slotLabels = [], eventModels = [], eventDate = '', eventLocation = '' }) {
   const [selected, setSelected] = useState(null)
   const [selections, setSelections] = useState({})
+  const [layerPath, setLayerPath] = useState([])
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [cartAdded, setCartAdded] = useState(false)
   const { addItem } = useCart()
@@ -24,6 +27,7 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
   function openModal(p) {
     setSelected(p)
     setSelections({})
+    setLayerPath([])
     setDeliveryAddress('')
     setCartAdded(false)
   }
@@ -48,36 +52,56 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
 
   function buildCartItem() {
     if (!selected) return null
-    const groups = getOptionGroups(selected)
+    const isLayers = selected.options?.type === 'layers'
     const selectedModelIds = []
     const selectionData = {}
+    let selectionSummary = ''
 
-    groups.forEach((group, idx) => {
-      const val = selections[idx]
-      if (group.type === 'models') {
-        if (group.model_choices) {
-          // 新形式: {model_id, model_name, choice}
-          if (val && val.model_id) {
-            selectedModelIds.push(val.model_id)
-            selectionData['model'] = [val.model_name]
-            if (val.choice) selectionData['時間帯'] = val.choice
-          }
-        } else {
-          const ids = Array.isArray(val) ? val : (val ? [val] : [])
-          selectedModelIds.push(...ids)
-          selectionData['model'] = ids.map(id => eventModels.find(m => m.id === id)?.name).filter(Boolean)
+    if (isLayers) {
+      const layers = selected.options.layers || []
+      layers.forEach((layer, idx) => {
+        const choiceId = layerPath[idx]
+        if (!choiceId) return
+        if (layer.type === 'models') {
+          const mc = (layer.model_choices || []).find(mc => mc.id === choiceId)
+          if (mc) { selectedModelIds.push(mc.model_id); selectionData['model'] = [mc.model_name] }
+        } else if (layer.type === 'slots') {
+          const slotIdx = parseInt(choiceId.replace('slot_', ''))
+          const label = slotLabels[slotIdx] || choiceId
+          selectionData['slot'] = label
+        } else if (layer.type === 'manual') {
+          const choice = (layer.choices || []).find(c => c.id === choiceId)
+          if (choice) selectionData[layer.name || `option_${idx}`] = choice.name
         }
-      } else if (group.type === 'slots') {
-        selectionData['slot'] = Array.isArray(val) ? val.join(', ') : (val || '')
-      } else if (group.type === 'manual') {
-        selectionData[group.name || `option_${idx}`] = Array.isArray(val) ? val : (val ? [val] : [])
-      }
-    })
-
-    const selectionSummary = Object.entries(selectionData)
-      .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
-      .filter(([, v]) => v && (Array.isArray(v) ? v.length > 0 : v !== ''))
-      .join(' / ')
+      })
+      selectionSummary = buildSelectionsLabel(selected.options, layerPath)
+    } else {
+      const groups = getOptionGroups(selected)
+      groups.forEach((group, idx) => {
+        const val = selections[idx]
+        if (group.type === 'models') {
+          if (group.model_choices) {
+            if (val && val.model_id) {
+              selectedModelIds.push(val.model_id)
+              selectionData['model'] = [val.model_name]
+              if (val.choice) selectionData['時間帯'] = val.choice
+            }
+          } else {
+            const ids = Array.isArray(val) ? val : (val ? [val] : [])
+            selectedModelIds.push(...ids)
+            selectionData['model'] = ids.map(id => eventModels.find(m => m.id === id)?.name).filter(Boolean)
+          }
+        } else if (group.type === 'slots') {
+          selectionData['slot'] = Array.isArray(val) ? val.join(', ') : (val || '')
+        } else if (group.type === 'manual') {
+          selectionData[group.name || `option_${idx}`] = Array.isArray(val) ? val : (val ? [val] : [])
+        }
+      })
+      selectionSummary = Object.entries(selectionData)
+        .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+        .filter(([, v]) => v && (Array.isArray(v) ? v.length > 0 : v !== ''))
+        .join(' / ')
+    }
 
     return {
       type: 'product',
@@ -91,6 +115,7 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
       selections: selectionData,
       selectedModelIds,
       selectionSummary,
+      layersPath: isLayers && layerPath.length > 0 ? layerPath : null,
       isDelivery: !!selected.options?.is_delivery,
       deliveryAddress: deliveryAddress || null,
     }
@@ -113,7 +138,8 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
   }
 
   const selectedGroups = selected ? getOptionGroups(selected) : []
-  const hasBookableOptions = selectedGroups.length > 0
+  const isSelectedLayers = selected?.options?.type === 'layers'
+  const hasBookableOptions = isSelectedLayers ? (selected.options.layers?.length > 0) : (selectedGroups.length > 0)
 
   return (
     <>
@@ -186,7 +212,15 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
 
               {hasBookableOptions ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {selectedGroups.map((group, idx) => {
+                  {isSelectedLayers ? (
+                    <LayerOptionPicker
+                      options={selected.options}
+                      eventModels={eventModels}
+                      slotLabels={slotLabels}
+                      value={layerPath}
+                      onChange={setLayerPath}
+                    />
+                  ) : selectedGroups.map((group, idx) => {
                     const val = selections[idx]
 
                     if (group.type === 'slots') {

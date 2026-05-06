@@ -1,10 +1,11 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import { Resend } from 'resend'
 import { renderEmailTemplate } from '@/lib/email-render'
+import { decrementLayersStock } from '@/lib/product-layers'
 
 export async function POST(req) {
   const body = await req.json()
-  const { goods_id, last_name, first_name, email, phone, payment_method, quantity, notes, square_payment_id, options_selected, delivery_address } = body
+  const { goods_id, last_name, first_name, email, phone, payment_method, quantity, notes, square_payment_id, options_selected, layers_path, delivery_address } = body
 
   if (!goods_id || !last_name || !email) {
     return Response.json({ error: 'Missing required fields' }, { status: 400 })
@@ -42,7 +43,15 @@ export async function POST(req) {
     await admin.from('goods').update({ stock: goods.stock - qty }).eq('id', goods.id)
   }
 
-  // 選択肢ごとの在庫デクリメント
+  // 選択肢ごとの在庫デクリメント（layers形式）
+  if (layers_path?.length > 0 && goods.options?.type === 'layers') {
+    const updatedOptions = decrementLayersStock(goods.options, layers_path)
+    if (updatedOptions !== goods.options) {
+      await admin.from('goods').update({ options: updatedOptions }).eq('id', goods.id)
+    }
+  }
+
+  // 選択肢ごとの在庫デクリメント（旧groups形式）
   if (options_selected && goods.options?.type === 'groups') {
     const groups = goods.options.groups || []
     let changed = false
