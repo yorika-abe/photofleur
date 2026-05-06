@@ -1086,12 +1086,10 @@ export default function EventEditPage() {
                                 + モデル枠
                               </button>
                             )}
-                            {!newProduct.option_groups.some(g => g.type === 'manual') && (
-                              <button type="button" onClick={() => addOptionGroup('manual')}
-                                style={{ fontSize: 11, background: '#e8f0fe', color: '#1a3560', border: '1px solid #c5cae9', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', fontWeight: 700 }}>
-                                + 手動
-                              </button>
-                            )}
+                            <button type="button" onClick={() => addOptionGroup('manual')}
+                              style={{ fontSize: 11, background: '#e8f0fe', color: '#1a3560', border: '1px solid #c5cae9', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', fontWeight: 700 }}>
+                              + 手動
+                            </button>
                           </div>
                         </div>
                         {newProduct.option_groups.length === 0 ? (
