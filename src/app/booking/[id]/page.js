@@ -1,5 +1,17 @@
 import Link from "next/link";
 import { getSupabase } from "@/lib/supabase";
+import { buildMetadata } from "@/lib/ogp";
+
+export async function generateMetadata({ params }) {
+  const supabase = getSupabase()
+  const { id } = await params
+  const { data: model } = await supabase.from("models").select("name, image").eq("id", id).single()
+  return buildMetadata({
+    title: model?.name ? `${model.name} の予約 | PhotoFleur` : '予約 | PhotoFleur',
+    path: `/booking/${id}`,
+    imageUrl: model?.image || null,
+  })
+}
 
 export default async function BookingPage({ params }) {
   const supabase = getSupabase()

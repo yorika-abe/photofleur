@@ -1,4 +1,10 @@
+import { getOgpImage, buildMetadata } from '@/lib/ogp'
 import Link from 'next/link'
+
+export async function generateMetadata() {
+  const image = await getOgpImage('ogp_home')
+  return buildMetadata({ title: 'PhotoFleur | 撮影会予約サービス', path: '/', imageUrl: image })
+}
 import { createClient } from '@supabase/supabase-js'
 import HeroSection from '@/components/HeroSection'
 import RecruitMarquee from '@/components/RecruitMarquee'

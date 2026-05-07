@@ -25,6 +25,18 @@ const TABS = [
   { id: 'home', label: 'HOME' },
   { id: 'request', label: 'リクエスト撮影' },
   { id: 'recruit_page', label: 'モデル募集' },
+  { id: 'ogp', label: '共有画像設定(OGP)' },
+]
+
+const OGP_PAGES = [
+  { key: 'ogp_home', label: 'HOME' },
+  { key: 'ogp_schedule', label: 'スケジュール一覧' },
+  { key: 'ogp_models', label: 'モデル一覧' },
+  { key: 'ogp_blog', label: 'ブログ一覧' },
+  { key: 'ogp_request', label: 'リクエスト撮影' },
+  { key: 'ogp_recruit', label: 'モデル募集' },
+  { key: 'ogp_goods', label: 'グッズ' },
+  { key: 'ogp_faq', label: 'FAQ' },
 ]
 
 export default function AdminMediaPage() {
@@ -37,6 +49,7 @@ export default function AdminMediaPage() {
   const [recruitImages, setRecruitImages] = useState([])
   const [requestHeroImages, setRequestHeroImages] = useState([])
   const [recruitHeroImages, setRecruitHeroImages] = useState([])
+  const [ogpImages, setOgpImages] = useState({})
   const [uploading, setUploading] = useState(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadCount, setUploadCount] = useState({ current: 0, total: 0 })
@@ -55,6 +68,9 @@ export default function AdminMediaPage() {
       try { const p = JSON.parse(rhi); setRequestHeroImages(Array.isArray(p) ? p : (rhi ? [rhi] : [])) } catch { setRequestHeroImages(rhi ? [rhi] : []) }
       const mhi = data.recruit_hero_image || ''
       try { const p = JSON.parse(mhi); setRecruitHeroImages(Array.isArray(p) ? p : (mhi ? [mhi] : [])) } catch { setRecruitHeroImages(mhi ? [mhi] : []) }
+      const ogp = {}
+      for (const { key } of OGP_PAGES) ogp[key] = data[key] || ''
+      setOgpImages(ogp)
     })
   }, [])
 
@@ -170,6 +186,7 @@ export default function AdminMediaPage() {
         recruit_bg_images: JSON.stringify(recruitImages),
         request_hero_image: JSON.stringify(requestHeroImages),
         recruit_hero_image: JSON.stringify(recruitHeroImages),
+        ...ogpImages,
       }),
     })
     setSaving(false)
@@ -398,6 +415,25 @@ export default function AdminMediaPage() {
             <ImageGrid images={requestHeroImages} onRemove={i => setRequestHeroImages(imgs => imgs.filter((_, idx) => idx !== i))}
               uploadKey="request_hero" onAdd={f => uploadWithSignedUrl(f, 'request_hero', url => setRequestHeroImages(imgs => [...imgs, url]))} label="画像を追加（複数可）" aspect="16/9" />
           </Section>
+        )}
+
+        {/* ── 共有画像設定(OGP) ── */}
+        {tab === 'ogp' && (
+          <>
+            <div style={{ background: '#fffde7', border: '1px solid #ffe082', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#795548', marginBottom: 4 }}>
+              LINEやX（Twitter）でURLをシェアした時に表示される画像です。推奨サイズ：<strong>1200×630px</strong>
+            </div>
+            {OGP_PAGES.map(({ key, label }) => (
+              <Section key={key} title={label}>
+                <SingleImageSection
+                  value={ogpImages[key] || ''}
+                  onChange={url => setOgpImages(prev => ({ ...prev, [key]: url }))}
+                  uploadKey={key}
+                  label="画像をアップロード"
+                />
+              </Section>
+            ))}
+          </>
         )}
 
         {/* ── モデル募集 ── */}

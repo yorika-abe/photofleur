@@ -2,14 +2,19 @@ import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
 import PortfolioSlider from '@/components/PortfolioSlider'
+import { buildMetadata } from '@/lib/ogp'
 
 
 export async function generateMetadata({ params }) {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   const { id } = await params
-  const { data: model } = await supabase.from('models').select('name, name_en').eq('id', id).single()
+  const { data: model } = await supabase.from('models').select('name, image').eq('id', id).single()
   if (!model) return {}
-  return { title: `${model.name} | PhotoFleur` }
+  return buildMetadata({
+    title: `${model.name} | PhotoFleur`,
+    path: `/models/${id}`,
+    imageUrl: model.image || null,
+  })
 }
 
 export default async function ModelDetailPage({ params }) {

@@ -3,7 +3,11 @@ import { createSupabaseAdminClient } from '@/lib/supabase-server'
 
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
-export const metadata = { title: 'モデル一覧 | PhotoFleur' }
+import { getOgpImage, buildMetadata } from '@/lib/ogp'
+export async function generateMetadata() {
+  const image = await getOgpImage('ogp_models')
+  return buildMetadata({ title: 'モデル一覧 | PhotoFleur', path: '/models', imageUrl: image })
+}
 
 export default async function ModelsPage() {
   const supabase = await createSupabaseAdminClient()

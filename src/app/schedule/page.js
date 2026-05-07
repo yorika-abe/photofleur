@@ -2,7 +2,11 @@ import Link from 'next/link'
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import ScheduleBookingTabs from '@/components/ScheduleBookingTabs'
 
-export const metadata = { title: 'スケジュール一覧 | PhotoFleur' }
+import { getOgpImage, buildMetadata } from '@/lib/ogp'
+export async function generateMetadata() {
+  const image = await getOgpImage('ogp_schedule')
+  return buildMetadata({ title: 'スケジュール一覧 | PhotoFleur', path: '/schedule', imageUrl: image })
+}
 
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 

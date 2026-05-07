@@ -1,12 +1,17 @@
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
+import { buildMetadata } from '@/lib/ogp'
 
 export async function generateMetadata({ params }) {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   const { slug } = await params
-  const { data } = await supabase.from('blog_posts').select('title').eq('slug', slug).single()
-  return { title: data ? `${data.title} | PhotoFleur Blog` : 'ブログ' }
+  const { data } = await supabase.from('blog_posts').select('title, cover_image').eq('slug', slug).single()
+  return buildMetadata({
+    title: data?.title ? `${data.title} | PhotoFleur Blog` : 'ブログ | PhotoFleur',
+    path: `/blog/${slug}`,
+    imageUrl: data?.cover_image || null,
+  })
 }
 
 export default async function BlogPostPage({ params }) {

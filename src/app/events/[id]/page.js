@@ -4,8 +4,20 @@ import { notFound } from 'next/navigation'
 import BookingSection from './BookingSection'
 import GalleryMarquee from './GalleryMarquee'
 import ProductCards from './ProductCards'
+import { buildMetadata } from '@/lib/ogp'
 
 export const dynamic = 'force-dynamic'
+
+export async function generateMetadata({ params }) {
+  const { id } = await params
+  const supabase = await createSupabaseAdminClient()
+  const { data: ev } = await supabase.from('events').select('title, main_image, thumbnail_image').eq('id', id).single()
+  return buildMetadata({
+    title: ev?.title ? `${ev.title} | PhotoFleur` : 'イベント詳細 | PhotoFleur',
+    path: `/events/${id}`,
+    imageUrl: ev?.main_image || ev?.thumbnail_image || null,
+  })
+}
 
 function formatDateFull(dateStr) {
   const d = new Date(dateStr + 'T00:00:00')

@@ -1,5 +1,11 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import FadingHeroBg from '@/components/FadingHeroBg'
+import { getOgpImage, buildMetadata } from '@/lib/ogp'
+
+export async function generateMetadata() {
+  const image = await getOgpImage('ogp_recruit')
+  return buildMetadata({ title: 'モデル募集 | PhotoFleur', path: '/model-recruit', imageUrl: image })
+}
 
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 

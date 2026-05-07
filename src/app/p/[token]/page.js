@@ -1,7 +1,19 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import PrivateProductBookingForm from './BookingForm'
+import { buildMetadata } from '@/lib/ogp'
 
 export const dynamic = 'force-dynamic'
+
+export async function generateMetadata({ params }) {
+  const { token } = await params
+  const admin = await createSupabaseAdminClient()
+  const { data: product } = await admin.from('private_products').select('name, image').eq('token', token).single()
+  return buildMetadata({
+    title: product?.name ? `${product.name} | PhotoFleur` : '非公開商品 | PhotoFleur',
+    path: `/p/${token}`,
+    imageUrl: product?.image || null,
+  })
+}
 
 export default async function PrivateProductPage({ params }) {
   const { token } = await params
