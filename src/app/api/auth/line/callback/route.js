@@ -78,6 +78,12 @@ export async function GET(req) {
     if (!currentUser) {
       return Response.redirect(`${siteUrl}/login?error=line_error`)
     }
+    // Remove line_user_id from any other account that had it (e.g. accidental LINE-only account)
+    await admin.from('user_profiles')
+      .update({ line_user_id: null })
+      .eq('line_user_id', lineUserId)
+      .neq('id', currentUser.id)
+    // Link LINE to this account
     await admin.from('user_profiles').update({ line_user_id: lineUserId }).eq('id', currentUser.id)
     return Response.redirect(`${siteUrl}/my?line_linked=1`)
   }
