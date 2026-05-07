@@ -122,14 +122,17 @@ const newRow = (type) => ({
 })
 
 function restoreRowsFromDb(rows) {
+  if (!Array.isArray(rows)) return []
   return rows.map(row => ({
     ...row,
     id: uid(),
-    cells: row.cells.map(cell => ({
+    bg: row.bg || { color: '', imageUrl: '' },
+    colWidths: row.colWidths || [100],
+    cells: Array.isArray(row.cells) ? row.cells.map(cell => ({
       ...cell,
       id: uid(),
-      block: cell.block ? { ...cell.block, id: uid() } : null,
-    })),
+      block: cell.block ? { ...cell.block, id: uid(), data: { ...(DEFAULTS[cell.block.type] || {}), ...(cell.block.data || {}) } } : null,
+    })) : [{ id: uid(), block: null }],
   }))
 }
 
@@ -176,6 +179,22 @@ function getDefaultRows(templateId) {
         makeRow('text', { text: 'こちら都合でキャンセルとなり返金のある方はクレジットカード宛に返金させていただきますのでご確認ください。\n\nキャンセル料が発生する方に関しましては別途ご連絡させていただきます。', size: 14, color: '#444', lineHeight: 1.9 }),
         makeRow('divider', { color: '#e5e5e5' }),
         makeRow('text', { text: '公式LINE🔗 https://lin.ee/VgTzmhe\n公式Instagram🔗 @photofleur.official\n公式X🔗 @photofleur_', size: 14, color: '#555', lineHeight: 2 }),
+      ]
+    case 'private-booking-confirmation':
+      return [
+        makeRow('heading', { text: 'ご予約ありがとうございます', size: 24 }),
+        makeRow('text', { text: '{{customer_name}} 様\n\nこの度はPhotoFleurにお申し込みいただき、誠にありがとうございます。\n以下の内容でご予約を受け付けました。', size: 15, lineHeight: 1.9 }),
+        makeRow('text', { text: '{{qr_block}}', size: 14 }),
+        makeRow('divider', { color: '#e5e5e5' }),
+        makeRow('text', { text: 'ご不明点がございましたら、公式LINEよりご連絡ください。\nhttps://lin.ee/7XLB4St', size: 13, color: '#555', lineHeight: 2 }),
+      ]
+    case 'goods-order-confirmation':
+      return [
+        makeRow('heading', { text: 'ご注文ありがとうございます', size: 24 }),
+        makeRow('text', { text: '{{customer_name}} 様\n\nこの度はPhotoFleurにてグッズをご注文いただき、誠にありがとうございます。\n以下の内容でご注文を受け付けました。', size: 15, lineHeight: 1.9 }),
+        makeRow('text', { text: '商品名：{{goods_title}}\n数量：{{quantity}}\n合計金額：{{total_price}}\nお支払方法：{{payment_method}}', size: 15, lineHeight: 2 }),
+        makeRow('divider', { color: '#e5e5e5' }),
+        makeRow('text', { text: 'ご不明点がございましたら、公式LINEよりご連絡ください。\nhttps://lin.ee/7XLB4St', size: 13, color: '#555', lineHeight: 2 }),
       ]
     default:
       return []
@@ -656,7 +675,13 @@ export default function NewsletterPage() {
       const json = await res.json()
       if (json.template) {
         const t = json.template
-        setRows(t.rows_json?.length > 0 ? restoreRowsFromDb(t.rows_json) : [])
+        let restoredRows = []
+        try {
+          restoredRows = t.rows_json?.length > 0 ? restoreRowsFromDb(t.rows_json) : []
+        } catch {
+          restoredRows = getDefaultRows(tmplId)
+        }
+        setRows(restoredRows.length > 0 ? restoredRows : getDefaultRows(tmplId))
         setHeader(t.header_json && Object.keys(t.header_json).length > 0
           ? t.header_json
           : { bgColor: '#1a3560', text: 'PhotoFleur', textColor: '#ffffff', fontSize: 20 })
