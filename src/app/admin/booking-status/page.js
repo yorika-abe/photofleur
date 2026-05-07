@@ -53,6 +53,7 @@ export default function AdminBookingStatusPage() {
   const [selectedBooking, setSelectedBooking] = useState(null)
   const [eventProducts, setEventProducts] = useState([])
   const [productSales, setProductSales] = useState({})
+  const [epBookings, setEpBookings] = useState([])
   const [showHistory, setShowHistory] = useState(false)
   const [historyRecords, setHistoryRecords] = useState([])
   const [expandedHistory, setExpandedHistory] = useState(null)
@@ -151,6 +152,11 @@ export default function AdminBookingStatusPage() {
     } catch { setProductHansellingMap({}) }
 
     // 予約商品を取得（booked_countを自動反映）
+    fetch(`/api/admin/events/${selectedEventId}/product-bookings`)
+      .then(r => r.json())
+      .then(d => setEpBookings(d.bookings || []))
+      .catch(() => setEpBookings([]))
+
     fetch(`/api/admin/events/${selectedEventId}/products`)
       .then(r => r.json())
       .then(d => {
@@ -1082,6 +1088,46 @@ export default function AdminBookingStatusPage() {
                         </table>
                       </div>
                     </div>
+
+                    {/* 特別予約商品購入者リスト */}
+                    {epBookings.length > 0 && (
+                      <div style={{ marginTop: 16, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, padding: '16px 20px' }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 12 }}>特別予約商品 購入者一覧（{epBookings.length}件）</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {epBookings.map(b => (
+                            <div key={b.id} style={{ border: '1px solid #e8f0fb', borderRadius: 8, padding: '10px 14px', background: '#f8fbff', fontSize: 13 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 6 }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: 700, color: '#1a3560', marginBottom: 4 }}>
+                                    {b.product?.name || '—'}
+                                    <span style={{ fontWeight: 400, color: '#888', fontSize: 12, marginLeft: 8 }}>
+                                      {b.payment_method === 'card' ? '💳カード' : '💴現金'}
+                                    </span>
+                                  </div>
+                                  {Object.entries(b.selections || {}).filter(([k]) => k !== 'delivery_address').map(([k, v]) => (
+                                    <div key={k} style={{ color: '#555', marginBottom: 2 }}>
+                                      <span style={{ color: '#aaa', marginRight: 6 }}>{k}</span>
+                                      {Array.isArray(v) ? v.join(', ') : v}
+                                    </div>
+                                  ))}
+                                  {b.selections?.delivery_address && (
+                                    <div style={{ color: '#555', marginTop: 2 }}><span style={{ color: '#aaa', marginRight: 6 }}>配送先</span><span style={{ whiteSpace: 'pre-wrap' }}>{b.selections.delivery_address}</span></div>
+                                  )}
+                                  <div style={{ marginTop: 4, display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 12, color: '#888' }}>
+                                    {b.nickname && <span>📛 {b.nickname}</span>}
+                                    {b.sns_url && <a href={b.sns_url} target="_blank" rel="noopener noreferrer" style={{ color: '#1a3560' }}>{b.sns_url.replace('https://', '')}</a>}
+                                    <span>{b.customer_email}</span>
+                                  </div>
+                                </div>
+                                <div style={{ fontWeight: 700, color: '#1a3560', fontSize: 15, flexShrink: 0 }}>
+                                  ¥{(b.product?.price || 0).toLocaleString()}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* 予約商品売上 */}
                     {eventProducts.length > 0 && (
