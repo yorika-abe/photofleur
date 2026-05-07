@@ -34,6 +34,11 @@ export async function GET(req) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
+  const { data: pausedRow } = await supabase.from('line_templates').select('body').eq('key', '_camera_broadcast_paused').maybeSingle()
+  if (pausedRow?.body === 'true') {
+    return Response.json({ ok: true, sent: false, reason: 'camera broadcast paused' })
+  }
+
   // 22:00 UTC = 7:00 JST翌日。JSTの「今日」のbooking_open_atを持つイベントを取得
   const now = new Date()
   const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000)

@@ -911,6 +911,59 @@ function TabPhotographer() {
   )
 }
 
+// ---- 公式LINE自動送信トグル ----
+function CameraAutoToggle() {
+  const [paused, setPaused] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/admin/line-templates')
+      .then(r => r.json())
+      .then(d => setPaused(d.templates?._camera_broadcast_paused === 'true'))
+  }, [])
+
+  async function toggle() {
+    setSaving(true)
+    const newPaused = !paused
+    await fetch('/api/admin/line-templates', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: '_camera_broadcast_paused', body: newPaused ? 'true' : 'false' }),
+    })
+    setPaused(newPaused)
+    setSaving(false)
+  }
+
+  if (paused === null) return null
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 16,
+      padding: '14px 20px', borderRadius: 12, marginBottom: 20,
+      background: paused ? '#fff3e0' : '#e8f5e9',
+      border: `2px solid ${paused ? '#ffb74d' : '#81c784'}`,
+    }}>
+      <div style={{ fontSize: 24 }}>{paused ? '⏸' : '📣'}</div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontWeight: 700, fontSize: 15, color: paused ? '#e65100' : '#2e7d32' }}>
+          公式LINE 自動一斉送信 — {paused ? '一時停止中' : '稼働中'}
+        </div>
+        <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
+          {paused
+            ? '金曜週間告知・予約受付開始・月初イベント告知の自動送信が停止されています'
+            : '金曜週間告知・予約受付開始・月初イベント告知が自動で送信されます'}
+        </div>
+      </div>
+      <button onClick={toggle} disabled={saving} style={{
+        padding: '10px 22px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 14, cursor: saving ? 'not-allowed' : 'pointer',
+        background: paused ? '#2e7d32' : '#e65100', color: '#fff', opacity: saving ? 0.6 : 1, whiteSpace: 'nowrap',
+      }}>
+        {saving ? '...' : paused ? '▶ 再開する' : '⏸ 一時停止する'}
+      </button>
+    </div>
+  )
+}
+
 // ---- メインページ ----
 export default function LineBroadcastPage() {
   const [activeTab, setActiveTab] = useState('all')
@@ -950,6 +1003,9 @@ export default function LineBroadcastPage() {
           <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>{tab?.desc}</div>
         </div>
       </div>
+
+      {/* 公式LINE自動送信トグル */}
+      <CameraAutoToggle />
 
       {/* 送信先設定パネル */}
       <LineSettingsPanel />

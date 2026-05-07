@@ -29,6 +29,11 @@ export async function GET(req) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
+  const { data: pausedRow } = await supabase.from('line_templates').select('body').eq('key', '_camera_broadcast_paused').maybeSingle()
+  if (pausedRow?.body === 'true') {
+    return Response.json({ ok: true, sent: false, reason: 'camera broadcast paused' })
+  }
+
   const [{ data: events }, { data: models }] = await Promise.all([
     supabase.from('annual_events').select('*').eq('month', month).order('day'),
     supabase.from('models').select('name, birthday').not('birthday', 'is', null),
