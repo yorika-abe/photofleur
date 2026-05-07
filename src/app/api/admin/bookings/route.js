@@ -116,5 +116,5 @@ export async function GET() {
   const merged = [...regular, ...privateBookings, ...epBookings, ...goodsBookings]
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 
-  return Response.json({ bookings: merged })
+  return Response.json({ bookings: merged, _debug: { epbCount: (epbRaw || []).length, epbError: epbError || null } })
 }
