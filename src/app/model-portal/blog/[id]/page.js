@@ -105,7 +105,7 @@ export default function ModelBlogEditPage() {
         {isNew ? '新規記事作成' : '記事編集'}
       </h1>
 
-      <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#795548' }}>
+      <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#1565c0' }}>
         💡 「承認を申請する」を押すと運営に送信されます。承認後に公開されます。
       </div>
 

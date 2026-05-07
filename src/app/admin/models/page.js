@@ -5,9 +5,9 @@ import Link from 'next/link'
 
 const TIER_LABELS = {
   staff:  { label: '運営スタッフ', color: '#1a3560', bg: '#e8f0fb' },
-  '12000': { label: '12000モデル', color: '#6a1b9a', bg: '#f3e5f5' },
+  '12000': { label: '12000モデル', color: '#c2185b', bg: '#fce4ec' },
   '9900':  { label: '9900モデル',  color: '#00695c', bg: '#e0f2f1' },
-  '8900':  { label: '8900モデル',  color: '#e65100', bg: '#fff3e0' },
+  '8900':  { label: '8900モデル',  color: '#1565c0', bg: '#e3f2fd' },
 }
 
 const FIELD_LABELS = {
@@ -108,7 +108,7 @@ export default function AdminModelsPage() {
         ? isChange ? { ...m, pending_data: null } : { ...m, status: 'inactive', pending_data: null }
         : m
     ))
-    showToast(isChange ? '変更を却下しました（公開情報は維持）' : '非公開にしました', '#e65100')
+    showToast(isChange ? '変更を却下しました（公開情報は維持）' : '非公開にしました', '#c62828')
   }
 
   // Drag and drop handlers (active tab only)
@@ -147,7 +147,7 @@ export default function AdminModelsPage() {
   const inactive = models.filter(m => m.status === 'inactive')
 
   const tabs = [
-    { key: 'pending', label: `承認待ち (${pending.length})`, color: '#e65100' },
+    { key: 'pending', label: `承認待ち (${pending.length})`, color: '#c62828' },
     { key: 'active', label: `公開中 (${active.length})`, color: '#388e3c' },
     { key: 'inactive', label: `非公開 (${inactive.length})`, color: '#999' },
   ]
@@ -180,7 +180,7 @@ export default function AdminModelsPage() {
       <div style={{ marginBottom: 28 }} />
 
       {pending.length > 0 && tab !== 'pending' && (
-        <div style={{ background: '#fff3e0', border: '1px solid #ffe082', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#e65100', cursor: 'pointer' }}
+        <div style={{ background: '#ffebee', border: '1px solid #ef9a9a', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#c62828', cursor: 'pointer' }}
           onClick={() => setTab('pending')}>
           ⚠️ 承認待ちのモデルが {pending.length} 件あります → 確認する
         </div>
@@ -218,7 +218,7 @@ export default function AdminModelsPage() {
                   onDrop={isDraggable ? onDrop : undefined}
                   style={{
                     background: '#fff', borderRadius: 12,
-                    border: tab === 'pending' ? '2px solid #ffb74d' : '1px solid #e5e5e5',
+                    border: tab === 'pending' ? '2px solid #ef9a9a' : '1px solid #e5e5e5',
                     overflow: 'hidden',
                     cursor: isDraggable ? 'grab' : 'default',
                     userSelect: 'none',

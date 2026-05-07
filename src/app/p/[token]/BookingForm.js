@@ -203,7 +203,7 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
       )}
 
       {selectedPayment === 'cash' && (
-        <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 8, padding: '12px', fontSize: 13, color: '#795548', marginBottom: 14 }}>
+        <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 8, padding: '12px', fontSize: 13, color: '#1565c0', marginBottom: 14 }}>
           💴 当日受付にてお支払いください。
         </div>
       )}
@@ -216,7 +216,7 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
       )}
 
       {requireEventDetails && (
-        <div style={{ background: '#f3f6ff', border: '1px solid #c5cae9', borderRadius: 10, padding: '14px 16px', marginBottom: 14 }}>
+        <div style={{ background: '#f0f8ff', border: '1px solid #b3d9f5', borderRadius: 10, padding: '14px 16px', marginBottom: 14 }}>
           <div style={{ fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 12 }}>撮影詳細（必須）</div>
           <div style={{ marginBottom: 12 }}>
             <label style={lbl}>開催日 *</label>

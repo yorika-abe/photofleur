@@ -405,7 +405,7 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
 
                   <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {!isSelectionsComplete && (
-                      <div style={{ background: '#fff3e0', color: '#e65100', borderRadius: 8, padding: '10px 14px', fontSize: 13 }}>
+                      <div style={{ background: '#ffebee', color: '#c62828', borderRadius: 8, padding: '10px 14px', fontSize: 13 }}>
                         ⚠ 全ての選択肢を選んでください
                       </div>
                     )}

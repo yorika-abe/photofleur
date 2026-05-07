@@ -369,7 +369,7 @@ export default function PrivateProductsPage() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-                    <span style={{ fontSize: 12, color: '#3949ab', fontWeight: 600 }}>{p.booking_count}件予約</span>
+                    <span style={{ fontSize: 12, color: '#1a3560', fontWeight: 600 }}>{p.booking_count}件予約</span>
                     <button onClick={() => copyLink(p.token)}
                       style={{ fontSize: 12, padding: '5px 12px', borderRadius: 6, border: '1px solid #1a3560', background: copiedToken === p.token ? '#1a3560' : '#fff', color: copiedToken === p.token ? '#fff' : '#1a3560', cursor: 'pointer', fontWeight: 600 }}>
                       {copiedToken === p.token ? '✓ コピー済み' : '🔗 リンクコピー'}
@@ -449,7 +449,7 @@ function BookingList({ productId, onCancel }) {
             {b.nickname && <span style={{ color: '#888' }}>({b.nickname})</span>}
             <span style={{ color: '#888' }}>{b.email}</span>
             {b.phone && <span style={{ color: '#888' }}>{b.phone}</span>}
-            <span style={{ fontSize: 11, background: b.payment_method === 'card' ? '#e8f5e9' : '#fff3e0', color: b.payment_method === 'card' ? '#388e3c' : '#e65100', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>
+            <span style={{ fontSize: 11, background: b.payment_method === 'card' ? '#e8f5e9' : '#e3f2fd', color: b.payment_method === 'card' ? '#388e3c' : '#1565c0', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>
               {b.payment_method === 'card' ? 'カード' : '現金'}
             </span>
             {b.cancelled_at && (

@@ -243,7 +243,7 @@ export default async function EventDetailPage({ params }) {
 
       {/* Street notice (meeting place note) */}
       {event.event_type === 'street' && (
-        <div style={{ background: '#fffbf0', border: '1px solid #ffe082', borderRadius: 10, padding: '14px 18px', marginBottom: 24, fontSize: 13, color: '#7a5f00', lineHeight: 1.8 }}>
+        <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 10, padding: '14px 18px', marginBottom: 24, fontSize: 13, color: '#1565c0', lineHeight: 1.8 }}>
           ⚠️ 集合場所の詳細は<strong>確定メール</strong>に記載されています。
           {event.street_notes && <><br />{event.street_notes}</>}
         </div>
@@ -262,8 +262,8 @@ export default async function EventDetailPage({ params }) {
 
       {/* 企画書（モデル向け） */}
       {isModelOrAdmin && event.planning_note_model && (
-        <div style={{ background: '#fffde7', border: '1px solid #ffe082', borderRadius: 12, padding: '16px 20px', marginBottom: 32 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#a07800', marginBottom: 10, letterSpacing: 1 }}>モデルにのみ表示</div>
+        <div style={{ background: '#f8fbff', border: '1px solid #d6ecf5', borderRadius: 12, padding: '16px 20px', marginBottom: 32 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#1a3560', marginBottom: 10, letterSpacing: 1 }}>モデルにのみ表示</div>
           <div className="blog-content" dangerouslySetInnerHTML={{ __html: event.planning_note_model }}
             style={{ fontSize: 15, color: '#444', lineHeight: 2 }} />
         </div>

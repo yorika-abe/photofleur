@@ -159,7 +159,7 @@ export default function ExtraEntryPage() {
           return (
             <div key={req.id} style={{
               background: '#fff', borderRadius: 12, padding: '14px 16px',
-              border: isPending ? '1.5px solid #ffe082' : '1px solid #e0f0f4',
+              border: isPending ? '1.5px solid #ef9a9a' : '1px solid #e0f0f4',
             }}>
               {/* ヘッダー行 */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: isOpen ? 12 : (existing ? 8 : 0) }}>
@@ -171,7 +171,7 @@ export default function ExtraEntryPage() {
                   {TYPE_LABELS[req.event_type] || req.event_type}
                 </span>
                 {isPending && (
-                  <span style={{ fontSize: 11, background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '2px 7px', fontWeight: 700 }}>
+                  <span style={{ fontSize: 11, background: '#ffebee', color: '#c62828', borderRadius: 4, padding: '2px 7px', fontWeight: 700 }}>
                     承認待ち
                   </span>
                 )}
@@ -242,7 +242,7 @@ export default function ExtraEntryPage() {
                       style={{ width: '100%', boxSizing: 'border-box', padding: '5px 10px', border: '1px solid #e0e0e0', borderRadius: 6, fontSize: 12, color: '#555', background: '#f8f8f8', marginBottom: 8 }} />
                   )}
                   <button disabled={submitting[req.id]} onClick={() => submit(req)}
-                    style={{ width: '100%', background: '#f57f17', color: '#fff', border: 'none', borderRadius: 7, padding: '9px', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: submitting[req.id] ? 0.7 : 1 }}>
+                    style={{ width: '100%', background: '#1a3560', color: '#fff', border: 'none', borderRadius: 7, padding: '9px', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: submitting[req.id] ? 0.7 : 1 }}>
                     {submitting[req.id] ? '申請中...' : existing ? '変更申請を送る' : '追加申請を送る'}
                   </button>
                   {results[req.id] === 'error' && (

@@ -291,7 +291,7 @@ export default function CartCheckoutPage() {
             ))}
           </div>
           {paymentMethod === 'cash' && (
-            <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 8, padding: '12px', fontSize: 13, color: '#795548' }}>
+            <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 8, padding: '12px', fontSize: 13, color: '#1565c0' }}>
               💴 当日受付にてお支払いください。予約確定メールが届いた時点で予約完了です。
             </div>
           )}
@@ -321,8 +321,8 @@ export default function CartCheckoutPage() {
           </label>
         </div>
 
-        <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: '14px 16px', marginBottom: 20 }}>
-          <p style={{ fontSize: 13, color: '#795548', margin: '0 0 10px', lineHeight: 1.7 }}>
+        <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 10, padding: '14px 16px', marginBottom: 20 }}>
+          <p style={{ fontSize: 13, color: '#1565c0', margin: '0 0 10px', lineHeight: 1.7 }}>
             ご予約前に<Link href="/terms" target="_blank" style={{ color: '#1a3560', fontWeight: 700 }}>利用規約</Link>を必ずご確認ください。予約することで利用規約に同意したこととします。
           </p>
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#555' }}>

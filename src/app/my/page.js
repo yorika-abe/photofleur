@@ -33,7 +33,7 @@ function formatDate(dateStr) {
 const typeColors = {
   street: { bg: '#e0f7fa', color: '#0097a7', label: 'ストリート' },
   studio: { bg: '#fce4ec', color: '#c2185b', label: 'スタジオ' },
-  irregular: { bg: '#e8eaf6', color: '#1a3560', label: '不定期' },
+  irregular: { bg: '#e3f2fd', color: '#1a3560', label: '不定期' },
 }
 
 function MyPageContent() {
@@ -161,7 +161,7 @@ function MyPageContent() {
   const recentBookings = bookings.slice(0, 3)
   const profileComplete = !!(savedProfile.last_name && savedProfile.first_name && savedProfile.last_name_kana && savedProfile.first_name_kana && savedProfile.phone && savedProfile.sns_url)
   const profileIncompleteNotice = (
-    <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: '14px 18px', fontSize: 13, color: '#795548' }}>
+    <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 10, padding: '14px 18px', fontSize: 13, color: '#1565c0' }}>
       ⚠️ マイページ上の登録情報を全てご記入ください。
     </div>
   )
@@ -304,7 +304,7 @@ function MyPageContent() {
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#555' }}>写っているモデル（複数選択可）</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {models.filter(m => m.status === 'active').map(m => (
-                <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, background: photoModelIds.includes(m.id) ? '#e8eaf6' : '#f5f5f5', borderRadius: 20, padding: '6px 14px', border: photoModelIds.includes(m.id) ? '1px solid #1a3560' : '1px solid #e0e0e0' }}>
+                <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, background: photoModelIds.includes(m.id) ? '#e3f2fd' : '#f5f5f5', borderRadius: 20, padding: '6px 14px', border: photoModelIds.includes(m.id) ? '1px solid #1a3560' : '1px solid #e0e0e0' }}>
                   <input type="checkbox" checked={photoModelIds.includes(m.id)} onChange={() => toggleModel(m.id)} style={{ display: 'none' }} />
                   {m.image && <img src={m.image} style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />}
                   <span style={{ color: photoModelIds.includes(m.id) ? '#1a3560' : '#555', fontWeight: photoModelIds.includes(m.id) ? 700 : 400 }}>{m.name}</span>
@@ -361,7 +361,7 @@ function MyPageContent() {
                       </div>
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
                         <div style={{ fontWeight: 700, color: '#1a3560', fontSize: 15 }}>¥{(b.final_price || 0).toLocaleString()}</div>
-                        <div style={{ fontSize: 12, color: isPaid ? '#0097a7' : '#e65100', marginTop: 2 }}>
+                        <div style={{ fontSize: 12, color: isPaid ? '#0097a7' : '#1565c0', marginTop: 2 }}>
                           {isPaid ? '💳 カード払い' : '💴 現金払い'}
                         </div>
                       </div>

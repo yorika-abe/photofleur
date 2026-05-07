@@ -144,7 +144,7 @@ export default function AdminBlogCategoriesPage() {
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560' }}>{cat.name}</div>
                   <div style={{ fontSize: 12, color: '#aaa' }}>/{cat.slug}</div>
-                  {cat.memo && <div style={{ fontSize: 12, color: '#999', marginTop: 3, background: '#fffde7', borderRadius: 4, padding: '2px 6px', display: 'inline-block' }}>📝 {cat.memo}</div>}
+                  {cat.memo && <div style={{ fontSize: 12, color: '#999', marginTop: 3, background: '#f0f4fb', borderRadius: 4, padding: '2px 6px', display: 'inline-block' }}>📝 {cat.memo}</div>}
                 </div>
                 <button onClick={() => startEdit(cat)}
                   style={{ background: '#f0f4fb', color: '#1a3560', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>

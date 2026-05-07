@@ -53,7 +53,7 @@ function ContractModal({ form, onClose, onAgree, readOnly, agreedAt }) {
             </button>
           ) : (
             <>
-              {!scrolled && <p style={{ fontSize: 12, color: '#e65100', margin: '0 0 12px', fontWeight: 600 }}>↓ 最後までスクロールすると同意できます</p>}
+              {!scrolled && <p style={{ fontSize: 12, color: '#1565c0', margin: '0 0 12px', fontWeight: 600 }}>↓ 最後までスクロールすると同意できます</p>}
               {scrolled && (
                 <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1a3560' }}>
                   <input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer' }} />
@@ -128,7 +128,7 @@ function RulesModal({ onClose, onAgree, readOnly, agreedAt }) {
             </button>
           ) : (
             <>
-              {!scrolled && <p style={{ fontSize: 12, color: '#e65100', margin: '0 0 12px', fontWeight: 600 }}>↓ 最後までスクロールすると同意できます</p>}
+              {!scrolled && <p style={{ fontSize: 12, color: '#1565c0', margin: '0 0 12px', fontWeight: 600 }}>↓ 最後までスクロールすると同意できます</p>}
               {scrolled && (
                 <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1a3560' }}>
                   <input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer' }} />
@@ -285,7 +285,7 @@ export default function PrivateInfoPage() {
       )}
 
       {!isLocked && (
-        <div style={{ background: '#fff3e0', border: '1px solid #ffe082', borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 13, color: '#795548' }}>
+        <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 13, color: '#1565c0' }}>
           <strong>⚠️ 必須情報について</strong><br />
           本名・住所・最寄り駅・電話番号・メールアドレスを入力のうえ、業務委託契約に同意してください。
         </div>

@@ -36,8 +36,8 @@ async function checkAdmin(admin) {
 
 function buildCancelHtml({ customerName, cancelReason }) {
   const reasonBlock = cancelReason ? `
-    <div style="background:#fff3e0; border-left:4px solid #e65100; border-radius:0 8px 8px 0; padding:14px 18px; margin:0 0 24px;">
-      <p style="margin:0 0 6px; font-size:13px; font-weight:700; color:#e65100;">キャンセル理由</p>
+    <div style="background:#fce4ec; border-left:4px solid #c62828; border-radius:0 8px 8px 0; padding:14px 18px; margin:0 0 24px;">
+      <p style="margin:0 0 6px; font-size:13px; font-weight:700; color:#c62828;">キャンセル理由</p>
       <p style="margin:0; font-size:14px; line-height:1.8; color:#555; white-space:pre-wrap;">${cancelReason}</p>
     </div>
   ` : ''

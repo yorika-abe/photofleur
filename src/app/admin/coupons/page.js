@@ -160,7 +160,7 @@ export default function AdminCouponsPage() {
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
                       <span style={{ fontFamily: 'monospace', fontSize: 18, fontWeight: 700, color: '#2f2244', background: '#f8f5ff', padding: '3px 12px', borderRadius: 6 }}>{c.code}</span>
-                      <span style={{ background: c.discount_type === 'fixed' ? '#e8f5e9' : '#e8eaf6', color: c.discount_type === 'fixed' ? '#388e3c' : '#3949ab', borderRadius: 4, padding: '2px 8px', fontSize: 13, fontWeight: 700 }}>
+                      <span style={{ background: c.discount_type === 'fixed' ? '#e8f5e9' : '#e3f2fd', color: c.discount_type === 'fixed' ? '#388e3c' : '#1a3560', borderRadius: 4, padding: '2px 8px', fontSize: 13, fontWeight: 700 }}>
                         {c.discount_type === 'fixed' ? `¥${c.discount_value.toLocaleString()} OFF` : `${c.discount_value}% OFF`}
                       </span>
                       {!c.is_active && <span style={{ background: '#f5f5f5', color: '#999', borderRadius: 4, padding: '2px 8px', fontSize: 12 }}>無効</span>}
@@ -180,7 +180,7 @@ export default function AdminCouponsPage() {
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button onClick={() => toggleActive(c)}
-                      style={{ background: c.is_active ? '#fff3e0' : '#e8f5e9', color: c.is_active ? '#e65100' : '#388e3c', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                      style={{ background: c.is_active ? '#ffebee' : '#e8f5e9', color: c.is_active ? '#c62828' : '#388e3c', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
                       {c.is_active ? '無効化' : '有効化'}
                     </button>
                     <button onClick={() => deleteCoupon(c.id)}

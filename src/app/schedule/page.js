@@ -120,8 +120,8 @@ export default async function SchedulePage() {
               const type = ev.event_type || 'special'
               const thumbSrc = ev.thumbnail_image || ev.main_image
               const cardBg = !thumbSrc
-                ? (type === 'street' ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : type === 'studio' ? 'linear-gradient(160deg,#f4d6e8,#e8b8d0)' : 'linear-gradient(160deg,#c5cae9,#9fa8da)')
-                : '#e8e0f0'
+                ? (type === 'street' ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : type === 'studio' ? 'linear-gradient(160deg,#f4d6e8,#e8b8d0)' : 'linear-gradient(160deg,#ccd8e8,#b0c4d8)')
+                : '#e8f4f8'
 
               return (
                 <Link key={ev.id} href={`/events/${ev.id}`} style={{ textDecoration: 'none', display: 'block' }} className="sched-card">

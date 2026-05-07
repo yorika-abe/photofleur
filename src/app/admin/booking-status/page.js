@@ -5,9 +5,9 @@ import Link from 'next/link'
 
 const TIER_META = {
   staff:   { label: '運営', color: '#1a3560', bg: '#dce8ff' },
-  '12000': { label: '12000', color: '#6a1b9a', bg: '#f3e5f5' },
+  '12000': { label: '12000', color: '#c2185b', bg: '#fce4ec' },
   '9900':  { label: '9900',  color: '#00695c', bg: '#e0f2f1' },
-  '8900':  { label: '8900',  color: '#e65100', bg: '#fff3e0' },
+  '8900':  { label: '8900',  color: '#1565c0', bg: '#e3f2fd' },
 }
 
 const DEFAULT_FEES = {
@@ -425,13 +425,13 @@ export default function AdminBookingStatusPage() {
         <Link href="/admin/sales" style={{ padding: '10px 20px', fontWeight: 600, fontSize: 15, color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>売上管理</Link>
         <button
           onClick={() => { setShowHistory(false); setShowNonEvent(true) }}
-          style={{ padding: '10px 20px', fontWeight: showNonEvent ? 700 : 600, fontSize: 15, color: showNonEvent ? '#7b1fa2' : '#999', background: 'none', border: 'none', borderBottom: showNonEvent ? '2px solid #7b1fa2' : '2px solid transparent', marginBottom: -2, cursor: 'pointer' }}>
+          style={{ padding: '10px 20px', fontWeight: showNonEvent ? 700 : 600, fontSize: 15, color: showNonEvent ? '#c2185b' : '#999', background: 'none', border: 'none', borderBottom: showNonEvent ? '2px solid #c2185b' : '2px solid transparent', marginBottom: -2, cursor: 'pointer' }}>
           イベント外収益
         </button>
         <button
           onClick={() => { setShowNonEvent(false); setShowHistory(true) }}
           style={{ padding: '10px 20px', fontWeight: showHistory ? 700 : 600, fontSize: 15, color: showHistory ? '#1a3560' : '#999', background: 'none', border: 'none', borderBottom: showHistory ? '2px solid #1a3560' : '2px solid transparent', marginBottom: -2, cursor: 'pointer' }}>
-          履歴 {savedIds.size > 0 && <span style={{ fontSize: 11, background: '#e0e7ff', color: '#3949ab', borderRadius: 10, padding: '1px 7px', marginLeft: 4, fontWeight: 700 }}>{savedIds.size}</span>}
+          履歴 {savedIds.size > 0 && <span style={{ fontSize: 11, background: '#e3f2fd', color: '#1565c0', borderRadius: 10, padding: '1px 7px', marginLeft: 4, fontWeight: 700 }}>{savedIds.size}</span>}
         </button>
       </div>
 
@@ -442,10 +442,10 @@ export default function AdminBookingStatusPage() {
           <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
             {[['管理', false], ['履歴', true]].map(([label, hist]) => (
               <button key={label} onClick={() => setNeShowHistory(hist)}
-                style={{ padding: '7px 20px', borderRadius: 8, border: `2px solid ${neShowHistory === hist ? '#7b1fa2' : '#e5e5e5'}`, background: neShowHistory === hist ? '#f3e5f5' : '#fff', color: neShowHistory === hist ? '#7b1fa2' : '#666', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                style={{ padding: '7px 20px', borderRadius: 8, border: `2px solid ${neShowHistory === hist ? '#c2185b' : '#e5e5e5'}`, background: neShowHistory === hist ? '#fce4ec' : '#fff', color: neShowHistory === hist ? '#c2185b' : '#666', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
                 {label}
                 {label === '履歴' && neSavedList.length > 0 && (
-                  <span style={{ marginLeft: 5, fontSize: 11, background: '#ce93d8', color: '#fff', borderRadius: 10, padding: '1px 6px' }}>{neSavedList.length}</span>
+                  <span style={{ marginLeft: 5, fontSize: 11, background: '#f48fb1', color: '#fff', borderRadius: 10, padding: '1px 6px' }}>{neSavedList.length}</span>
                 )}
               </button>
             ))}
@@ -454,7 +454,7 @@ export default function AdminBookingStatusPage() {
           {neShowHistory ? (
             /* 履歴 */
             <div>
-              <div style={{ fontWeight: 700, fontSize: 15, color: '#7b1fa2', marginBottom: 14 }}>イベント外収益 履歴</div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: '#c2185b', marginBottom: 14 }}>イベント外収益 履歴</div>
               {neSavedList.length === 0 ? (
                 <p style={{ color: '#999', fontSize: 14 }}>保存された記録はありません。</p>
               ) : (
@@ -468,7 +468,7 @@ export default function AdminBookingStatusPage() {
                       <div key={month} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, overflow: 'hidden' }}>
                         <div onClick={() => setNeExpandedHistory(isExp ? null : month)}
                           style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 12, background: '#f3e5f5', color: '#7b1fa2', borderRadius: 4, padding: '2px 8px', fontWeight: 700 }}>イベント外</span>
+                          <span style={{ fontSize: 12, background: '#fce4ec', color: '#c2185b', borderRadius: 4, padding: '2px 8px', fontWeight: 700 }}>イベント外</span>
                           <span style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>{month.replace('-', '年').replace(/(\d{2})$/, m => parseInt(m) + '月')}</span>
                           <div style={{ marginLeft: 'auto', display: 'flex', gap: 16, alignItems: 'center' }}>
                             <span style={{ fontSize: 13, color: '#388e3c', fontWeight: 600 }}>売上 ¥{(rec.totalRevenue || 0).toLocaleString()}</span>
@@ -524,9 +524,9 @@ export default function AdminBookingStatusPage() {
                     const saved = neSavedList.includes(m)
                     return (
                       <button key={m} onClick={() => { setNeSelectedMonth(m); setNeExpandedPrivate(false); setNeExpandedGoods(false); setNeExpandedCosts(new Set()) }}
-                        style={{ padding: '7px 14px', borderRadius: 16, border: `2px solid ${active ? '#7b1fa2' : '#e5e5e5'}`, background: active ? '#f3e5f5' : '#fff', color: active ? '#7b1fa2' : '#666', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                        style={{ padding: '7px 14px', borderRadius: 16, border: `2px solid ${active ? '#c2185b' : '#e5e5e5'}`, background: active ? '#fce4ec' : '#fff', color: active ? '#c2185b' : '#666', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
                         {m.replace('-', '年').replace(/(\d{2})$/, mo => parseInt(mo) + '月')}
-                        {saved && <span style={{ marginLeft: 4, fontSize: 10, background: '#ce93d8', color: '#fff', borderRadius: 3, padding: '1px 5px' }}>保存済</span>}
+                        {saved && <span style={{ marginLeft: 4, fontSize: 10, background: '#f48fb1', color: '#fff', borderRadius: 3, padding: '1px 5px' }}>保存済</span>}
                       </button>
                     )
                   })}
@@ -535,8 +535,8 @@ export default function AdminBookingStatusPage() {
                 {/* サマリー */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 20 }}>
                   {[
-                    { label: '非公開商品', value: stats.privateRevenue, color: '#7b1fa2', note: `${stats.priv.length}件` },
-                    { label: 'グッズ', value: stats.goodsRevenue, color: '#e65100', note: `${stats.gds.length}件` },
+                    { label: '非公開商品', value: stats.privateRevenue, color: '#c2185b', note: `${stats.priv.length}件` },
+                    { label: 'グッズ', value: stats.goodsRevenue, color: '#1565c0', note: `${stats.gds.length}件` },
                     { label: '売上合計', value: stats.totalRevenue, color: '#1a3560' },
                     { label: '粗利益', value: stats.grossProfit, color: stats.grossProfit >= 0 ? '#388e3c' : '#c62828' },
                   ].map(s => (
@@ -553,7 +553,7 @@ export default function AdminBookingStatusPage() {
                   <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, marginBottom: 14, overflow: 'hidden' }}>
                     <button onClick={() => setNeExpandedPrivate(p => !p)}
                       style={{ width: '100%', padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-                      <span style={{ fontWeight: 700, fontSize: 14, color: '#7b1fa2' }}>非公開商品予約 <span style={{ fontSize: 12, fontWeight: 400, color: '#aaa' }}>{stats.priv.length}件 / ¥{stats.privateRevenue.toLocaleString()}</span></span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: '#c2185b' }}>非公開商品予約 <span style={{ fontSize: 12, fontWeight: 400, color: '#aaa' }}>{stats.priv.length}件 / ¥{stats.privateRevenue.toLocaleString()}</span></span>
                       <span style={{ color: '#bbb' }}>{neExpandedPrivate ? '▲' : '▼'}</span>
                     </button>
                     {neExpandedPrivate && (
@@ -585,14 +585,14 @@ export default function AdminBookingStatusPage() {
                                     <td style={{ padding: '9px 14px', color: '#555' }}>{b.product?.title || '—'}</td>
                                     <td style={{ padding: '9px 14px', color: '#555', whiteSpace: 'nowrap' }}>{b.product?.event_date || '—'}</td>
                                     <td style={{ padding: '9px 14px' }}>
-                                      <span style={{ fontSize: 11, background: b.payment_method === 'card' ? '#e8f5e9' : '#fff3e0', color: b.payment_method === 'card' ? '#388e3c' : '#e65100', borderRadius: 3, padding: '2px 6px', fontWeight: 600 }}>
+                                      <span style={{ fontSize: 11, background: b.payment_method === 'card' ? '#e8f5e9' : '#e3f2fd', color: b.payment_method === 'card' ? '#388e3c' : '#1565c0', borderRadius: 3, padding: '2px 6px', fontWeight: 600 }}>
                                         {b.payment_method === 'card' ? 'カード' : '現金'}
                                       </span>
                                     </td>
-                                    <td style={{ padding: '9px 14px', fontWeight: 700, color: '#7b1fa2' }}>¥{(b.product?.price || 0).toLocaleString()}</td>
+                                    <td style={{ padding: '9px 14px', fontWeight: 700, color: '#c2185b' }}>¥{(b.product?.price || 0).toLocaleString()}</td>
                                     <td style={{ padding: '9px 14px' }}>
                                       <button onClick={() => toggleNeCostExpand('p_' + b.id)}
-                                        style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, border: '1px solid #ddd', background: isCostExp ? '#f3e5f5' : '#fff', color: '#555', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                        style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, border: '1px solid #ddd', background: isCostExp ? '#fce4ec' : '#fff', color: '#555', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                                         −¥{costTotal.toLocaleString()} {isCostExp ? '▲' : '▼'}
                                       </button>
                                     </td>
@@ -600,7 +600,7 @@ export default function AdminBookingStatusPage() {
                                   {isCostExp && (
                                     <tr>
                                       <td colSpan={7} style={{ padding: '8px 14px 12px', background: '#fdf8ff', borderBottom: '1px solid #f0f0f0' }}>
-                                        <div style={{ fontSize: 12, color: '#7b1fa2', fontWeight: 600, marginBottom: 8 }}>{b.product?.title || '商品'} の販管費</div>
+                                        <div style={{ fontSize: 12, color: '#c2185b', fontWeight: 600, marginBottom: 8 }}>{b.product?.title || '商品'} の販管費</div>
                                         {costItems.map((item, i) => (
                                           <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 5, alignItems: 'center' }}>
                                             <input value={item.label} onChange={e => updateNeCostItems(month, 'private', b.id, costItems.map((it, idx) => idx === i ? { ...it, label: e.target.value } : it))}
@@ -615,7 +615,7 @@ export default function AdminBookingStatusPage() {
                                         ))}
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
                                           <button onClick={() => updateNeCostItems(month, 'private', b.id, [...costItems, { label: '', amount: 0 }])}
-                                            style={{ fontSize: 11, color: '#7b1fa2', background: 'none', border: '1px solid #7b1fa2', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>+ 追加</button>
+                                            style={{ fontSize: 11, color: '#c2185b', background: 'none', border: '1px solid #c2185b', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>+ 追加</button>
                                           <span style={{ fontSize: 12, fontWeight: 700, color: '#c62828' }}>合計 −¥{costTotal.toLocaleString()}</span>
                                         </div>
                                       </td>
@@ -636,7 +636,7 @@ export default function AdminBookingStatusPage() {
                   <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, marginBottom: 14, overflow: 'hidden' }}>
                     <button onClick={() => setNeExpandedGoods(p => !p)}
                       style={{ width: '100%', padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-                      <span style={{ fontWeight: 700, fontSize: 14, color: '#e65100' }}>グッズ注文 <span style={{ fontSize: 12, fontWeight: 400, color: '#aaa' }}>{stats.gds.length}件 / ¥{stats.goodsRevenue.toLocaleString()}</span></span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: '#1565c0' }}>グッズ注文 <span style={{ fontSize: 12, fontWeight: 400, color: '#aaa' }}>{stats.gds.length}件 / ¥{stats.goodsRevenue.toLocaleString()}</span></span>
                       <span style={{ color: '#bbb' }}>{neExpandedGoods ? '▲' : '▼'}</span>
                     </button>
                     {neExpandedGoods && (
@@ -664,14 +664,14 @@ export default function AdminBookingStatusPage() {
                                     <td style={{ padding: '9px 14px', color: '#555' }}>{o.goods?.title || '—'}</td>
                                     <td style={{ padding: '9px 14px', textAlign: 'center', color: '#555' }}>{o.quantity || 1}</td>
                                     <td style={{ padding: '9px 14px' }}>
-                                      <span style={{ fontSize: 11, background: o.payment_method === 'card' ? '#e8f5e9' : '#fff3e0', color: o.payment_method === 'card' ? '#388e3c' : '#e65100', borderRadius: 3, padding: '2px 6px', fontWeight: 600 }}>
+                                      <span style={{ fontSize: 11, background: o.payment_method === 'card' ? '#e8f5e9' : '#e3f2fd', color: o.payment_method === 'card' ? '#388e3c' : '#1565c0', borderRadius: 3, padding: '2px 6px', fontWeight: 600 }}>
                                         {o.payment_method === 'card' ? 'カード' : '現金'}
                                       </span>
                                     </td>
-                                    <td style={{ padding: '9px 14px', fontWeight: 700, color: '#e65100' }}>¥{((o.goods?.price || 0) * (o.quantity || 1)).toLocaleString()}</td>
+                                    <td style={{ padding: '9px 14px', fontWeight: 700, color: '#1565c0' }}>¥{((o.goods?.price || 0) * (o.quantity || 1)).toLocaleString()}</td>
                                     <td style={{ padding: '9px 14px' }}>
                                       <button onClick={() => toggleNeCostExpand('g_' + o.id)}
-                                        style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, border: '1px solid #ddd', background: isCostExp ? '#fff3e0' : '#fff', color: '#555', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                        style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, border: '1px solid #ddd', background: isCostExp ? '#e3f2fd' : '#fff', color: '#555', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                                         −¥{costTotal.toLocaleString()} {isCostExp ? '▲' : '▼'}
                                       </button>
                                     </td>
@@ -679,7 +679,7 @@ export default function AdminBookingStatusPage() {
                                   {isCostExp && (
                                     <tr>
                                       <td colSpan={7} style={{ padding: '8px 14px 12px', background: '#fffbe6', borderBottom: '1px solid #f0f0f0' }}>
-                                        <div style={{ fontSize: 12, color: '#e65100', fontWeight: 600, marginBottom: 8 }}>{o.goods?.title || 'グッズ'} の販管費</div>
+                                        <div style={{ fontSize: 12, color: '#1565c0', fontWeight: 600, marginBottom: 8 }}>{o.goods?.title || 'グッズ'} の販管費</div>
                                         {costItems.map((item, i) => (
                                           <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 5, alignItems: 'center' }}>
                                             <input value={item.label} onChange={e => updateNeCostItems(month, 'goods', o.id, costItems.map((it, idx) => idx === i ? { ...it, label: e.target.value } : it))}
@@ -694,7 +694,7 @@ export default function AdminBookingStatusPage() {
                                         ))}
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
                                           <button onClick={() => updateNeCostItems(month, 'goods', o.id, [...costItems, { label: '', amount: 0 }])}
-                                            style={{ fontSize: 11, color: '#e65100', background: 'none', border: '1px solid #e65100', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>+ 追加</button>
+                                            style={{ fontSize: 11, color: '#1565c0', background: 'none', border: '1px solid #1565c0', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>+ 追加</button>
                                           <span style={{ fontSize: 12, fontWeight: 700, color: '#c62828' }}>合計 −¥{costTotal.toLocaleString()}</span>
                                         </div>
                                       </td>
@@ -716,11 +716,11 @@ export default function AdminBookingStatusPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
                       <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>非公開商品売上</span>
-                      <span style={{ fontWeight: 700, color: '#7b1fa2' }}>¥{stats.privateRevenue.toLocaleString()}</span>
+                      <span style={{ fontWeight: 700, color: '#c2185b' }}>¥{stats.privateRevenue.toLocaleString()}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
                       <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>グッズ売上</span>
-                      <span style={{ fontWeight: 700, color: '#e65100' }}>¥{stats.goodsRevenue.toLocaleString()}</span>
+                      <span style={{ fontWeight: 700, color: '#1565c0' }}>¥{stats.goodsRevenue.toLocaleString()}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
                       <span style={{ fontSize: 13, color: '#1a3560', fontWeight: 700 }}>売上合計</span>
@@ -760,9 +760,9 @@ export default function AdminBookingStatusPage() {
 
                 {/* 保存ボタン */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 32, gap: 10, alignItems: 'center' }}>
-                  {isSaved && <span style={{ fontSize: 13, color: '#7b1fa2', fontWeight: 600 }}>✓ 保存済み（売上管理に反映中）</span>}
+                  {isSaved && <span style={{ fontSize: 13, color: '#c2185b', fontWeight: 600 }}>✓ 保存済み（売上管理に反映中）</span>}
                   <button onClick={() => handleNeSave(month, stats)}
-                    style={{ background: '#7b1fa2', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 28px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                    style={{ background: '#c2185b', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 28px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
                     {isSaved ? '上書き保存して反映' : '保存して売上管理に反映'}
                   </button>
                 </div>
@@ -783,8 +783,8 @@ export default function AdminBookingStatusPage() {
               {historyRecords.map(rec => {
                 const isExpanded = expandedHistory === rec.eventId
                 const typeLabel = rec.eventType === 'street' ? 'ストリート' : 'スタジオ'
-                const typeColor = rec.eventType === 'street' ? '#388e3c' : '#3949ab'
-                const typeBg = rec.eventType === 'street' ? '#e8f5e9' : '#e8eaf6'
+                const typeColor = rec.eventType === 'street' ? '#388e3c' : '#1a3560'
+                const typeBg = rec.eventType === 'street' ? '#e8f5e9' : '#e3f2fd'
                 return (
                   <div key={rec.eventId} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, overflow: 'hidden' }}>
                     <div
@@ -877,7 +877,7 @@ export default function AdminBookingStatusPage() {
                   const active = selectedEventId === item.event.id
                   return (
                     <button key={item.event.id} onClick={() => setSelectedEventId(item.event.id)}
-                      style={{ padding: '8px 16px', borderRadius: 20, border: `2px solid ${active ? (isStreet ? '#388e3c' : '#3949ab') : '#e5e5e5'}`, cursor: 'pointer', fontWeight: 600, fontSize: 13, background: active ? (isStreet ? '#e8f5e9' : '#e8eaf6') : '#fff', color: active ? (isStreet ? '#388e3c' : '#3949ab') : '#666' }}>
+                      style={{ padding: '8px 16px', borderRadius: 20, border: `2px solid ${active ? (isStreet ? '#388e3c' : '#1a3560') : '#e5e5e5'}`, cursor: 'pointer', fontWeight: 600, fontSize: 13, background: active ? (isStreet ? '#e8f5e9' : '#e3f2fd') : '#fff', color: active ? (isStreet ? '#388e3c' : '#1a3560') : '#666' }}>
                       {formatDate(item.event.event_date)}
                       {item.event.title && <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 400 }}>{item.event.title}</span>}
                     </button>
@@ -938,9 +938,9 @@ export default function AdminBookingStatusPage() {
                   <>
                     {/* 過去イベント警告バナー */}
                     {isPastEvent && (
-                      <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
                         <span style={{ fontSize: 18 }}>⚠️</span>
-                        <span style={{ fontSize: 13, color: '#795548', fontWeight: 600 }}>
+                        <span style={{ fontSize: 13, color: '#1565c0', fontWeight: 600 }}>
                           この開催日は終了しています。経費を確認して「記録を保存」してください。
                         </span>
                       </div>
@@ -1062,7 +1062,7 @@ export default function AdminBookingStatusPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {[['12000', '#f3e5f5', '#6a1b9a'], ['9900', '#e0f2f1', '#00695c'], ['8900', '#fff3e0', '#e65100']].map(([tier, bg, color]) => (
+                            {[['12000', '#fce4ec', '#c2185b'], ['9900', '#e0f2f1', '#00695c'], ['8900', '#e3f2fd', '#1565c0']].map(([tier, bg, color]) => (
                               <tr key={tier}>
                                 <td style={{ padding: '8px 14px', fontWeight: 700, color, background: bg, border: '1px solid #eee', whiteSpace: 'nowrap' }}>{tier}モデル</td>
                                 {['45', '60', '90'].map(dur => (
@@ -1114,7 +1114,7 @@ export default function AdminBookingStatusPage() {
                                   {[['flat', '総額入力'], ['per_item', '1件あたり×件数']].map(([v, lbl]) => (
                                     <button key={v} type="button"
                                       onClick={() => updateProductHanselling(p.id, 'mode', v)}
-                                      style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, border: `1px solid ${ph.mode === v ? '#6a1b9a' : '#ddd'}`, background: ph.mode === v ? '#6a1b9a' : '#fff', color: ph.mode === v ? '#fff' : '#888', cursor: 'pointer', fontWeight: 600 }}>
+                                      style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, border: `1px solid ${ph.mode === v ? '#c2185b' : '#ddd'}`, background: ph.mode === v ? '#c2185b' : '#fff', color: ph.mode === v ? '#fff' : '#888', cursor: 'pointer', fontWeight: 600 }}>
                                       {lbl}
                                     </button>
                                   ))}

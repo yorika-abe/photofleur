@@ -7,7 +7,7 @@ import { createBrowserClient } from '@supabase/ssr'
 const STATUS_LABEL = { draft: '下書き', pending_review: '承認待ち', published: '公開中' }
 const STATUS_COLOR = {
   draft: { bg: '#f5f5f5', color: '#888' },
-  pending_review: { bg: '#fff3e0', color: '#e65100' },
+  pending_review: { bg: '#ffebee', color: '#c62828' },
   published: { bg: '#e8f5e9', color: '#388e3c' },
 }
 
@@ -114,7 +114,7 @@ export default function AdminBlogPage() {
                   )}
                   {post.status === 'draft' && (
                     <button onClick={() => updateStatus(post.id, 'published')}
-                      style={{ background: '#e8eaf6', color: '#3949ab', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+                      style={{ background: '#e3f2fd', color: '#1a3560', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
                       公開する
                     </button>
                   )}

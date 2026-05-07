@@ -103,7 +103,7 @@ function CompleteContent() {
             {booking && <div><strong>お名前：</strong>{booking.name}</div>}
             {event && <div><strong>開催日：</strong>{formatDate(event.event_date)}</div>}
             {slot && <div><strong>予約枠：</strong>{slot.slot_label}</div>}
-            {booking?.is_outdoor && <div style={{ color: '#e65100' }}><strong>撮影形式：</strong>屋外撮影</div>}
+            {booking?.is_outdoor && <div style={{ color: '#1565c0' }}><strong>撮影形式：</strong>屋外撮影</div>}
             {booking && <div><strong>料金：</strong>¥{(booking.final_price || slot?.price || 0).toLocaleString()}</div>}
           </div>
         </div>

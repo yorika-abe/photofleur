@@ -202,10 +202,10 @@ export default function AdminSchedulePage() {
       {loadError && <div style={{ background: '#fce4ec', border: '1px solid #ef9a9a', borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#c62828' }}>エラー: {loadError}</div>}
 
       {cameraNotify && (
-        <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 12, padding: '14px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 12, padding: '14px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div>
-            <div style={{ fontWeight: 700, color: '#e65100', fontSize: 14, marginBottom: 4 }}>📣 公式LINE（カメラマン向け）でも告知しますか？</div>
-            <div style={{ fontSize: 13, color: '#795548' }}>「{cameraNotify.ev.title || cameraNotify.ev.location_name}」を公開告知します{cameraNotify.ev.thumbnail_image ? '（サムネイル画像も送信）' : ''}</div>
+            <div style={{ fontWeight: 700, color: '#1a3560', fontSize: 14, marginBottom: 4 }}>📣 公式LINE（カメラマン向け）でも告知しますか？</div>
+            <div style={{ fontSize: 13, color: '#1565c0' }}>「{cameraNotify.ev.title || cameraNotify.ev.location_name}」を公開告知します{cameraNotify.ev.thumbnail_image ? '（サムネイル画像も送信）' : ''}</div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
             {cameraNotifySent ? (
@@ -250,7 +250,7 @@ export default function AdminSchedulePage() {
         ) : tabEvents.map(ev => {
           const models = ev.event_entries?.map(e => e.models).filter(Boolean) || []
           const typeLabel = ev.event_type === 'street' ? 'ストリート' : ev.event_type === 'studio' ? 'スタジオ' : '不定期'
-          const typeColor = ev.event_type === 'street' ? { bg: '#e0f7fa', color: '#0097a7' } : ev.event_type === 'studio' ? { bg: '#fce4ec', color: '#c2185b' } : { bg: '#e8eaf6', color: '#1a3560' }
+          const typeColor = ev.event_type === 'street' ? { bg: '#e0f7fa', color: '#0097a7' } : ev.event_type === 'studio' ? { bg: '#fce4ec', color: '#c2185b' } : { bg: '#e3f2fd', color: '#1a3560' }
           const isActive = ev.status === 'active'
           const isPast = tab === 'past'
 

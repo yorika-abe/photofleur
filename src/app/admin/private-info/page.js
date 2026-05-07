@@ -74,7 +74,7 @@ function InfoCard({ model, info, onApprove, onReject }) {
                       const newVal = info.pending_changes[key] || ''
                       const changed = oldVal !== newVal
                       return newVal ? (
-                        <div key={key} style={{ background: changed ? '#fff8e1' : '#f8fbff', borderRadius: 8, padding: '10px 14px', border: changed ? '1px solid #ffe082' : 'none' }}>
+                        <div key={key} style={{ background: changed ? '#e3f2fd' : '#f8fbff', borderRadius: 8, padding: '10px 14px', border: changed ? '1px solid #90caf9' : 'none' }}>
                           <div style={{ fontSize: 11, color: '#999', marginBottom: 2 }}>{label}{changed && ' ✏️'}</div>
                           <div style={{ fontSize: 14, fontWeight: 600, color: '#1a3560' }}>{newVal}</div>
                           {changed && oldVal && <div style={{ fontSize: 11, color: '#aaa', textDecoration: 'line-through', marginTop: 2 }}>{oldVal}</div>}

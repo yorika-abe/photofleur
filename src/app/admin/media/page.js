@@ -496,7 +496,7 @@ export default function AdminMediaPage() {
         {/* ── 共有画像設定(OGP) ── */}
         {tab === 'ogp' && (
           <>
-            <div style={{ background: '#fffde7', border: '1px solid #ffe082', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#795548', marginBottom: 4 }}>
+            <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#1565c0', marginBottom: 4 }}>
               LINEやX（Twitter）でURLをシェアした時に表示される画像です。推奨サイズ：<strong>1200×630px</strong>
             </div>
             {OGP_PAGES.map(({ key, label }) => (

@@ -82,7 +82,7 @@ function LoginForm() {
         </div>
       )}
       {lineError && (
-        <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: '14px 18px', marginBottom: 16, fontSize: 14, color: '#5d4037', lineHeight: 1.7 }}>
+        <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 10, padding: '14px 18px', marginBottom: 16, fontSize: 14, color: '#1565c0', lineHeight: 1.7 }}>
           異なるログイン方法でご登録いただいているか会員情報がありません。<br />
           別のログイン方法でのログインもしくは新規会員登録をお願いいたします。
         </div>
@@ -166,9 +166,9 @@ function LoginForm() {
       </form>
 
 {errorType === 'unconfirmed' && (
-        <div style={{ background: '#fff8e1', border: '2px solid #f0c040', borderRadius: 14, padding: '20px 24px', marginTop: 20, textAlign: 'center' }}>
+        <div style={{ background: '#e3f2fd', border: '2px solid #90caf9', borderRadius: 14, padding: '20px 24px', marginTop: 20, textAlign: 'center' }}>
           <div style={{ fontSize: 22, marginBottom: 8 }}>📧</div>
-          <div style={{ fontWeight: 700, color: '#795548', marginBottom: 6, fontSize: 15 }}>メール確認が必要です</div>
+          <div style={{ fontWeight: 700, color: '#1a3560', marginBottom: 6, fontSize: 15 }}>メール確認が必要です</div>
           <div style={{ color: '#666', fontSize: 13 }}>登録時に送信されたメールを開き、確認リンクをクリックしてからログインしてください。</div>
         </div>
       )}

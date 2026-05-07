@@ -881,7 +881,7 @@ export default function NewsletterPage() {
             </div>
           ) : (
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span style={{ fontSize: 12, color: '#795548', fontWeight: 600 }}>{filteredCount ?? subscriberCount}名に送信します</span>
+              <span style={{ fontSize: 12, color: '#1a3560', fontWeight: 600 }}>{filteredCount ?? subscriberCount}名に送信します</span>
               <button onClick={handleSend} disabled={sending}
                 style={{ background: '#e53935', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 700, cursor: sending ? 'not-allowed' : 'pointer', opacity: sending ? 0.6 : 1 }}>
                 {sending ? '送信中...' : '送信する'}

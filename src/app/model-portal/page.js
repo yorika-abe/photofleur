@@ -84,7 +84,7 @@ function ActivityReportCard() {
 }
 
 const TYPE_LABEL = { street: 'ストリート', studio: 'スタジオ', irregular: '不定期' }
-const TYPE_COLOR = { street: { color: '#388e3c', bg: '#e8f5e9' }, studio: { color: '#3949ab', bg: '#e8eaf6' }, irregular: { color: '#e65100', bg: '#fff3e0' } }
+const TYPE_COLOR = { street: { color: '#388e3c', bg: '#e8f5e9' }, studio: { color: '#1a3560', bg: '#e3f2fd' }, irregular: { color: '#1565c0', bg: '#e3f2fd' } }
 
 function UpcomingEvents({ events }) {
   return (
@@ -269,7 +269,7 @@ export default function ModelPortalHome() {
   )
 
   const hasPendingChange = model.status === 'active' && model.pending_data
-  const statusColor = hasPendingChange ? '#1565c0' : model.status === 'active' ? '#388e3c' : model.status === 'pending' ? '#e65100' : '#999'
+  const statusColor = hasPendingChange ? '#1565c0' : model.status === 'active' ? '#388e3c' : model.status === 'pending' ? '#c62828' : '#999'
   const statusLabel = hasPendingChange ? '変更審査中' : model.status === 'active' ? '公開中' : model.status === 'pending' ? '承認待ち' : '非公開'
 
   const adminModelId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('model_id') : null
@@ -309,7 +309,7 @@ export default function ModelPortalHome() {
 
         {/* 承認待ちメッセージ */}
         {model.status === 'pending' && (
-          <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 12, padding: '16px 20px', marginBottom: 24, fontSize: 14, color: '#795548' }}>
+          <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 12, padding: '16px 20px', marginBottom: 24, fontSize: 14, color: '#1565c0' }}>
             プロフィールは現在審査中です。承認されると公開されます。
           </div>
         )}

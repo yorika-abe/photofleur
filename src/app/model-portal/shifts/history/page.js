@@ -12,7 +12,7 @@ const STATUS_COLORS = {
   submitted: { bg: '#e0f7fa', color: '#00838f' },
   confirmed: { bg: '#e8f5e9', color: '#388e3c' },
   rejected: { bg: '#fce4ec', color: '#c62828' },
-  pending_approval: { bg: '#fff3e0', color: '#e65100' },
+  pending_approval: { bg: '#ffebee', color: '#c62828' },
 }
 
 function fmtDate(dateStr) {

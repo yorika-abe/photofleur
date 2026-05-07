@@ -395,7 +395,7 @@ export default function GoodsAdminPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <span style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>{g.title}</span>
                       {!g.is_active && <span style={{ fontSize: 11, background: '#ffcdd2', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>非公開</span>}
-                      {beforeStart && <span style={{ fontSize: 11, background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>販売前</span>}
+                      {beforeStart && <span style={{ fontSize: 11, background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>販売前</span>}
                       {afterEnd && <span style={{ fontSize: 11, background: '#fce4ec', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>販売終了</span>}
                     </div>
                     <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
@@ -406,7 +406,7 @@ export default function GoodsAdminPage() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-                    <span style={{ fontSize: 12, color: '#3949ab', fontWeight: 600 }}>{g.order_count}件注文</span>
+                    <span style={{ fontSize: 12, color: '#1a3560', fontWeight: 600 }}>{g.order_count}件注文</span>
                     <button type="button" onClick={() => startEdit(g)}
                       style={{ fontSize: 12, padding: '5px 12px', borderRadius: 6, border: '1px solid #ddd', background: '#fff', color: '#555', cursor: 'pointer' }}>
                       編集
@@ -433,7 +433,7 @@ export default function GoodsAdminPage() {
                               summary = gr.choices.map(c => typeof c === 'string' ? c : c.name).join(' / ')
                             }
                             return (
-                              <div key={i} style={{ fontSize: 12, background: '#e8eaf6', color: '#3949ab', borderRadius: 6, padding: '3px 10px' }}>
+                              <div key={i} style={{ fontSize: 12, background: '#e3f2fd', color: '#1a3560', borderRadius: 6, padding: '3px 10px' }}>
                                 {gr.name}: {summary}
                               </div>
                             )
@@ -485,8 +485,8 @@ function OrderList({ goodsId }) {
           <span style={{ fontWeight: 600 }}>{o.last_name} {o.first_name}</span>
           <span style={{ color: '#888' }}>{o.email}</span>
           {o.phone && <span style={{ color: '#888' }}>{o.phone}</span>}
-          <span style={{ fontSize: 11, background: '#e8eaf6', color: '#3949ab', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>×{o.quantity}</span>
-          <span style={{ fontSize: 11, background: o.payment_method === 'card' ? '#e8f5e9' : '#fff3e0', color: o.payment_method === 'card' ? '#388e3c' : '#e65100', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>
+          <span style={{ fontSize: 11, background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>×{o.quantity}</span>
+          <span style={{ fontSize: 11, background: o.payment_method === 'card' ? '#e8f5e9' : '#e3f2fd', color: o.payment_method === 'card' ? '#388e3c' : '#1565c0', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>
             {o.payment_method === 'card' ? 'カード' : '現金'}
           </span>
           {o.options_selected && (
@@ -495,7 +495,7 @@ function OrderList({ goodsId }) {
             </span>
           )}
           {o.sns_url && <a href={o.sns_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#1a3560', background: '#e8f0fe', borderRadius: 4, padding: '1px 7px', textDecoration: 'none' }}>{o.sns_url.replace('https://', '').split('/')[0]}</a>}
-          {o.delivery_address && <span style={{ fontSize: 11, color: '#555', background: '#fff3e0', borderRadius: 4, padding: '1px 7px' }}>📦 {o.delivery_address.split('\n')[0]}</span>}
+          {o.delivery_address && <span style={{ fontSize: 11, color: '#555', background: '#e3f2fd', borderRadius: 4, padding: '1px 7px' }}>📦 {o.delivery_address.split('\n')[0]}</span>}
           {o.cancelled_at && <span style={{ fontSize: 11, background: '#ffcdd2', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>キャンセル済</span>}
           {o.notes && <span style={{ color: '#999', fontSize: 12 }}>{o.notes}</span>}
           <span style={{ marginLeft: 'auto', color: '#bbb', fontSize: 11 }}>{new Date(o.created_at).toLocaleDateString('ja-JP')}</span>

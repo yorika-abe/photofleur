@@ -69,7 +69,7 @@ export default function GoodsShop() {
                     <div>
                       <span style={{ fontSize: 20, fontWeight: 700, color: '#1a3560' }}>¥{g.price.toLocaleString()}</span>
                       {g.stock >= 0 && g.stock <= 5 && !soldOut && (
-                        <span style={{ marginLeft: 8, fontSize: 12, color: '#e65100' }}>残{g.stock}個</span>
+                        <span style={{ marginLeft: 8, fontSize: 12, color: '#c62828' }}>残{g.stock}個</span>
                       )}
                     </div>
                     {soldOut ? (
@@ -302,7 +302,7 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart }) {
                   onChange={setLayerPath}
                 />
                 {hasOptions && !isLayersComplete && (
-                  <p style={{ fontSize: 12, color: '#e65100', marginTop: 6 }}>⚠ 全ての選択肢を選んでください</p>
+                  <p style={{ fontSize: 12, color: '#c62828', marginTop: 6 }}>⚠ 全ての選択肢を選んでください</p>
                 )}
               </div>
             )}
@@ -436,7 +436,7 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart }) {
             )}
 
             {selectedPayment === 'cash' && (
-              <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 8, padding: 12, fontSize: 13, color: '#795548', marginBottom: 14 }}>
+              <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 8, padding: 12, fontSize: 13, color: '#1565c0', marginBottom: 14 }}>
                 💴 受け取り時にお支払いください。
               </div>
             )}
@@ -461,7 +461,7 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart }) {
               <div style={{ background: '#ffebee', color: '#c62828', borderRadius: 8, padding: '10px 14px', fontSize: 14, marginBottom: 14 }}>{error}</div>
             )}
             {hasOptions && !isSelectionsComplete && (
-              <div style={{ background: '#fff3e0', color: '#e65100', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 14 }}>
+              <div style={{ background: '#ffebee', color: '#c62828', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 14 }}>
                 ⚠ 上の選択肢を全て選んでから注文できます
               </div>
             )}
@@ -731,7 +731,7 @@ function CartCheckout({ cart, onClose, onCancel, onOrderComplete }) {
               </div>
             )}
             {selectedPayment === 'cash' && (
-              <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 8, padding: 12, fontSize: 13, color: '#795548', marginBottom: 14 }}>
+              <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 8, padding: 12, fontSize: 13, color: '#1565c0', marginBottom: 14 }}>
                 💴 受け取り時にお支払いください。
               </div>
             )}

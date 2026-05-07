@@ -117,7 +117,7 @@ export default function UsersPage() {
       </div>
 
       {newInviteCount > 0 && (
-        <div style={{ background: '#fff3e0', border: '1px solid #ffe082', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#e65100' }}>
+        <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#1565c0' }}>
           🌸 招待リンク経由で新しいモデルが {newInviteCount} 名登録しました。内容を確認して「既読」を押してください。
         </div>
       )}
@@ -150,8 +150,8 @@ export default function UsersPage() {
                 display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', flexWrap: 'wrap',
                 borderBottom: i < filtered.length - 1 ? '1px solid #f0f0f0' : 'none',
                 opacity: changing === user.id ? 0.6 : 1,
-                background: isBlocked ? '#fff5f5' : isNew ? '#fff8e1' : '#fff',
-                borderLeft: isBlocked ? '4px solid #e53935' : isNew ? '4px solid #ff9800' : '4px solid transparent',
+                background: isBlocked ? '#fff5f5' : isNew ? '#f0f8ff' : '#fff',
+                borderLeft: isBlocked ? '4px solid #e53935' : isNew ? '4px solid #5bbfd6' : '4px solid transparent',
               }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

@@ -129,8 +129,8 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
               </div>
 
               {availableSlots.length === 0 ? (
-                <div style={{ background: '#fff3e0', border: '1px solid #ffb300', borderRadius: 10, padding: '20px', textAlign: 'center' }}>
-                  <div style={{ fontWeight: 800, fontSize: 20, color: '#e65100', letterSpacing: 2 }}>満枠御礼</div>
+                <div style={{ background: '#f8fbff', border: '1px solid #b8d9f0', borderRadius: 10, padding: '20px', textAlign: 'center' }}>
+                  <div style={{ fontWeight: 800, fontSize: 20, color: '#1a3560', letterSpacing: 2 }}>満枠御礼</div>
                   <p style={{ fontSize: 13, color: '#888', margin: '8px 0 0' }}>ご予約可能な枠がございません。</p>
                 </div>
               ) : (

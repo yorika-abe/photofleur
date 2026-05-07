@@ -102,7 +102,7 @@ export default function TermsPage() {
             <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {s.items.map((item, i) => (
                 <li key={i} style={{ display: 'flex', gap: 10, fontSize: 14, color: '#444', lineHeight: 1.8 }}>
-                  <span style={{ color: '#a08cc0', fontWeight: 700, flexShrink: 0, marginTop: 2 }}>・</span>
+                  <span style={{ color: '#5bbfd6', fontWeight: 700, flexShrink: 0, marginTop: 2 }}>・</span>
                   <span>{item}</span>
                 </li>
               ))}

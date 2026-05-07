@@ -171,8 +171,8 @@ export default function AnnualEventsPage() {
               <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, cursor: 'pointer' }}>
                 <input type="checkbox" checked={form.notify_camera}
                   onChange={e => setForm(f => ({ ...f, notify_camera: e.target.checked }))}
-                  style={{ accentColor: '#e65100' }} />
-                <span style={{ color: '#e65100', fontWeight: 600 }}>📣</span>
+                  style={{ accentColor: '#1a3560' }} />
+                <span style={{ color: '#1a3560', fontWeight: 600 }}>📣</span>
               </label>
             </div>
             <button onClick={addEvent} disabled={saving || !form.title.trim()}
@@ -191,7 +191,7 @@ export default function AnnualEventsPage() {
           {sendState.sending === 'model_group' ? '送信中...' : '👥 モデル全体'}
         </button>
         <button onClick={() => sendNow('camera')} disabled={!!sendState.sending}
-          style={{ padding: '5px 14px', borderRadius: 7, border: 'none', background: sendState.sending === 'camera' ? '#ccc' : '#e65100', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+          style={{ padding: '5px 14px', borderRadius: 7, border: 'none', background: sendState.sending === 'camera' ? '#ccc' : '#1a3560', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
           {sendState.sending === 'camera' ? '送信中...' : '📣 公式LINE'}
         </button>
         {sendState.result && (
@@ -256,7 +256,7 @@ export default function AnnualEventsPage() {
                     ) : (
                       <>
                         {birthdays.map((b, i) => (
-                          <div key={`b-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 14px', background: '#fffde7', borderBottom: '1px solid #f5f5f5' }}>
+                          <div key={`b-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 14px', background: '#f8fbff', borderBottom: '1px solid #f5f5f5' }}>
                             <span style={{ fontSize: 12, color: '#888', minWidth: 32, textAlign: 'right' }}>{month}/{b.day}</span>
                             <span style={{ flex: 1, fontSize: 13 }}>{b.title}</span>
                             <span style={{ fontSize: 11, color: '#1a3560', fontWeight: 600 }}>👥 自動</span>
@@ -272,10 +272,10 @@ export default function AnnualEventsPage() {
                                 style={{ accentColor: '#1a3560', width: 13, height: 13 }} />
                               👥
                             </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', fontSize: 12, color: ev.notify_camera ? '#e65100' : '#bbb', fontWeight: ev.notify_camera ? 700 : 400 }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', fontSize: 12, color: ev.notify_camera ? '#1a3560' : '#bbb', fontWeight: ev.notify_camera ? 700 : 400 }}>
                               <input type="checkbox" checked={ev.notify_camera}
                                 onChange={e => toggleCheck(ev.id, 'notify_camera', e.target.checked)}
-                                style={{ accentColor: '#e65100', width: 13, height: 13 }} />
+                                style={{ accentColor: '#1a3560', width: 13, height: 13 }} />
                               📣
                             </label>
                             <button onClick={() => deleteEvent(ev.id)}

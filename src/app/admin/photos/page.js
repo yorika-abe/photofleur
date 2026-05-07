@@ -106,7 +106,7 @@ export default function AdminPhotosPage() {
           {/* 新着 */}
           {newPhotos.length > 0 && (
             <div style={{ marginBottom: 32 }}>
-              <p style={{ fontSize: 12, fontWeight: 700, color: '#e65100', letterSpacing: '0.08em', marginBottom: 12 }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: '#1a3560', letterSpacing: '0.08em', marginBottom: 12 }}>
                 新着 {newPhotos.length}件
               </p>
               <div style={grid}>

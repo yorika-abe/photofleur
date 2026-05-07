@@ -46,9 +46,9 @@ function loadNonEventRecords() {
 
 const TIER_META = {
   staff:   { label: '運営', color: '#1a3560', bg: '#dce8ff' },
-  '12000': { label: '12000', color: '#6a1b9a', bg: '#f3e5f5' },
+  '12000': { label: '12000', color: '#c2185b', bg: '#fce4ec' },
   '9900':  { label: '9900',  color: '#00695c', bg: '#e0f2f1' },
-  '8900':  { label: '8900',  color: '#e65100', bg: '#fff3e0' },
+  '8900':  { label: '8900',  color: '#1565c0', bg: '#e3f2fd' },
 }
 
 export default function AdminSalesPage() {
@@ -256,7 +256,7 @@ export default function AdminSalesPage() {
             <button key={m} onClick={() => setSelectedMonth(m)} style={tabStyle(m)}>
               {monthLabel(m)}
               {m === currentMonth && <span style={{ marginLeft: 6, fontSize: 10, background: activeMonth === m ? 'rgba(255,255,255,0.3)' : '#e8f5e9', color: activeMonth === m ? '#fff' : '#388e3c', borderRadius: 3, padding: '1px 5px' }}>今月</span>}
-              {m === nextMonth && <span style={{ marginLeft: 6, fontSize: 10, background: activeMonth === m ? 'rgba(255,255,255,0.3)' : '#fff3e0', color: activeMonth === m ? '#fff' : '#e65100', borderRadius: 3, padding: '1px 5px' }}>翌月</span>}
+              {m === nextMonth && <span style={{ marginLeft: 6, fontSize: 10, background: activeMonth === m ? 'rgba(255,255,255,0.3)' : '#e3f2fd', color: activeMonth === m ? '#fff' : '#1565c0', borderRadius: 3, padding: '1px 5px' }}>翌月</span>}
             </button>
           ))}
         </div>
@@ -297,15 +297,15 @@ export default function AdminSalesPage() {
       <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1a3560', margin: 0 }}>{monthLabel(activeMonth)}</h2>
         {activeMonth === currentMonth && <span style={{ fontSize: 12, background: '#e8f5e9', color: '#388e3c', borderRadius: 4, padding: '2px 8px', fontWeight: 600 }}>今月</span>}
-        {activeMonth === nextMonth && <span style={{ fontSize: 12, background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '2px 8px', fontWeight: 600 }}>翌月</span>}
+        {activeMonth === nextMonth && <span style={{ fontSize: 12, background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '2px 8px', fontWeight: 600 }}>翌月</span>}
       </div>
 
       {/* 月次サマリー */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 20 }}>
         {[
           { label: '売上', value: yen(activeData.revenue), color: '#388e3c', note: [activeData.productRevenue > 0 && `イベント商品 ${yen(activeData.productRevenue)}`, activeData.privateRevenue > 0 && `非公開 ${yen(activeData.privateRevenue)}`, activeData.goodsRevenue > 0 && `グッズ ${yen(activeData.goodsRevenue)}`].filter(Boolean).join(' / ') || null },
-          { label: '粗利益', value: yen(activeData.grossProfit), color: '#3949ab', note: '保存済み記録' },
-          { label: '諸々経費', value: yen(activeData.misc), color: '#e65100', editable: true },
+          { label: '粗利益', value: yen(activeData.grossProfit), color: '#1a3560', note: '保存済み記録' },
+          { label: '諸々経費', value: yen(activeData.misc), color: '#1565c0', editable: true },
           { label: '純利益', value: yen(activeData.netProfit), color: activeData.netProfit >= 0 ? '#00695c' : '#c62828', note: `粗利−手数料(${yen(Math.round(activeData.slotRevenue * 0.036))})−経費` },
         ].map(s => (
           <div key={s.label} style={{ background: '#fff', borderRadius: 10, padding: '14px', border: '1px solid #e5e5e5', textAlign: 'center' }}>
@@ -344,7 +344,7 @@ export default function AdminSalesPage() {
                     onClick={() => setExpandedRecords(p => ({ ...p, [record.eventId]: !p[record.eventId] }))}
                     style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 11, background: isStreet ? '#e8f5e9' : '#e8eaf6', color: isStreet ? '#388e3c' : '#3949ab', borderRadius: 3, padding: '2px 7px', fontWeight: 600 }}>
+                      <span style={{ fontSize: 11, background: isStreet ? '#e8f5e9' : '#e3f2fd', color: isStreet ? '#388e3c' : '#1a3560', borderRadius: 3, padding: '2px 7px', fontWeight: 600 }}>
                         {isStreet ? 'スト' : 'スタ'}
                       </span>
                       <span style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>{formatEventDate(record.eventDate)}</span>
@@ -352,7 +352,7 @@ export default function AdminSalesPage() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                       <span style={{ fontSize: 13, color: '#388e3c', fontWeight: 700 }}>売上 {yen(record.revenue)}</span>
-                      <span style={{ fontSize: 13, color: record.grossProfit >= 0 ? '#3949ab' : '#c62828', fontWeight: 700 }}>粗利 {yen(record.grossProfit)}</span>
+                      <span style={{ fontSize: 13, color: record.grossProfit >= 0 ? '#1a3560' : '#c62828', fontWeight: 700 }}>粗利 {yen(record.grossProfit)}</span>
                       <span style={{ fontSize: 12, color: '#aaa' }}>{isExpanded ? '▲' : '▼'}</span>
                     </div>
                   </button>
@@ -404,7 +404,7 @@ export default function AdminSalesPage() {
                         <span>人件費 <strong style={{ color: '#c62828' }}>−{yen(record.labor)}</strong></span>
                         <span>お昼代 <strong style={{ color: '#c62828' }}>−{yen(record.lunchTotal)}</strong>（{record.lunchCount}人×{yen(record.lunchRate)}）</span>
                         <span>スタジオ代等 <strong style={{ color: '#c62828' }}>−{yen(record.studioCost)}</strong></span>
-                        <span style={{ fontWeight: 700, fontSize: 13, color: record.grossProfit >= 0 ? '#3949ab' : '#c62828' }}>粗利益 {yen(record.grossProfit)}</span>
+                        <span style={{ fontWeight: 700, fontSize: 13, color: record.grossProfit >= 0 ? '#1a3560' : '#c62828' }}>粗利益 {yen(record.grossProfit)}</span>
                       </div>
                       <div style={{ fontSize: 11, color: '#bbb', marginTop: 6 }}>
                         保存日時：{new Date(record.savedAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}
@@ -420,11 +420,11 @@ export default function AdminSalesPage() {
 
       {/* イベント外収益（保存済） */}
       {activeData.neRecord && (
-        <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e1bee7', overflow: 'hidden', marginBottom: 24 }}>
-          <div style={{ padding: '14px 20px', borderBottom: '1px solid #f3e5f5', background: '#fdf6ff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #f8c8d8', overflow: 'hidden', marginBottom: 24 }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid #fce4ec', background: '#fff9fb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#7b1fa2', margin: 0 }}>イベント外収益（保存済）</h3>
-              <span style={{ fontSize: 11, background: '#7b1fa2', color: '#fff', borderRadius: 3, padding: '2px 7px', fontWeight: 600 }}>保存済</span>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#c2185b', margin: 0 }}>イベント外収益（保存済）</h3>
+              <span style={{ fontSize: 11, background: '#c2185b', color: '#fff', borderRadius: 3, padding: '2px 7px', fontWeight: 600 }}>保存済</span>
             </div>
             <span style={{ fontSize: 11, color: '#aaa' }}>保存日時：{new Date(activeData.neRecord.savedAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</span>
           </div>
@@ -443,7 +443,7 @@ export default function AdminSalesPage() {
                 : activeData.neRecord.hanselling > 0 && <span>販管費 <strong style={{ color: '#c62828' }}>−{yen(activeData.neRecord.hanselling)}</strong></span>
               }
               {(activeData.neRecord.otherCosts || 0) > 0 && <span>その他経費 <strong style={{ color: '#c62828' }}>−{yen(activeData.neRecord.otherCosts)}</strong></span>}
-              <span style={{ fontWeight: 700, fontSize: 14, color: activeData.neRecord.grossProfit >= 0 ? '#3949ab' : '#c62828' }}>粗利益 {yen(activeData.neRecord.grossProfit)}</span>
+              <span style={{ fontWeight: 700, fontSize: 14, color: activeData.neRecord.grossProfit >= 0 ? '#1a3560' : '#c62828' }}>粗利益 {yen(activeData.neRecord.grossProfit)}</span>
             </div>
             <div style={{ fontSize: 11, color: '#aaa', marginTop: 8 }}>※ 予約状況のイベント外収益タブから保存されたデータです。</div>
           </div>
@@ -466,7 +466,7 @@ export default function AdminSalesPage() {
                     <span style={{ fontWeight: 700, fontSize: 13, color: '#2f2244' }}>{yen(m.revenue)}</span>
                   </div>
                   <div style={{ height: 5, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden', marginLeft: 24 }}>
-                    <div style={{ width: `${pct}%`, height: '100%', background: i === 0 ? '#f0c040' : i === 1 ? '#b0bec5' : '#a1887f', borderRadius: 3 }} />
+                    <div style={{ width: `${pct}%`, height: '100%', background: i === 0 ? '#5bbfd6' : i === 1 ? '#b0bec5' : '#90a4ae', borderRadius: 3 }} />
                   </div>
                   <div style={{ fontSize: 11, color: '#aaa', marginLeft: 24, marginTop: 2 }}>{m.count}件</div>
                 </div>
@@ -479,7 +479,7 @@ export default function AdminSalesPage() {
             <div style={{ display: 'flex', gap: 10 }}>
               {[
                 { key: 'street', label: 'ストリート', color: '#388e3c', bg: '#e8f5e9' },
-                { key: 'studio', label: 'スタジオ', color: '#3949ab', bg: '#e8eaf6' },
+                { key: 'studio', label: 'スタジオ', color: '#1a3560', bg: '#e3f2fd' },
               ].map(({ key, label, color, bg }) => (
                 <div key={key} style={{ flex: 1, background: bg, borderRadius: 10, padding: '14px', textAlign: 'center' }}>
                   <div style={{ fontSize: 12, color, fontWeight: 600 }}>{label}</div>
@@ -520,10 +520,10 @@ export default function AdminSalesPage() {
                     <td style={{ padding: '10px 14px', fontSize: 12, color: '#666' }}>{b.slot?.slot_label || '—'}</td>
                     <td style={{ padding: '10px 14px' }}>
                       <div style={{ display: 'flex', gap: 4 }}>
-                        <span style={{ fontSize: 10, background: b.event?.event_type === 'street' ? '#e8f5e9' : '#e8eaf6', color: b.event?.event_type === 'street' ? '#388e3c' : '#3949ab', borderRadius: 3, padding: '1px 6px', fontWeight: 600 }}>
+                        <span style={{ fontSize: 10, background: b.event?.event_type === 'street' ? '#e8f5e9' : '#e3f2fd', color: b.event?.event_type === 'street' ? '#388e3c' : '#1a3560', borderRadius: 3, padding: '1px 6px', fontWeight: 600 }}>
                           {b.event?.event_type === 'street' ? 'スト' : 'スタ'}
                         </span>
-                        {b.is_outdoor && <span style={{ fontSize: 10, background: '#fff3e0', color: '#e65100', borderRadius: 3, padding: '1px 6px', fontWeight: 600 }}>屋外</span>}
+                        {b.is_outdoor && <span style={{ fontSize: 10, background: '#e3f2fd', color: '#1565c0', borderRadius: 3, padding: '1px 6px', fontWeight: 600 }}>屋外</span>}
                       </div>
                     </td>
                     <td style={{ padding: '10px 14px', fontSize: 14, fontWeight: 700, color: '#2f2244' }}>{yen(b.revenue)}</td>

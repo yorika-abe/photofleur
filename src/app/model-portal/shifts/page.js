@@ -167,8 +167,8 @@ export default function ModelShiftsPage() {
       </div>
 
       {!model && (
-        <div style={{ background: '#fff3e0', border: '1px solid #ffe082', borderRadius: 10, padding: 16, marginBottom: 24 }}>
-          <p style={{ color: '#795548', margin: 0, fontSize: 13 }}>モデルアカウントが設定されていません。運営にご連絡ください。</p>
+        <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 10, padding: 16, marginBottom: 24 }}>
+          <p style={{ color: '#1565c0', margin: 0, fontSize: 13 }}>モデルアカウントが設定されていません。運営にご連絡ください。</p>
         </div>
       )}
 

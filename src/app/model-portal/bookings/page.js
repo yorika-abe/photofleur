@@ -9,8 +9,8 @@ const LAST_VIEWED_KEY = 'model_bookings_last_viewed'
 const TYPE_LABEL = { street: 'ストリート', studio: 'スタジオ', irregular: '不定期' }
 const TYPE_COLOR = {
   street: { bg: '#e8f5e9', color: '#388e3c' },
-  studio: { bg: '#e8eaf6', color: '#3949ab' },
-  irregular: { bg: '#fff3e0', color: '#e65100' },
+  studio: { bg: '#e3f2fd', color: '#1a3560' },
+  irregular: { bg: '#e3f2fd', color: '#1565c0' },
 }
 
 function formatDate(dateStr) {

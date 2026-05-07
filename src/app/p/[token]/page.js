@@ -72,7 +72,7 @@ export default async function PrivateProductPage({ params }) {
             </span>
           </div>
           {product.stock <= 0 && (
-            <div style={{ marginTop: 12, background: '#f3e5f5', borderRadius: 8, padding: '10px 14px', fontSize: 14, color: '#6a1b9a', fontWeight: 600, textAlign: 'center' }}>
+            <div style={{ marginTop: 12, background: '#fce4ec', borderRadius: 8, padding: '10px 14px', fontSize: 14, color: '#c2185b', fontWeight: 600, textAlign: 'center' }}>
               申込済み
             </div>
           )}

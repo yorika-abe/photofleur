@@ -219,7 +219,7 @@ export default function ModelProfilePage() {
   )
 
   const statusLabel = model.status === 'active' ? { text: '公開中', color: '#388e3c', bg: '#e8f5e9' }
-    : model.status === 'pending' ? { text: '承認待ち', color: '#e65100', bg: '#fff3e0' }
+    : model.status === 'pending' ? { text: '承認待ち', color: '#c62828', bg: '#ffebee' }
     : { text: '非公開', color: '#999', bg: '#f5f5f5' }
 
   return (
@@ -268,7 +268,7 @@ export default function ModelProfilePage() {
       </div>
 
       {model.status === 'pending' && (
-        <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#795548', lineHeight: 1.7 }}>
+        <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#1565c0', lineHeight: 1.7 }}>
           {model.pending_data
             ? '⏳ 変更申請中です。運営が承認するまで、一般公開ページには以前の情報が表示されています。'
             : '⏳ プロフィールは運営の確認待ちです。承認後に公開されます。'}

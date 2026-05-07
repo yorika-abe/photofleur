@@ -7,9 +7,9 @@ import { compressImage } from '@/lib/compressImage'
 
 const PRICE_TIERS = [
   { key: 'staff',  label: '運営スタッフ', street: 12000, studio: 10000, is_staff: true,  color: '#1a3560', bg: '#e8f0fb' },
-  { key: '12000',  label: '12000モデル',  street: 12000, studio: 10000, is_staff: false, color: '#6a1b9a', bg: '#f3e5f5' },
+  { key: '12000',  label: '12000モデル',  street: 12000, studio: 10000, is_staff: false, color: '#c2185b', bg: '#fce4ec' },
   { key: '9900',   label: '9900モデル',   street: 9900,  studio: 7900,  is_staff: false, color: '#00695c', bg: '#e0f2f1' },
-  { key: '8900',   label: '8900モデル',   street: 8900,  studio: 6900,  is_staff: false, color: '#e65100', bg: '#fff3e0' },
+  { key: '8900',   label: '8900モデル',   street: 8900,  studio: 6900,  is_staff: false, color: '#1565c0', bg: '#e3f2fd' },
 ]
 
 export default function AdminModelEditPage() {
@@ -167,7 +167,7 @@ export default function AdminModelEditPage() {
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               {[
                 { val: 'active', label: '公開中', color: '#388e3c', bg: '#e8f5e9' },
-                { val: 'pending', label: '承認待ち', color: '#e65100', bg: '#fff3e0' },
+                { val: 'pending', label: '承認待ち', color: '#c62828', bg: '#ffebee' },
                 { val: 'inactive', label: '非公開', color: '#999', bg: '#f5f5f5' },
               ].map(s => (
                 <button key={s.val} onClick={() => setStatus(s.val)}
@@ -314,7 +314,7 @@ export default function AdminModelEditPage() {
             </p>
             {linkedUserId
               ? <div style={{ fontSize: 13, color: '#388e3c', fontWeight: 600, marginBottom: 12 }}>✓ アカウント紐付け済み</div>
-              : <div style={{ fontSize: 13, color: '#e65100', marginBottom: 12 }}>未紐付け（モデルは自分でプロフィールを編集できません）</div>
+              : <div style={{ fontSize: 13, color: '#1565c0', marginBottom: 12 }}>未紐付け（モデルは自分でプロフィールを編集できません）</div>
             }
             <div style={{ display: 'flex', gap: 8 }}>
               <input style={{ ...inp, flex: 1 }} value={linkEmail} onChange={e => setLinkEmail(e.target.value)}

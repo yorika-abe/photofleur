@@ -46,7 +46,7 @@ function SendButtons({ canSend, recipientLabel, sending, confirmed, onConfirm, o
         </button>
       ) : (
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <span style={{ fontSize: 13, color: '#795548', fontWeight: 600 }}>{recipientLabel}に送信します</span>
+          <span style={{ fontSize: 13, color: '#1565c0', fontWeight: 600 }}>{recipientLabel}に送信します</span>
           <button onClick={onSend} disabled={sending}
             style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: sending ? '#ccc' : '#e53935', color: '#fff', fontWeight: 700, fontSize: 14, cursor: sending ? 'not-allowed' : 'pointer' }}>
             {sending ? '送信中...' : '送信する'}
@@ -378,9 +378,9 @@ function TabIndividual({ models }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ background: '#f3e5f5', borderRadius: 12, border: '1px solid #ce93d8', padding: '14px 18px', fontSize: 13 }}>
-          <div style={{ fontWeight: 700, color: '#6a1b9a', marginBottom: 4 }}>👤 モデル個別グループLINE</div>
-          <div style={{ color: '#7b1fa2', lineHeight: 1.7 }}>
+        <div style={{ background: '#fce4ec', borderRadius: 12, border: '1px solid #f48fb1', padding: '14px 18px', fontSize: 13 }}>
+          <div style={{ fontWeight: 700, color: '#c2185b', marginBottom: 4 }}>👤 モデル個別グループLINE</div>
+          <div style={{ color: '#ad1457', lineHeight: 1.7 }}>
             選択したモデルと運営が参加している個別グループLINEに送信します。
           </div>
         </div>
@@ -723,12 +723,12 @@ function TabZatsudan() {
                       const isToday = diff === 0
                       const isSoon = diff <= 7
                       return (
-                        <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: isToday ? '#fff3e0' : isSoon ? '#f3e5f5' : '#f8fbff', border: `1px solid ${isToday ? '#ffb74d' : isSoon ? '#ce93d8' : '#e5e5e5'}` }}>
+                        <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: isToday ? '#ffebee' : isSoon ? '#fce4ec' : '#f8fbff', border: `1px solid ${isToday ? '#ef9a9a' : isSoon ? '#f48fb1' : '#e5e5e5'}` }}>
                           <div style={{ flex: 1 }}>
                             <span style={{ fontWeight: 700, fontSize: 14 }}>{m.name}</span>
                             <span style={{ fontSize: 13, color: '#888', marginLeft: 8 }}>{month}/{day}</span>
-                            {isToday && <span style={{ marginLeft: 8, fontSize: 12, color: '#e65100', fontWeight: 700 }}>🎂 今日！</span>}
-                            {!isToday && isSoon && <span style={{ marginLeft: 8, fontSize: 12, color: '#7b1fa2' }}>あと{diff}日</span>}
+                            {isToday && <span style={{ marginLeft: 8, fontSize: 12, color: '#c62828', fontWeight: 700 }}>🎂 今日！</span>}
+                            {!isToday && isSoon && <span style={{ marginLeft: 8, fontSize: 12, color: '#c2185b' }}>あと{diff}日</span>}
                           </div>
                           {bdResults[m.id] === 'ok' ? <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 700 }}>✅ 送信済</span>
                             : bdResults[m.id] === 'fail' ? <span style={{ fontSize: 12, color: '#c62828', fontWeight: 700 }}>❌ 失敗</span>
@@ -782,9 +782,9 @@ function TabCamera() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ background: '#fff3e0', borderRadius: 12, border: '1px solid #ffb74d', padding: '14px 18px', fontSize: 13 }}>
-          <div style={{ fontWeight: 700, color: '#e65100', marginBottom: 6 }}>📣 全フォロワーへのブロードキャスト</div>
-          <div style={{ color: '#795548', lineHeight: 1.7 }}>
+        <div style={{ background: '#e3f2fd', borderRadius: 12, border: '1px solid #90caf9', padding: '14px 18px', fontSize: 13 }}>
+          <div style={{ fontWeight: 700, color: '#1a3560', marginBottom: 6 }}>📣 全フォロワーへのブロードキャスト</div>
+          <div style={{ color: '#1565c0', lineHeight: 1.7 }}>
             カメラマン向け公式LINEアカウントのフォロワー全員に送信されます。<br />
             イベント公開告知・数日前の宣伝・前日宣伝などに使用してください。
           </div>
@@ -902,9 +902,9 @@ function TabPhotographer() {
         </div>
       </div>
 
-      <div style={{ background: '#fff8e1', borderRadius: 12, border: '1px solid #ffe082', padding: '14px 18px', fontSize: 13 }}>
-        <div style={{ fontWeight: 700, color: '#f57f17', marginBottom: 4 }}>📧 メール自動送信タイミング</div>
-        <ul style={{ margin: 0, padding: '0 0 0 18px', color: '#795548', lineHeight: 2 }}>
+      <div style={{ background: '#e3f2fd', borderRadius: 12, border: '1px solid #90caf9', padding: '14px 18px', fontSize: 13 }}>
+        <div style={{ fontWeight: 700, color: '#1a3560', marginBottom: 4 }}>📧 メール自動送信タイミング</div>
+        <ul style={{ margin: 0, padding: '0 0 0 18px', color: '#1565c0', lineHeight: 2 }}>
           <li>予約完了メール — イベント予約・特別予約・非公開予約完了時</li>
           <li>グッズ購入完了メール — グッズ購入完了時</li>
           <li>前日確認メール — 撮影前日の夜（自動cron）</li>
@@ -946,19 +946,19 @@ function CameraAutoToggle() {
     <div style={{
       display: 'flex', alignItems: 'center', gap: 16,
       padding: '14px 20px', borderRadius: 12, marginBottom: 20,
-      background: paused ? '#fff3e0' : '#e8f5e9',
-      border: `2px solid ${paused ? '#ffb74d' : '#81c784'}`,
+      background: paused ? '#ffebee' : '#e8f5e9',
+      border: `2px solid ${paused ? '#ef9a9a' : '#81c784'}`,
     }}>
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>公式LINE 自動一斉送信</div>
-        <div style={{ fontWeight: 700, fontSize: 18, color: paused ? '#e65100' : '#2e7d32' }}>
+        <div style={{ fontWeight: 700, fontSize: 18, color: paused ? '#c62828' : '#2e7d32' }}>
           {paused ? '📴 配信停止中' : '📣 稼働中'}
         </div>
       </div>
       <button onClick={toggle} disabled={saving} style={{
         padding: '10px 22px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 14,
         cursor: saving ? 'not-allowed' : 'pointer',
-        background: paused ? '#2e7d32' : '#e65100', color: '#fff',
+        background: paused ? '#2e7d32' : '#c62828', color: '#fff',
         opacity: saving ? 0.6 : 1, whiteSpace: 'nowrap',
       }}>
         {saving ? '...' : paused ? '稼働中にする' : '配信停止にする'}
@@ -998,7 +998,7 @@ export default function LineBroadcastPage() {
       </div>
 
       {/* 送信元・説明 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, padding: '10px 16px', background: tab?.id === 'camera' ? '#fff8e1' : '#f0f8ff', borderRadius: 10, border: `1px solid ${tab?.id === 'camera' ? '#ffe082' : '#b3d9f5'}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, padding: '10px 16px', background: tab?.id === 'camera' ? '#e3f2fd' : '#f0f8ff', borderRadius: 10, border: `1px solid ${tab?.id === 'camera' ? '#90caf9' : '#b3d9f5'}` }}>
         <div style={{ fontSize: 20 }}>📲</div>
         <div>
           <div style={{ fontSize: 12, color: '#888' }}>送信元アカウント</div>

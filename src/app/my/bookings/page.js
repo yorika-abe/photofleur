@@ -14,7 +14,7 @@ function formatDate(dateStr) {
 const typeColors = {
   street: { bg: '#e0f7fa', color: '#0097a7', label: 'ストリート' },
   studio: { bg: '#fce4ec', color: '#c2185b', label: 'スタジオ' },
-  irregular: { bg: '#e8eaf6', color: '#1a3560', label: '不定期' },
+  irregular: { bg: '#e3f2fd', color: '#1a3560', label: '不定期' },
 }
 
 export default function AllBookingsPage() {
@@ -77,7 +77,7 @@ function BookingCard({ b }) {
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
           <div style={{ fontWeight: 700, color: '#1a3560', fontSize: 16 }}>¥{(b.final_price || 0).toLocaleString()}</div>
-          <div style={{ fontSize: 12, color: isPaid ? '#0097a7' : '#e65100', marginTop: 4 }}>
+          <div style={{ fontSize: 12, color: isPaid ? '#0097a7' : '#1565c0', marginTop: 4 }}>
             {isPaid ? '💳 カード払い' : '💴 現金払い'}
           </div>
         </div>

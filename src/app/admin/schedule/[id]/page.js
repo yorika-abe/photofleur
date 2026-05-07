@@ -790,9 +790,9 @@ export default function EventEditPage() {
             </div>
           </div>
 
-          <div style={{ background: '#fff3e0', borderRadius: 12, padding: 20, border: '1px solid #ffe082' }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#e65100', marginBottom: 4, marginTop: 0 }}>🔒 非公開：集合場所（モデル・確定メールのみ）</h3>
-            <p style={{ fontSize: 12, color: '#795548', marginBottom: 16 }}>ストリートの場合、予約確定メールとモデルLINEにのみ通知されます</p>
+          <div style={{ background: '#e3f2fd', borderRadius: 12, padding: 20, border: '1px solid #90caf9' }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginBottom: 4, marginTop: 0 }}>🔒 非公開：集合場所（モデル・確定メールのみ）</h3>
+            <p style={{ fontSize: 12, color: '#1565c0', marginBottom: 16 }}>ストリートの場合、予約確定メールとモデルLINEにのみ通知されます</p>
             <div style={{ marginBottom: 14 }}>
               <label style={label}>集合場所名</label>
               <input type="text" value={event.meeting_place || ''} onChange={e => updateField('meeting_place', e.target.value)} style={inp} placeholder="ハチ公像前" />
@@ -884,7 +884,7 @@ export default function EventEditPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>予約受付枠の設定</h3>
-                <span style={{ fontSize: 11, background: event.event_type === 'studio' ? '#fce4ec' : event.event_type === 'street' ? '#e0f7fa' : '#e8eaf6', color: event.event_type === 'studio' ? '#c2185b' : event.event_type === 'street' ? '#0097a7' : '#1a3560', borderRadius: 4, padding: '2px 8px', fontWeight: 700 }}>
+                <span style={{ fontSize: 11, background: event.event_type === 'studio' ? '#fce4ec' : event.event_type === 'street' ? '#e0f7fa' : '#e3f2fd', color: event.event_type === 'studio' ? '#c2185b' : event.event_type === 'street' ? '#0097a7' : '#1a3560', borderRadius: 4, padding: '2px 8px', fontWeight: 700 }}>
                   {event.event_type === 'studio' ? 'スタジオ' : event.event_type === 'street' ? 'ストリート' : '不定期'}
                 </span>
               </div>
@@ -1300,9 +1300,9 @@ export default function EventEditPage() {
               uploadEndpoint="/api/admin/upload"
             />
           </div>
-          <div style={{ background: '#fffde7', borderRadius: 12, padding: 20, border: '1px solid #ffe082' }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#7a5f00', marginBottom: 4, marginTop: 0 }}>企画書（モデル向け）</h3>
-            <p style={{ fontSize: 12, color: '#a07800', marginBottom: 16 }}>モデル・運営としてログイン中のユーザーにのみ表示されます。</p>
+          <div style={{ background: '#f8fbff', borderRadius: 12, padding: 20, border: '1px solid #d6ecf5' }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginBottom: 4, marginTop: 0 }}>企画書（モデル向け）</h3>
+            <p style={{ fontSize: 12, color: '#1565c0', marginBottom: 16 }}>モデル・運営としてログイン中のユーザーにのみ表示されます。</p>
             <RichEditor
               value={event.planning_note_model || ''}
               onChange={v => updateField('planning_note_model', v)}

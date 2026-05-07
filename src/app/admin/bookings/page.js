@@ -163,7 +163,7 @@ export default function AdminBookingsPage() {
                     )}
                   </div>
                   {refundModal.refundType !== 'none' && (
-                    <div style={{ fontSize: 12, color: '#e65100', background: '#fff3e0', borderRadius: 8, padding: '8px 12px', marginBottom: 16 }}>
+                    <div style={{ fontSize: 12, color: '#1565c0', background: '#e3f2fd', borderRadius: 8, padding: '8px 12px', marginBottom: 16 }}>
                       ⚠️ Square返金：¥{refundAmount.toLocaleString()} を実行します
                     </div>
                   )}
@@ -245,9 +245,9 @@ export default function AdminBookingsPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ fontWeight: 700, fontSize: 14, color: isCancelled ? '#999' : '#2f2244' }}>{b.name || `${b.last_name} ${b.first_name}`}</span>
                       {isCancelled && <span style={{ background: '#ffcdd2', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>キャンセル済</span>}
-                      {isPrivate && <span style={{ background: '#f3e5f5', color: '#7b1fa2', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>非公開商品</span>}
+                      {isPrivate && <span style={{ background: '#fce4ec', color: '#c2185b', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>非公開商品</span>}
                       {isEP && <span style={{ background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>特別予約商品</span>}
-                      {isGoods && <span style={{ background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>グッズ注文</span>}
+                      {isGoods && <span style={{ background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>グッズ注文</span>}
                     </div>
                     <div style={{ fontSize: 12, color: '#888' }}>{b.email}</div>
                   </div>
@@ -260,10 +260,10 @@ export default function AdminBookingsPage() {
                   </div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     {!isPrivate && !isEP && !isGoods && b.is_outdoor && (
-                      <span style={{ background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '2px 7px', fontSize: 11, fontWeight: 600 }}>屋外</span>
+                      <span style={{ background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '2px 7px', fontSize: 11, fontWeight: 600 }}>屋外</span>
                     )}
                     {!isPrivate && !isGoods && (
-                      <span style={{ background: b.event?.event_type === 'street' ? '#e8f5e9' : '#e8eaf6', color: b.event?.event_type === 'street' ? '#388e3c' : '#3949ab', borderRadius: 4, padding: '2px 7px', fontSize: 11, fontWeight: 600 }}>
+                      <span style={{ background: b.event?.event_type === 'street' ? '#e8f5e9' : '#e3f2fd', color: b.event?.event_type === 'street' ? '#388e3c' : '#1a3560', borderRadius: 4, padding: '2px 7px', fontSize: 11, fontWeight: 600 }}>
                         {b.event?.event_type === 'street' ? 'スト' : 'スタ'}
                       </span>
                     )}

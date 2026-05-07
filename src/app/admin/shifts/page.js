@@ -8,7 +8,7 @@ const STATUS_COLORS = {
   submitted:        { bg: '#e3f2fd', color: '#1565c0' },
   confirmed:        { bg: '#e8f5e9', color: '#388e3c' },
   rejected:         { bg: '#fce4ec', color: '#c62828' },
-  pending_approval: { bg: '#fff3e0', color: '#e65100' },
+  pending_approval: { bg: '#ffebee', color: '#c62828' },
 }
 const DOW = ['日', '月', '火', '水', '木', '金', '土']
 
@@ -133,7 +133,7 @@ export default function AdminShiftsPage() {
             const avType = availabilityType(shift)
             const isUnavailable = avType === 'unavailable'
             return (
-              <div key={shift.id} style={{ background: isUnavailable ? '#f5f5f5' : '#fff', borderRadius: 12, padding: '14px 18px', border: isPending ? '1.5px solid #ffe082' : '1px solid #e5e5e5', opacity: isUnavailable ? 0.6 : 1 }}>
+              <div key={shift.id} style={{ background: isUnavailable ? '#f5f5f5' : '#fff', borderRadius: 12, padding: '14px 18px', border: isPending ? '1.5px solid #ef9a9a' : '1px solid #e5e5e5', opacity: isUnavailable ? 0.6 : 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
