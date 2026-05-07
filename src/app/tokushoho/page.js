@@ -3,9 +3,9 @@ export const metadata = { title: '特定商取引法に基づく表記 | PhotoFl
 export default function TokushohoPage() {
   const items = [
     { label: '事業者名', value: 'PhotoFleur' },
-    { label: '運営責任者', value: '阿部頼果' },
+    { label: '運営責任者', value: '阿部依花' },
     { label: 'メールアドレス', value: 'yorika.photo@gmail.com' },
-    { label: 'サービス名', value: 'PhotoFleur 撮影会予約サービス' },
+    { label: 'サービス名', value: 'PhotoFleur 撮影会予約サービスならびにイベントの運用' },
     { label: '販売価格', value: '各撮影会の予約ページに記載の金額（税込）' },
     { label: '支払い方法', value: '当日現金払い / Square（クレジットカード）' },
     { label: '支払い時期', value: '当日撮影開始前にお支払いいただきます' },
@@ -38,7 +38,7 @@ export default function TokushohoPage() {
 
       <div style={{ marginTop: 32, padding: '20px 24px', background: '#f8f5ff', borderRadius: 12, border: '1px solid #e0d5f5' }}>
         <p style={{ color: '#555', fontSize: 14, lineHeight: 1.8, margin: 0 }}>
-          ご不明な点はLINEまたはメール（yorika.photo@gmail.com）にてお問い合わせください。
+          ご不明な点は公式LINEにてお問い合わせください。
         </p>
       </div>
     </div>
