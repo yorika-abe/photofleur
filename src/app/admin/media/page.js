@@ -26,6 +26,7 @@ const TABS = [
   { id: 'request', label: 'リクエスト撮影' },
   { id: 'recruit_page', label: 'モデル募集' },
   { id: 'ogp', label: '共有画像設定(OGP)' },
+  { id: 'onboarding', label: 'モデル登録手続き' },
 ]
 
 const OGP_PAGES = [
@@ -55,6 +56,8 @@ export default function AdminMediaPage() {
   const [uploadCount, setUploadCount] = useState({ current: 0, total: 0 })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [onboardingPdfAbout, setOnboardingPdfAbout] = useState('')
+  const [onboardingPdfRegist, setOnboardingPdfRegist] = useState('')
 
   useEffect(() => {
     fetch('/api/admin/site-settings').then(r => r.json()).then(data => {
@@ -71,6 +74,8 @@ export default function AdminMediaPage() {
       const ogp = {}
       for (const { key } of OGP_PAGES) ogp[key] = data[key] || ''
       setOgpImages(ogp)
+      setOnboardingPdfAbout(data.onboarding_pdf_about || '')
+      setOnboardingPdfRegist(data.onboarding_pdf_regist || '')
     })
   }, [])
 
@@ -183,6 +188,18 @@ export default function AdminMediaPage() {
     setUploadProgress(0)
   }
 
+  async function uploadPdf(file, key, setter) {
+    setUploading(key)
+    setUploadProgress(0)
+    try {
+      const path = `site/${key}-${Date.now()}.pdf`
+      const url = await uploadWithProgress(file, path)
+      setter(url)
+    } catch (e) { alert('アップロードエラー: ' + e) }
+    setUploading(null)
+    setUploadProgress(0)
+  }
+
   async function save() {
     setSaving(true)
     await fetch('/api/admin/site-settings', {
@@ -198,6 +215,8 @@ export default function AdminMediaPage() {
         request_hero_image: JSON.stringify(requestHeroImages),
         recruit_hero_image: JSON.stringify(recruitHeroImages),
         ...ogpImages,
+        onboarding_pdf_about: onboardingPdfAbout,
+        onboarding_pdf_regist: onboardingPdfRegist,
       }),
     })
     setSaving(false)
@@ -358,6 +377,32 @@ export default function AdminMediaPage() {
     )
   }
 
+  function PdfSection({ title, desc, value, setter, uploadKey }) {
+    return (
+      <Section title={title} desc={desc}>
+        {value && (
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ background: '#f5f9ff', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#1a3560', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>📄</span>
+              <a href={value} target="_blank" rel="noreferrer" style={{ color: '#1a3560', wordBreak: 'break-all' }}>{value.split('/').pop()}</a>
+            </div>
+            <button onClick={() => setter('')}
+              style={{ background: 'none', border: '1px solid #ddd', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', fontSize: 11, color: '#888' }}>削除</button>
+          </div>
+        )}
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+          📄 PDFをアップロード
+          <input type="file" accept="application/pdf" style={{ display: 'none' }} disabled={!!uploading}
+            onChange={e => e.target.files?.[0] && uploadPdf(e.target.files[0], uploadKey, setter)} />
+        </label>
+        {uploading === uploadKey && <ProgressBar progress={uploadProgress} />}
+        <div style={{ marginTop: 10 }}>
+          <input style={inp} value={value} onChange={e => setter(e.target.value)} placeholder="またはPDF URLを直接入力" />
+        </div>
+      </Section>
+    )
+  }
+
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '28px 20px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
@@ -453,6 +498,16 @@ export default function AdminMediaPage() {
             <ImageGrid images={recruitHeroImages} onRemove={i => setRecruitHeroImages(imgs => imgs.filter((_, idx) => idx !== i))}
               uploadKey="recruit_hero" onAdd={f => uploadWithSignedUrl(f, 'recruit_hero', url => setRecruitHeroImages(imgs => [...imgs, url]))} label="画像を追加（複数可）" aspect="16/9" />
           </Section>
+        )}
+
+        {/* ── モデル登録手続き ── */}
+        {tab === 'onboarding' && (
+          <>
+            <PdfSection title="ABOUT Photo Fleur PDF" desc="モデル登録手引きページのABOUT PHOTO FLEURセクションに表示されるPDFです"
+              value={onboardingPdfAbout} setter={setOnboardingPdfAbout} uploadKey="onboarding_pdf_about" />
+            <PdfSection title="撮影会登録説明 PDF" desc="モデル登録手引きページの撮影会登録説明セクションに表示されるPDFです"
+              value={onboardingPdfRegist} setter={setOnboardingPdfRegist} uploadKey="onboarding_pdf_regist" />
+          </>
         )}
 
       </div>
