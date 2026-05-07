@@ -170,6 +170,21 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
   // --- Slots (event only) ---
   function addSlotsLayer() { addLayer('slots') }
 
+  function initSlotChoices(layerIdx) {
+    const parentLayer = layerIdx > 0 ? layers[layerIdx - 1] : null
+    const parentChoices = parentLayer
+      ? (parentLayer.type === 'manual' ? parentLayer.choices : parentLayer.model_choices) || []
+      : []
+    const choices = slotLabels.map((label, si) => {
+      const id = `slot_${si}`
+      const parent_stocks = layerIdx > 0 && parentChoices.length > 0
+        ? Object.fromEntries(parentChoices.map(pc => [pc.id, -1]))
+        : undefined
+      return { id, name: label, stock: -1, ...(parent_stocks ? { parent_stocks } : {}) }
+    })
+    update(layers.map((l, i) => i !== layerIdx ? l : { ...l, choices }))
+  }
+
   const inp = { padding: '6px 9px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }
 
   return (
@@ -349,9 +364,62 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
 
               {/* Slots */}
               {layer.type === 'slots' && (
-                <p style={{ fontSize: 11, color: '#888', margin: 0 }}>
-                  イベントの予約受付枠が自動で表示されます
-                </p>
+                <div>
+                  {(layer.choices || []).length === 0 ? (
+                    <div>
+                      {slotLabels.length > 0 && (
+                        <button type="button" onClick={() => initSlotChoices(layerIdx)}
+                          style={{ fontSize: 12, color: '#0097a7', background: '#e0f7fa', border: '1px solid #b2ebf2', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontWeight: 600, marginBottom: 6, display: 'block' }}>
+                          📅 {slotLabels.length}枠を読み込んで在庫設定
+                        </button>
+                      )}
+                      <p style={{ fontSize: 11, color: '#888', margin: 0 }}>
+                        イベントの予約受付枠が自動で表示されます{slotLabels.length > 0 ? '（在庫を設定する場合は上のボタンをクリック）' : ''}
+                      </p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {(layer.choices || []).map(choice => (
+                        <div key={choice.id} style={{ background: '#fff', border: '1px solid #b2ebf2', borderRadius: 8, padding: '8px 10px' }}>
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: parentChoices.length > 0 ? 6 : 0 }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: '#0097a7', flex: 1 }}>{choice.name}</span>
+                            {layerIdx === 0 && (
+                              <>
+                                <span style={{ fontSize: 11, color: '#888', whiteSpace: 'nowrap' }}>在庫</span>
+                                <input type="number" value={choice.stock < 0 ? '' : choice.stock} placeholder="∞"
+                                  onChange={e => updateManualChoice(layerIdx, choice.id, 'stock', e.target.value === '' ? -1 : Number(e.target.value))}
+                                  style={{ ...inp, width: 52, textAlign: 'center' }} />
+                              </>
+                            )}
+                          </div>
+                          {layerIdx > 0 && parentChoices.map(pc => {
+                            const linked = choice.parent_stocks && pc.id in choice.parent_stocks
+                            const ps = choice.parent_stocks?.[pc.id] ?? -1
+                            return (
+                              <div key={pc.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, paddingLeft: 8 }}>
+                                <input type="checkbox" checked={linked}
+                                  onChange={() => toggleParentLink(layerIdx, choice.id, pc.id)} />
+                                <span style={{ fontSize: 12, color: '#555', minWidth: 60 }}>{pc.name || pc.model_name || '?'}</span>
+                                {linked && (
+                                  <>
+                                    <span style={{ fontSize: 11, color: '#888' }}>在庫</span>
+                                    <input type="number" value={ps < 0 ? '' : ps} placeholder="∞"
+                                      onChange={e => updateParentStock(layerIdx, choice.id, pc.id, e.target.value)}
+                                      style={{ ...inp, width: 52, textAlign: 'center' }} />
+                                  </>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => update(layers.map((l, i) => i !== layerIdx ? l : { ...l, choices: [] }))}
+                        style={{ fontSize: 11, color: '#888', background: 'none', border: '1px dashed #bbb', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', alignSelf: 'flex-start' }}>
+                        在庫設定をリセット
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 

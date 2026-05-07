@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+
 import { getLayerChoices, getChoiceStock } from '@/lib/product-layers'
 
 // props:
@@ -25,7 +25,9 @@ export default function LayerOptionPicker({ options, eventModels = [], slotLabel
         if (layerIdx > 0 && !parentId) return null
 
         const choices = layer.type === 'slots'
-          ? slotLabels.map((sl, si) => ({ id: `slot_${si}`, name: sl, stock: -1 }))
+          ? ((layer.choices || []).length > 0
+            ? getLayerChoices(layer, parentId)
+            : slotLabels.map((sl, si) => ({ id: `slot_${si}`, name: sl, stock: -1 })))
           : getLayerChoices(layer, parentId)
 
         const selectedId = value[layerIdx]
