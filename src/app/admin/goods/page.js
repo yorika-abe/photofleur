@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { createBrowserClient } from '@supabase/ssr'
 import Cropper from 'react-easy-crop'
 import LayerOptionBuilder from '@/components/LayerOptionBuilder'
 import { genId } from '@/lib/product-layers'
@@ -35,11 +34,6 @@ export default function GoodsAdminPage() {
   const [expanded, setExpanded] = useState(null)
   const [toast, setToast] = useState(null)
   const fileRef = useRef()
-
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  )
 
   useEffect(() => { load() }, [])
 
@@ -76,10 +70,13 @@ export default function GoodsAdminPage() {
       const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.85))
       URL.revokeObjectURL(src)
       const path = `goods/${Date.now()}.jpg`
-      const { error } = await supabase.storage.from('images').upload(path, new File([blob], 'image.jpg', { type: 'image/jpeg' }))
-      if (error) { alert('アップロード失敗'); return }
-      const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(path)
-      setForm(f => ({ ...f, image: publicUrl }))
+      const fd = new FormData()
+      fd.append('file', new File([blob], 'image.jpg', { type: 'image/jpeg' }))
+      fd.append('path', path)
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      if (!res.ok) { alert('アップロード失敗'); return }
+      const { url } = await res.json()
+      setForm(f => ({ ...f, image: url }))
     } catch (e) {
       URL.revokeObjectURL(src); alert('アップロードエラー: ' + e)
     } finally { setUploading(false) }
