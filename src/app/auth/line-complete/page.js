@@ -16,33 +16,34 @@ function LineCompleteContent() {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     )
 
-    // getSession() detects #access_token in the URL hash and establishes a session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    async function establish() {
+      // @supabase/ssr uses cookies, not localStorage — must manually parse #access_token from hash
+      const hash = window.location.hash.substring(1)
+      const params = new URLSearchParams(hash)
+      const accessToken = params.get('access_token')
+      const refreshToken = params.get('refresh_token')
+
+      if (accessToken && refreshToken) {
+        const { data } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+        if (data.session) {
+          router.push(next)
+          router.refresh()
+          return
+        }
+      }
+
+      // Fallback: check if already has a session
+      const { data: { session } } = await supabase.auth.getSession()
       if (session) {
         router.push(next)
         router.refresh()
         return
       }
 
-      // Wait for auth state change in case it takes a moment
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          subscription.unsubscribe()
-          router.push(next)
-          router.refresh()
-        }
-      })
+      router.push('/login?error=line_session_failed')
+    }
 
-      const timeout = setTimeout(() => {
-        subscription.unsubscribe()
-        router.push('/login?error=line_session_failed')
-      }, 6000)
-
-      return () => {
-        clearTimeout(timeout)
-        subscription.unsubscribe()
-      }
-    })
+    establish()
   }, [])
 
   return (
