@@ -430,7 +430,7 @@ function TabIndividual({ models }) {
 }
 
 // ---- 送信先設定パネル ----
-function LineSettingsPanel() {
+function LineSettingsPanel({ activeTab }) {
   const [open, setOpen] = useState(false)
   const [groupAll, setGroupAll] = useState('')
   const [groupZatsudan, setGroupZatsudan] = useState('')
@@ -521,36 +521,42 @@ function LineSettingsPanel() {
               </div>
             )}
 
-            <div>
-              <label style={{ display: 'block', fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 6 }}>👥 モデル全体グループID</label>
-              <input style={inp} value={groupAll} onChange={e => setGroupAll(e.target.value)} placeholder="C..." />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 6 }}>💬 雑談グループID</label>
-              <input style={inp} value={groupZatsudan} onChange={e => setGroupZatsudan(e.target.value)} placeholder="C..." />
-            </div>
-
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 10 }}>👤 モデル個人 — 各モデルのLINEグループID</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {models.map(m => (
-                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: '#e0d8f0' }}>
-                      {m.image ? <img src={m.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>👤</div>}
-                    </div>
-                    <span style={{ width: 100, fontSize: 13, fontWeight: 600, color: '#333', flexShrink: 0 }}>{m.name}</span>
-                    <input
-                      style={{ ...inp, flex: 1 }}
-                      value={modelLineIds[m.id] || ''}
-                      onChange={e => setModelLineIds(ids => ({ ...ids, [m.id]: e.target.value }))}
-                      placeholder="C... または U..."
-                    />
-                  </div>
-                ))}
-                {models.length === 0 && <p style={{ color: '#aaa', fontSize: 13 }}>公開中のモデルがいません</p>}
+            {activeTab === 'all' && (
+              <div>
+                <label style={{ display: 'block', fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 6 }}>👥 モデル全体グループID</label>
+                <input style={inp} value={groupAll} onChange={e => setGroupAll(e.target.value)} placeholder="C..." />
               </div>
-            </div>
+            )}
+
+            {activeTab === 'zatsudan' && (
+              <div>
+                <label style={{ display: 'block', fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 6 }}>💬 雑談グループID</label>
+                <input style={inp} value={groupZatsudan} onChange={e => setGroupZatsudan(e.target.value)} placeholder="C..." />
+              </div>
+            )}
+
+            {activeTab === 'individual' && (
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 10 }}>👤 モデル個人 — 各モデルのLINEグループID</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {models.map(m => (
+                    <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: '#e0d8f0' }}>
+                        {m.image ? <img src={m.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>👤</div>}
+                      </div>
+                      <span style={{ width: 100, fontSize: 13, fontWeight: 600, color: '#333', flexShrink: 0 }}>{m.name}</span>
+                      <input
+                        style={{ ...inp, flex: 1 }}
+                        value={modelLineIds[m.id] || ''}
+                        onChange={e => setModelLineIds(ids => ({ ...ids, [m.id]: e.target.value }))}
+                        placeholder="C... または U..."
+                      />
+                    </div>
+                  ))}
+                  {models.length === 0 && <p style={{ color: '#aaa', fontSize: 13 }}>公開中のモデルがいません</p>}
+                </div>
+              </div>
+            )}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'flex-end' }}>
               {saved && <span style={{ fontSize: 13, color: '#2e7d32', fontWeight: 600 }}>✅ 保存しました</span>}
@@ -1001,11 +1007,11 @@ export default function LineBroadcastPage() {
         </div>
       </div>
 
-      {/* 公式LINE自動送信トグル */}
-      <CameraAutoToggle />
+      {/* 公式LINE自動送信トグル（公式LINEタブのみ） */}
+      {activeTab === 'camera' && <CameraAutoToggle />}
 
-      {/* 送信先設定パネル */}
-      <LineSettingsPanel />
+      {/* 送信先設定パネル（モデル関連タブのみ） */}
+      {['all', 'individual', 'zatsudan'].includes(activeTab) && <LineSettingsPanel />}
 
       {/* タブコンテンツ */}
       {activeTab === 'all' && <TabAll />}
