@@ -141,6 +141,37 @@ export async function GET(req) {
     )
   }
 
+  // グッズ購入（notify_model有効・このモデルが選択された）
+  let goodsOrders = []
+  {
+    const { data: allGoods } = await admin.from('goods').select('id, title, options')
+    const myGoodsInfo = []
+    for (const g of allGoods || []) {
+      if (g.options?.notify_model === false) continue
+      if (g.options?.type !== 'layers') continue
+      const modelLayer = (g.options.layers || []).find(l => l.type === 'models')
+      if (!modelLayer) continue
+      const myChoiceIds = (modelLayer.model_choices || [])
+        .filter(mc => mc.model_id === model.id)
+        .map(mc => mc.id)
+      if (myChoiceIds.length === 0) continue
+      myGoodsInfo.push({ goodsId: g.id, goodsTitle: g.title, choiceIds: myChoiceIds })
+    }
+    if (myGoodsInfo.length > 0) {
+      const goodsIds = myGoodsInfo.map(g => g.goodsId)
+      const { data: gOrders } = await admin.from('goods_orders')
+        .select('id, goods_id, layers_path, options_selected, last_name, first_name, sns_url, created_at')
+        .in('goods_id', goodsIds)
+        .is('cancelled_at', null)
+        .order('created_at', { ascending: false })
+      const myGoodsMap = Object.fromEntries(myGoodsInfo.map(g => [g.goodsId, g]))
+      goodsOrders = (gOrders || []).filter(o => {
+        const info = myGoodsMap[o.goods_id]
+        return info && (o.layers_path || []).some(id => info.choiceIds.includes(id))
+      }).map(o => ({ ...o, goods_title: myGoodsMap[o.goods_id].goodsTitle }))
+    }
+  }
+
   // 非公開予約
   const { data: privateProducts } = await admin
     .from('private_products')
@@ -164,5 +195,6 @@ export async function GET(req) {
     past: pastEntries.map(toEventItem),
     productBookings,
     privateBookings,
+    goodsOrders,
   })
 }

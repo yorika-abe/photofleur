@@ -2,7 +2,7 @@ import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/sup
 import { Resend } from 'resend'
 import { renderEmailTemplate } from '@/lib/email-render'
 import { decrementLayersStock, getLeafChoicePrice, buildSelectionsLabel } from '@/lib/product-layers'
-import { sendLineCameraUser } from '@/lib/line'
+import { sendLineCameraUser, sendLineMessage } from '@/lib/line'
 import { DEFAULTS } from '@/app/api/admin/line-templates/route'
 
 function applyVars(template, vars) {
@@ -108,6 +108,36 @@ export async function POST(req) {
     if (changed) {
       await admin.from('goods').update({ options: { ...goods.options, groups: updatedGroups } }).eq('id', goods.id)
     }
+  }
+
+  // モデルへのLINE通知
+  if (layers_path?.length > 0 && goods.options?.type === 'layers' && goods.options?.notify_model !== false) {
+    try {
+      const layers = goods.options.layers || []
+      const selectedModelIds = []
+      for (let i = 0; i < layers.length; i++) {
+        if (layers[i].type === 'models' && layers_path[i]) {
+          const mc = (layers[i].model_choices || []).find(mc => mc.id === layers_path[i])
+          if (mc?.model_id) selectedModelIds.push(mc.model_id)
+        }
+      }
+      if (selectedModelIds.length > 0) {
+        const { data: tmplRow } = await admin.from('line_templates').select('body').eq('key', 'event_product_booking_notify').single()
+        const tmpl = tmplRow?.body ?? '{{product_name}} に新しい購入がありました\nニックネーム：{{nickname}}\nSNS：{{sns_url}}'
+        const { data: modelList } = await admin.from('models').select('id, line_id').in('id', selectedModelIds)
+        const customerName = `${last_name}${first_name ? ` ${first_name}` : ''}`
+        const message = tmpl.replace(/\{\{(\w+)\}\}/g, (_, k) => ({
+          product_name: goods.title, event_date: '', details: '', nickname: customerName, sns_url: sns_url || '',
+        })[k] ?? '')
+        for (const model of modelList || []) {
+          if (!model.line_id) continue
+          const result = await sendLineMessage(model.line_id, message).catch(() => ({ ok: false }))
+          await admin.from('line_notifications').insert({
+            model_id: model.id, type: 'booking', message, status: result.ok ? 'sent' : 'failed',
+          }).catch(() => {})
+        }
+      }
+    } catch {}
   }
 
   try {

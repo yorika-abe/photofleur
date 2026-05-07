@@ -21,7 +21,7 @@ export default async function ModelOnboardingPage() {
       </div>
 
       {/* Content */}
-      <div style={{ position: 'relative', zIndex: 1, maxWidth: 680, margin: '0 auto', padding: '40px 20px' }}>
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 1300, margin: '0 auto', padding: '40px 20px' }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>🌸</div>
           <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a3560', margin: '0 0 16px' }}>Photo Fleurにようこそ</h1>
@@ -34,38 +34,35 @@ export default async function ModelOnboardingPage() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* PDF 1 */}
-          <div style={{ background: 'rgba(255,255,255,0.88)', border: '1px solid #d6ecf5', borderRadius: 14, padding: '24px', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 12 }}>ABOUT Photo Fleur</h2>
-            {pdfAbout ? (
-              <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #d6ecf5' }}>
-                <iframe src={pdfAbout} style={{ width: '100%', height: 480, border: 'none', display: 'block' }} title="ABOUT Photo Fleur" />
-                <div style={{ background: '#f5f9ff', padding: '10px 14px', textAlign: 'center' }}>
-                  <a href={pdfAbout} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: '#1a3560', textDecoration: 'none', fontWeight: 600 }}>📄 PDFを開く</a>
+          {/* PDFs side by side */}
+          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+            {/* PDF 1 */}
+            <div style={{ flex: '1 1 400px', background: 'rgba(255,255,255,0.88)', border: '1px solid #d6ecf5', borderRadius: 14, padding: '24px', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 12 }}>ABOUT Photo Fleur</h2>
+              {pdfAbout ? (
+                <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #d6ecf5' }}>
+                  <iframe src={`${pdfAbout}#toolbar=0&navpanes=0`} style={{ width: '100%', height: 560, border: 'none', display: 'block' }} title="ABOUT Photo Fleur" />
                 </div>
-              </div>
-            ) : (
-              <div style={{ background: '#f5f9ff', borderRadius: 10, padding: '32px', textAlign: 'center', color: '#aaa', fontSize: 14 }}>
-                📄 PDF（後ほど追加されます）
-              </div>
-            )}
-          </div>
+              ) : (
+                <div style={{ background: '#f5f9ff', borderRadius: 10, padding: '32px', textAlign: 'center', color: '#aaa', fontSize: 14 }}>
+                  📄 PDF（後ほど追加されます）
+                </div>
+              )}
+            </div>
 
-          {/* PDF 2 */}
-          <div style={{ background: 'rgba(255,255,255,0.88)', border: '1px solid #d6ecf5', borderRadius: 14, padding: '24px', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 12 }}>撮影会登録説明</h2>
-            {pdfRegist ? (
-              <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #d6ecf5' }}>
-                <iframe src={pdfRegist} style={{ width: '100%', height: 480, border: 'none', display: 'block' }} title="撮影会登録説明" />
-                <div style={{ background: '#f5f9ff', padding: '10px 14px', textAlign: 'center' }}>
-                  <a href={pdfRegist} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: '#1a3560', textDecoration: 'none', fontWeight: 600 }}>📄 PDFを開く</a>
+            {/* PDF 2 */}
+            <div style={{ flex: '1 1 400px', background: 'rgba(255,255,255,0.88)', border: '1px solid #d6ecf5', borderRadius: 14, padding: '24px', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 12 }}>撮影会登録説明</h2>
+              {pdfRegist ? (
+                <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #d6ecf5' }}>
+                  <iframe src={`${pdfRegist}#toolbar=0&navpanes=0`} style={{ width: '100%', height: 560, border: 'none', display: 'block' }} title="撮影会登録説明" />
                 </div>
-              </div>
-            ) : (
-              <div style={{ background: '#f5f9ff', borderRadius: 10, padding: '32px', textAlign: 'center', color: '#aaa', fontSize: 14 }}>
-                📄 PDF（後ほど追加されます）
-              </div>
-            )}
+              ) : (
+                <div style={{ background: '#f5f9ff', borderRadius: 10, padding: '32px', textAlign: 'center', color: '#aaa', fontSize: 14 }}>
+                  📄 PDF（後ほど追加されます）
+                </div>
+              )}
+            </div>
           </div>
 
           <div style={{ textAlign: 'center', paddingTop: 8 }}>

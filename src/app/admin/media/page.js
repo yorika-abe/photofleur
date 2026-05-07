@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
+import Cropper from 'react-easy-crop'
 
 async function compressImage(file, maxW = 2000, maxH = 2000, quality = 0.88) {
   return new Promise(resolve => {
@@ -51,6 +52,11 @@ export default function AdminMediaPage() {
   const [requestHeroImages, setRequestHeroImages] = useState([])
   const [recruitHeroImages, setRecruitHeroImages] = useState([])
   const [ogpImages, setOgpImages] = useState({})
+  const [ogpCrop, setOgpCrop] = useState(null) // { src, key, oldUrl }
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
+  const onCropComplete = useCallback((_, pixels) => setCroppedAreaPixels(pixels), [])
   const [uploading, setUploading] = useState(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadCount, setUploadCount] = useState({ current: 0, total: 0 })
@@ -182,6 +188,38 @@ export default function AdminMediaPage() {
       const path = `site/${key}-${Date.now()}.jpg`
       const url = await uploadWithProgress(compressed, path)
       setter(url)
+      if (oldUrl) deleteFile(oldUrl)
+    } catch (e) { alert('アップロードエラー: ' + e) }
+    setUploading(null)
+    setUploadProgress(0)
+  }
+
+  async function startOgpCrop(file, key, oldUrl) {
+    setCrop({ x: 0, y: 0 })
+    setZoom(1)
+    setOgpCrop({ src: URL.createObjectURL(file), key, oldUrl })
+  }
+
+  async function confirmOgpCrop() {
+    if (!ogpCrop || !croppedAreaPixels) return
+    const { src, key, oldUrl } = ogpCrop
+    setOgpCrop(null)
+    setUploading(key)
+    setUploadProgress(0)
+    try {
+      const img = await new Promise((resolve, reject) => {
+        const i = new Image(); i.onload = () => resolve(i); i.onerror = reject; i.src = src
+      })
+      const { x, y, width, height } = croppedAreaPixels
+      const canvas = document.createElement('canvas')
+      canvas.width = 1200; canvas.height = 630
+      canvas.getContext('2d').drawImage(img, x, y, width, height, 0, 0, 1200, 630)
+      URL.revokeObjectURL(src)
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.92))
+      const file = new File([blob], 'ogp.jpg', { type: 'image/jpeg' })
+      const path = `site/${key}-${Date.now()}.jpg`
+      const url = await uploadWithProgress(file, path)
+      setOgpImages(prev => ({ ...prev, [key]: url }))
       if (oldUrl) deleteFile(oldUrl)
     } catch (e) { alert('アップロードエラー: ' + e) }
     setUploading(null)
@@ -342,7 +380,7 @@ export default function AdminMediaPage() {
     )
   }
 
-  function SingleImageSection({ value, onChange, uploadKey, label }) {
+  function SingleImageSection({ value, onChange, uploadKey, label, onFileSelect }) {
     return (
       <>
         {value && (
@@ -355,7 +393,11 @@ export default function AdminMediaPage() {
         <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
           📷 {label}
           <input type="file" accept="image/*" style={{ display: 'none' }} disabled={!!uploading}
-            onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], uploadKey, onChange, value)} />
+            onChange={e => {
+              if (!e.target.files?.[0]) return
+              onFileSelect ? onFileSelect(e.target.files[0]) : uploadImage(e.target.files[0], uploadKey, onChange, value)
+              e.target.value = ''
+            }} />
         </label>
         {uploading === uploadKey && <ProgressBar progress={uploadProgress} />}
         <div style={{ marginTop: 10 }}>
@@ -425,6 +467,32 @@ export default function AdminMediaPage() {
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '28px 20px' }}>
+      {ogpCrop && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <Cropper image={ogpCrop.src} crop={crop} zoom={zoom} aspect={1200 / 630}
+              onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={onCropComplete} />
+          </div>
+          <div style={{ background: '#1a1a2e', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, textAlign: 'center' }}>OGP推奨サイズ 1200×630px にトリミングされます</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, whiteSpace: 'nowrap' }}>ズーム</span>
+              <input type="range" min={1} max={3} step={0.01} value={zoom}
+                onChange={e => setZoom(Number(e.target.value))} style={{ flex: 1, accentColor: '#a8e2f4' }} />
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={() => { URL.revokeObjectURL(ogpCrop.src); setOgpCrop(null) }}
+                style={{ padding: '10px 24px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#fff', fontSize: 14, cursor: 'pointer' }}>
+                キャンセル
+              </button>
+              <button onClick={confirmOgpCrop}
+                style={{ padding: '10px 28px', borderRadius: 8, border: 'none', background: '#1a3560', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                この範囲でアップロード
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
         <Link href="/admin" style={{ color: '#888', textDecoration: 'none', fontSize: 13 }}>← 管理画面</Link>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1a3560', margin: 0 }}>メディア管理</h1>
@@ -506,6 +574,7 @@ export default function AdminMediaPage() {
                   onChange={url => setOgpImages(prev => ({ ...prev, [key]: url }))}
                   uploadKey={key}
                   label="画像をアップロード"
+                  onFileSelect={f => startOgpCrop(f, key, ogpImages[key] || '')}
                 />
               </Section>
             ))}

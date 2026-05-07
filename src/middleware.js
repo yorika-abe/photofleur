@@ -59,9 +59,25 @@ export async function middleware(request) {
     }
   }
 
+  // Staff portal requires staff or admin role
+  if (path.startsWith('/staff-portal')) {
+    if (!user) {
+      return NextResponse.redirect(new URL('/login?redirect=/staff-portal', request.url))
+    }
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('roles, role')
+      .eq('id', user.id)
+      .single()
+    const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
+    if (!roles.some(r => ['staff', 'admin'].includes(r))) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+  }
+
   return supabaseResponse
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/model-portal/:path*'],
+  matcher: ['/admin/:path*', '/model-portal/:path*', '/staff-portal/:path*'],
 }

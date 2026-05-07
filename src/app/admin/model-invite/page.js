@@ -73,7 +73,7 @@ export default function ModelInvitePage() {
                   <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>{item.label}</div>
                   <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{item.desc}</div>
                 </div>
-                <a href={item.href} target="_blank" rel="noreferrer"
+                <a href={item.href}
                   style={{ background: '#fff', color: '#1a3560', border: '1px solid #d6ecf5', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
                   確認する →
                 </a>

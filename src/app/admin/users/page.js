@@ -6,22 +6,26 @@ import Link from 'next/link'
 const ROLE_OPTIONS = [
   { value: 'admin', label: '運営', color: '#1565c0', bg: '#e3f2fd' },
   { value: 'model', label: 'モデル', color: '#c2185b', bg: '#fce4ec' },
+  { value: 'staff', label: '受付スタッフ', color: '#6a1b9a', bg: '#f3e5f5' },
 ]
 
 const TABS = [
   { key: 'all', label: 'すべて' },
   { key: 'admin', label: '運営' },
   { key: 'model', label: 'モデル' },
+  { key: 'staff', label: '受付スタッフ' },
   { key: 'photographer', label: '一般' },
+  { key: 'blocked', label: 'ブロック' },
 ]
 
 function RoleBadges({ roles }) {
-  if (!roles || roles.length === 0 || (roles.length === 1 && roles[0] === 'photographer')) {
+  const special = ROLE_OPTIONS.filter(r => roles?.includes(r.value))
+  if (special.length === 0) {
     return <span style={{ background: '#f5f5f5', color: '#888', borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 700 }}>一般</span>
   }
   return (
     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-      {ROLE_OPTIONS.filter(r => roles.includes(r.value)).map(r => (
+      {special.map(r => (
         <span key={r.value} style={{ background: r.bg, color: r.color, borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 700 }}>{r.label}</span>
       ))}
     </div>
@@ -88,9 +92,13 @@ export default function UsersPage() {
 
   const filtered = users.filter(u => {
     const roles = u.roles || []
+    const isBlocked = !!u.is_blocked
+    if (tab === 'blocked') return isBlocked
+    if (isBlocked) return false
     if (tab === 'admin' && !roles.includes('admin')) return false
     if (tab === 'model' && !roles.includes('model')) return false
-    if (tab === 'photographer' && (roles.includes('admin') || roles.includes('model'))) return false
+    if (tab === 'staff' && !roles.includes('staff')) return false
+    if (tab === 'photographer' && (roles.includes('admin') || roles.includes('model') || roles.includes('staff'))) return false
     if (search) {
       const q = search.toLowerCase()
       return (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)

@@ -1011,7 +1011,7 @@ export default function LineBroadcastPage() {
       {activeTab === 'camera' && <CameraAutoToggle />}
 
       {/* 送信先設定パネル（モデル関連タブのみ） */}
-      {['all', 'individual', 'zatsudan'].includes(activeTab) && <LineSettingsPanel />}
+      {['all', 'individual', 'zatsudan'].includes(activeTab) && <LineSettingsPanel activeTab={activeTab} />}
 
       {/* タブコンテンツ */}
       {activeTab === 'all' && <TabAll />}

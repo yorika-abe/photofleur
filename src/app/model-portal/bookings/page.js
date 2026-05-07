@@ -146,6 +146,41 @@ function ProductBookingCard({ item, lastViewed }) {
   )
 }
 
+function GoodsOrderCard({ order, lastViewed }) {
+  const isNew = lastViewed && order.created_at && new Date(order.created_at) > new Date(lastViewed)
+  const [open, setOpen] = useState(isNew)
+  const customerName = `${order.last_name || ''}${order.first_name ? ` ${order.first_name}` : ''}`.trim()
+  return (
+    <div style={{ background: '#fff', borderRadius: 14, border: `1px solid ${isNew ? '#ffcdd2' : '#d6ecf5'}`, overflow: 'hidden' }}>
+      <button onClick={() => setOpen(o => !o)} style={{
+        width: '100%', textAlign: 'left', background: 'linear-gradient(135deg, #4a2060, #7b3fa0)',
+        color: '#fff', padding: '12px 16px', border: 'none', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+      }}>
+        <span style={{ fontSize: 14 }}>🛍</span>
+        <span style={{ fontWeight: 700, fontSize: 15 }}>{order.goods_title}</span>
+        {isNew && <span style={{ fontSize: 10, background: '#e53935', color: '#fff', borderRadius: 4, padding: '1px 6px', fontWeight: 700 }}>NEW</span>}
+        <span style={{ marginLeft: 'auto', fontSize: 14, color: 'rgba(255,255,255,0.6)', flexShrink: 0 }}>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ background: '#f3e5f5', borderRadius: 8, padding: '8px 12px', border: '1px solid #ce93d8', display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+            <span style={{ fontSize: 11, background: '#7b1fa2', color: '#fff', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>購入済み</span>
+            <span style={{ fontSize: 13, color: '#444' }}>{customerName} 様</span>
+            {order.sns_url && (
+              <a href={order.sns_url} target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: 12, color: '#1a3560', fontWeight: 600, wordBreak: 'break-all' }}>
+                📷 {order.sns_url}
+              </a>
+            )}
+            <span style={{ fontSize: 11, color: '#888', marginLeft: 'auto' }}>{new Date(order.created_at).toLocaleDateString('ja-JP')}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function PrivateBookingCard({ booking, defaultOpen = true, lastViewed }) {
   const [open, setOpen] = useState(defaultOpen)
   const isNew = lastViewed && booking.created_at && new Date(booking.created_at) > new Date(lastViewed)
@@ -187,6 +222,7 @@ export default function ModelBookingsPage() {
   const [past, setPast] = useState([])
   const [productBookings, setProductBookings] = useState([])
   const [privateBookings, setPrivateBookings] = useState([])
+  const [goodsOrders, setGoodsOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [lastViewed, setLastViewed] = useState(null)
 
@@ -214,6 +250,7 @@ export default function ModelBookingsPage() {
       setPast(data.past || [])
       setProductBookings(data.productBookings || [])
       setPrivateBookings(data.privateBookings || [])
+      setGoodsOrders(data.goodsOrders || [])
       setLoading(false)
     }
     load()
@@ -223,16 +260,19 @@ export default function ModelBookingsPage() {
 
   const today = new Date().toISOString().split('T')[0]
 
-  // 日付ある非公開予約を通常イベントと混合して日付順に並べる
+  // 日付ある非公開予約・特別予約を通常イベントと混合して日付順に並べる
   const datedPrivate = privateBookings.filter(b => b.event_date_input && b.event_date_input >= today)
   const undatedPrivate = privateBookings.filter(b => !b.event_date_input || b.event_date_input < today)
+  const datedProducts = productBookings.filter(pb => pb.event?.event_date && pb.event.event_date >= today)
+  const undatedProducts = productBookings.filter(pb => !pb.event?.event_date || pb.event.event_date < today)
 
   const unified = [
     ...events.map(item => ({ kind: 'event', date: item.event.event_date, item })),
     ...datedPrivate.map(b => ({ kind: 'private', date: b.event_date_input, item: b })),
+    ...datedProducts.map(pb => ({ kind: 'product', date: pb.event.event_date, item: pb })),
   ].sort((a, b) => a.date.localeCompare(b.date))
 
-  const isEmpty = unified.length === 0 && productBookings.length === 0 && undatedPrivate.length === 0 && past.length === 0
+  const isEmpty = unified.length === 0 && undatedProducts.length === 0 && undatedPrivate.length === 0 && goodsOrders.length === 0 && past.length === 0
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '24px 20px' }}>
@@ -247,16 +287,29 @@ export default function ModelBookingsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {unified.map(u => u.kind === 'event'
             ? <EventCard key={`ev-${u.item.event.id}`} event={u.item.event} slots={u.item.slots} defaultOpen={true} lastViewed={lastViewed} />
-            : <PrivateBookingCard key={`pb-${u.item.id}`} booking={u.item} defaultOpen={true} lastViewed={lastViewed} />
+            : u.kind === 'product'
+              ? <ProductBookingCard key={`epb-${u.item.product.id}`} item={u.item} lastViewed={lastViewed} />
+              : <PrivateBookingCard key={`pb-${u.item.id}`} booking={u.item} defaultOpen={true} lastViewed={lastViewed} />
           )}
 
-          {productBookings.length > 0 && (
+          {undatedProducts.length > 0 && (
             <>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#888', marginTop: 8, marginBottom: 4, paddingLeft: 4 }}>
-                特別予約商品
+                特別予約商品（日程未定）
               </div>
-              {productBookings.map(item => (
-                <ProductBookingCard key={item.product.id} item={item} lastViewed={lastViewed} />
+              {undatedProducts.map(item => (
+                <ProductBookingCard key={`epb-u-${item.product.id}`} item={item} lastViewed={lastViewed} />
+              ))}
+            </>
+          )}
+
+          {goodsOrders.length > 0 && (
+            <>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#888', marginTop: 8, marginBottom: 4, paddingLeft: 4 }}>
+                グッズ購入
+              </div>
+              {goodsOrders.map(o => (
+                <GoodsOrderCard key={o.id} order={o} lastViewed={lastViewed} />
               ))}
             </>
           )}

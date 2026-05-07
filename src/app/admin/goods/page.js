@@ -18,6 +18,7 @@ const EMPTY_FORM = {
   layers: [],
   hasSalePeriod: false, sale_start: '', sale_end: '',
   is_delivery: false,
+  notify_model: true,
 }
 
 export default function GoodsAdminPage() {
@@ -132,6 +133,7 @@ export default function GoodsAdminPage() {
       sale_start: g.sale_start ? g.sale_start.slice(0, 16) : '',
       sale_end: g.sale_end ? g.sale_end.slice(0, 16) : '',
       is_delivery: g.options?.is_delivery || false,
+      notify_model: g.options?.notify_model !== false,
     })
     setExpanded(g.id)
   }
@@ -153,6 +155,9 @@ export default function GoodsAdminPage() {
     if (validLayers.length > 0) {
       optionsObj.type = 'layers'
       optionsObj.layers = validLayers
+      if (validLayers.some(l => l.type === 'models')) {
+        optionsObj.notify_model = form.notify_model
+      }
     }
     const options = Object.keys(optionsObj).length > 0 ? optionsObj : null
     const url = editId ? `/api/admin/goods/${editId}` : '/api/admin/goods'
@@ -338,6 +343,17 @@ export default function GoodsAdminPage() {
               <span style={{ fontSize: 13, fontWeight: 600, color: '#555' }}>お届け商品（購入時に配送先住所を入力してもらう）</span>
             </label>
           </div>
+
+          {/* モデル通知 */}
+          {form.layers.some(l => l.type === 'models') && (
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.notify_model}
+                  onChange={e => setForm(f => ({ ...f, notify_model: e.target.checked }))} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#2e7d32' }}>対応モデルに連絡（購入時にLINE通知＋モデルポータルに表示）</span>
+              </label>
+            </div>
+          )}
 
           {/* 画像 */}
           <div style={{ gridColumn: '1 / -1' }}>
