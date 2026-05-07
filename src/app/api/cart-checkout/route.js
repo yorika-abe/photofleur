@@ -1,4 +1,4 @@
-import { createSupabaseAdminClient } from '@/lib/supabase-server'
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase-server'
 import { sendLineMessage } from '@/lib/line'
 import { randomUUID } from 'crypto'
 import { decrementLayersStock } from '@/lib/product-layers'
@@ -11,6 +11,8 @@ function applyVars(template, vars) {
 export async function POST(req) {
   try {
   const admin = await createSupabaseAdminClient()
+  const server = await createSupabaseServerClient()
+  const { data: { user } } = await server.auth.getUser()
   const { items, customer, paymentMethod, squarePaymentId, couponId } = await req.json()
 
   if (!items?.length) return Response.json({ error: 'カートが空です' }, { status: 400 })
@@ -202,15 +204,19 @@ export async function POST(req) {
   }
 
   // プロフィール更新
-  fetch(`${baseUrl}/api/customer/profile`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      last_name: customer.last_name, first_name: customer.first_name,
-      last_name_kana: customer.last_name_kana, first_name_kana: customer.first_name_kana,
-      phone: customer.phone, sns_url: customer.sns_url, nickname: customer.nickname,
-    }),
-  }).catch(() => {})
+  if (user) {
+    await admin.from('customer_profiles').upsert({
+      user_id: user.id,
+      last_name: customer.last_name || null,
+      first_name: customer.first_name || null,
+      last_name_kana: customer.last_name_kana || null,
+      first_name_kana: customer.first_name_kana || null,
+      phone: customer.phone || null,
+      sns_url: customer.sns_url || null,
+      nickname: customer.nickname || null,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' }).catch(() => {})
+  }
 
   return Response.json({ ok: true, qrTokens })
   } catch (err) {

@@ -35,7 +35,7 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
     const id = genId()
     const parentLayer = layerIdx > 0 ? layers[layerIdx - 1] : null
     const parentChoices = parentLayer
-      ? (parentLayer.type === 'manual' ? parentLayer.choices : parentLayer.model_choices) || []
+      ? (parentLayer.type === 'manual' || parentLayer.type === 'slots' ? parentLayer.choices : parentLayer.model_choices) || []
       : []
     const parent_stocks = layerIdx > 0
       ? Object.fromEntries(parentChoices.map(pc => [pc.id, -1]))
@@ -100,7 +100,7 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
     const exists = (layerState?.model_choices || []).some(mc => mc.model_id === model.id)
     const parentLayer = layerIdx > 0 ? layers[layerIdx - 1] : null
     const parentChoices = parentLayer
-      ? (parentLayer.type === 'manual' ? parentLayer.choices : parentLayer.model_choices) || []
+      ? (parentLayer.type === 'manual' || parentLayer.type === 'slots' ? parentLayer.choices : parentLayer.model_choices) || []
       : []
 
     update(layers.map((l, i) => {
@@ -126,7 +126,7 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
     const existing = new Set((layers[layerIdx]?.model_choices || []).map(mc => mc.model_id))
     const parentLayer = layerIdx > 0 ? layers[layerIdx - 1] : null
     const parentChoices = parentLayer
-      ? (parentLayer.type === 'manual' ? parentLayer.choices : parentLayer.model_choices) || []
+      ? (parentLayer.type === 'manual' || parentLayer.type === 'slots' ? parentLayer.choices : parentLayer.model_choices) || []
       : []
     const parent_stocks = layerIdx > 0 ? Object.fromEntries(parentChoices.map(pc => [pc.id, -1])) : undefined
     const toAdd = eventModels.filter(m => !existing.has(m.id)).map(m => ({
@@ -172,7 +172,7 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
   function initSlotChoices(layerIdx) {
     const parentLayer = layerIdx > 0 ? layers[layerIdx - 1] : null
     const parentChoices = parentLayer
-      ? (parentLayer.type === 'manual' ? parentLayer.choices : parentLayer.model_choices) || []
+      ? (parentLayer.type === 'manual' || parentLayer.type === 'slots' ? parentLayer.choices : parentLayer.model_choices) || []
       : []
     const choices = slotLabels.map((label, si) => {
       const id = `slot_${si}`
@@ -272,7 +272,7 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
         const isLeaf = layerIdx === layers.length - 1
         const parentLayer = layerIdx > 0 ? layers[layerIdx - 1] : null
         const parentChoices = parentLayer
-          ? (parentLayer.type === 'manual' ? parentLayer.choices : parentLayer.model_choices) || []
+          ? (parentLayer.type === 'manual' || parentLayer.type === 'slots' ? parentLayer.choices : parentLayer.model_choices) || []
           : []
         const layerColor = layer.type === 'models' ? '#e8f5e9' : layer.type === 'slots' ? '#e0f7fa' : '#f8f9ff'
         const layerBorder = layer.type === 'models' ? '#c8e6c9' : layer.type === 'slots' ? '#b2ebf2' : '#e0e0f0'

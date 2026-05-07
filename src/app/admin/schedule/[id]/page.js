@@ -488,6 +488,7 @@ export default function EventEditPage() {
     }
     setNewProduct({ name: p.name, image: p.image || '', description: p.description || '', price: p.price || 0, stock: p.stock || 1, layers, is_delivery: p.options?.is_delivery || false, notify_model: p.options?.notify_model !== false })
     setEditingProductId(p.id)
+    setModelsSubTab('products')
     setTimeout(() => productFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
 
@@ -1066,104 +1067,157 @@ export default function EventEditPage() {
                     </div>
                   </div>
 
-                  {/* 登録済み商品リスト（productsタブ内） - プレースホルダー */}
-                  {products.length === 0 && (
-                    <p style={{ color: '#aaa', fontSize: 13, margin: 0 }}>まだ予約商品がありません</p>
-                  )}
                 </div>
               )}
 
-              {/* 登録済み商品リスト - 両タブで常時表示 */}
-              {products.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <p style={{ fontSize: 12, fontWeight: 600, color: '#555', margin: 0 }}>登録済み予約商品</p>
-                      {products.map(p => {
-                        const hasModelLayer = (() => {
-                          const opts = p.options
-                          if (opts?.type === 'layers') return (opts.layers || []).some(l => l.type === 'models')
-                          if (opts?.type === 'groups') return (opts.groups || []).some(g => g.type === 'models')
-                          return false
-                        })()
-                        const notifyModel = p.options?.notify_model !== false
-                        return (
-                        <div key={p.id} style={{ background: '#f8f8f8', borderRadius: 8, padding: '10px 12px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            {p.image && <img src={p.image} style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontWeight: 700, fontSize: 13, color: '#1a3560' }}>{p.name}</div>
-                              {p.description && <div style={{ fontSize: 11, color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description}</div>}
-                            </div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: '#333', whiteSpace: 'nowrap' }}>¥{(p.price || 0).toLocaleString()}</div>
-                            {hasModelLayer && (
-                              <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#555', whiteSpace: 'nowrap', cursor: 'pointer' }}>
-                                <input type="checkbox" checked={notifyModel} onChange={e => updateProductNotifyModel(p.id, e.target.checked)} />
-                                対応モデルに連絡
-                              </label>
-                            )}
-                            <button onClick={() => startEditProduct(p)}
-                              style={{ background: '#e8f0fe', color: '#1a3560', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 12, flexShrink: 0 }}>編集</button>
-                            <button onClick={() => removeProduct(p.id)}
-                              style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', fontSize: 12, flexShrink: 0 }}>削除</button>
-                          </div>
-                          {/* 選択肢グループまたは在庫 */}
-                          <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #e8e8e8' }}>
-                            {(() => {
-                              const opts = p.options
-                              if (opts && typeof opts === 'object' && !Array.isArray(opts) && opts.type === 'groups') {
-                                return (
-                                  <div>
-                                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
-                                      {(opts.groups || []).map((g, gi) => (
-                                        <span key={gi} style={{ fontSize: 11, background: g.type === 'slots' ? '#e0f7fa' : g.type === 'models' ? '#e8f5e9' : '#e8f0fe', color: g.type === 'slots' ? '#0097a7' : g.type === 'models' ? '#2e7d32' : '#1a3560', borderRadius: 4, padding: '2px 8px', fontWeight: 600 }}>
-                                          {g.type === 'slots' ? '📅 時間枠' : g.type === 'models' ? '👤 モデル枠' : `📝 ${g.name}`}
-                                          {g.multiple === true ? '（複数）' : g.multiple === false ? '（単一）' : ''}
-                                        </span>
-                                      ))}
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                      <span style={{ fontSize: 12, color: '#888' }}>在庫</span>
-                                      <input type="number" min="0" defaultValue={p.stock}
-                                        style={{ width: 60, padding: '3px 6px', border: '1px solid #ddd', borderRadius: 5, fontSize: 13, textAlign: 'center' }}
-                                        onBlur={e => updateProductStock(p.id, e.target.value)} />
-                                    </div>
-                                  </div>
-                                )
-                              }
-                              if (Array.isArray(opts) && opts.length > 0) {
-                                return (
-                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                    {opts.map((opt, idx) => (
-                                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff', border: '1px solid #ddd', borderRadius: 6, padding: '4px 8px' }}>
-                                        <span style={{ fontSize: 12, fontWeight: 700, color: '#1a3560' }}>{opt.name}</span>
-                                        <span style={{ fontSize: 11, color: '#aaa' }}>在庫</span>
-                                        <input type="number" min="0" defaultValue={opt.stock}
-                                          style={{ width: 48, padding: '2px 4px', border: '1px solid #ddd', borderRadius: 4, fontSize: 12, textAlign: 'center' }}
-                                          onBlur={e => {
-                                            const updated = opts.map((o, i) => i === idx ? { ...o, stock: parseInt(e.target.value) || 0 } : o)
-                                            updateProductOptions(p.id, updated)
-                                          }} />
-                                      </div>
-                                    ))}
-                                  </div>
-                                )
-                              }
-                              return (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                  <span style={{ fontSize: 12, color: '#888' }}>在庫</span>
-                                  <input type="number" min="0" defaultValue={p.stock}
-                                    style={{ width: 60, padding: '3px 6px', border: '1px solid #ddd', borderRadius: 5, fontSize: 13, textAlign: 'center' }}
-                                    onBlur={e => updateProductStock(p.id, e.target.value)} />
-                                </div>
-                              )
-                            })()}
-                          </div>
-                        </div>
-                        )
-                      })}
-                </div>
-              )}
             </div>
           </div>
+
+          {/* 登録済み予約商品（独立カード） */}
+          {products.map(p => {
+            const hasModelLayer = (() => {
+              const opts = p.options
+              if (opts?.type === 'layers') return (opts.layers || []).some(l => l.type === 'models')
+              if (opts?.type === 'groups') return (opts.groups || []).some(g => g.type === 'models')
+              return false
+            })()
+            const notifyModel = p.options?.notify_model !== false
+            return (
+              <div key={p.id} style={{ background: '#fff', borderRadius: 12, padding: 20, border: '2px solid #c0d8f4' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {p.image && <img src={p.image} style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />}
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560' }}>{p.name}</div>
+                      <div style={{ fontSize: 13, color: '#888' }}>¥{(p.price || 0).toLocaleString()}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {hasModelLayer && (
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#555', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={notifyModel} onChange={e => updateProductNotifyModel(p.id, e.target.checked)} />
+                        対応モデルに連絡
+                      </label>
+                    )}
+                    <button onClick={() => startEditProduct(p)}
+                      style={{ background: '#e8f0fe', color: '#1a3560', border: 'none', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>編集</button>
+                    <button onClick={() => removeProduct(p.id)}
+                      style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 12 }}>削除</button>
+                  </div>
+                </div>
+                <div style={{ borderTop: '1px solid #e8e8e8', paddingTop: 12 }}>
+                  {(() => {
+                    const opts = p.options
+                    if (opts?.type === 'layers') {
+                      const layers = opts.layers || []
+                      const leafIdx = layers.length - 1
+                      const leafLayer = leafIdx >= 0 ? layers[leafIdx] : null
+                      const parentLayer = leafIdx > 0 ? layers[leafIdx - 1] : null
+                      const parentChoicesMap = {}
+                      if (parentLayer) {
+                        const pcs = parentLayer.type === 'models' ? (parentLayer.model_choices || []) : (parentLayer.choices || [])
+                        pcs.forEach(pc => { parentChoicesMap[pc.id] = pc.name || pc.model_name || '?' })
+                      }
+                      const leafChoices = leafLayer
+                        ? (leafLayer.type === 'models' ? (leafLayer.model_choices || []) : (leafLayer.choices || []))
+                        : []
+                      const choiceKey = leafLayer?.type === 'models' ? 'model_choices' : 'choices'
+                      return (
+                        <div>
+                          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
+                            {layers.map((l, li) => (
+                              <span key={li} style={{ fontSize: 11, background: l.type === 'slots' ? '#e0f7fa' : l.type === 'models' ? '#e8f5e9' : '#e8f0fe', color: l.type === 'slots' ? '#0097a7' : l.type === 'models' ? '#2e7d32' : '#1a3560', borderRadius: 4, padding: '2px 8px', fontWeight: 600 }}>
+                                {l.type === 'slots' ? '📅 時間枠' : l.type === 'models' ? '👤 モデル' : `📝 ${l.name || '手動'}`}
+                              </span>
+                            ))}
+                          </div>
+                          {leafChoices.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              {leafChoices.map((c, ci) => (
+                                <div key={c.id || ci} style={{ background: '#f8f8f8', border: '1px solid #e0e0e0', borderRadius: 6, padding: '5px 10px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: '#333', flex: 1 }}>{c.name || c.model_name}</span>
+                                    {!c.parent_stocks && (
+                                      <>
+                                        <span style={{ fontSize: 11, color: '#aaa' }}>在庫</span>
+                                        <input type="number" min="0" defaultValue={c.stock < 0 ? '' : c.stock} placeholder="∞"
+                                          style={{ width: 52, padding: '2px 4px', border: '1px solid #ddd', borderRadius: 4, fontSize: 12, textAlign: 'center' }}
+                                          onBlur={e => {
+                                            const newStock = e.target.value === '' ? -1 : parseInt(e.target.value)
+                                            const updatedLayers = layers.map((l, li) => li !== leafIdx ? l : {
+                                              ...l,
+                                              [choiceKey]: (l[choiceKey] || []).map(ch => ch.id === c.id ? { ...ch, stock: newStock } : ch)
+                                            })
+                                            updateProductOptions(p.id, { ...opts, layers: updatedLayers })
+                                          }} />
+                                      </>
+                                    )}
+                                  </div>
+                                  {c.parent_stocks && Object.entries(c.parent_stocks).map(([pid, ps]) => (
+                                    <div key={pid} style={{ display: 'flex', alignItems: 'center', gap: 5, paddingLeft: 8, marginTop: 3 }}>
+                                      <span style={{ fontSize: 11, color: '#555', minWidth: 60 }}>{parentChoicesMap[pid] || '?'}</span>
+                                      <span style={{ fontSize: 11, color: '#aaa' }}>在庫</span>
+                                      <input type="number" min="0" defaultValue={ps < 0 ? '' : ps} placeholder="∞"
+                                        style={{ width: 52, padding: '2px 4px', border: '1px solid #ddd', borderRadius: 4, fontSize: 12, textAlign: 'center' }}
+                                        onBlur={e => {
+                                          const newPs = e.target.value === '' ? -1 : parseInt(e.target.value)
+                                          const updatedLayers = layers.map((l, li) => li !== leafIdx ? l : {
+                                            ...l,
+                                            [choiceKey]: (l[choiceKey] || []).map(ch => ch.id !== c.id ? ch : {
+                                              ...ch, parent_stocks: { ...ch.parent_stocks, [pid]: newPs }
+                                            })
+                                          })
+                                          updateProductOptions(p.id, { ...opts, layers: updatedLayers })
+                                        }} />
+                                    </div>
+                                  ))}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontSize: 12, color: '#888' }}>在庫</span>
+                              <input type="number" min="0" defaultValue={p.stock}
+                                style={{ width: 60, padding: '3px 6px', border: '1px solid #ddd', borderRadius: 5, fontSize: 13, textAlign: 'center' }}
+                                onBlur={e => updateProductStock(p.id, e.target.value)} />
+                            </div>
+                          )}
+                        </div>
+                      )
+                    }
+                    if (opts?.type === 'groups') {
+                      return (
+                        <div>
+                          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
+                            {(opts.groups || []).map((g, gi) => (
+                              <span key={gi} style={{ fontSize: 11, background: g.type === 'slots' ? '#e0f7fa' : g.type === 'models' ? '#e8f5e9' : '#e8f0fe', color: g.type === 'slots' ? '#0097a7' : g.type === 'models' ? '#2e7d32' : '#1a3560', borderRadius: 4, padding: '2px 8px', fontWeight: 600 }}>
+                                {g.type === 'slots' ? '📅 時間枠' : g.type === 'models' ? '👤 モデル枠' : `📝 ${g.name}`}
+                                {g.multiple === true ? '（複数）' : ''}
+                              </span>
+                            ))}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 12, color: '#888' }}>在庫</span>
+                            <input type="number" min="0" defaultValue={p.stock}
+                              style={{ width: 60, padding: '3px 6px', border: '1px solid #ddd', borderRadius: 5, fontSize: 13, textAlign: 'center' }}
+                              onBlur={e => updateProductStock(p.id, e.target.value)} />
+                          </div>
+                        </div>
+                      )
+                    }
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 12, color: '#888' }}>在庫</span>
+                        <input type="number" min="0" defaultValue={p.stock}
+                          style={{ width: 60, padding: '3px 6px', border: '1px solid #ddd', borderRadius: 5, fontSize: 13, textAlign: 'center' }}
+                          onBlur={e => updateProductStock(p.id, e.target.value)} />
+                      </div>
+                    )
+                  })()}
+                </div>
+              </div>
+            )
+          })}
 
           {/* エントリー済みモデル・予約枠 */}
           {entries.map(entry => {
