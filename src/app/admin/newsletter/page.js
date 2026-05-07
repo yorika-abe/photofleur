@@ -19,6 +19,12 @@ const TEMPLATE_DEFS = [
     vars: [
       { key: 'customer_name', desc: 'お客様名' },
       { key: 'items_block', desc: '予約内容一覧（自動生成HTML・モデル写真・QRコード・場所情報含む）' },
+      { key: 'model_name', desc: 'モデル名' },
+      { key: 'model_image', desc: 'モデル写真URL（画像ブロックのURLに入力して使用）' },
+      { key: 'event_date', desc: '開催日' },
+      { key: 'slot_label', desc: '予約時間枠' },
+      { key: 'qr_block', desc: 'QRコード（自動生成HTML）' },
+      { key: 'location_block', desc: '開催場所情報（自動生成HTML）' },
     ] },
   { id: 'day-before-reminder', name: '前日リマインド', icon: '⏰',
     defaultSubject: '【PhotoFleur】明日（{{event_date}}）のご案内',
@@ -38,12 +44,17 @@ const TEMPLATE_DEFS = [
     vars: [
       { key: 'customer_name', desc: 'お客様名' },
       { key: 'feedback_url', desc: 'ご意見箱URL' },
+      { key: 'event_date', desc: '開催日' },
+      { key: 'model_name', desc: 'モデル名' },
     ] },
   { id: 'cancellation', name: 'キャンセル', icon: '❌',
     defaultSubject: '【PhotoFleur】ご予約のキャンセルについて',
     vars: [
       { key: 'customer_name', desc: 'お客様名' },
       { key: 'cancel_reason', desc: 'キャンセル理由（空白の場合あり）' },
+      { key: 'event_date', desc: '開催日' },
+      { key: 'model_name', desc: 'モデル名' },
+      { key: 'slot_label', desc: '予約時間枠' },
     ] },
   { id: 'private-booking-confirmation', name: '特別/非公開商品', icon: '🎫',
     defaultSubject: '【PhotoFleur】ご予約確定のお知らせ',
@@ -56,6 +67,7 @@ const TEMPLATE_DEFS = [
       { key: 'time_label', desc: '時間枠' },
       { key: 'price', desc: '料金' },
       { key: 'qr_block', desc: 'QRコード（自動生成HTML）' },
+      { key: 'location_block', desc: '開催場所情報（自動生成HTML）' },
     ] },
   { id: 'goods-order-confirmation', name: 'グッズ注文', icon: '🛍️',
     defaultSubject: '【PhotoFleur】ご注文ありがとうございます',
@@ -377,6 +389,24 @@ const lbl = { display: 'block', fontSize: 11, fontWeight: 600, color: '#666', ma
 const section = { borderTop: '1px solid #f0f0f0', paddingTop: 12, marginTop: 4 }
 const checkRow = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }
 
+function VarsPanel({ templateVars }) {
+  if (!templateVars?.length) return null
+  return (
+    <div style={{ borderTop: '1px solid #e8f0f8', marginTop: 12, paddingTop: 12 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#1a3560', marginBottom: 10 }}>使用できる変数</div>
+      {templateVars.map(v => (
+        <div key={v.key} style={{ marginBottom: 8 }}>
+          <code style={{ background: '#e0eeff', color: '#1a3560', padding: '2px 6px', borderRadius: 4, fontSize: 11, userSelect: 'all', display: 'inline-block' }}>
+            {`{{${v.key}}}`}
+          </code>
+          <span style={{ fontSize: 11, color: '#555', marginLeft: 6 }}>{v.desc}</span>
+        </div>
+      ))}
+      <div style={{ fontSize: 10, color: '#bbb', marginTop: 8 }}>テキストブロックにそのまま入力すると送信時に自動で置換されます</div>
+    </div>
+  )
+}
+
 function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRowBgChange, header, onHeaderChange, footer, onFooterChange, templateVars = [] }) {
   if (selection === 'header') {
     return (
@@ -388,6 +418,7 @@ function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRow
           <div><label style={lbl}>文字色</label><input type="color" value={header.textColor} onChange={e => onHeaderChange({ ...header, textColor: e.target.value })} style={{ ...inp, padding: 2, height: 36 }} /></div>
         </div>
         <div><label style={lbl}>文字サイズ(px)</label><input type="number" value={header.fontSize} onChange={e => onHeaderChange({ ...header, fontSize: Number(e.target.value) })} style={inp} /></div>
+        <VarsPanel templateVars={templateVars} />
       </div>
     )
   }
@@ -396,6 +427,7 @@ function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRow
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#1a3560' }}>フッターの設定</div>
         <div><label style={lbl}>フッターテキスト</label><textarea value={footer} onChange={e => onFooterChange(e.target.value)} rows={4} style={{ ...inp, resize: 'vertical' }} /></div>
+        <VarsPanel templateVars={templateVars} />
       </div>
     )
   }
@@ -431,6 +463,7 @@ function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRow
             </div>
           )}
         </div>
+        <VarsPanel templateVars={templateVars} />
       </div>
     )
   }
@@ -438,20 +471,7 @@ function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRow
     <div style={{ padding: 16, color: '#aaa', fontSize: 13 }}>
       <div>ブロックを選択してください</div>
       <span style={{ fontSize: 11, marginTop: 8, display: 'block' }}>ヘッダー・フッター・行の余白部分をクリックすると設定できます</span>
-      {templateVars.length > 0 && (
-        <div style={{ marginTop: 20, background: '#f0f7ff', borderRadius: 8, padding: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#1a3560', marginBottom: 10 }}>使用できる変数</div>
-          {templateVars.map(v => (
-            <div key={v.key} style={{ marginBottom: 8 }}>
-              <code style={{ background: '#e0eeff', color: '#1a3560', padding: '2px 6px', borderRadius: 4, fontSize: 11, userSelect: 'all', display: 'inline-block' }}>
-                {`{{${v.key}}}`}
-              </code>
-              <span style={{ fontSize: 11, color: '#555', marginLeft: 6 }}>{v.desc}</span>
-            </div>
-          ))}
-          <div style={{ fontSize: 10, color: '#bbb', marginTop: 8 }}>テキストブロックにそのまま入力すると送信時に自動で置換されます</div>
-        </div>
-      )}
+      <VarsPanel templateVars={templateVars} />
     </div>
   )
 
@@ -565,6 +585,7 @@ function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRow
           </div>
         </div>
       )}
+      <VarsPanel templateVars={templateVars} />
     </div>
   )
 }
