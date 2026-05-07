@@ -132,7 +132,7 @@ export default function HeroSection({ images, mobileImages }) {
       {/* Top-right label */}
       <div style={{ position: 'absolute', top: 28, right: 28, textAlign: 'right' }}>
         <div style={{ ...serif, fontSize: 10, letterSpacing: '0.25em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: 4 }}>Photography × Model</div>
-        <div style={{ ...serif, fontSize: 11, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>Since 2024</div>
+        <div style={{ ...serif, fontSize: 11, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>Since 2026</div>
       </div>
 
       {/* Main text */}
