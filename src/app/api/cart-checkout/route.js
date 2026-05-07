@@ -95,30 +95,24 @@ export async function POST(req) {
     } else if (item.type === 'product') {
       const productQrToken = randomUUID()
       let productBooking = null
-      const epbPayload = {
+      const { data: epbResult, error: epbInsertError } = await admin.from('event_product_bookings').insert({
         event_id: item.eventId,
         product_id: item.productId,
         customer_name: customer.name,
         customer_email: customer.email,
+        customer_phone: customer.phone || null,
+        sns_url: customer.sns_url || null,
+        nickname: customer.nickname || null,
+        payment_method: paymentMethod || null,
+        square_payment_id: squarePaymentId || null,
         selections: { ...(item.selections || {}), ...(item.deliveryAddress ? { delivery_address: item.deliveryAddress } : {}) },
         qr_token: productQrToken,
-      }
-      // オプション列が存在する場合のみ追加（存在しない列があるとinsertが失敗するため分岐）
-      const { data: epbResult, error: epbInsertError } = await admin.from('event_product_bookings').insert(epbPayload).select('id').single()
+        cart_token: cartToken,
+      }).select('id').single()
       if (epbInsertError) {
         console.error('[cart-checkout] event_product_bookings insert error:', epbInsertError)
       } else {
         productBooking = epbResult
-        // 追加フィールドをupdateで補完（列が存在する場合のみ成功する）
-        const extras = {
-          customer_phone: customer.phone || null,
-          sns_url: customer.sns_url || null,
-          nickname: customer.nickname || null,
-          payment_method: paymentMethod || null,
-          square_payment_id: squarePaymentId || null,
-          cart_token: cartToken,
-        }
-        await admin.from('event_product_bookings').update(extras).eq('id', epbResult.id).catch(() => {})
       }
 
       if (productBooking) {
