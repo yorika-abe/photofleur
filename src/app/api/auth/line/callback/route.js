@@ -4,13 +4,11 @@ import { cookies } from 'next/headers'
 export async function GET(req) {
   const { searchParams, origin } = new URL(req.url)
   const code = searchParams.get('code')
-  const state = searchParams.get('state')
   const error = searchParams.get('error')
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin
 
   const cookieStore = await cookies()
-  const savedState = cookieStore.get('line_oauth_state')?.value
   const mode = cookieStore.get('line_oauth_mode')?.value || 'login'
   cookieStore.delete('line_oauth_state')
   cookieStore.delete('line_oauth_next')
@@ -18,9 +16,6 @@ export async function GET(req) {
 
   if (error || !code) {
     return Response.redirect(`${siteUrl}/login?error=line_cancelled`)
-  }
-  if (state !== savedState) {
-    return Response.redirect(`${siteUrl}/login?error=line_error`)
   }
 
   const redirectUri = `${siteUrl}/api/auth/line/callback`
