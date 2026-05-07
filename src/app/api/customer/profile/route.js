@@ -6,17 +6,16 @@ export async function GET() {
   if (!user) return Response.json({ profile: null })
 
   const admin = await createSupabaseAdminClient()
-  const { data: profile } = await admin
-    .from('customer_profiles')
-    .select('*')
-    .eq('user_id', user.id)
-    .single()
+  const [{ data: profile }, { data: userProfile }] = await Promise.all([
+    admin.from('customer_profiles').select('*').eq('user_id', user.id).single(),
+    admin.from('user_profiles').select('line_user_id').eq('id', user.id).single(),
+  ])
 
   // LINE users have a fake internal email — use stored contact email if available
   const isLineUser = user.email?.endsWith('@photofleur-line.app')
   const contactEmail = profile?.email || (isLineUser ? '' : user.email)
 
-  return Response.json({ profile: profile || null, email: contactEmail, hasLine: !!profile?.line_user_id })
+  return Response.json({ profile: profile || null, email: contactEmail, hasLine: !!userProfile?.line_user_id })
 }
 
 export async function PUT(req) {
