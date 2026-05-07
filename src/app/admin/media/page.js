@@ -94,7 +94,7 @@ export default function AdminMediaPage() {
     })
   }
 
-  async function uploadWithSignedUrl(file, key, onSuccess) {
+  async function uploadWithSignedUrl(file, key, onSuccess, oldUrl) {
     setUploading(key)
     setUploadProgress(0)
     try {
@@ -122,6 +122,7 @@ export default function AdminMediaPage() {
         xhr.send(compressed)
       })
       onSuccess(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${path}`)
+      if (oldUrl) deleteFile(oldUrl)
     } catch (e) { alert('アップロードエラー: ' + e) }
     setUploading(null)
     setUploadProgress(0)
@@ -159,7 +160,16 @@ export default function AdminMediaPage() {
     setUploadProgress(0)
   }
 
-  async function uploadImage(file, key, setter) {
+  async function deleteFile(url) {
+    if (!url || !url.includes('/storage/v1/object/public/images/')) return
+    await fetch('/api/admin/delete-storage-file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    })
+  }
+
+  async function uploadImage(file, key, setter, oldUrl) {
     setUploading(key)
     setUploadProgress(0)
     try {
@@ -167,6 +177,7 @@ export default function AdminMediaPage() {
       const path = `site/${key}-${Date.now()}.jpg`
       const url = await uploadWithProgress(compressed, path)
       setter(url)
+      if (oldUrl) deleteFile(oldUrl)
     } catch (e) { alert('アップロードエラー: ' + e) }
     setUploading(null)
     setUploadProgress(0)
@@ -298,14 +309,14 @@ export default function AdminMediaPage() {
         {value && (
           <div style={{ marginBottom: 12, position: 'relative', borderRadius: 8, overflow: 'hidden', maxHeight: 140 }}>
             <img src={value} alt="" style={{ width: '100%', height: 140, objectFit: 'cover' }} />
-            <button onClick={() => onChange('')}
+            <button onClick={() => { deleteFile(value); onChange('') }}
               style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontSize: 11 }}>削除</button>
           </div>
         )}
         <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
           📷 {label}
           <input type="file" accept="image/*" style={{ display: 'none' }} disabled={!!uploading}
-            onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], uploadKey, onChange)} />
+            onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], uploadKey, onChange, value)} />
         </label>
         {uploading === uploadKey && <ProgressBar progress={uploadProgress} />}
         <div style={{ marginTop: 10 }}>
