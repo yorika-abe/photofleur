@@ -89,7 +89,7 @@ function OrderModal({ goods, onClose, onComplete }) {
   const isDelivery = !!goods.options?.is_delivery
   const isLayers = goods.options?.type === 'layers'
   const [form, setForm] = useState({
-    last_name: '', first_name: '', email: '', phone: '',
+    last_name: '', first_name: '', email: '', phone: '', sns_url: '',
     payment_method: goods.payment_method === 'both' ? 'card' : goods.payment_method,
     quantity: 1, notes: '',
     delivery_address: '',
@@ -116,6 +116,7 @@ function OrderModal({ goods, onClose, onComplete }) {
         first_name: profile?.first_name || f.first_name,
         email: email || f.email,
         phone: profile?.phone || f.phone,
+        sns_url: profile?.sns_url || f.sns_url,
       }))
     }).catch(() => {})
   }, [])
@@ -180,7 +181,7 @@ function OrderModal({ goods, onClose, onComplete }) {
     const res = await fetch('/api/orders/goods', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ goods_id: goods.id, ...form, square_payment_id: squarePaymentId, options_selected: Object.keys(optionsSelected).length > 0 ? optionsSelected : null, layers_path: isLayers && layerPath.length > 0 ? layerPath : null, delivery_address: form.delivery_address || null }),
+      body: JSON.stringify({ goods_id: goods.id, ...form, square_payment_id: squarePaymentId, options_selected: Object.keys(optionsSelected).length > 0 ? optionsSelected : null, layers_path: isLayers && layerPath.length > 0 ? layerPath : null, delivery_address: form.delivery_address || null, sns_url: form.sns_url || null }),
     })
     setSubmitting(false)
     if (res.ok) {
@@ -190,7 +191,7 @@ function OrderModal({ goods, onClose, onComplete }) {
         fetch('/api/customer/profile', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ last_name: form.last_name, first_name: form.first_name, phone: form.phone, email: form.email }),
+          body: JSON.stringify({ last_name: form.last_name, first_name: form.first_name, phone: form.phone, email: form.email, sns_url: form.sns_url }),
         }).catch(() => {})
       }
     } else {
@@ -245,6 +246,11 @@ function OrderModal({ goods, onClose, onComplete }) {
               <label style={lbl}>電話番号（任意）</label>
               <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                 placeholder="090-0000-0000" style={inp} />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={lbl}>SNS URL（任意）</label>
+              <input type="url" value={form.sns_url} onChange={e => setForm(f => ({ ...f, sns_url: e.target.value }))}
+                placeholder="https://instagram.com/..." style={inp} />
             </div>
             {isDelivery && (
               <div style={{ marginBottom: 14 }}>

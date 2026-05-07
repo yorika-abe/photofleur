@@ -1,7 +1,7 @@
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase-server'
 import { Resend } from 'resend'
 import { renderEmailTemplate } from '@/lib/email-render'
-import { decrementLayersStock, getLeafChoicePrice } from '@/lib/product-layers'
+import { decrementLayersStock, getLeafChoicePrice, buildSelectionsLabel } from '@/lib/product-layers'
 import { sendLineCameraUser } from '@/lib/line'
 import { DEFAULTS } from '@/app/api/admin/line-templates/route'
 
@@ -11,7 +11,7 @@ function applyVars(template, vars) {
 
 export async function POST(req) {
   const body = await req.json()
-  const { goods_id, last_name, first_name, email, phone, payment_method, quantity, notes, square_payment_id, options_selected, layers_path, delivery_address } = body
+  const { goods_id, last_name, first_name, email, phone, payment_method, quantity, notes, square_payment_id, options_selected, layers_path, delivery_address, sns_url } = body
 
   if (!goods_id || !last_name || !email) {
     return Response.json({ error: 'Missing required fields' }, { status: 400 })
@@ -29,7 +29,14 @@ export async function POST(req) {
   const qty = Math.max(1, Number(quantity) || 1)
   if (goods.stock >= 0 && goods.stock < qty) return Response.json({ error: 'Out of stock' }, { status: 409 })
 
-  const { error } = await admin.from('goods_orders').insert({
+  const layersLabel = layers_path?.length > 0 && goods.options?.type === 'layers'
+    ? buildSelectionsLabel(goods.options, layers_path)
+    : null
+  const storedOptions = layersLabel
+    ? { _label: layersLabel }
+    : (options_selected || null)
+
+  const insertBase = {
     goods_id: goods.id,
     last_name,
     first_name: first_name || null,
@@ -39,9 +46,14 @@ export async function POST(req) {
     quantity: qty,
     notes: notes || null,
     square_payment_id: square_payment_id || null,
-    options_selected: options_selected || null,
+    options_selected: storedOptions,
     delivery_address: delivery_address || null,
-  })
+  }
+  let { error } = await admin.from('goods_orders').insert({ ...insertBase, sns_url: sns_url || null })
+  if (error?.code === '42703') {
+    const r = await admin.from('goods_orders').insert(insertBase)
+    error = r.error
+  }
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
 

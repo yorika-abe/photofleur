@@ -189,7 +189,7 @@ export default function AdminBookingsPage() {
       <Link href="/admin" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
       <div style={{ display: 'flex', gap: 0, margin: '8px 0 24px', borderBottom: '2px solid #e5e5e5' }}>
         <Link href="/admin/booking-status" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>予約状況</Link>
-        <div style={{ padding: '10px 24px', fontWeight: 700, fontSize: 15, color: '#2f2244', borderBottom: '2px solid #2f2244', marginBottom: -2, cursor: 'default' }}>予約一覧</div>
+        <div style={{ padding: '10px 24px', fontWeight: 700, fontSize: 15, color: '#2f2244', borderBottom: '2px solid #2f2244', marginBottom: -2, cursor: 'default' }}>予約・販売一覧</div>
         <Link href="/admin/sales" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>売上管理</Link>
         <Link href="/admin/booking-status?tab=nonevent" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>イベント外収益</Link>
         <Link href="/admin/booking-status?tab=history" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>履歴</Link>
@@ -314,6 +314,14 @@ export default function AdminBookingsPage() {
                           <>
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>商品</span>{b.product?.title || '—'}</div>
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>数量</span>{b.quantity || 1}個</div>
+                            {b.options_selected && (
+                              <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>選択肢</span>
+                                {b.options_selected._label || Object.entries(b.options_selected).filter(([k]) => k !== '_label').map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('/') : v}`).join(' / ')}
+                              </div>
+                            )}
+                            {b.delivery_address && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>配送先</span><span style={{ whiteSpace: 'pre-wrap' }}>{b.delivery_address}</span></div>}
+                            {b.sns_url && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>SNS</span><a href={b.sns_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2f2244' }}>{b.sns_url.replace('https://', '')}</a></div>}
+                            {b.notes && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>備考</span>{b.notes}</div>}
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>支払</span>{b.payment_method === 'card' ? 'カード決済' : '当日現金'}</div>
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>金額</span>¥{price.toLocaleString()}</div>
                           </>

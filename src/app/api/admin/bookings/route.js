@@ -37,7 +37,7 @@ export async function GET() {
   // グッズ注文
   const { data: goodsRaw } = await admin
     .from('goods_orders')
-    .select('id, last_name, first_name, email, phone, payment_method, qr_token, cancelled_at, created_at, goods_id, quantity, goods(id, title, price)')
+    .select('id, last_name, first_name, email, phone, payment_method, qr_token, cancelled_at, created_at, goods_id, quantity, notes, options_selected, delivery_address, sns_url, goods(id, title, price)')
     .order('created_at', { ascending: false })
 
   // 通常予約のslot/entry/event/model解決

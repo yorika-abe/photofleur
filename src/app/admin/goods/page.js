@@ -489,11 +489,13 @@ function OrderList({ goodsId }) {
           <span style={{ fontSize: 11, background: o.payment_method === 'card' ? '#e8f5e9' : '#fff3e0', color: o.payment_method === 'card' ? '#388e3c' : '#e65100', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>
             {o.payment_method === 'card' ? 'カード' : '現金'}
           </span>
-          {o.options_selected && Object.keys(o.options_selected).length > 0 && (
+          {o.options_selected && (
             <span style={{ fontSize: 11, color: '#555', background: '#f5f5f5', borderRadius: 4, padding: '1px 7px' }}>
-              {Object.entries(o.options_selected).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('/') : v}`).join(' | ')}
+              {o.options_selected._label || Object.entries(o.options_selected).filter(([k]) => k !== '_label').map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('/') : v}`).join(' | ')}
             </span>
           )}
+          {o.sns_url && <a href={o.sns_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#1a3560', background: '#e8f0fe', borderRadius: 4, padding: '1px 7px', textDecoration: 'none' }}>{o.sns_url.replace('https://', '').split('/')[0]}</a>}
+          {o.delivery_address && <span style={{ fontSize: 11, color: '#555', background: '#fff3e0', borderRadius: 4, padding: '1px 7px' }}>📦 {o.delivery_address.split('\n')[0]}</span>}
           {o.cancelled_at && <span style={{ fontSize: 11, background: '#ffcdd2', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>キャンセル済</span>}
           {o.notes && <span style={{ color: '#999', fontSize: 12 }}>{o.notes}</span>}
           <span style={{ marginLeft: 'auto', color: '#bbb', fontSize: 11 }}>{new Date(o.created_at).toLocaleDateString('ja-JP')}</span>
