@@ -4,24 +4,15 @@ import { randomBytes } from 'crypto'
 export async function GET(req) {
   const { searchParams } = new URL(req.url)
   const next = searchParams.get('next') || '/'
+  const mode = searchParams.get('mode') || 'login'
 
   const state = randomBytes(16).toString('hex')
   const cookieStore = await cookies()
 
-  cookieStore.set('line_oauth_state', state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 600,
-    sameSite: 'lax',
-    path: '/',
-  })
-  cookieStore.set('line_oauth_next', next, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 600,
-    sameSite: 'lax',
-    path: '/',
-  })
+  const cookieOpts = { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 600, sameSite: 'lax', path: '/' }
+  cookieStore.set('line_oauth_state', state, cookieOpts)
+  cookieStore.set('line_oauth_next', next, cookieOpts)
+  cookieStore.set('line_oauth_mode', mode, cookieOpts)
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
   const redirectUri = `${siteUrl}/api/auth/line/callback`

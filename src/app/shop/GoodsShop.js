@@ -108,6 +108,19 @@ function OrderModal({ goods, onClose, onComplete }) {
   const selectedPayment = form.payment_method
 
   useEffect(() => {
+    fetch('/api/customer/profile').then(r => r.json()).then(({ profile, email }) => {
+      if (!profile && !email) return
+      setForm(f => ({
+        ...f,
+        last_name: profile?.last_name || f.last_name,
+        first_name: profile?.first_name || f.first_name,
+        email: email || f.email,
+        phone: profile?.phone || f.phone,
+      }))
+    }).catch(() => {})
+  }, [])
+
+  useEffect(() => {
     if (selectedPayment === 'card') loadSquareSDK()
   }, [selectedPayment])
 
@@ -173,6 +186,13 @@ function OrderModal({ goods, onClose, onComplete }) {
     if (res.ok) {
       setDone(true)
       onComplete()
+      if (form.email) {
+        fetch('/api/customer/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ last_name: form.last_name, first_name: form.first_name, phone: form.phone, email: form.email }),
+        }).catch(() => {})
+      }
     } else {
       const d = await res.json()
       setError(d.error === 'Out of stock' ? '申し訳ありませんが売り切れました' : '送信に失敗しました。もう一度お試しください。')

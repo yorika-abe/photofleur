@@ -16,7 +16,7 @@ export async function GET() {
   const isLineUser = user.email?.endsWith('@photofleur-line.app')
   const contactEmail = profile?.email || (isLineUser ? '' : user.email)
 
-  return Response.json({ profile: profile || null, email: contactEmail })
+  return Response.json({ profile: profile || null, email: contactEmail, hasLine: !!profile?.line_user_id })
 }
 
 export async function PUT(req) {

@@ -118,7 +118,7 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
           body: JSON.stringify({
             last_name: form.last_name, first_name: form.first_name,
             last_name_kana: form.last_name_kana, first_name_kana: form.first_name_kana,
-            nickname: form.nickname, phone: form.phone,
+            nickname: form.nickname, phone: form.phone, email: form.email,
           }),
         }).catch(() => {})
       } else {

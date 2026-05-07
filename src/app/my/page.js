@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 
 async function compressImage(file, maxW = 1600, maxH = 1600, quality = 0.85) {
@@ -35,12 +36,16 @@ const typeColors = {
   irregular: { bg: '#e8eaf6', color: '#1a3560', label: '不定期' },
 }
 
-export default function MyPage() {
+function MyPageContent() {
+  const searchParams = useSearchParams()
+  const justLinkedLine = searchParams.get('line_linked') === '1'
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState('')
+  const [hasLine, setHasLine] = useState(false)
   const [bookings, setBookings] = useState([])
   const [models, setModels] = useState([])
   const [form, setForm] = useState({ last_name: '', first_name: '', last_name_kana: '', first_name_kana: '', phone: '', sns_url: '', nickname: '' })
+  const [emailInput, setEmailInput] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [savedProfile, setSavedProfile] = useState({})
@@ -68,10 +73,13 @@ export default function MyPage() {
         fetch('/api/customer/bookings'),
         fetch('/api/admin/models').then(r => r.json()).catch(() => ({ models: [] })),
       ])
-      const { profile, email: userEmail } = await profileRes.json()
+      const { profile, email: userEmail, hasLine: hl } = await profileRes.json()
+      setHasLine(hl || false)
       const { bookings } = await bookingsRes.json()
 
-      setEmail(userEmail || user.email || '')
+      const resolvedEmail = userEmail || user.email || ''
+      setEmail(resolvedEmail)
+      setEmailInput(resolvedEmail)
       setBookings(bookings || [])
       setModels(modelsRes.models || [])
       if (profile) {
@@ -98,7 +106,7 @@ export default function MyPage() {
     await fetch('/api/customer/profile', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, email: emailInput }),
     })
     setSaving(false)
     setSaved(true)
@@ -186,6 +194,10 @@ export default function MyPage() {
             <input style={inp} value={form.nickname} onChange={e => setForm(f => ({ ...f, nickname: e.target.value }))} placeholder="撮影会で使用する名前" />
           </div>
           <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#555' }}>メールアドレス</label>
+            <input type="email" style={inp} value={emailInput} onChange={e => setEmailInput(e.target.value)} placeholder="example@email.com" />
+          </div>
+          <div style={{ marginBottom: 12 }}>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4, color: '#555' }}>電話番号</label>
             <input style={inp} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="090-0000-0000" />
           </div>
@@ -197,6 +209,31 @@ export default function MyPage() {
             {saving ? '保存中...' : '保存する'}
           </button>
         </form>
+      </section>
+
+      {/* LINE連携 */}
+      <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #d6ecf5', marginBottom: 24 }}>
+        <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 4 }}>LINE連携</h2>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>連携するとLINEでもログインできるようになります</p>
+        {justLinkedLine && (
+          <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#388e3c' }}>
+            LINEアカウントを連携しました
+          </div>
+        )}
+        {hasLine ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#388e3c', fontWeight: 600 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#06C755"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+            LINE連携済み
+          </div>
+        ) : (
+          <a
+            href="/api/auth/line?mode=link&next=/my"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#06C755', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '12px 20px', fontSize: 14, fontWeight: 700, boxShadow: '0 2px 8px rgba(6,199,85,0.3)' }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+            LINEと連携する
+          </a>
+        )}
       </section>
 
       {/* 意見箱 */}
@@ -344,5 +381,13 @@ export default function MyPage() {
         )}
       </section>
     </div>
+  )
+}
+
+export default function MyPage() {
+  return (
+    <Suspense>
+      <MyPageContent />
+    </Suspense>
   )
 }

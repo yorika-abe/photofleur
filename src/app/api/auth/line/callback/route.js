@@ -1,4 +1,4 @@
-import { createSupabaseAdminClient } from '@/lib/supabase-server'
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase-server'
 import { cookies } from 'next/headers'
 
 export async function GET(req) {
@@ -11,8 +11,10 @@ export async function GET(req) {
 
   const cookieStore = await cookies()
   const savedState = cookieStore.get('line_oauth_state')?.value
+  const mode = cookieStore.get('line_oauth_mode')?.value || 'login'
   cookieStore.delete('line_oauth_state')
   cookieStore.delete('line_oauth_next')
+  cookieStore.delete('line_oauth_mode')
 
   if (error || !code) {
     return Response.redirect(`${siteUrl}/login?error=line_cancelled`)
@@ -68,6 +70,17 @@ export async function GET(req) {
   }
 
   const admin = await createSupabaseAdminClient()
+
+  // mode=link: link LINE to the currently logged-in user
+  if (mode === 'link') {
+    const server = await createSupabaseServerClient()
+    const { data: { user: currentUser } } = await server.auth.getUser()
+    if (!currentUser) {
+      return Response.redirect(`${siteUrl}/login?error=line_error`)
+    }
+    await admin.from('user_profiles').update({ line_user_id: lineUserId }).eq('id', currentUser.id)
+    return Response.redirect(`${siteUrl}/my?line_linked=1`)
+  }
 
   // Find existing user by line_user_id
   const { data: existingProfile } = await admin

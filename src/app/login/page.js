@@ -70,8 +70,8 @@ function LoginForm() {
 
       {lineError && (
         <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: '14px 18px', marginBottom: 16, fontSize: 14, color: '#5d4037', lineHeight: 1.7 }}>
-          メールアドレスでご登録いただいているか会員情報がありません。<br />
-          メールアドレスでのログインもしくは新規会員登録をお願いいたします。
+          異なるログイン方法でご登録いただいているか会員情報がありません。<br />
+          別のログイン方法でのログインもしくは新規会員登録をお願いいたします。
         </div>
       )}
 
