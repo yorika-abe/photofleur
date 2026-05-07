@@ -1,14 +1,12 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { Suspense } from 'react'
 
 function LineCompleteContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const next = searchParams.get('next') || '/my'
 
   useEffect(() => {
     const supabase = createBrowserClient(
@@ -17,7 +15,7 @@ function LineCompleteContent() {
     )
 
     async function establish() {
-      // @supabase/ssr uses cookies, not localStorage — must manually parse #access_token from hash
+      // @supabase/ssr uses cookies — manually parse #access_token from URL hash
       const hash = window.location.hash.substring(1)
       const params = new URLSearchParams(hash)
       const accessToken = params.get('access_token')
@@ -26,21 +24,32 @@ function LineCompleteContent() {
       if (accessToken && refreshToken) {
         const { data } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
         if (data.session) {
-          router.push(next)
-          router.refresh()
+          await redirectByRole(supabase, data.session.user.id)
           return
         }
       }
 
-      // Fallback: check if already has a session
+      // Fallback: check existing session
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
-        router.push(next)
-        router.refresh()
+        await redirectByRole(supabase, session.user.id)
         return
       }
 
       router.push('/login?error=line_session_failed')
+    }
+
+    async function redirectByRole(supabase, userId) {
+      const { data: profile } = await supabase.from('user_profiles').select('roles, role').eq('id', userId).single()
+      const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
+      if (roles.includes('admin')) {
+        router.push('/admin')
+      } else if (roles.includes('model')) {
+        router.push('/model-portal')
+      } else {
+        router.push('/my')
+      }
+      router.refresh()
     }
 
     establish()

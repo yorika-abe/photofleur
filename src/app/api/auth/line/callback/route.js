@@ -11,8 +11,6 @@ export async function GET(req) {
 
   const cookieStore = await cookies()
   const savedState = cookieStore.get('line_oauth_state')?.value
-  const next = cookieStore.get('line_oauth_next')?.value || '/'
-
   cookieStore.delete('line_oauth_state')
   cookieStore.delete('line_oauth_next')
 
@@ -128,7 +126,7 @@ export async function GET(req) {
   const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
     type: 'magiclink',
     email: authEmail,
-    options: { redirectTo: `${siteUrl}/auth/line-complete?next=${encodeURIComponent(next)}` },
+    options: { redirectTo: `${siteUrl}/auth/line-complete` },
   })
 
   if (linkError || !linkData?.properties?.action_link) {
