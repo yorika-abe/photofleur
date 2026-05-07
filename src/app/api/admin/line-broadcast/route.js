@@ -23,7 +23,7 @@ export async function GET(req) {
     const { data: models } = await admin
       .from('models')
       .select('id, name, birthday, line_id')
-      .eq('is_active', true)
+      .eq('status', 'active')
       .not('birthday', 'is', null)
     return Response.json({ models: models || [] })
   }
@@ -31,7 +31,7 @@ export async function GET(req) {
   const { data: models } = await admin
     .from('models')
     .select('id, name, line_id')
-    .eq('is_active', true)
+    .eq('status', 'active')
     .not('line_id', 'is', null)
 
   return Response.json({ count: (models || []).length, models: models || [] })
