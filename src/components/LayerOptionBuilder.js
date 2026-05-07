@@ -106,7 +106,6 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
     update(layers.map((l, i) => {
       if (i !== layerIdx) return l
       if (exists) {
-        const removedId = l.model_choices.find(mc => mc.model_id === model.id)?.id
         return { ...l, model_choices: l.model_choices.filter(mc => mc.model_id !== model.id) }
       }
       const id = genId()
@@ -185,11 +184,92 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
     update(layers.map((l, i) => i !== layerIdx ? l : { ...l, choices }))
   }
 
+  // --- Per-choice pricing (leaf layer only) ---
+  function updateChoicePrice(layerIdx, choiceKey, choiceId, val) {
+    update(layers.map((l, i) => i !== layerIdx ? l : {
+      ...l,
+      [choiceKey]: (l[choiceKey] || []).map(c => c.id !== choiceId ? c : {
+        ...c, price: val === '' ? null : Number(val),
+      }),
+    }))
+  }
+
+  function addChoiceCost(layerIdx, choiceKey, choiceId) {
+    const id = genId()
+    update(layers.map((l, i) => i !== layerIdx ? l : {
+      ...l,
+      [choiceKey]: (l[choiceKey] || []).map(c => c.id !== choiceId ? c : {
+        ...c, cost_items: [...(c.cost_items || []), { id, name: '', amount: 0, per_unit: true }],
+      }),
+    }))
+  }
+
+  function updateChoiceCost(layerIdx, choiceKey, choiceId, itemId, field, val) {
+    update(layers.map((l, i) => i !== layerIdx ? l : {
+      ...l,
+      [choiceKey]: (l[choiceKey] || []).map(c => c.id !== choiceId ? c : {
+        ...c, cost_items: (c.cost_items || []).map(item => item.id !== itemId ? item : { ...item, [field]: val }),
+      }),
+    }))
+  }
+
+  function removeChoiceCost(layerIdx, choiceKey, choiceId, itemId) {
+    update(layers.map((l, i) => i !== layerIdx ? l : {
+      ...l,
+      [choiceKey]: (l[choiceKey] || []).map(c => c.id !== choiceId ? c : {
+        ...c, cost_items: (c.cost_items || []).filter(item => item.id !== itemId),
+      }),
+    }))
+  }
+
   const inp = { padding: '6px 9px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }
+
+  function renderPerChoicePricing(layerIdx, choiceKey, choice) {
+    const layer = layers[layerIdx]
+    if (layerIdx !== layers.length - 1 || !layer.per_choice_pricing) return null
+    return (
+      <div style={{ marginTop: 8, borderTop: '1px solid #eee', paddingTop: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+          <span style={{ fontSize: 11, color: '#888', whiteSpace: 'nowrap', fontWeight: 600 }}>料金</span>
+          <span style={{ fontSize: 12, color: '#555' }}>¥</span>
+          <input type="number" value={choice.price ?? ''} placeholder="デフォルト使用"
+            onChange={e => updateChoicePrice(layerIdx, choiceKey, choice.id, e.target.value)}
+            style={{ ...inp, width: 100, textAlign: 'right' }} />
+          <span style={{ fontSize: 10, color: '#aaa' }}>空欄=商品デフォルト価格</span>
+        </div>
+        <div>
+          <div style={{ fontSize: 11, color: '#888', fontWeight: 600, marginBottom: 4 }}>販管費（仕入れ・送料など）</div>
+          {(choice.cost_items || []).map(item => (
+            <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4, flexWrap: 'wrap' }}>
+              <input value={item.name} onChange={e => updateChoiceCost(layerIdx, choiceKey, choice.id, item.id, 'name', e.target.value)}
+                placeholder="項目名" style={{ ...inp, width: 120 }} />
+              <span style={{ fontSize: 11, color: '#555' }}>¥</span>
+              <input type="number" value={item.amount}
+                onChange={e => updateChoiceCost(layerIdx, choiceKey, choice.id, item.id, 'amount', Number(e.target.value))}
+                style={{ ...inp, width: 80, textAlign: 'right' }} />
+              <select value={item.per_unit ? 'unit' : 'fixed'}
+                onChange={e => updateChoiceCost(layerIdx, choiceKey, choice.id, item.id, 'per_unit', e.target.value === 'unit')}
+                style={{ ...inp, fontSize: 11, padding: '6px 4px' }}>
+                <option value="unit">1個あたり</option>
+                <option value="fixed">まとめて</option>
+              </select>
+              <button type="button" onClick={() => removeChoiceCost(layerIdx, choiceKey, choice.id, item.id)}
+                style={{ background: 'none', border: 'none', color: '#bbb', fontSize: 16, cursor: 'pointer', padding: '0 2px', lineHeight: 1 }}>×</button>
+            </div>
+          ))}
+          <button type="button" onClick={() => addChoiceCost(layerIdx, choiceKey, choice.id)}
+            style={{ fontSize: 11, color: '#888', background: 'none', border: '1px dashed #ddd', borderRadius: 5, padding: '2px 8px', cursor: 'pointer', marginTop: 2 }}>
+            + 販管費を追加
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
       {layers.map((layer, layerIdx) => {
+        const isLeaf = layerIdx === layers.length - 1
         const parentLayer = layerIdx > 0 ? layers[layerIdx - 1] : null
         const parentChoices = parentLayer
           ? (parentLayer.type === 'manual' ? parentLayer.choices : parentLayer.model_choices) || []
@@ -216,6 +296,13 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
                     <label style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: '#666', cursor: 'pointer' }}>
                       <input type="checkbox" checked={layer.no_duplicate} onChange={e => updateLayer(layerIdx, 'no_duplicate', e.target.checked)} />
                       重複防止
+                    </label>
+                  )}
+                  {isLeaf && (
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: '#b85c00', cursor: 'pointer', fontWeight: 600 }}>
+                      <input type="checkbox" checked={layer.per_choice_pricing || false}
+                        onChange={e => updateLayer(layerIdx, 'per_choice_pricing', e.target.checked)} />
+                      💰 選択肢ごとに料金・販管費を設定
                     </label>
                   )}
                 </div>
@@ -266,6 +353,7 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
                             </div>
                           )
                         })}
+                        {renderPerChoicePricing(layerIdx, 'choices', choice)}
                       </div>
                     ))}
                   </div>
@@ -355,6 +443,7 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
                               </div>
                             )
                           })}
+                          {renderPerChoicePricing(layerIdx, 'model_choices', mc)}
                         </div>
                       ))}
                     </div>
@@ -411,6 +500,7 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
                               </div>
                             )
                           })}
+                          {renderPerChoicePricing(layerIdx, 'choices', choice)}
                         </div>
                       ))}
                       <button type="button" onClick={() => update(layers.map((l, i) => i !== layerIdx ? l : { ...l, choices: [] }))}

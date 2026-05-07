@@ -67,6 +67,19 @@ export function decrementLayersStock(options, path) {
   return { ...options, layers }
 }
 
+// Get the price override for the leaf choice in a selection path.
+// Returns the price number if set, or null if not set (fall back to product default).
+export function getLeafChoicePrice(options, path) {
+  if (!options || options.type !== 'layers' || !path?.length) return null
+  const layers = options.layers || []
+  const leafIdx = path.length - 1
+  const layer = layers[leafIdx]
+  if (!layer) return null
+  const choices = layer.type === 'models' ? (layer.model_choices || []) : (layer.choices || [])
+  const choice = choices.find(c => c.id === path[leafIdx])
+  return choice?.price != null ? choice.price : null
+}
+
 // Build selections summary string from path + layers
 export function buildSelectionsLabel(options, path) {
   if (!options || options.type !== 'layers') return ''

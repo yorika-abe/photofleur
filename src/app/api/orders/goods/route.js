@@ -1,7 +1,7 @@
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase-server'
 import { Resend } from 'resend'
 import { renderEmailTemplate } from '@/lib/email-render'
-import { decrementLayersStock } from '@/lib/product-layers'
+import { decrementLayersStock, getLeafChoicePrice } from '@/lib/product-layers'
 import { sendLineCameraUser } from '@/lib/line'
 import { DEFAULTS } from '@/app/api/admin/line-templates/route'
 
@@ -101,7 +101,9 @@ export async function POST(req) {
   try {
     const resend = new Resend(process.env.RESEND_API_KEY)
     const customerName = `${last_name}${first_name ? ` ${first_name}` : ''}`
-    const total = goods.price * qty
+    const choicePrice = layers_path?.length > 0 ? getLeafChoicePrice(goods.options, layers_path) : null
+    const unitPrice = choicePrice ?? goods.price
+    const total = unitPrice * qty
     const paymentLabel = payment_method === 'card' ? 'クレジットカード（決済済み）' : '当日現金'
 
     const templateResult = await renderEmailTemplate(admin, 'goods-order-confirmation', {
