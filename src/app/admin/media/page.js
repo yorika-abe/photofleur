@@ -191,10 +191,30 @@ export default function AdminMediaPage() {
   async function uploadPdf(file, key, setter) {
     setUploading(key)
     setUploadProgress(0)
+    const path = `site/${key}-${Date.now()}.pdf`
     try {
-      const path = `site/${key}-${Date.now()}.pdf`
-      const url = await uploadWithProgress(file, path)
-      setter(url)
+      const res = await fetch('/api/admin/upload-signed-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path }),
+      })
+      const { signedUrl, error } = await res.json()
+      if (error) throw error
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.upload.addEventListener('progress', e => {
+          if (e.lengthComputable) setUploadProgress(Math.round(e.loaded / e.total * 100))
+        })
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve()
+          else reject('アップロード失敗: ' + xhr.status)
+        })
+        xhr.addEventListener('error', () => reject('通信エラー'))
+        xhr.open('PUT', signedUrl)
+        xhr.setRequestHeader('Content-Type', 'application/pdf')
+        xhr.send(file)
+      })
+      setter(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${path}`)
     } catch (e) { alert('アップロードエラー: ' + e) }
     setUploading(null)
     setUploadProgress(0)
