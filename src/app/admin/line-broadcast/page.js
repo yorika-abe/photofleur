@@ -707,7 +707,7 @@ function TabZatsudan() {
               </div>
             </div>
             <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 12 }}>送信イベント一覧（近い順）</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 12 }}>モデル誕生日一覧（近い順）</div>
               {bdLoading ? <p style={{ color: '#aaa', fontSize: 13 }}>読み込み中...</p>
                 : sorted.length === 0 ? <p style={{ color: '#aaa', fontSize: 13 }}>誕生日登録済みモデルがいません</p>
                 : (
