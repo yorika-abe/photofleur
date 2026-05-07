@@ -103,9 +103,12 @@ export default function Header() {
                 }}>管理画面</Link>
               )}
               {roles.includes('model') && (
-                <Link href="/model-portal" style={{ color: '#1a7090', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 10px', borderRadius: 6, background: isActive('/model-portal') ? 'rgba(26,112,144,0.08)' : 'transparent' }}>モデル画面</Link>
+                <Link href="/model-portal" style={{ color: '#c2185b', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 10px', borderRadius: 6, background: isActive('/model-portal') ? 'rgba(194,24,91,0.08)' : 'transparent' }}>モデル画面</Link>
               )}
-              {!roles.includes('admin') && !roles.includes('model') && (
+              {roles.includes('staff') && (
+                <Link href="/staff-portal" style={{ color: '#6a1b9a', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 10px', borderRadius: 6, background: isActive('/staff-portal') ? 'rgba(106,27,154,0.08)' : 'transparent' }}>スタッフ画面</Link>
+              )}
+              {!roles.includes('admin') && !roles.includes('model') && !roles.includes('staff') && (
                 <Link href="/my" style={{ color: '#1a7090', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 10px' }}>マイページ</Link>
               )}
               <button onClick={handleLogout} style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontSize: 13 }}>
@@ -156,8 +159,9 @@ export default function Header() {
           {user ? (
             <>
               {roles.includes('admin') && <Link href="/admin" onClick={() => setMenuOpen(false)} style={{ color: '#a07000', textDecoration: 'none', fontSize: 15, padding: '10px 12px' }}>管理画面</Link>}
-              {roles.includes('model') && <Link href="/model-portal" onClick={() => setMenuOpen(false)} style={{ color: '#1a7090', textDecoration: 'none', fontSize: 15, padding: '10px 12px' }}>モデル画面</Link>}
-              {!roles.includes('admin') && !roles.includes('model') && <Link href="/my" onClick={() => setMenuOpen(false)} style={{ color: '#1a7090', textDecoration: 'none', fontSize: 15, padding: '10px 12px' }}>マイページ</Link>}
+              {roles.includes('model') && <Link href="/model-portal" onClick={() => setMenuOpen(false)} style={{ color: '#c2185b', textDecoration: 'none', fontSize: 15, padding: '10px 12px' }}>モデル画面</Link>}
+              {roles.includes('staff') && <Link href="/staff-portal" onClick={() => setMenuOpen(false)} style={{ color: '#6a1b9a', textDecoration: 'none', fontSize: 15, padding: '10px 12px' }}>スタッフ画面</Link>}
+              {!roles.includes('admin') && !roles.includes('model') && !roles.includes('staff') && <Link href="/my" onClick={() => setMenuOpen(false)} style={{ color: '#1a7090', textDecoration: 'none', fontSize: 15, padding: '10px 12px' }}>マイページ</Link>}
               <button onClick={handleLogout} style={{ background: 'none', color: '#888', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 15, padding: '10px 12px' }}>ログアウト</button>
             </>
           ) : (

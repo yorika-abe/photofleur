@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 const ROLE_OPTIONS = [
-  { value: 'admin', label: '運営', color: '#1565c0', bg: '#e3f2fd' },
-  { value: 'model', label: 'モデル', color: '#c2185b', bg: '#fce4ec' },
-  { value: 'staff', label: '受付スタッフ', color: '#6a1b9a', bg: '#f3e5f5' },
+  { value: 'admin', label: '運営', color: '#a07000', bg: '#fff8e1', accent: '#f9a825' },
+  { value: 'model', label: 'モデル', color: '#c2185b', bg: '#fce4ec', accent: '#c2185b' },
+  { value: 'staff', label: '受付スタッフ', color: '#1565c0', bg: '#e3f2fd', accent: '#1565c0' },
 ]
 
 const TABS = [
@@ -178,7 +178,7 @@ export default function UsersPage() {
                         checked={userRoles.includes(r.value)}
                         disabled={changing === user.id}
                         onChange={() => toggleRole(user.id, r.value, userRoles)}
-                        style={{ width: 16, height: 16, cursor: 'pointer', accentColor: r.color }}
+                        style={{ width: 16, height: 16, cursor: 'pointer', accentColor: r.accent || r.color }}
                       />
                       {r.label}
                     </label>
