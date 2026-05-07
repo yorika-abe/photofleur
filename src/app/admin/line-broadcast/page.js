@@ -434,11 +434,20 @@ function LineSettingsPanel() {
   const [open, setOpen] = useState(false)
   const [groupAll, setGroupAll] = useState('')
   const [groupZatsudan, setGroupZatsudan] = useState('')
+  const [lastModeful, setLastModeful] = useState('')
+  const [lastOfficial, setLastOfficial] = useState('')
   const [models, setModels] = useState([])
   const [modelLineIds, setModelLineIds] = useState({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [copied, setCopied] = useState('')
+
+  function copyText(text, key) {
+    navigator.clipboard.writeText(text)
+    setCopied(key)
+    setTimeout(() => setCopied(''), 2000)
+  }
 
   useEffect(() => {
     fetch('/api/admin/line-settings')
@@ -446,6 +455,8 @@ function LineSettingsPanel() {
       .then(d => {
         setGroupAll(d.group_all || '')
         setGroupZatsudan(d.group_zatsudan || '')
+        setLastModeful(d.last_joined_modeful || '')
+        setLastOfficial(d.last_joined_official || '')
         setModels(d.models || [])
         const ids = {}
         for (const m of d.models || []) ids[m.id] = m.line_id || ''
@@ -478,10 +489,37 @@ function LineSettingsPanel() {
         loading ? <p style={{ color: '#aaa', fontSize: 13, marginTop: 12 }}>読み込み中...</p> : (
           <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div style={{ background: '#f5f9ff', borderRadius: 10, padding: '14px 16px', fontSize: 12, color: '#555', lineHeight: 1.8 }}>
-              グループIDはLINEのグループに「モデフル」または「photofleur公式」を招待し、<br />
-              Webhook等でグループIDを取得してここに入力してください。<br />
+              グループIDはLINEのグループに「モデフル」または「photofleur公式」を招待すると自動取得されます。<br />
+              取得したIDを下の欄にコピーして貼り付けてください。<br />
               モデル個人欄には、そのモデルが入っているトークグループのIDを入力してください。
             </div>
+
+            {/* 自動取得グループID */}
+            {(lastModeful || lastOfficial) && (
+              <div style={{ background: '#e8f5e9', borderRadius: 10, padding: '14px 16px', fontSize: 12 }}>
+                <div style={{ fontWeight: 700, color: '#2e7d32', marginBottom: 10 }}>📥 Webhookで取得したグループID</div>
+                {lastModeful && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <span style={{ color: '#555', minWidth: 100 }}>モデフル最終参加:</span>
+                    <code style={{ flex: 1, background: '#fff', borderRadius: 4, padding: '4px 8px', fontSize: 11, wordBreak: 'break-all' }}>{lastModeful}</code>
+                    <button onClick={() => copyText(lastModeful, 'modeful')}
+                      style={{ flexShrink: 0, padding: '4px 10px', border: '1px solid #a5d6a7', borderRadius: 6, background: copied === 'modeful' ? '#388e3c' : '#fff', color: copied === 'modeful' ? '#fff' : '#2e7d32', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                      {copied === 'modeful' ? 'コピー済' : 'コピー'}
+                    </button>
+                  </div>
+                )}
+                {lastOfficial && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ color: '#555', minWidth: 100 }}>公式最終参加:</span>
+                    <code style={{ flex: 1, background: '#fff', borderRadius: 4, padding: '4px 8px', fontSize: 11, wordBreak: 'break-all' }}>{lastOfficial}</code>
+                    <button onClick={() => copyText(lastOfficial, 'official')}
+                      style={{ flexShrink: 0, padding: '4px 10px', border: '1px solid #a5d6a7', borderRadius: 6, background: copied === 'official' ? '#388e3c' : '#fff', color: copied === 'official' ? '#fff' : '#2e7d32', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                      {copied === 'official' ? 'コピー済' : 'コピー'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div>
               <label style={{ display: 'block', fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 6 }}>👥 モデル全体グループID</label>

@@ -18,7 +18,12 @@ export async function GET() {
   const { data: rows } = await admin
     .from('site_settings')
     .select('key, value')
-    .in('key', ['line_group_id_all', 'line_group_id_zatsudan'])
+    .in('key', [
+      'line_group_id_all',
+      'line_group_id_zatsudan',
+      'line_group_id_last_joined_modeful',
+      'line_group_id_last_joined_official',
+    ])
 
   const settings = Object.fromEntries((rows || []).map(r => [r.key, r.value]))
 
@@ -32,6 +37,8 @@ export async function GET() {
   return Response.json({
     group_all: settings.line_group_id_all || '',
     group_zatsudan: settings.line_group_id_zatsudan || '',
+    last_joined_modeful: settings.line_group_id_last_joined_modeful || '',
+    last_joined_official: settings.line_group_id_last_joined_official || '',
     models: models || [],
   })
 }
