@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Fragment } from 'react'
 import Link from 'next/link'
+import CancelModal from '@/components/CancelModal'
 
 const TIER_META = {
   staff:   { label: '運営', color: '#1a3560', bg: '#dce8ff' },
@@ -54,6 +55,7 @@ export default function AdminBookingStatusPage() {
   const [eventProducts, setEventProducts] = useState([])
   const [productSales, setProductSales] = useState({})
   const [epBookings, setEpBookings] = useState([])
+  const [cancelTarget, setCancelTarget] = useState(null)
   const [showHistory, setShowHistory] = useState(false)
   const [historyRecords, setHistoryRecords] = useState([])
   const [expandedHistory, setExpandedHistory] = useState(null)
@@ -1090,19 +1092,33 @@ export default function AdminBookingStatusPage() {
                     </div>
 
                     {/* 特別予約商品購入者リスト */}
+                    {cancelTarget && (
+                      <CancelModal
+                        item={cancelTarget}
+                        type="event_product"
+                        customerName={cancelTarget.customer_name || ''}
+                        price={cancelTarget.product?.price || 0}
+                        onClose={() => setCancelTarget(null)}
+                        onDone={() => {
+                          setEpBookings(prev => prev.map(b => b.id === cancelTarget.id ? { ...b, cancelled_at: new Date().toISOString() } : b))
+                          setCancelTarget(null)
+                        }}
+                      />
+                    )}
                     {epBookings.length > 0 && (
                       <div style={{ marginTop: 16, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, padding: '16px 20px' }}>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 12 }}>特別予約商品 購入者一覧（{epBookings.length}件）</div>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 12 }}>特別予約商品 購入者一覧（{epBookings.filter(b => !b.cancelled_at).length}件）</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                           {epBookings.map(b => (
-                            <div key={b.id} style={{ border: '1px solid #e8f0fb', borderRadius: 8, padding: '10px 14px', background: '#f8fbff', fontSize: 13 }}>
+                            <div key={b.id} style={{ border: '1px solid #e8f0fb', borderRadius: 8, padding: '10px 14px', background: b.cancelled_at ? '#fafafa' : '#f8fbff', fontSize: 13, opacity: b.cancelled_at ? 0.6 : 1 }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 6 }}>
                                 <div style={{ flex: 1 }}>
-                                  <div style={{ fontWeight: 700, color: '#1a3560', marginBottom: 4 }}>
+                                  <div style={{ fontWeight: 700, color: '#1a3560', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                     {b.product?.name || '—'}
-                                    <span style={{ fontWeight: 400, color: '#888', fontSize: 12, marginLeft: 8 }}>
+                                    <span style={{ fontWeight: 400, color: '#888', fontSize: 12 }}>
                                       {b.payment_method === 'card' ? '💳カード' : '💴現金'}
                                     </span>
+                                    {b.cancelled_at && <span style={{ fontSize: 11, background: '#ffcdd2', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>キャンセル済</span>}
                                   </div>
                                   {Object.entries(b.selections || {}).filter(([k]) => k !== 'delivery_address').map(([k, v]) => (
                                     <div key={k} style={{ color: '#555', marginBottom: 2 }}>
@@ -1119,8 +1135,16 @@ export default function AdminBookingStatusPage() {
                                     <span>{b.customer_email}</span>
                                   </div>
                                 </div>
-                                <div style={{ fontWeight: 700, color: '#1a3560', fontSize: 15, flexShrink: 0 }}>
-                                  ¥{(b.product?.price || 0).toLocaleString()}
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
+                                  <div style={{ fontWeight: 700, color: '#1a3560', fontSize: 15 }}>
+                                    ¥{(b.product?.price || 0).toLocaleString()}
+                                  </div>
+                                  {!b.cancelled_at && (
+                                    <button onClick={() => setCancelTarget(b)}
+                                      style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, border: '1px solid #e53935', background: '#fff', color: '#e53935', cursor: 'pointer', fontWeight: 600 }}>
+                                      キャンセル
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </div>

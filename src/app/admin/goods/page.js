@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Cropper from 'react-easy-crop'
 import LayerOptionBuilder from '@/components/LayerOptionBuilder'
+import CancelModal from '@/components/CancelModal'
 import { genId } from '@/lib/product-layers'
 
 const PAYMENT_OPTIONS = [
@@ -447,7 +448,7 @@ export default function GoodsAdminPage() {
                     {g.order_count > 0 && (
                       <div style={{ marginBottom: 12 }}>
                         <div style={{ fontWeight: 600, fontSize: 13, color: '#1a3560', marginBottom: 8 }}>注文一覧</div>
-                        <OrderList goodsId={g.id} />
+                        <OrderList goodsId={g.id} goodsPrice={g.price} />
                       </div>
                     )}
                     <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
@@ -471,37 +472,59 @@ export default function GoodsAdminPage() {
   )
 }
 
-function OrderList({ goodsId }) {
+function OrderList({ goodsId, goodsPrice }) {
   const [orders, setOrders] = useState(null)
+  const [cancelTarget, setCancelTarget] = useState(null)
   useEffect(() => {
     fetch(`/api/admin/goods/${goodsId}`).then(r => r.json()).then(d => setOrders(d.orders || []))
   }, [goodsId])
 
   if (!orders) return <p style={{ fontSize: 12, color: '#aaa' }}>読み込み中...</p>
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {orders.map(o => (
-        <div key={o.id} style={{ background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: '8px 12px', fontSize: 13, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontWeight: 600 }}>{o.last_name} {o.first_name}</span>
-          <span style={{ color: '#888' }}>{o.email}</span>
-          {o.phone && <span style={{ color: '#888' }}>{o.phone}</span>}
-          <span style={{ fontSize: 11, background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>×{o.quantity}</span>
-          <span style={{ fontSize: 11, background: o.payment_method === 'card' ? '#e8f5e9' : '#e3f2fd', color: o.payment_method === 'card' ? '#388e3c' : '#1565c0', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>
-            {o.payment_method === 'card' ? 'カード' : '現金'}
-          </span>
-          {o.options_selected && (
-            <span style={{ fontSize: 11, color: '#555', background: '#f5f5f5', borderRadius: 4, padding: '1px 7px' }}>
-              {o.options_selected._label || Object.entries(o.options_selected).filter(([k]) => k !== '_label').map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('/') : v}`).join(' | ')}
+    <>
+      {cancelTarget && (
+        <CancelModal
+          item={cancelTarget}
+          type="goods"
+          customerName={`${cancelTarget.last_name || ''} ${cancelTarget.first_name || ''}`.trim()}
+          price={(goodsPrice || 0) * (cancelTarget.quantity || 1)}
+          onClose={() => setCancelTarget(null)}
+          onDone={() => {
+            setOrders(prev => prev.map(o => o.id === cancelTarget.id ? { ...o, cancelled_at: new Date().toISOString() } : o))
+            setCancelTarget(null)
+          }}
+        />
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {orders.map(o => (
+          <div key={o.id} style={{ background: o.cancelled_at ? '#fafafa' : '#fff', border: '1px solid #eee', borderRadius: 8, padding: '8px 12px', fontSize: 13, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', opacity: o.cancelled_at ? 0.7 : 1 }}>
+            <span style={{ fontWeight: 600 }}>{o.last_name} {o.first_name}</span>
+            <span style={{ color: '#888' }}>{o.email}</span>
+            {o.phone && <span style={{ color: '#888' }}>{o.phone}</span>}
+            <span style={{ fontSize: 11, background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>×{o.quantity}</span>
+            <span style={{ fontSize: 11, background: o.payment_method === 'card' ? '#e8f5e9' : '#e3f2fd', color: o.payment_method === 'card' ? '#388e3c' : '#1565c0', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>
+              {o.payment_method === 'card' ? 'カード' : '現金'}
             </span>
-          )}
-          {o.sns_url && <a href={o.sns_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#1a3560', background: '#e8f0fe', borderRadius: 4, padding: '1px 7px', textDecoration: 'none' }}>{o.sns_url.replace('https://', '').split('/')[0]}</a>}
-          {o.delivery_address && <span style={{ fontSize: 11, color: '#555', background: '#e3f2fd', borderRadius: 4, padding: '1px 7px' }}>📦 {o.delivery_address.split('\n')[0]}</span>}
-          {o.cancelled_at && <span style={{ fontSize: 11, background: '#ffcdd2', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>キャンセル済</span>}
-          {o.notes && <span style={{ color: '#999', fontSize: 12 }}>{o.notes}</span>}
-          <span style={{ marginLeft: 'auto', color: '#bbb', fontSize: 11 }}>{new Date(o.created_at).toLocaleDateString('ja-JP')}</span>
-        </div>
-      ))}
-    </div>
+            {o.options_selected && (
+              <span style={{ fontSize: 11, color: '#555', background: '#f5f5f5', borderRadius: 4, padding: '1px 7px' }}>
+                {o.options_selected._label || Object.entries(o.options_selected).filter(([k]) => k !== '_label').map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('/') : v}`).join(' | ')}
+              </span>
+            )}
+            {o.sns_url && <a href={o.sns_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#1a3560', background: '#e8f0fe', borderRadius: 4, padding: '1px 7px', textDecoration: 'none' }}>{o.sns_url.replace('https://', '').split('/')[0]}</a>}
+            {o.delivery_address && <span style={{ fontSize: 11, color: '#555', background: '#e3f2fd', borderRadius: 4, padding: '1px 7px' }}>📦 {o.delivery_address.split('\n')[0]}</span>}
+            {o.cancelled_at && <span style={{ fontSize: 11, background: '#ffcdd2', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>キャンセル済</span>}
+            {o.notes && <span style={{ color: '#999', fontSize: 12 }}>{o.notes}</span>}
+            <span style={{ marginLeft: 'auto', color: '#bbb', fontSize: 11 }}>{new Date(o.created_at).toLocaleDateString('ja-JP')}</span>
+            {!o.cancelled_at && (
+              <button onClick={() => setCancelTarget(o)}
+                style={{ fontSize: 11, padding: '2px 10px', borderRadius: 6, border: '1px solid #e53935', background: '#fff', color: '#e53935', cursor: 'pointer', fontWeight: 600 }}>
+                キャンセル
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </>
   )
 }
 

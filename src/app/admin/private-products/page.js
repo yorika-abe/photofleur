@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
 import Cropper from 'react-easy-crop'
+import CancelModal from '@/components/CancelModal'
 
 const PAYMENT_OPTIONS = [
   { value: 'cash', label: '現金のみ' },
@@ -394,7 +395,7 @@ export default function PrivateProductsPage() {
                     {p.booking_count > 0 && (
                       <div style={{ marginBottom: 12 }}>
                         <div style={{ fontWeight: 600, fontSize: 13, color: '#1a3560', marginBottom: 8 }}>予約一覧</div>
-                        <BookingList productId={p.id} onCancel={load} />
+                        <BookingList productId={p.id} productPrice={p.price} />
                       </div>
                     )}
                     <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
@@ -418,8 +419,9 @@ export default function PrivateProductsPage() {
   )
 }
 
-function BookingList({ productId, onCancel }) {
+function BookingList({ productId, productPrice }) {
   const [bookings, setBookings] = useState(null)
+  const [cancelTarget, setCancelTarget] = useState(null)
 
   async function load() {
     const d = await fetch(`/api/admin/private-products/${productId}`).then(r => r.json())
@@ -428,53 +430,55 @@ function BookingList({ productId, onCancel }) {
 
   useEffect(() => { load() }, [productId])
 
-  async function cancelBooking(b) {
-    if (!confirm(`${b.last_name} ${b.first_name || ''}さんの予約をキャンセルしますか？在庫が1件戻ります。`)) return
-    await fetch(`/api/admin/private-bookings/${b.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cancel: true }),
-    })
-    await load()
-    onCancel?.()
-  }
-
   if (!bookings) return <p style={{ fontSize: 12, color: '#aaa' }}>読み込み中...</p>
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {bookings.map(b => (
-        <div key={b.id} style={{ background: b.cancelled_at ? '#fafafa' : '#fff', border: `1px solid ${b.cancelled_at ? '#eee' : '#e5e5e5'}`, borderRadius: 8, padding: '8px 12px', fontSize: 13, opacity: b.cancelled_at ? 0.6 : 1 }}>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontWeight: 600 }}>{b.last_name} {b.first_name}</span>
-            {b.nickname && <span style={{ color: '#888' }}>({b.nickname})</span>}
-            <span style={{ color: '#888' }}>{b.email}</span>
-            {b.phone && <span style={{ color: '#888' }}>{b.phone}</span>}
-            <span style={{ fontSize: 11, background: b.payment_method === 'card' ? '#e8f5e9' : '#e3f2fd', color: b.payment_method === 'card' ? '#388e3c' : '#1565c0', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>
-              {b.payment_method === 'card' ? 'カード' : '現金'}
-            </span>
-            {b.cancelled_at && (
-              <span style={{ fontSize: 11, background: '#ffebee', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontWeight: 700 }}>キャンセル</span>
-            )}
-            {!b.cancelled_at && (
-              <button onClick={() => cancelBooking(b)}
-                style={{ marginLeft: 'auto', fontSize: 11, padding: '2px 10px', borderRadius: 6, border: '1px solid #e53935', background: '#fff', color: '#e53935', cursor: 'pointer', fontWeight: 600 }}>
-                キャンセル
-              </button>
-            )}
-            <span style={{ color: '#bbb', fontSize: 11, marginLeft: b.cancelled_at ? 'auto' : 0 }}>{new Date(b.created_at).toLocaleDateString('ja-JP')}</span>
-          </div>
-          {(b.event_date_input || b.meeting_place || b.shooting_time) && (
-            <div style={{ marginTop: 6, fontSize: 12, color: '#666', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              {b.event_date_input && <span>📅 {b.event_date_input}</span>}
-              {b.meeting_place && <span>📍 {b.meeting_place}</span>}
-              {b.shooting_time && <span>⏰ {b.shooting_time}</span>}
+    <>
+      {cancelTarget && (
+        <CancelModal
+          item={{ ...cancelTarget, id: cancelTarget.id }}
+          type="private"
+          customerName={`${cancelTarget.last_name || ''} ${cancelTarget.first_name || ''}`.trim()}
+          price={productPrice || 0}
+          onClose={() => setCancelTarget(null)}
+          onDone={() => {
+            setBookings(prev => prev.map(b => b.id === cancelTarget.id ? { ...b, cancelled_at: new Date().toISOString() } : b))
+            setCancelTarget(null)
+          }}
+        />
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {bookings.map(b => (
+          <div key={b.id} style={{ background: b.cancelled_at ? '#fafafa' : '#fff', border: `1px solid ${b.cancelled_at ? '#eee' : '#e5e5e5'}`, borderRadius: 8, padding: '8px 12px', fontSize: 13, opacity: b.cancelled_at ? 0.6 : 1 }}>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontWeight: 600 }}>{b.last_name} {b.first_name}</span>
+              {b.nickname && <span style={{ color: '#888' }}>({b.nickname})</span>}
+              <span style={{ color: '#888' }}>{b.email}</span>
+              {b.phone && <span style={{ color: '#888' }}>{b.phone}</span>}
+              <span style={{ fontSize: 11, background: b.payment_method === 'card' ? '#e8f5e9' : '#e3f2fd', color: b.payment_method === 'card' ? '#388e3c' : '#1565c0', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>
+                {b.payment_method === 'card' ? 'カード' : '現金'}
+              </span>
+              {b.cancelled_at && <span style={{ fontSize: 11, background: '#ffebee', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontWeight: 700 }}>キャンセル済</span>}
+              {!b.cancelled_at && (
+                <button onClick={() => setCancelTarget(b)}
+                  style={{ marginLeft: 'auto', fontSize: 11, padding: '2px 10px', borderRadius: 6, border: '1px solid #e53935', background: '#fff', color: '#e53935', cursor: 'pointer', fontWeight: 600 }}>
+                  キャンセル
+                </button>
+              )}
+              <span style={{ color: '#bbb', fontSize: 11, marginLeft: b.cancelled_at ? 'auto' : 0 }}>{new Date(b.created_at).toLocaleDateString('ja-JP')}</span>
             </div>
-          )}
-          {b.sns_url && <div style={{ marginTop: 4, fontSize: 12, color: '#1a3560' }}>{b.sns_url}</div>}
-          {b.notes && <div style={{ marginTop: 4, fontSize: 12, color: '#999' }}>{b.notes}</div>}
-        </div>
-      ))}
-    </div>
+            {(b.event_date_input || b.meeting_place || b.shooting_time) && (
+              <div style={{ marginTop: 6, fontSize: 12, color: '#666', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                {b.event_date_input && <span>📅 {b.event_date_input}</span>}
+                {b.meeting_place && <span>📍 {b.meeting_place}</span>}
+                {b.shooting_time && <span>⏰ {b.shooting_time}</span>}
+              </div>
+            )}
+            {b.sns_url && <div style={{ marginTop: 4, fontSize: 12, color: '#1a3560' }}>{b.sns_url}</div>}
+            {b.notes && <div style={{ marginTop: 4, fontSize: 12, color: '#999' }}>{b.notes}</div>}
+          </div>
+        ))}
+      </div>
+    </>
   )
 }
 

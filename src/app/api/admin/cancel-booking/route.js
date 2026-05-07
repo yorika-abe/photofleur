@@ -113,7 +113,7 @@ export async function POST(req) {
   const admin = await createSupabaseAdminClient()
   if (!(await checkAdmin(admin))) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { booking_id, private_booking_id, event_product_booking_id, refund_amount, cancel_reason } = await req.json()
+  const { booking_id, private_booking_id, event_product_booking_id, goods_order_id, refund_amount, cancel_reason } = await req.json()
   const resend = new Resend(process.env.RESEND_API_KEY)
 
   // 特別予約商品のキャンセル
@@ -146,6 +146,43 @@ export async function POST(req) {
         from: 'Photo Fleur運営 <onboarding@resend.dev>',
         to: epb.customer_email,
         subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
+        html: templateResult?.html ?? buildCancelHtml({ customerName, cancelReason: cancel_reason }),
+      }).catch(e => ({ error: e }))
+      mail_ok = !me; mail_error = me ? String(me) : null
+    }
+
+    return Response.json({ ok: true, refund_ok, refund_error, mail_ok, mail_error })
+  }
+
+  // グッズ注文のキャンセル
+  if (goods_order_id) {
+    const { data: go } = await admin
+      .from('goods_orders')
+      .select('id, email, last_name, first_name, goods_id, quantity, square_payment_id, goods(title, price, stock)')
+      .eq('id', goods_order_id)
+      .single()
+
+    if (!go) return Response.json({ error: 'goods order not found' }, { status: 404 })
+
+    let refund_ok = false, refund_error = null
+    if (refund_amount > 0 && go.square_payment_id) {
+      const r = await squareRefund(go.square_payment_id, refund_amount)
+      refund_ok = r.ok; refund_error = r.error || null
+    }
+
+    await admin.from('goods_orders').update({ cancelled_at: new Date().toISOString() }).eq('id', goods_order_id)
+    if (go.goods_id && go.goods?.stock !== undefined) {
+      await admin.from('goods').update({ stock: (go.goods.stock ?? 0) + (go.quantity || 1) }).eq('id', go.goods_id).catch(() => {})
+    }
+
+    const customerName = `${go.last_name || ''}${go.first_name ? ` ${go.first_name}` : ''}`.trim() || '様'
+    let mail_ok = false, mail_error = null
+    if (go.email) {
+      const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName, cancel_reason: cancel_reason || '' }).catch(() => null)
+      const { error: me } = await resend.emails.send({
+        from: 'Photo Fleur運営 <onboarding@resend.dev>',
+        to: go.email,
+        subject: templateResult?.subject || '【PhotoFleur】ご注文キャンセルのお知らせ',
         html: templateResult?.html ?? buildCancelHtml({ customerName, cancelReason: cancel_reason }),
       }).catch(e => ({ error: e }))
       mail_ok = !me; mail_error = me ? String(me) : null
