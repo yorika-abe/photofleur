@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
-import { renderEmailTemplate } from '@/lib/email-render'
+import { renderEmailTemplateWithBlocks } from '@/lib/email-render'
 
 function formatDate(dateStr) {
   if (!dateStr) return null
@@ -32,16 +32,18 @@ export async function POST(req) {
       ? `<div style="text-align:center;margin-bottom:24px;"><p style="font-size:14px;color:#555;margin:0 0 12px;">当日受付時にこのQRコードをご提示ください</p><img src="${qrImageUrl}" alt="受付QRコード" style="width:160px;height:160px;border:1px solid #e5e5e5;border-radius:8px;"/></div>`
       : ''
 
-    const templateResult = await renderEmailTemplate(supabase, 'private-booking-confirmation', {
-      customer_name: customerName,
-      model_name: modelName || '',
-      model_image: modelImage || '',
-      product_title: productTitle || '',
-      event_date: formattedDate || '',
-      time_label: timeLabel || '',
-      price: `¥${Number(price).toLocaleString()}`,
-      qr_block: qrBlock,
-    })
+    const templateResult = await renderEmailTemplateWithBlocks(
+      supabase, 'private-booking-confirmation',
+      { qr_block: qrBlock },
+      {
+        customer_name: customerName,
+        model_name: modelName || '',
+        product_title: productTitle || '',
+        event_date: formattedDate || '',
+        time_label: timeLabel || '',
+        price: `¥${Number(price).toLocaleString()}`,
+      }
+    )
 
     const dateBlock = formattedDate
       ? `<p style="margin:0 0 14px; font-size:16px; line-height:1.8;"><strong>開催日：</strong>${formattedDate}${timeLabel ? ` ${timeLabel}` : ''}</p>`
