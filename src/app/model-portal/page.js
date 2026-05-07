@@ -327,11 +327,11 @@ export default function ModelPortalHome() {
           ))}
         </div>
 
-        {/* 参加予定イベント */}
-        <UpcomingEvents events={upcomingEvents} />
-
         {/* 外部活動報告 */}
         {!isAdminView && <ActivityReportCard />}
+
+        {/* 参加予定イベント */}
+        <UpcomingEvents events={upcomingEvents} />
       </div>
     </div>
   )
