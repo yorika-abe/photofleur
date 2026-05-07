@@ -21,6 +21,8 @@ export async function GET() {
     .in('key', [
       'line_group_id_all',
       'line_group_id_zatsudan',
+      'line_group_id_staff',
+      'line_staff_ids',
       'line_group_id_last_joined_modeful',
       'line_group_id_last_joined_official',
     ])
@@ -34,12 +36,23 @@ export async function GET() {
     .order('display_order', { ascending: true })
     .order('name', { ascending: true })
 
+  const { data: staffProfiles } = await admin
+    .from('user_profiles')
+    .select('id, name, email')
+    .contains('roles', ['staff'])
+    .order('name', { ascending: true })
+
+  let staffLineIds = {}
+  try { staffLineIds = JSON.parse(settings.line_staff_ids || '{}') } catch {}
+
   return Response.json({
     group_all: settings.line_group_id_all || '',
     group_zatsudan: settings.line_group_id_zatsudan || '',
+    group_staff: settings.line_group_id_staff || '',
     last_joined_modeful: settings.line_group_id_last_joined_modeful || '',
     last_joined_official: settings.line_group_id_last_joined_official || '',
     models: models || [],
+    staff: (staffProfiles || []).map(u => ({ ...u, line_id: staffLineIds[u.id] || '' })),
   })
 }
 
@@ -47,11 +60,13 @@ export async function PUT(req) {
   const admin = await checkAdmin()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { group_all, group_zatsudan, model_line_ids } = await req.json()
+  const { group_all, group_zatsudan, group_staff, model_line_ids, staff_line_ids } = await req.json()
 
   const upserts = []
   if (group_all !== undefined) upserts.push({ key: 'line_group_id_all', value: group_all })
   if (group_zatsudan !== undefined) upserts.push({ key: 'line_group_id_zatsudan', value: group_zatsudan })
+  if (group_staff !== undefined) upserts.push({ key: 'line_group_id_staff', value: group_staff })
+  if (staff_line_ids !== undefined) upserts.push({ key: 'line_staff_ids', value: JSON.stringify(staff_line_ids) })
 
   if (upserts.length > 0) {
     await admin.from('site_settings').upsert(upserts, { onConflict: 'key' })

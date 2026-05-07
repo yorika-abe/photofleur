@@ -41,7 +41,7 @@ export async function POST(req) {
   const admin = await checkAdmin()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { message, model_ids, channel, image_url } = await req.json()
+  const { message, model_ids, channel, image_url, staff_user_id } = await req.json()
   if (!message?.trim()) return Response.json({ error: 'メッセージを入力してください' }, { status: 400 })
 
   // カメラマン公式LINE（broadcastAPI）
@@ -69,6 +69,27 @@ export async function POST(req) {
     if (!groupId) return Response.json({ error: '雑談グループIDが設定されていません' }, { status: 400 })
     const { sendLineGroupMessageToId } = await import('@/lib/line')
     const result = await sendLineGroupMessageToId(groupId, message)
+    return Response.json({ ok: result.ok, error: result.ok ? null : result.reason })
+  }
+
+  // スタッフグループLINE
+  if (channel === 'staff_group') {
+    const { data: groupRow } = await admin.from('site_settings').select('value').eq('key', 'line_group_id_staff').maybeSingle()
+    const groupId = groupRow?.value
+    if (!groupId) return Response.json({ error: 'スタッフグループIDが設定されていません' }, { status: 400 })
+    const { sendLineGroupMessageToId } = await import('@/lib/line')
+    const result = await sendLineGroupMessageToId(groupId, message)
+    return Response.json({ ok: result.ok, error: result.ok ? null : result.reason })
+  }
+
+  // スタッフ個別LINE
+  if (channel === 'staff_individual') {
+    const { data: lineIdsRow } = await admin.from('site_settings').select('value').eq('key', 'line_staff_ids').maybeSingle()
+    let staffLineIds = {}
+    try { staffLineIds = JSON.parse(lineIdsRow?.value || '{}') } catch {}
+    const lineId = staff_user_id ? staffLineIds[staff_user_id] : null
+    if (!lineId) return Response.json({ error: 'このスタッフのLINE IDが設定されていません' }, { status: 400 })
+    const result = await sendLineMessage(lineId, message)
     return Response.json({ ok: result.ok, error: result.ok ? null : result.reason })
   }
 

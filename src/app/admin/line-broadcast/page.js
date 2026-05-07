@@ -8,6 +8,7 @@ const TABS = [
   { id: 'all', label: 'モデル全体', icon: '👥', from: 'モデフル', desc: 'モデル全体グループLINEに送信' },
   { id: 'individual', label: 'モデル個人', icon: '👤', from: 'モデフル', desc: '1人のモデルを選んで個別グループLINEに送信' },
   { id: 'zatsudan', label: '雑談', icon: '💬', from: 'モデフル', desc: '雑談グループLINEに送信' },
+  { id: 'staff', label: '受付スタッフ', icon: '🐈‍⬛', from: 'モデフル', desc: 'スタッフグループ・個人LINEに送信' },
   { id: 'camera', label: '公式LINE', icon: '📣', from: 'photofleur公式', desc: '公式LINEの全フォロワーに一斉ブロードキャスト' },
   { id: 'photographer', label: 'カメラマン個人', icon: '📸', from: 'photofleur公式（個人push）', desc: 'LINE連携済みカメラマンへ予約・購入時に個別通知' },
 ]
@@ -434,10 +435,13 @@ function LineSettingsPanel({ activeTab }) {
   const [open, setOpen] = useState(false)
   const [groupAll, setGroupAll] = useState('')
   const [groupZatsudan, setGroupZatsudan] = useState('')
+  const [groupStaff, setGroupStaff] = useState('')
   const [lastModeful, setLastModeful] = useState('')
   const [lastOfficial, setLastOfficial] = useState('')
   const [models, setModels] = useState([])
   const [modelLineIds, setModelLineIds] = useState({})
+  const [staff, setStaff] = useState([])
+  const [staffLineIds, setStaffLineIds] = useState({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -455,12 +459,17 @@ function LineSettingsPanel({ activeTab }) {
       .then(d => {
         setGroupAll(d.group_all || '')
         setGroupZatsudan(d.group_zatsudan || '')
+        setGroupStaff(d.group_staff || '')
         setLastModeful(d.last_joined_modeful || '')
         setLastOfficial(d.last_joined_official || '')
         setModels(d.models || [])
         const ids = {}
         for (const m of d.models || []) ids[m.id] = m.line_id || ''
         setModelLineIds(ids)
+        setStaff(d.staff || [])
+        const sids = {}
+        for (const s of d.staff || []) sids[s.id] = s.line_id || ''
+        setStaffLineIds(sids)
         setLoading(false)
       })
   }, [])
@@ -470,7 +479,7 @@ function LineSettingsPanel({ activeTab }) {
     await fetch('/api/admin/line-settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ group_all: groupAll, group_zatsudan: groupZatsudan, model_line_ids: modelLineIds }),
+      body: JSON.stringify({ group_all: groupAll, group_zatsudan: groupZatsudan, group_staff: groupStaff, model_line_ids: modelLineIds, staff_line_ids: staffLineIds }),
     })
     setSaving(false)
     setSaved(true)
@@ -533,6 +542,33 @@ function LineSettingsPanel({ activeTab }) {
                 <label style={{ display: 'block', fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 6 }}>💬 雑談グループID</label>
                 <input style={inp} value={groupZatsudan} onChange={e => setGroupZatsudan(e.target.value)} placeholder="C..." />
               </div>
+            )}
+
+            {activeTab === 'staff' && (
+              <>
+                <div>
+                  <label style={{ display: 'block', fontWeight: 700, fontSize: 13, color: '#333', marginBottom: 6 }}>🐈‍⬛ スタッフグループID</label>
+                  <input style={inp} value={groupStaff} onChange={e => setGroupStaff(e.target.value)} placeholder="C..." />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#333', marginBottom: 10 }}>🐈‍⬛ スタッフ個人 — 各スタッフのLINEグループID</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {staff.map(s => (
+                      <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#e0e8f0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>👤</div>
+                        <span style={{ width: 100, fontSize: 13, fontWeight: 600, color: '#333', flexShrink: 0 }}>{s.name || s.email}</span>
+                        <input
+                          style={{ ...inp, flex: 1 }}
+                          value={staffLineIds[s.id] || ''}
+                          onChange={e => setStaffLineIds(ids => ({ ...ids, [s.id]: e.target.value }))}
+                          placeholder="C... または U..."
+                        />
+                      </div>
+                    ))}
+                    {staff.length === 0 && <p style={{ color: '#aaa', fontSize: 13 }}>スタッフ権限のユーザーがいません</p>}
+                  </div>
+                </div>
+              </>
             )}
 
             {activeTab === 'individual' && (
@@ -890,6 +926,150 @@ const PHOTOGRAPHER_TEMPLATES = [
   },
 ]
 
+function TabStaff({ staff }) {
+  // グループ送信
+  const [groupMsg, setGroupMsg] = useState('')
+  const [groupSending, setGroupSending] = useState(false)
+  const [groupConfirmed, setGroupConfirmed] = useState(false)
+  const [groupResult, setGroupResult] = useState(null)
+  // 個人送信
+  const [selectedId, setSelectedId] = useState('')
+  const [indivMsg, setIndivMsg] = useState('')
+  const [indivSending, setIndivSending] = useState(false)
+  const [indivConfirmed, setIndivConfirmed] = useState(false)
+  const [indivResult, setIndivResult] = useState(null)
+
+  const selectedStaff = staff.find(s => s.id === selectedId)
+
+  async function handleGroupSend() {
+    setGroupSending(true); setGroupResult(null)
+    const res = await fetch('/api/admin/line-broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: groupMsg, channel: 'staff_group' }),
+    })
+    const json = await res.json()
+    setGroupSending(false); setGroupConfirmed(false)
+    setGroupResult(res.ok && json.ok ? { ok: true } : { error: json.error || '送信に失敗しました' })
+  }
+
+  async function handleIndivSend() {
+    setIndivSending(true); setIndivResult(null)
+    const res = await fetch('/api/admin/line-broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: indivMsg, channel: 'staff_individual', staff_user_id: selectedId }),
+    })
+    const json = await res.json()
+    setIndivSending(false); setIndivConfirmed(false)
+    setIndivResult(res.ok && json.ok ? { ok: true } : { error: json.error || '送信に失敗しました' })
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+      {/* ── グループ送信 ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ background: '#f3f3f3', borderRadius: 12, border: '1px solid #ddd', padding: '14px 18px', fontSize: 13 }}>
+            <div style={{ fontWeight: 700, color: '#333', marginBottom: 4 }}>🐈‍⬛ スタッフグループLINE</div>
+            <div style={{ color: '#555', lineHeight: 1.7 }}>
+              全スタッフが参加しているグループLINEに送信します。<br />
+              受付募集案内などに使用してください。
+            </div>
+          </div>
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>メッセージ本文</div>
+              <span style={{ fontSize: 12, color: groupMsg.length > MAX_CHARS ? '#e53935' : '#aaa' }}>{groupMsg.length} / {MAX_CHARS}</span>
+            </div>
+            <textarea value={groupMsg} onChange={e => { setGroupMsg(e.target.value); setGroupConfirmed(false); setGroupResult(null) }}
+              rows={10} placeholder="メッセージを入力してください"
+              style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.7, fontFamily: 'inherit' }} />
+          </div>
+          {groupResult && (
+            <div style={{ padding: '10px 14px', borderRadius: 8, background: groupResult.error ? '#ffebee' : '#e8f5e9', border: `1px solid ${groupResult.error ? '#ef9a9a' : '#a5d6a7'}`, fontSize: 13 }}>
+              {groupResult.error ? <span style={{ color: '#c62828' }}>エラー: {groupResult.error}</span>
+                : <span style={{ color: '#2e7d32', fontWeight: 600 }}>✅ スタッフグループへの送信が完了しました</span>}
+            </div>
+          )}
+          <SendButtons canSend={groupMsg.trim().length > 0} recipientLabel="スタッフグループ" sending={groupSending} confirmed={groupConfirmed}
+            onConfirm={() => setGroupConfirmed(true)} onSend={handleGroupSend} onBack={() => setGroupConfirmed(false)} />
+        </div>
+        <div>
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>プレビュー</div>
+            <LinePreview message={groupMsg} accountName="モデフル" />
+            <p style={{ fontSize: 11, color: '#aaa', marginTop: 10 }}>※ LINEはプレーンテキストのみ送信されます</p>
+          </div>
+        </div>
+      </div>
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
+        <button style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'default', padding: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>🤖 自動送信メッセージ設定</div>
+          <span style={{ fontSize: 12, color: '#aaa' }}>（あとで作成）</span>
+        </button>
+      </div>
+
+      <div style={{ borderTop: '2px solid #f0f0f0', paddingTop: 8 }} />
+
+      {/* ── 個人送信 ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ background: '#f3f3f3', borderRadius: 12, border: '1px solid #ddd', padding: '14px 18px', fontSize: 13 }}>
+            <div style={{ fontWeight: 700, color: '#333', marginBottom: 4 }}>🐈‍⬛ スタッフ個別グループLINE</div>
+            <div style={{ color: '#555', lineHeight: 1.7 }}>
+              選択したスタッフと運営が参加している個別グループLINEに送信します。
+            </div>
+          </div>
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 12 }}>送信先スタッフを選択</div>
+            {staff.length === 0
+              ? <p style={{ color: '#aaa', fontSize: 13 }}>スタッフ権限のユーザーがいません</p>
+              : (
+                <select value={selectedId} onChange={e => { setSelectedId(e.target.value); setIndivConfirmed(false); setIndivResult(null) }}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14 }}>
+                  <option value="">-- スタッフを選択 --</option>
+                  {staff.map(s => <option key={s.id} value={s.id}>{s.name || s.email}</option>)}
+                </select>
+              )
+            }
+          </div>
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>メッセージ本文</div>
+              <span style={{ fontSize: 12, color: indivMsg.length > MAX_CHARS ? '#e53935' : '#aaa' }}>{indivMsg.length} / {MAX_CHARS}</span>
+            </div>
+            <textarea value={indivMsg} onChange={e => { setIndivMsg(e.target.value); setIndivConfirmed(false); setIndivResult(null) }}
+              rows={10} placeholder="メッセージを入力してください"
+              style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.7, fontFamily: 'inherit' }} />
+          </div>
+          {indivResult && (
+            <div style={{ padding: '10px 14px', borderRadius: 8, background: indivResult.error ? '#ffebee' : '#e8f5e9', border: `1px solid ${indivResult.error ? '#ef9a9a' : '#a5d6a7'}`, fontSize: 13 }}>
+              {indivResult.error ? <span style={{ color: '#c62828' }}>エラー: {indivResult.error}</span>
+                : <span style={{ color: '#2e7d32', fontWeight: 600 }}>✅ {selectedStaff?.name || selectedStaff?.email}さんに送信しました</span>}
+            </div>
+          )}
+          <SendButtons canSend={indivMsg.trim().length > 0 && !!selectedId} recipientLabel={selectedStaff?.name || selectedStaff?.email || '選択中のスタッフ'} sending={indivSending} confirmed={indivConfirmed}
+            onConfirm={() => setIndivConfirmed(true)} onSend={handleIndivSend} onBack={() => setIndivConfirmed(false)} />
+        </div>
+        <div>
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>プレビュー</div>
+            <LinePreview message={indivMsg} accountName="モデフル" />
+            <p style={{ fontSize: 11, color: '#aaa', marginTop: 10 }}>※ LINEはプレーンテキストのみ送信されます</p>
+          </div>
+        </div>
+      </div>
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
+        <button style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'default', padding: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>🤖 自動送信メッセージ設定</div>
+          <span style={{ fontSize: 12, color: '#aaa' }}>（あとで作成）</span>
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function TabPhotographer() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -971,11 +1151,15 @@ function CameraAutoToggle() {
 export default function LineBroadcastPage() {
   const [activeTab, setActiveTab] = useState('all')
   const [models, setModels] = useState([])
+  const [staff, setStaff] = useState([])
 
   useEffect(() => {
     fetch('/api/admin/line-broadcast')
       .then(r => r.json())
       .then(d => setModels(d.models || []))
+    fetch('/api/admin/line-settings')
+      .then(r => r.json())
+      .then(d => setStaff(d.staff || []))
   }, [])
 
   const tab = TABS.find(t => t.id === activeTab)
@@ -1011,12 +1195,13 @@ export default function LineBroadcastPage() {
       {activeTab === 'camera' && <CameraAutoToggle />}
 
       {/* 送信先設定パネル（モデル関連タブのみ） */}
-      {['all', 'individual', 'zatsudan'].includes(activeTab) && <LineSettingsPanel activeTab={activeTab} />}
+      {['all', 'individual', 'zatsudan', 'staff'].includes(activeTab) && <LineSettingsPanel activeTab={activeTab} />}
 
       {/* タブコンテンツ */}
       {activeTab === 'all' && <TabAll />}
       {activeTab === 'individual' && <TabIndividual models={models} />}
       {activeTab === 'zatsudan' && <TabZatsudan />}
+      {activeTab === 'staff' && <TabStaff staff={staff} />}
       {activeTab === 'camera' && <TabCamera />}
       {activeTab === 'photographer' && <TabPhotographer />}
     </div>
