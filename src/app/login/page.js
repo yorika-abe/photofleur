@@ -12,6 +12,7 @@ function LoginForm() {
   const redirect = searchParams.get('redirect') || '/'
   const isAlreadyRegistered = searchParams.get('notice') === 'already_registered'
   const noticeEmail = searchParams.get('email') || ''
+  const lineError = searchParams.get('error')?.startsWith('line_')
 
   const [email, setEmail] = useState(noticeEmail)
   const [password, setPassword] = useState('')
@@ -66,6 +67,13 @@ function LoginForm() {
     <div style={{ maxWidth: 440, margin: '60px auto', padding: '0 20px' }}>
       <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1a3560', marginBottom: 8, textAlign: 'center' }}>ログイン</h1>
       <p style={{ color: '#666', textAlign: 'center', marginBottom: 32, fontSize: 14 }}>PhotoFleurアカウントでログイン</p>
+
+      {lineError && (
+        <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: '14px 18px', marginBottom: 16, fontSize: 14, color: '#5d4037', lineHeight: 1.7 }}>
+          メールアドレスでご登録いただいているか会員情報がありません。<br />
+          メールアドレスでのログインもしくは新規会員登録をお願いいたします。
+        </div>
+      )}
 
       {/* LINE Login */}
       <a
