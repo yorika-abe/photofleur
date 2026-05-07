@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
+import QRCode from 'qrcode'
 
 function formatDate(dateString) {
   if (!dateString) return ''
@@ -17,7 +18,7 @@ function CompleteContent() {
   const [slot, setSlot] = useState(null)
   const [model, setModel] = useState(null)
   const [event, setEvent] = useState(null)
-  const [qrToken, setQrToken] = useState('')
+  const [qrDataUrl, setQrDataUrl] = useState('')
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -26,28 +27,29 @@ function CompleteContent() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const slotId = params.get('slot_id')
-    const email = params.get('email')
+    const bookingId = params.get('booking_id')
     const qr = params.get('qr')
-    if (qr) setQrToken(qr)
 
-    if (!slotId || !email) { setLoading(false); return }
+    if (qr) {
+      QRCode.toDataURL(qr, { width: 200, margin: 1 }).then(setQrDataUrl).catch(() => {})
+    }
+
+    if (!bookingId) { setLoading(false); return }
 
     async function load() {
       const { data: bookingData } = await supabase
         .from('bookings')
         .select('*')
-        .eq('slot_id', slotId)
-        .eq('email', email)
-        .order('created_at', { ascending: false })
-        .limit(1)
+        .eq('id', bookingId)
         .single()
       setBooking(bookingData)
+
+      if (!bookingData?.slot_id) { setLoading(false); return }
 
       const { data: slotData } = await supabase
         .from('booking_slots')
         .select('*, event_entry_id')
-        .eq('id', slotId)
+        .eq('id', bookingData.slot_id)
         .single()
       setSlot(slotData)
 
@@ -74,10 +76,6 @@ function CompleteContent() {
   }, [])
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>読み込み中...</div>
-
-  const qrImageUrl = qrToken
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrToken)}`
-    : null
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', padding: '40px 16px' }}>
@@ -111,11 +109,11 @@ function CompleteContent() {
         </div>
 
         {/* QR Code */}
-        {qrImageUrl && (
+        {qrDataUrl && (
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <div style={{ fontSize: 13, color: '#888', marginBottom: 4 }}>当日受付時にこのQRコードをご提示ください</div>
             <div style={{ fontSize: 12, color: '#aaa', marginBottom: 10 }}>確定メール・前日告知メールにも添付してあります。</div>
-            <img src={qrImageUrl} alt="受付QRコード" style={{ width: 160, height: 160, border: '1px solid #e5e5e5', borderRadius: 8 }} />
+            <img src={qrDataUrl} alt="受付QRコード" style={{ width: 160, height: 160, border: '1px solid #e5e5e5', borderRadius: 8 }} />
           </div>
         )}
 
