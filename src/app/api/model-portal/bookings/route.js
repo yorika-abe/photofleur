@@ -100,8 +100,68 @@ export async function GET(req) {
     slots: (slotsByEntry[e.id] || []).filter(s => s.slot_order !== 0),
   })
 
+  // 特別予約商品（notify_model有効・このモデルが含まれる）
+  const { data: allEventProducts } = await admin
+    .from('event_products')
+    .select('id, name, options, event_id')
+
+  const myProducts = (allEventProducts || []).filter(p => {
+    if (p.options?.notify_model === false) return false
+    const layers = p.options?.type === 'layers' ? (p.options.layers || []) : (p.options?.groups || [])
+    const modelLayer = layers.find(l => l.type === 'models')
+    return (modelLayer?.model_choices || []).some(mc => mc.model_id === model.id)
+  })
+
+  let productBookings = []
+  if (myProducts.length > 0) {
+    const { data: epBookings } = await admin
+      .from('event_product_bookings')
+      .select('id, product_id, selections, nickname, sns_url, created_at')
+      .in('product_id', myProducts.map(p => p.id))
+      .is('cancelled_at', null)
+      .order('created_at', { ascending: false })
+
+    const productEventIds = [...new Set(myProducts.map(p => p.event_id).filter(Boolean))]
+    const { data: productEvents } = productEventIds.length
+      ? await admin.from('events').select('id, event_date, event_type, title').in('id', productEventIds)
+      : { data: [] }
+    const eventById = Object.fromEntries((productEvents || []).map(e => [e.id, e]))
+
+    for (const p of myProducts) {
+      const pBookings = (epBookings || []).filter(b => b.product_id === p.id)
+      if (pBookings.length === 0) continue
+      productBookings.push({
+        product: { id: p.id, name: p.name },
+        event: eventById[p.event_id] || null,
+        bookings: pBookings,
+      })
+    }
+    productBookings.sort((a, b) =>
+      (a.event?.event_date || '').localeCompare(b.event?.event_date || '')
+    )
+  }
+
+  // 非公開予約
+  const { data: privateProducts } = await admin
+    .from('private_products')
+    .select('id')
+    .eq('model_id', model.id)
+
+  let privateBookings = []
+  if (privateProducts && privateProducts.length > 0) {
+    const { data: pbData } = await admin
+      .from('private_bookings')
+      .select('id, event_date_input, meeting_place, shooting_time, nickname, sns_url')
+      .in('product_id', privateProducts.map(p => p.id))
+      .is('cancelled_at', null)
+      .order('event_date_input', { ascending: true })
+    privateBookings = pbData || []
+  }
+
   return Response.json({
     events: upcomingEntries.map(toEventItem),
     past: pastEntries.map(toEventItem),
+    productBookings,
+    privateBookings,
   })
 }

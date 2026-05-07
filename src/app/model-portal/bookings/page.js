@@ -90,9 +90,86 @@ function EventCard({ event, slots, defaultOpen = false }) {
   )
 }
 
+function ProductBookingCard({ item }) {
+  const [open, setOpen] = useState(true)
+  return (
+    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #d6ecf5', overflow: 'hidden' }}>
+      <button onClick={() => setOpen(o => !o)} style={{
+        width: '100%', textAlign: 'left', background: 'linear-gradient(135deg, #4a1a6a, #6a2d9a)',
+        color: '#fff', padding: '12px 16px', border: 'none', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+      }}>
+        <span style={{ fontSize: 14 }}>👗</span>
+        <span style={{ fontWeight: 700, fontSize: 15 }}>{item.product.name}</span>
+        {item.event && <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>{formatDate(item.event.event_date)} {item.event.title}</span>}
+        <span style={{ marginLeft: 'auto', fontSize: 14, color: 'rgba(255,255,255,0.6)', flexShrink: 0 }}>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {item.bookings.map(b => {
+            const timeSlot = b.selections?.['時間帯'] || b.selections?.slot
+            return (
+              <div key={b.id} style={{ background: '#e0f2f1', borderRadius: 8, padding: '8px 12px', border: '1px solid #b2dfdb', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                {timeSlot && <span style={{ fontWeight: 700, fontSize: 13, color: '#1a3560', minWidth: 80 }}>{timeSlot}</span>}
+                <span style={{ fontSize: 11, background: '#00897b', color: '#fff', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>予約済み</span>
+                <span style={{ fontSize: 13, color: '#444' }}>{b.nickname || ''} 様</span>
+                {b.sns_url && (
+                  <a href={b.sns_url} target="_blank" rel="noopener noreferrer"
+                    style={{ fontSize: 12, color: '#1a3560', fontWeight: 600, wordBreak: 'break-all' }}>
+                    📷 {b.sns_url}
+                  </a>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PrivateBookingCard({ booking }) {
+  const [open, setOpen] = useState(true)
+  const days = ['日', '月', '火', '水', '木', '金', '土']
+  const d = new Date(booking.event_date_input + 'T00:00:00')
+  const dateLabel = `${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`
+  return (
+    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #d6ecf5', overflow: 'hidden' }}>
+      <button onClick={() => setOpen(o => !o)} style={{
+        width: '100%', textAlign: 'left', background: 'linear-gradient(135deg, #1a4a3a, #2d7a5a)',
+        color: '#fff', padding: '12px 16px', border: 'none', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+      }}>
+        <span style={{ fontSize: 14 }}>🔒</span>
+        <span style={{ fontWeight: 700, fontSize: 15 }}>非公開予約</span>
+        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>{dateLabel}</span>
+        <span style={{ marginLeft: 'auto', fontSize: 14, color: 'rgba(255,255,255,0.6)', flexShrink: 0 }}>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ background: '#e0f2f1', borderRadius: 8, padding: '8px 12px', border: '1px solid #b2dfdb', display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+            {booking.meeting_place && <span style={{ fontSize: 13, color: '#444' }}>📍 {booking.meeting_place}</span>}
+            {booking.shooting_time && <span style={{ fontSize: 13, color: '#444' }}>⏱ {booking.shooting_time}</span>}
+            <span style={{ fontSize: 11, background: '#00897b', color: '#fff', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>予約済み</span>
+            <span style={{ fontSize: 13, color: '#444' }}>{booking.nickname || ''} 様</span>
+            {booking.sns_url && (
+              <a href={booking.sns_url} target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: 12, color: '#1a3560', fontWeight: 600, wordBreak: 'break-all' }}>
+                📷 {booking.sns_url}
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ModelBookingsPage() {
   const [events, setEvents] = useState([])
   const [past, setPast] = useState([])
+  const [productBookings, setProductBookings] = useState([])
+  const [privateBookings, setPrivateBookings] = useState([])
   const [loading, setLoading] = useState(true)
 
   const supabase = createBrowserClient(
@@ -113,6 +190,8 @@ export default function ModelBookingsPage() {
       const data = await res.json()
       setEvents(data.events || [])
       setPast(data.past || [])
+      setProductBookings(data.productBookings || [])
+      setPrivateBookings(data.privateBookings || [])
       setLoading(false)
     }
     load()
@@ -134,6 +213,28 @@ export default function ModelBookingsPage() {
           {events.map(({ event, slots }) => (
             <EventCard key={event.id} event={event} slots={slots} defaultOpen={true} />
           ))}
+
+          {productBookings.length > 0 && (
+            <>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#888', marginTop: 8, marginBottom: 4, paddingLeft: 4 }}>
+                特別予約商品
+              </div>
+              {productBookings.map(item => (
+                <ProductBookingCard key={item.product.id} item={item} />
+              ))}
+            </>
+          )}
+
+          {privateBookings.length > 0 && (
+            <>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#888', marginTop: 8, marginBottom: 4, paddingLeft: 4 }}>
+                非公開予約
+              </div>
+              {privateBookings.map(b => (
+                <PrivateBookingCard key={b.id} booking={b} />
+              ))}
+            </>
+          )}
 
           {past.length > 0 && (
             <>
