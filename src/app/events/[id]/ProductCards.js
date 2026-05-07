@@ -141,6 +141,29 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
   const isSelectedLayers = selected?.options?.type === 'layers'
   const hasBookableOptions = isSelectedLayers ? (selected.options.layers?.length > 0) : (selectedGroups.length > 0)
 
+  // Validate all selections are complete
+  const isSelectionsComplete = (() => {
+    if (!selected || !hasBookableOptions) return true
+    if (isSelectedLayers) {
+      const layers = selected.options?.layers || []
+      return layerPath.length >= layers.length
+    }
+    return selectedGroups.every((group, idx) => {
+      const val = selections[idx]
+      if (group.type === 'slots') return !!val && (Array.isArray(val) ? val.length > 0 : val !== '')
+      if (group.type === 'models') {
+        if (!val) return false
+        if (group.model_choices) {
+          const mc = group.model_choices.find(mc => mc.model_id === val?.model_id)
+          if (mc?.choices?.length > 0 && !val?.choice) return false
+        }
+        return true
+      }
+      if (group.type === 'manual') return !!val && (Array.isArray(val) ? val.length > 0 : val !== '')
+      return true
+    })
+  })()
+
   return (
     <>
       <div style={{ marginBottom: 40 }}>
@@ -381,18 +404,23 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
                   )}
 
                   <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {!isSelectionsComplete && (
+                      <div style={{ background: '#fff3e0', color: '#e65100', borderRadius: 8, padding: '10px 14px', fontSize: 13 }}>
+                        ⚠ 全ての選択肢を選んでください
+                      </div>
+                    )}
                     {cartAdded ? (
                       <div style={{ background: '#e8f5e9', borderRadius: 10, padding: '12px', textAlign: 'center', color: '#2e7d32', fontWeight: 700 }}>
                         ✓ カートに追加しました
                       </div>
                     ) : (
                       <>
-                        <button onClick={handleBuyNow}
-                          style={{ width: '100%', padding: '13px 0', borderRadius: 10, border: 'none', background: '#1a3560', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
+                        <button onClick={handleBuyNow} disabled={!isSelectionsComplete}
+                          style={{ width: '100%', padding: '13px 0', borderRadius: 10, border: 'none', background: isSelectionsComplete ? '#1a3560' : '#ccc', color: '#fff', fontWeight: 700, fontSize: 15, cursor: isSelectionsComplete ? 'pointer' : 'not-allowed' }}>
                           今すぐ購入
                         </button>
-                        <button onClick={handleAddToCart}
-                          style={{ width: '100%', padding: '12px 0', borderRadius: 10, border: '2px solid #1a3560', background: '#fff', color: '#1a3560', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                        <button onClick={handleAddToCart} disabled={!isSelectionsComplete}
+                          style={{ width: '100%', padding: '12px 0', borderRadius: 10, border: `2px solid ${isSelectionsComplete ? '#1a3560' : '#ddd'}`, background: '#fff', color: isSelectionsComplete ? '#1a3560' : '#bbb', fontWeight: 700, fontSize: 14, cursor: isSelectionsComplete ? 'pointer' : 'not-allowed' }}>
                           🛒 カートに追加
                         </button>
                       </>
