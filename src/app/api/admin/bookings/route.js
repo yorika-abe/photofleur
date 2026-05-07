@@ -25,8 +25,14 @@ export async function GET() {
   // 特別予約商品
   const { data: epbRaw } = await admin
     .from('event_product_bookings')
-    .select('id, customer_name, customer_email, customer_phone, sns_url, nickname, payment_method, qr_token, cancelled_at, created_at, product_id, event_id, selections, event_products(id, name, price)')
+    .select('id, customer_name, customer_email, customer_phone, sns_url, nickname, payment_method, qr_token, cancelled_at, created_at, product_id, event_id, selections')
     .order('created_at', { ascending: false })
+
+  const epProductIds = [...new Set((epbRaw || []).map(b => b.product_id).filter(Boolean))]
+  const { data: epProducts } = epProductIds.length
+    ? await admin.from('event_products').select('id, name, price').in('id', epProductIds)
+    : { data: [] }
+  const epProductMap = Object.fromEntries((epProducts || []).map(p => [p.id, p]))
 
   const epEventIds = [...new Set((epbRaw || []).map(b => b.event_id).filter(Boolean))]
   const { data: epEvents } = epEventIds.length
@@ -88,11 +94,11 @@ export async function GET() {
     name: b.customer_name || '',
     email: b.customer_email || '',
     phone: b.customer_phone || null,
-    product: b.event_products || {},
+    product: epProductMap[b.product_id] || {},
     model: {},
     event: epEventMap[b.event_id] || {},
     slot: { slot_label: b.selections?.slot || '' },
-    final_price: b.event_products?.price || 0,
+    final_price: epProductMap[b.product_id]?.price || 0,
   }))
 
   const goodsBookings = (goodsRaw || []).map(b => ({
