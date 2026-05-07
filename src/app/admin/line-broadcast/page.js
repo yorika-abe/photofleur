@@ -7,9 +7,9 @@ const MAX_CHARS = 500
 const TABS = [
   { id: 'all', label: 'モデル全体', icon: '👥', from: 'モデフル', desc: 'モデル全体グループLINEに送信' },
   { id: 'individual', label: 'モデル個人', icon: '👤', from: 'モデフル', desc: '1人のモデルを選んで個別グループLINEに送信' },
-  { id: 'birthday', label: '雑談', icon: '🎂', from: 'モデフル', desc: 'モデルの誕生日にグループLINEでお祝いメッセージを送信' },
-  { id: 'camera', label: '公式LINE', icon: '📣', from: 'カメラマン向け公式LINEアカウント', desc: '公式LINEの全フォロワーに一斉ブロードキャスト' },
-  { id: 'photographer', label: 'カメラマン個人', icon: '📸', from: '公式LINEアカウント（個人push）', desc: 'LINE連携済みカメラマンへ予約・購入時に個別通知' },
+  { id: 'zatsudan', label: '雑談', icon: '💬', from: 'モデフル', desc: '雑談グループLINEに送信' },
+  { id: 'camera', label: '公式LINE', icon: '📣', from: 'photofleur公式', desc: '公式LINEの全フォロワーに一斉ブロードキャスト' },
+  { id: 'photographer', label: 'カメラマン個人', icon: '📸', from: 'photofleur公式（個人push）', desc: 'LINE連携済みカメラマンへ予約・購入時に個別通知' },
 ]
 
 function LinePreview({ message, accountName }) {
@@ -429,19 +429,130 @@ function TabIndividual({ models }) {
   )
 }
 
+// ---- 送信先設定パネル ----
+function LineSettingsPanel() {
+  const [open, setOpen] = useState(false)
+  const [groupAll, setGroupAll] = useState('')
+  const [groupZatsudan, setGroupZatsudan] = useState('')
+  const [models, setModels] = useState([])
+  const [modelLineIds, setModelLineIds] = useState({})
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/admin/line-settings')
+      .then(r => r.json())
+      .then(d => {
+        setGroupAll(d.group_all || '')
+        setGroupZatsudan(d.group_zatsudan || '')
+        setModels(d.models || [])
+        const ids = {}
+        for (const m of d.models || []) ids[m.id] = m.line_id || ''
+        setModelLineIds(ids)
+        setLoading(false)
+      })
+  }, [])
+
+  async function handleSave() {
+    setSaving(true)
+    await fetch('/api/admin/line-settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ group_all: groupAll, group_zatsudan: groupZatsudan, model_line_ids: modelLineIds }),
+    })
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2500)
+  }
+
+  const inp = { width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', fontFamily: 'monospace' }
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '14px 18px', marginBottom: 20 }}>
+      <button onClick={() => setOpen(v => !v)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>⚙️ 送信先グループID設定</div>
+        <span style={{ fontSize: 12, color: '#aaa' }}>{open ? '▲ 閉じる' : '▼ 開く'}</span>
+      </button>
+      {open && (
+        loading ? <p style={{ color: '#aaa', fontSize: 13, marginTop: 12 }}>読み込み中...</p> : (
+          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ background: '#f5f9ff', borderRadius: 10, padding: '14px 16px', fontSize: 12, color: '#555', lineHeight: 1.8 }}>
+              グループIDはLINEのグループに「モデフル」または「photofleur公式」を招待し、<br />
+              Webhook等でグループIDを取得してここに入力してください。<br />
+              モデル個人欄には、そのモデルが入っているトークグループのIDを入力してください。
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 6 }}>👥 モデル全体グループID</label>
+              <input style={inp} value={groupAll} onChange={e => setGroupAll(e.target.value)} placeholder="C..." />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 6 }}>💬 雑談グループID</label>
+              <input style={inp} value={groupZatsudan} onChange={e => setGroupZatsudan(e.target.value)} placeholder="C..." />
+            </div>
+
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 10 }}>👤 モデル個人 — 各モデルのLINEグループID</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {models.map(m => (
+                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: '#e0d8f0' }}>
+                      {m.image ? <img src={m.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>👤</div>}
+                    </div>
+                    <span style={{ width: 100, fontSize: 13, fontWeight: 600, color: '#333', flexShrink: 0 }}>{m.name}</span>
+                    <input
+                      style={{ ...inp, flex: 1 }}
+                      value={modelLineIds[m.id] || ''}
+                      onChange={e => setModelLineIds(ids => ({ ...ids, [m.id]: e.target.value }))}
+                      placeholder="C... または U..."
+                    />
+                  </div>
+                ))}
+                {models.length === 0 && <p style={{ color: '#aaa', fontSize: 13 }}>公開中のモデルがいません</p>}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'flex-end' }}>
+              {saved && <span style={{ fontSize: 13, color: '#2e7d32', fontWeight: 600 }}>✅ 保存しました</span>}
+              <button onClick={handleSave} disabled={saving}
+                style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: saving ? '#ccc' : '#1a3560', color: '#fff', fontWeight: 700, fontSize: 14, cursor: saving ? 'not-allowed' : 'pointer' }}>
+                {saving ? '保存中...' : '保存する'}
+              </button>
+            </div>
+          </div>
+        )
+      )}
+    </div>
+  )
+}
+
 const DEFAULT_BIRTHDAY_MSG = `今日は○○ちゃんの誕生日！\nお誕生日おめでとうございます💖\n素敵な1日になりますように❣️\n\nPhotoFleur運営`
 
-// ---- タブ3: 誕生日 ----
-function TabBirthday() {
-  const [models, setModels] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [sending, setSending] = useState(null)
-  const [results, setResults] = useState({})
+// ---- タブ3: 雑談（手動送信 + 誕生日お祝い） ----
+function TabZatsudan() {
+  // 手動送信
+  const [message, setMessage] = useState('')
+  const [sending, setSending] = useState(false)
+  const [confirmed, setConfirmed] = useState(false)
+  const [result, setResult] = useState(null)
+  // 誕生日
+  const [bdModels, setBdModels] = useState([])
+  const [bdLoading, setBdLoading] = useState(true)
+  const [bdSending, setBdSending] = useState(null)
+  const [bdResults, setBdResults] = useState({})
+  const [bdTemplate, setBdTemplate] = useState(DEFAULT_BIRTHDAY_MSG)
+  const [bdTemplateSaving, setBdTemplateSaving] = useState(false)
+  const [bdTemplateSaved, setBdTemplateSaved] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/line-broadcast?type=birthdays')
       .then(r => r.json())
-      .then(d => { setModels(d.models || []); setLoading(false) })
+      .then(d => { setBdModels(d.models || []); setBdLoading(false) })
+    fetch('/api/admin/line-templates')
+      .then(r => r.json())
+      .then(d => { if (d.templates?.birthday_msg) setBdTemplate(d.templates.birthday_msg) })
   }, [])
 
   function getBirthdayInfo(birthday) {
@@ -456,83 +567,147 @@ function TabBirthday() {
     return { month, day, diff }
   }
 
-  const sorted = [...models]
+  const sorted = [...bdModels]
     .map(m => ({ ...m, bdInfo: getBirthdayInfo(m.birthday) }))
     .filter(m => m.bdInfo)
     .sort((a, b) => a.bdInfo.diff - b.bdInfo.diff)
 
-  async function sendBirthday(model) {
-    setSending(model.id)
-    const msg = `今日は${model.name}ちゃんの誕生日！\nお誕生日おめでとうございます💖\n素敵な1日になりますように❣️\n\nPhotoFleur運営`
+  async function handleSend() {
+    setSending(true); setResult(null)
     const res = await fetch('/api/admin/line-broadcast', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: msg, channel: 'group' }),
+      body: JSON.stringify({ message, channel: 'zatsudan' }),
     })
     const json = await res.json()
-    setSending(null)
-    setResults(prev => ({ ...prev, [model.id]: res.ok && json.ok ? 'ok' : 'fail' }))
+    setSending(false); setConfirmed(false)
+    setResult(res.ok && json.ok ? { ok: true } : { error: json.error || '送信に失敗しました' })
   }
 
+  async function saveBdTemplate() {
+    setBdTemplateSaving(true)
+    await fetch('/api/admin/line-templates', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'birthday_msg', body: bdTemplate }),
+    })
+    setBdTemplateSaving(false); setBdTemplateSaved(true)
+    setTimeout(() => setBdTemplateSaved(false), 2000)
+  }
+
+  async function sendBirthday(model) {
+    setBdSending(model.id)
+    const msg = bdTemplate.replace(/○○/g, model.name).replace(/{{name}}/g, model.name)
+    const res = await fetch('/api/admin/line-broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, channel: 'zatsudan' }),
+    })
+    const json = await res.json()
+    setBdSending(null)
+    setBdResults(prev => ({ ...prev, [model.id]: res.ok && json.ok ? 'ok' : 'fail' }))
+  }
+
+  const canSend = message.trim().length > 0
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ background: '#e8f5e9', borderRadius: 12, border: '1px solid #a5d6a7', padding: '14px 18px', fontSize: 13 }}>
-          <div style={{ fontWeight: 700, color: '#2e7d32', marginBottom: 4 }}>🤖 自動送信が有効です</div>
-          <div style={{ color: '#388e3c', lineHeight: 1.7 }}>
-            モデルプロフィールに誕生日が登録されていれば、毎日0:00（JST）にモデルグループLINEへ自動でお祝いメッセージを送信します。<br />
-            手動で送りたい場合は下の一覧から「手動送信」を押してください。
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* 手動送信 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ background: '#e8f5e9', borderRadius: 12, border: '1px solid #a5d6a7', padding: '14px 18px', fontSize: 13 }}>
+            <div style={{ fontWeight: 700, color: '#2e7d32', marginBottom: 4 }}>💬 雑談グループへ手動送信</div>
+            <div style={{ color: '#388e3c', lineHeight: 1.7 }}>モデフルアカウントから雑談グループに送信します。</div>
           </div>
-        </div>
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 4 }}>自動送信メッセージ</div>
-          <div style={{ fontSize: 11, color: '#aaa', marginBottom: 10 }}>※ メッセージを変更したい場合はコード（cron-send-birthday-line/route.js）を編集してください</div>
-          <pre style={{ margin: 0, padding: '10px 14px', background: '#f8fbff', borderRadius: 8, fontSize: 13, lineHeight: 1.7, color: '#333', whiteSpace: 'pre-wrap', wordBreak: 'break-word', border: '1px solid #e0e8f0' }}>
-            {DEFAULT_BIRTHDAY_MSG}
-          </pre>
-        </div>
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>モデル誕生日一覧（近い順）</div>
-          {loading ? (
-            <p style={{ color: '#aaa', fontSize: 13 }}>読み込み中...</p>
-          ) : sorted.length === 0 ? (
-            <p style={{ color: '#aaa', fontSize: 13 }}>誕生日登録済みモデルがいません</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {sorted.map(m => {
-                const { month, day, diff } = m.bdInfo
-                const isToday = diff === 0
-                const isSoon = diff <= 7
-                return (
-                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: isToday ? '#fff3e0' : isSoon ? '#f3e5f5' : '#f8fbff', border: `1px solid ${isToday ? '#ffb74d' : isSoon ? '#ce93d8' : '#e5e5e5'}` }}>
-                    <div style={{ flex: 1 }}>
-                      <span style={{ fontWeight: 700, fontSize: 14 }}>{m.name}</span>
-                      <span style={{ fontSize: 13, color: '#888', marginLeft: 8 }}>{month}/{day}</span>
-                      {isToday && <span style={{ marginLeft: 8, fontSize: 12, color: '#e65100', fontWeight: 700 }}>🎂 今日！</span>}
-                      {!isToday && isSoon && <span style={{ marginLeft: 8, fontSize: 12, color: '#7b1fa2' }}>あと{diff}日</span>}
-                    </div>
-                    {results[m.id] === 'ok' ? (
-                      <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 700 }}>✅ 送信済</span>
-                    ) : results[m.id] === 'fail' ? (
-                      <span style={{ fontSize: 12, color: '#c62828', fontWeight: 700 }}>❌ 失敗</span>
-                    ) : (
-                      <button onClick={() => sendBirthday(m)} disabled={sending === m.id}
-                        style={{ padding: '5px 12px', borderRadius: 7, border: 'none', background: '#06c755', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: sending === m.id ? 0.6 : 1 }}>
-                        {sending === m.id ? '送信中...' : '手動送信'}
-                      </button>
-                    )}
-                  </div>
-                )
-              })}
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>メッセージ本文</div>
+              <span style={{ fontSize: 12, color: message.length > MAX_CHARS ? '#e53935' : '#aaa' }}>{message.length} / {MAX_CHARS}</span>
+            </div>
+            <textarea value={message} onChange={e => { setMessage(e.target.value); setConfirmed(false); setResult(null) }}
+              rows={8} placeholder="メッセージを入力してください"
+              style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.7, fontFamily: 'inherit' }} />
+          </div>
+          {result && (
+            <div style={{ padding: '10px 14px', borderRadius: 8, background: result.error ? '#ffebee' : '#e8f5e9', border: `1px solid ${result.error ? '#ef9a9a' : '#a5d6a7'}`, fontSize: 13 }}>
+              {result.error ? <span style={{ color: '#c62828' }}>エラー: {result.error}</span>
+                : <span style={{ color: '#2e7d32', fontWeight: 600 }}>✅ 雑談グループへの送信が完了しました</span>}
             </div>
           )}
+          <SendButtons canSend={canSend} recipientLabel="雑談グループ" sending={sending} confirmed={confirmed}
+            onConfirm={() => setConfirmed(true)} onSend={handleSend} onBack={() => setConfirmed(false)} />
+        </div>
+        <div>
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>プレビュー</div>
+            <LinePreview message={message} accountName="モデフル" />
+            <p style={{ fontSize: 11, color: '#aaa', marginTop: 10 }}>※ LINEはプレーンテキストのみ送信されます</p>
+          </div>
         </div>
       </div>
-      <div>
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>プレビュー（自動送信メッセージ）</div>
-          <LinePreview message={DEFAULT_BIRTHDAY_MSG} accountName="PhotoFleur（モデル向け）" />
-          <p style={{ fontSize: 11, color: '#aaa', marginTop: 10 }}>※ LINEはプレーンテキストのみ送信されます</p>
+
+      {/* 誕生日お祝い */}
+      <div style={{ borderTop: '2px solid #f0f0f0', paddingTop: 24 }}>
+        <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560', marginBottom: 16 }}>🎂 誕生日お祝い送信</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 6 }}>お祝いメッセージテンプレート</div>
+              <div style={{ fontSize: 11, color: '#aaa', marginBottom: 8 }}>○○ または {'{{name}}'} がモデル名に置き換わります</div>
+              <textarea
+                value={bdTemplate}
+                onChange={e => setBdTemplate(e.target.value)}
+                rows={6}
+                style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.7, fontFamily: 'inherit' }}
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
+                {bdTemplateSaved && <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 600 }}>✅ 保存しました</span>}
+                <button onClick={saveBdTemplate} disabled={bdTemplateSaving}
+                  style={{ padding: '6px 16px', borderRadius: 8, border: 'none', background: bdTemplateSaving ? '#ccc' : '#1a3560', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                  {bdTemplateSaving ? '保存中...' : '保存'}
+                </button>
+              </div>
+            </div>
+            <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 12 }}>モデル誕生日一覧（近い順）</div>
+              {bdLoading ? <p style={{ color: '#aaa', fontSize: 13 }}>読み込み中...</p>
+                : sorted.length === 0 ? <p style={{ color: '#aaa', fontSize: 13 }}>誕生日登録済みモデルがいません</p>
+                : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {sorted.map(m => {
+                      const { month, day, diff } = m.bdInfo
+                      const isToday = diff === 0
+                      const isSoon = diff <= 7
+                      return (
+                        <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: isToday ? '#fff3e0' : isSoon ? '#f3e5f5' : '#f8fbff', border: `1px solid ${isToday ? '#ffb74d' : isSoon ? '#ce93d8' : '#e5e5e5'}` }}>
+                          <div style={{ flex: 1 }}>
+                            <span style={{ fontWeight: 700, fontSize: 14 }}>{m.name}</span>
+                            <span style={{ fontSize: 13, color: '#888', marginLeft: 8 }}>{month}/{day}</span>
+                            {isToday && <span style={{ marginLeft: 8, fontSize: 12, color: '#e65100', fontWeight: 700 }}>🎂 今日！</span>}
+                            {!isToday && isSoon && <span style={{ marginLeft: 8, fontSize: 12, color: '#7b1fa2' }}>あと{diff}日</span>}
+                          </div>
+                          {bdResults[m.id] === 'ok' ? <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 700 }}>✅ 送信済</span>
+                            : bdResults[m.id] === 'fail' ? <span style={{ fontSize: 12, color: '#c62828', fontWeight: 700 }}>❌ 失敗</span>
+                            : (
+                              <button onClick={() => sendBirthday(m)} disabled={bdSending === m.id}
+                                style={{ padding: '5px 12px', borderRadius: 7, border: 'none', background: '#06c755', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: bdSending === m.id ? 0.6 : 1 }}>
+                                {bdSending === m.id ? '送信中...' : '手動送信'}
+                              </button>
+                            )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+            </div>
+          </div>
+          <div>
+            <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>プレビュー（テンプレート）</div>
+              <LinePreview message={bdTemplate.replace(/○○/g, 'モデル名')} accountName="モデフル" />
+              <p style={{ fontSize: 11, color: '#aaa', marginTop: 10 }}>※ LINEはプレーンテキストのみ送信されます</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -738,10 +913,13 @@ export default function LineBroadcastPage() {
         </div>
       </div>
 
+      {/* 送信先設定パネル */}
+      <LineSettingsPanel />
+
       {/* タブコンテンツ */}
       {activeTab === 'all' && <TabAll />}
       {activeTab === 'individual' && <TabIndividual models={models} />}
-      {activeTab === 'birthday' && <TabBirthday />}
+      {activeTab === 'zatsudan' && <TabZatsudan />}
       {activeTab === 'camera' && <TabCamera />}
       {activeTab === 'photographer' && <TabPhotographer />}
     </div>

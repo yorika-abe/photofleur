@@ -36,6 +36,10 @@ export async function sendLineGroupMessage(message) {
   return pushMessage(LINE_CHANNEL_ACCESS_TOKEN, LINE_GROUP_ID, message)
 }
 
+export async function sendLineGroupMessageToId(groupId, message) {
+  return pushMessage(LINE_CHANNEL_ACCESS_TOKEN, groupId, message)
+}
+
 export async function broadcastCameraLine(message) {
   return broadcastMessages(LINE_CAMERA_CHANNEL_ACCESS_TOKEN, [{ type: 'text', text: message }])
 }

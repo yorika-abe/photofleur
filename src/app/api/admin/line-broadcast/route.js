@@ -58,6 +58,16 @@ export async function POST(req) {
     return Response.json({ ok: result.ok, error: result.ok ? null : result.reason })
   }
 
+  // 雑談グループLINE
+  if (channel === 'zatsudan') {
+    const { data: rows } = await admin.from('site_settings').select('value').eq('key', 'line_group_id_zatsudan').maybeSingle()
+    const groupId = rows?.value
+    if (!groupId) return Response.json({ error: '雑談グループIDが設定されていません' }, { status: 400 })
+    const { sendLineGroupMessageToId } = await import('@/lib/line')
+    const result = await sendLineGroupMessageToId(groupId, message)
+    return Response.json({ ok: result.ok, error: result.ok ? null : result.reason })
+  }
+
   // モデルLINE（個別push）
   let targets
   if (model_ids?.length > 0) {
