@@ -68,13 +68,13 @@ export default function Header() {
 
   return (
     <header style={{ background: '#fff', borderBottom: '1px solid #eee', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 6px rgba(0,0,0,0.06)' }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
-        <Link href="/" style={{ color: '#1a3560', textDecoration: 'none', fontWeight: 700, fontSize: 22, letterSpacing: '0.05em' }}>
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 52, gap: 4 }}>
+        <Link href="/" style={{ color: '#1a3560', textDecoration: 'none', fontWeight: 700, fontSize: 17, letterSpacing: '0.04em', flexShrink: 0 }}>
           PhotoFleur
         </Link>
 
         {/* Desktop nav */}
-        <nav style={{ display: 'flex', gap: 2, alignItems: 'center' }} className="desktop-nav">
+        <nav style={{ display: 'flex', gap: 0, alignItems: 'center', flexWrap: 'nowrap', overflow: 'hidden' }} className="desktop-nav">
           {navLinks.map(link => (
             <Link
               key={link.href}
@@ -82,10 +82,11 @@ export default function Header() {
               style={{
                 color: isActive(link.href) ? '#1a3560' : '#555',
                 textDecoration: 'none',
-                fontSize: 13,
+                fontSize: 11,
                 fontWeight: isActive(link.href) ? 700 : 500,
-                padding: '6px 10px',
-                borderRadius: 6,
+                padding: '5px 7px',
+                borderRadius: 5,
+                whiteSpace: 'nowrap',
                 background: isActive(link.href) ? 'rgba(26,53,96,0.07)' : 'transparent',
                 borderBottom: isActive(link.href) ? '2px solid #1a3560' : '2px solid transparent',
               }}
@@ -94,29 +95,29 @@ export default function Header() {
             </Link>
           ))}
           {user ? (
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginLeft: 8 }}>
+            <div style={{ display: 'flex', gap: 3, alignItems: 'center', marginLeft: 6, flexShrink: 0, flexWrap: 'nowrap' }}>
               {roles.includes('admin') && (
                 <Link href="/admin" style={{
-                  color: '#a07000', textDecoration: 'none', fontSize: 13, fontWeight: 600,
-                  padding: '6px 10px', borderRadius: 6,
+                  color: '#a07000', textDecoration: 'none', fontSize: 11, fontWeight: 600,
+                  padding: '5px 7px', borderRadius: 5, whiteSpace: 'nowrap',
                   background: isActive('/admin') ? 'rgba(160,112,0,0.08)' : 'transparent',
                 }}>管理画面</Link>
               )}
               {roles.includes('model') && (
-                <Link href="/model-portal" style={{ color: '#c2185b', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 10px', borderRadius: 6, background: isActive('/model-portal') ? 'rgba(194,24,91,0.08)' : 'transparent' }}>モデル画面</Link>
+                <Link href="/model-portal" style={{ color: '#c2185b', textDecoration: 'none', fontSize: 11, fontWeight: 600, padding: '5px 7px', borderRadius: 5, whiteSpace: 'nowrap', background: isActive('/model-portal') ? 'rgba(194,24,91,0.08)' : 'transparent' }}>モデル画面</Link>
               )}
               {roles.includes('staff') && (
-                <Link href="/staff-portal" style={{ color: '#6a1b9a', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 10px', borderRadius: 6, background: isActive('/staff-portal') ? 'rgba(106,27,154,0.08)' : 'transparent' }}>スタッフ画面</Link>
+                <Link href="/staff-portal" style={{ color: '#6a1b9a', textDecoration: 'none', fontSize: 11, fontWeight: 600, padding: '5px 7px', borderRadius: 5, whiteSpace: 'nowrap', background: isActive('/staff-portal') ? 'rgba(106,27,154,0.08)' : 'transparent' }}>スタッフ画面</Link>
               )}
               {!roles.includes('admin') && !roles.includes('model') && !roles.includes('staff') && (
-                <Link href="/my" style={{ color: '#1a7090', textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '6px 10px' }}>マイページ</Link>
+                <Link href="/my" style={{ color: '#1a7090', textDecoration: 'none', fontSize: 11, fontWeight: 600, padding: '5px 7px', whiteSpace: 'nowrap' }}>マイページ</Link>
               )}
-              <button onClick={handleLogout} style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontSize: 13 }}>
+              <button onClick={handleLogout} style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 11px', cursor: 'pointer', fontSize: 11, whiteSpace: 'nowrap', flexShrink: 0 }}>
                 ログアウト
               </button>
             </div>
           ) : (
-            <Link href="/login" style={{ background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 500, marginLeft: 8 }}>
+            <Link href="/login" style={{ background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '5px 11px', fontSize: 11, fontWeight: 500, marginLeft: 6, whiteSpace: 'nowrap', flexShrink: 0 }}>
               ログイン
             </Link>
           )}
