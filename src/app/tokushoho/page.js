@@ -17,7 +17,7 @@ export default function TokushohoPage() {
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '40px 20px' }}>
       <h1 style={{ fontSize: 32, fontWeight: 700, color: '#2f2244', marginBottom: 8 }}>特定商取引法に基づく表記</h1>
-      <p style={{ color: '#999', fontSize: 13, marginBottom: 48 }}>最終更新日：2024年1月1日</p>
+      <p style={{ color: '#999', fontSize: 13, marginBottom: 48 }}>最終更新日：2026年5月7日</p>
 
       <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e5e5', overflow: 'hidden' }}>
         {items.map((item, i) => (

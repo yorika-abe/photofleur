@@ -79,7 +79,7 @@ export default function Footer() {
           </div>
         </div>
         <div style={{ borderTop: '1px solid #e8f4f8', paddingTop: 24, textAlign: 'center', fontSize: 12, color: '#aaa' }}>
-          © 2024 PhotoFleur. All rights reserved.
+          © {new Date().getFullYear()} PhotoFleur. All rights reserved.
         </div>
       </div>
     </footer>
