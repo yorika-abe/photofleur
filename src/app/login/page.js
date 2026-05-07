@@ -12,7 +12,8 @@ function LoginForm() {
   const redirect = searchParams.get('redirect') || '/'
   const isAlreadyRegistered = searchParams.get('notice') === 'already_registered'
   const noticeEmail = searchParams.get('email') || ''
-  const lineError = searchParams.get('error')?.startsWith('line_')
+  const lineError = searchParams.get('error')?.startsWith('line_') && searchParams.get('error') !== 'line_blocked'
+  const lineBlocked = searchParams.get('error') === 'line_blocked'
 
   const [email, setEmail] = useState(noticeEmail)
   const [password, setPassword] = useState('')
@@ -45,11 +46,18 @@ function LoginForm() {
       }
       setLoading(false)
     } else {
+      const { data: profile } = await supabase.from('user_profiles').select('roles, role, is_blocked').eq('id', data.user.id).single()
+      if (profile?.is_blocked) {
+        await supabase.auth.signOut()
+        setErrorType('blocked')
+        setError('撮影会によりブロックされています。ログインできません。')
+        setLoading(false)
+        return
+      }
       // redirectパラメータがあればそこへ、なければロールに応じて振り分け
       if (redirect !== '/') {
         router.push(redirect)
       } else {
-        const { data: profile } = await supabase.from('user_profiles').select('roles, role').eq('id', data.user.id).single()
         const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
         if (roles.includes('admin')) {
           router.push('/admin')
@@ -68,6 +76,11 @@ function LoginForm() {
       <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1a3560', marginBottom: 8, textAlign: 'center' }}>ログイン</h1>
       <p style={{ color: '#666', textAlign: 'center', marginBottom: 32, fontSize: 14 }}>PhotoFleurアカウントでログイン</p>
 
+      {lineBlocked && (
+        <div style={{ background: '#ffeef0', border: '1px solid #f5c0c5', borderRadius: 10, padding: '14px 18px', marginBottom: 16, fontSize: 14, color: '#c0392b', fontWeight: 600, lineHeight: 1.7 }}>
+          撮影会によりブロックされています。ログインできません。
+        </div>
+      )}
       {lineError && (
         <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: '14px 18px', marginBottom: 16, fontSize: 14, color: '#5d4037', lineHeight: 1.7 }}>
           異なるログイン方法でご登録いただいているか会員情報がありません。<br />

@@ -135,6 +135,12 @@ export async function GET(req) {
     }
   }
 
+  // Check if blocked
+  const { data: blockedProfile } = await admin.from('user_profiles').select('is_blocked').eq('id', userId).single()
+  if (blockedProfile?.is_blocked) {
+    return Response.redirect(`${siteUrl}/login?error=line_blocked`)
+  }
+
   // Generate magic link to create a session
   const userRes = await admin.auth.admin.getUserById(userId)
   const authEmail = userRes.data.user?.email

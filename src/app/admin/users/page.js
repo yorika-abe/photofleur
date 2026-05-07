@@ -62,6 +62,17 @@ export default function UsersPage() {
     setChanging(null)
   }
 
+  async function toggleBlock(userId, currentBlocked) {
+    setChanging(userId)
+    await fetch('/api/admin/users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, is_blocked: !currentBlocked }),
+    })
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_blocked: !currentBlocked } : u))
+    setChanging(null)
+  }
+
   async function markInviteSeen(userId) {
     setMarkingSeenId(userId)
     await fetch('/api/admin/users/mark-invite-seen', {
@@ -133,17 +144,19 @@ export default function UsersPage() {
           {filtered.map((user, i) => {
             const userRoles = user.roles || ['photographer']
             const isNew = user.registered_via_invite && !user.invite_notif_seen
+            const isBlocked = !!user.is_blocked
             return (
               <div key={user.id} style={{
                 display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', flexWrap: 'wrap',
                 borderBottom: i < filtered.length - 1 ? '1px solid #f0f0f0' : 'none',
                 opacity: changing === user.id ? 0.6 : 1,
-                background: isNew ? '#fff8e1' : '#fff',
-                borderLeft: isNew ? '4px solid #ff9800' : '4px solid transparent',
+                background: isBlocked ? '#fff5f5' : isNew ? '#fff8e1' : '#fff',
+                borderLeft: isBlocked ? '4px solid #e53935' : isNew ? '4px solid #ff9800' : '4px solid transparent',
               }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontWeight: 700, fontSize: 15, color: '#1a3560' }}>{user.name || '（名前なし）'}</span>
+                    <span style={{ fontWeight: 700, fontSize: 15, color: isBlocked ? '#c62828' : '#1a3560' }}>{user.name || '（名前なし）'}</span>
+                    {isBlocked && <span style={{ background: '#e53935', color: '#fff', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>ブロック中</span>}
                     {isNew && <span style={{ background: '#ff9800', color: '#fff', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>招待登録</span>}
                   </div>
                   <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>{user.email}</div>
@@ -162,6 +175,12 @@ export default function UsersPage() {
                       {r.label}
                     </label>
                   ))}
+                  <button
+                    onClick={() => toggleBlock(user.id, isBlocked)}
+                    disabled={changing === user.id}
+                    style={{ background: isBlocked ? '#e53935' : '#f5f5f5', color: isBlocked ? '#fff' : '#888', border: isBlocked ? 'none' : '1px solid #ddd', borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                    {isBlocked ? 'ブロック解除' : 'ブロック'}
+                  </button>
                   {isNew && (
                     <button
                       onClick={() => markInviteSeen(user.id)}

@@ -4,7 +4,7 @@ export async function GET() {
   const supabase = await createSupabaseAdminClient()
   const { data, error } = await supabase
     .from('user_profiles')
-    .select('id, name, email, roles, role, created_at, registered_via_invite, invite_notif_seen')
+    .select('id, name, email, roles, role, created_at, registered_via_invite, invite_notif_seen, is_blocked')
     .order('created_at', { ascending: false })
   if (error) return Response.json({ error: error.message }, { status: 500 })
   const normalized = (data || []).map(u => ({
@@ -15,9 +15,13 @@ export async function GET() {
 }
 
 export async function PATCH(req) {
-  const { userId, roles } = await req.json()
+  const body = await req.json()
+  const { userId, roles, is_blocked } = body
   const supabase = await createSupabaseAdminClient()
-  const { error } = await supabase.from('user_profiles').update({ roles }).eq('id', userId)
+  const updateData = {}
+  if (roles !== undefined) updateData.roles = roles
+  if (is_blocked !== undefined) updateData.is_blocked = is_blocked
+  const { error } = await supabase.from('user_profiles').update(updateData).eq('id', userId)
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json({ ok: true })
 }

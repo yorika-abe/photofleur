@@ -153,6 +153,7 @@ export default function AdminPrivateInfoPage() {
             非公開登録情報
             {pendingCount > 0 && <span style={{ background: '#e53935', color: '#fff', borderRadius: 10, padding: '1px 8px', fontSize: 12, fontWeight: 700 }}>{pendingCount}</span>}
           </div>
+          <Link href="/admin/model-invite" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>モデル登録リンク</Link>
         </div>
       </div>
       <div style={{ marginBottom: 28 }} />

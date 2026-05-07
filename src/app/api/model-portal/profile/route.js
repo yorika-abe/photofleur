@@ -39,10 +39,12 @@ export async function PUT(req) {
   const { user, admin } = result
   const body = await req.json()
 
-  const { data: existing } = await admin.from('models').select('id, status').eq('user_id', user.id).single()
+  const { data: existing } = await admin.from('models').select('*').eq('user_id', user.id).single()
   if (!existing) return Response.json({ error: 'モデルレコードが見つかりません' }, { status: 404 })
 
-  const updateData = { pending_data: body }
+  const basePending = existing.pending_data || {}
+  const mergedPending = { ...basePending, ...body }
+  const updateData = { pending_data: mergedPending }
   if (existing.status !== 'active') updateData.status = 'pending'
 
   const { error } = await admin.from('models').update(updateData).eq('user_id', user.id)
