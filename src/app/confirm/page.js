@@ -244,6 +244,7 @@ function ConfirmForm() {
       body: JSON.stringify({ last_name: form.last_name, first_name: form.first_name, last_name_kana: form.last_name_kana, first_name_kana: form.first_name_kana, phone: form.phone, sns_url: form.sns_url, nickname: form.nickname, email: form.email }),
     }).catch(() => {})
 
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
     await fetch('/api/send-booking-mail', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -254,6 +255,7 @@ function ConfirmForm() {
         qr_token: bookingData.qr_token,
         final_price: finalPrice,
         is_outdoor: isOutdoor,
+        user_id: currentUser?.id || null,
       }),
     }).catch(() => {})
 

@@ -1,6 +1,11 @@
-import { createSupabaseAdminClient } from '@/lib/supabase-server'
-import { sendLineMessage } from '@/lib/line'
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase-server'
+import { sendLineMessage, sendLineCameraUser } from '@/lib/line'
+import { DEFAULTS } from '@/app/api/admin/line-templates/route'
 import { randomUUID } from 'crypto'
+
+function applyVars(template, vars) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '')
+}
 
 export async function POST(req, { params }) {
   const { id } = await params
@@ -83,6 +88,25 @@ export async function POST(req, { params }) {
       }
     }
   }
+
+  // カメラマン個人LINE通知
+  try {
+    const server = await createSupabaseServerClient()
+    const { data: { user } } = await server.auth.getUser()
+    if (user) {
+      const { data: userProfile } = await admin.from('user_profiles').select('line_user_id').eq('id', user.id).single()
+      if (userProfile?.line_user_id) {
+        const { data: tmplRow } = await admin.from('line_templates').select('body').eq('key', 'photographer_special').single()
+        const template = tmplRow?.body ?? DEFAULTS.photographer_special
+        const message = applyVars(template, {
+          product_name: product_name || '',
+          event_date: '',
+          selections: Object.entries(selections || {}).map(([k, v]) => `${k}：${v}`).join('\n'),
+        })
+        await sendLineCameraUser(userProfile.line_user_id, message).catch(() => {})
+      }
+    }
+  } catch {}
 
   return Response.json({ ok: true, qr_token: qrToken })
 }

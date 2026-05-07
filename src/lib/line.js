@@ -2,6 +2,11 @@ const LINE_CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN
 const LINE_GROUP_ID = process.env.LINE_GROUP_ID
 const LINE_CAMERA_CHANNEL_ACCESS_TOKEN = process.env.LINE_CAMERA_CHANNEL_ACCESS_TOKEN
 
+// 公式LINEアカウント経由でカメラマン個人にpush（LINE連携済みかつ公式LINEをフォロー済みの場合のみ有効）
+export async function sendLineCameraUser(lineUserId, message) {
+  return pushMessage(LINE_CAMERA_CHANNEL_ACCESS_TOKEN, lineUserId, message)
+}
+
 async function pushMessage(token, to, message) {
   if (!token || !to) return { ok: false, reason: 'missing config' }
   const res = await fetch('https://api.line.me/v2/bot/message/push', {

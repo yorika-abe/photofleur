@@ -1,6 +1,12 @@
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
 import { renderEmailTemplateWithBlocks } from '@/lib/email-render'
+import { sendLineCameraUser } from '@/lib/line'
+import { DEFAULTS } from '@/app/api/admin/line-templates/route'
+
+function applyVars(template, vars) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '')
+}
 
 function formatDate(dateString) {
   if (!dateString) return "未取得";
@@ -139,6 +145,24 @@ export async function POST(req) {
       subject: emailSubject,
       html,
     });
+
+    // カメラマン個人LINE通知（user_idが渡されLINE連携済みの場合）
+    if (body.user_id) {
+      try {
+        const { data: userProfile } = await supabase.from('user_profiles').select('line_user_id').eq('id', body.user_id).single()
+        if (userProfile?.line_user_id) {
+          const { data: tmplRow } = await supabase.from('line_templates').select('body').eq('key', 'photographer_booking').single()
+          const template = tmplRow?.body ?? DEFAULTS.photographer_booking
+          const message = applyVars(template, {
+            customer_name: customerName,
+            event_date: eventDate,
+            slot_label: slotLabel,
+            model_name: modelName,
+          })
+          await sendLineCameraUser(userProfile.line_user_id, message).catch(() => {})
+        }
+      } catch {}
+    }
 
     return Response.json({ success: true, data });
   } catch (error) {

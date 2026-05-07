@@ -1,6 +1,25 @@
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { renderEmailTemplateWithBlocks } from '@/lib/email-render'
+import { sendLineCameraUser } from '@/lib/line'
+import { DEFAULTS } from '@/app/api/admin/line-templates/route'
+
+function applyVars(template, vars) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '')
+}
+
+async function sendPhotographerDayBeforeLine(supabase, email, vars, templateKey, defaultKey) {
+  try {
+    const { data: cp } = await supabase.from('customer_profiles').select('user_id').eq('email', email).single()
+    if (!cp?.user_id) return
+    const { data: up } = await supabase.from('user_profiles').select('line_user_id').eq('id', cp.user_id).single()
+    if (!up?.line_user_id) return
+    const { data: tmplRow } = await supabase.from('line_templates').select('body').eq('key', templateKey).single()
+    const template = tmplRow?.body ?? DEFAULTS[defaultKey]
+    const message = applyVars(template, vars)
+    await sendLineCameraUser(up.line_user_id, message).catch(() => {})
+  } catch {}
+}
 
 function formatDate(dateStr) {
   if (!dateStr) return ''
@@ -241,6 +260,15 @@ export async function GET(req) {
           html,
         })
         results.push({ email, groupCount: Object.keys(groups).length, ok: !error })
+
+        // LINE通知（連携済みカメラマンへ）
+        await sendPhotographerDayBeforeLine(supabase, email, {
+          customer_name: customerName,
+          event_date: formattedDate,
+          slot_label: Object.values(groups).flatMap(g => g.items).map(i => i.slotLabel || i.productTitle || '').filter(Boolean).join(' / '),
+          model_name: Object.values(groups).flatMap(g => g.items).map(i => i.modelName || '').filter(Boolean).join(' / '),
+          location: Object.values(groups).flatMap(g => g.items).map(i => i.locationInfo?.location_name || i.locationInfo?.meeting_place || '').filter(Boolean).join(' '),
+        }, 'photographer_day_before', 'photographer_day_before')
       } catch (e) {
         results.push({ email, ok: false, error: String(e) })
       }

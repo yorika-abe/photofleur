@@ -9,6 +9,7 @@ const TABS = [
   { id: 'individual', label: 'モデル個人', icon: '👤', from: 'モデフル', desc: '1人のモデルを選んで個別グループLINEに送信' },
   { id: 'birthday', label: '雑談', icon: '🎂', from: 'モデフル', desc: 'モデルの誕生日にグループLINEでお祝いメッセージを送信' },
   { id: 'camera', label: '公式LINE', icon: '📣', from: 'カメラマン向け公式LINEアカウント', desc: '公式LINEの全フォロワーに一斉ブロードキャスト' },
+  { id: 'photographer', label: 'カメラマン個人', icon: '📸', from: '公式LINEアカウント（個人push）', desc: 'LINE連携済みカメラマンへ予約・購入時に個別通知' },
 ]
 
 function LinePreview({ message, accountName }) {
@@ -602,6 +603,101 @@ function TabCamera() {
   )
 }
 
+const PHOTOGRAPHER_TEMPLATES = [
+  {
+    key: 'photographer_booking',
+    label: '予約完了LINE（イベント予約）',
+    trigger: 'イベント枠に予約が入った時（自動）',
+    vars: [
+      { key: '{{customer_name}}', desc: 'お客様名' },
+      { key: '{{event_date}}', desc: '撮影日' },
+      { key: '{{slot_label}}', desc: '時間枠' },
+      { key: '{{model_name}}', desc: 'モデル名' },
+    ],
+  },
+  {
+    key: 'photographer_special',
+    label: '予約完了LINE（特別予約商品）',
+    trigger: '特別予約商品に予約が入った時（自動）',
+    vars: [
+      { key: '{{customer_name}}', desc: 'お客様名' },
+      { key: '{{product_name}}', desc: '商品名' },
+      { key: '{{event_date}}', desc: '撮影日' },
+      { key: '{{selections}}', desc: '選択内容' },
+    ],
+  },
+  {
+    key: 'photographer_private',
+    label: '予約完了LINE（非公開商品）',
+    trigger: '非公開リンクから予約が入った時（自動）',
+    vars: [
+      { key: '{{customer_name}}', desc: 'お客様名' },
+      { key: '{{product_title}}', desc: '商品名' },
+      { key: '{{model_name}}', desc: 'モデル名' },
+    ],
+  },
+  {
+    key: 'photographer_goods',
+    label: '購入完了LINE（グッズ）',
+    trigger: 'グッズを購入した時（自動）',
+    vars: [
+      { key: '{{customer_name}}', desc: 'お客様名' },
+      { key: '{{goods_title}}', desc: '商品名' },
+      { key: '{{quantity}}', desc: '数量' },
+    ],
+  },
+  {
+    key: 'photographer_day_before',
+    label: '前日確認LINE（イベント・特別予約）',
+    trigger: '撮影前日の夜（自動cron）',
+    vars: [
+      { key: '{{customer_name}}', desc: 'お客様名' },
+      { key: '{{event_date}}', desc: '撮影日' },
+      { key: '{{slot_label}}', desc: '時間枠' },
+      { key: '{{model_name}}', desc: 'モデル名' },
+      { key: '{{location}}', desc: '場所' },
+    ],
+  },
+  {
+    key: 'photographer_private_day_before',
+    label: '前日確認LINE（非公開予約）',
+    trigger: '撮影前日の夜（自動cron）',
+    vars: [
+      { key: '{{customer_name}}', desc: 'お客様名' },
+      { key: '{{product_title}}', desc: '商品名' },
+      { key: '{{meeting_place}}', desc: '集合場所' },
+      { key: '{{shooting_time}}', desc: '撮影時間' },
+    ],
+  },
+]
+
+function TabPhotographer() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ background: '#e8f5e9', borderRadius: 12, border: '1px solid #a5d6a7', padding: '14px 18px', fontSize: 13 }}>
+        <div style={{ fontWeight: 700, color: '#2e7d32', marginBottom: 6 }}>📸 カメラマン個人通知について</div>
+        <div style={{ color: '#388e3c', lineHeight: 1.8 }}>
+          予約・購入時に<strong>メールは全員に自動送信</strong>されます。<br />
+          マイページでLINE連携済みのカメラマンには、メールに加えて<strong>公式LINEからも個別通知</strong>が送られます。<br />
+          ※ 公式LINEをフォローしていない場合はLINE通知は届きません。
+        </div>
+      </div>
+
+      <div style={{ background: '#fff8e1', borderRadius: 12, border: '1px solid #ffe082', padding: '14px 18px', fontSize: 13 }}>
+        <div style={{ fontWeight: 700, color: '#f57f17', marginBottom: 4 }}>📧 メール自動送信タイミング</div>
+        <ul style={{ margin: 0, padding: '0 0 0 18px', color: '#795548', lineHeight: 2 }}>
+          <li>予約完了メール — イベント予約・特別予約・非公開予約完了時</li>
+          <li>グッズ購入完了メール — グッズ購入完了時</li>
+          <li>前日確認メール — 撮影前日の夜（自動cron）</li>
+        </ul>
+        <div style={{ marginTop: 8, fontSize: 12, color: '#aaa' }}>メールのHTMLテンプレートはメルマガ配信ページから編集できます。</div>
+      </div>
+
+      <AutoTemplateSection templateDefs={PHOTOGRAPHER_TEMPLATES} />
+    </div>
+  )
+}
+
 // ---- メインページ ----
 export default function LineBroadcastPage() {
   const [activeTab, setActiveTab] = useState('all')
@@ -647,6 +743,7 @@ export default function LineBroadcastPage() {
       {activeTab === 'individual' && <TabIndividual models={models} />}
       {activeTab === 'birthday' && <TabBirthday />}
       {activeTab === 'camera' && <TabCamera />}
+      {activeTab === 'photographer' && <TabPhotographer />}
     </div>
   )
 }

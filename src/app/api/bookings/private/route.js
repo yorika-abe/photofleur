@@ -1,5 +1,5 @@
-import { createSupabaseAdminClient } from '@/lib/supabase-server'
-import { sendLineMessage } from '@/lib/line'
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase-server'
+import { sendLineMessage, sendLineCameraUser } from '@/lib/line'
 import { DEFAULTS } from '@/app/api/admin/line-templates/route'
 import { randomUUID } from 'crypto'
 
@@ -118,6 +118,24 @@ export async function POST(req) {
       status: result.ok ? 'sent' : 'failed',
     }).catch(() => {})
   }
+
+  // カメラマン個人LINE通知（LINE連携済みの場合）
+  try {
+    const server = await createSupabaseServerClient()
+    const { data: { user } } = await server.auth.getUser()
+    if (user) {
+      const { data: userProfile } = await admin.from('user_profiles').select('line_user_id').eq('id', user.id).single()
+      if (userProfile?.line_user_id) {
+        const { data: tmplRow } = await admin.from('line_templates').select('body').eq('key', 'photographer_private').single()
+        const template = tmplRow?.body ?? DEFAULTS.photographer_private
+        const message = applyVars(template, {
+          product_title: product.title,
+          model_name: product.models?.name || '',
+        })
+        await sendLineCameraUser(userProfile.line_user_id, message).catch(() => {})
+      }
+    }
+  } catch {}
 
   return Response.json({ ok: true, qr_token: qrToken })
 }

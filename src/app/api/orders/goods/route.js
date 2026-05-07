@@ -1,7 +1,13 @@
-import { createSupabaseAdminClient } from '@/lib/supabase-server'
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase-server'
 import { Resend } from 'resend'
 import { renderEmailTemplate } from '@/lib/email-render'
 import { decrementLayersStock } from '@/lib/product-layers'
+import { sendLineCameraUser } from '@/lib/line'
+import { DEFAULTS } from '@/app/api/admin/line-templates/route'
+
+function applyVars(template, vars) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '')
+}
 
 export async function POST(req) {
   const body = await req.json()
@@ -131,6 +137,22 @@ export async function POST(req) {
       subject: templateResult?.subject || '【PhotoFleur】ご注文ありがとうございます',
       html,
     })
+  } catch {}
+
+  // カメラマン個人LINE通知
+  try {
+    const server = await createSupabaseServerClient()
+    const { data: { user } } = await server.auth.getUser()
+    if (user) {
+      const { data: userProfile } = await admin.from('user_profiles').select('line_user_id').eq('id', user.id).single()
+      if (userProfile?.line_user_id) {
+        const { data: tmplRow } = await admin.from('line_templates').select('body').eq('key', 'photographer_goods').single()
+        const template = tmplRow?.body ?? DEFAULTS.photographer_goods
+        const customerName = `${last_name}${first_name ? ` ${first_name}` : ''}`
+        const message = applyVars(template, { customer_name: customerName, goods_title: goods.title, quantity: String(qty) })
+        await sendLineCameraUser(userProfile.line_user_id, message).catch(() => {})
+      }
+    }
   } catch {}
 
   return Response.json({ ok: true })

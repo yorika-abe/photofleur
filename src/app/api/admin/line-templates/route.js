@@ -17,6 +17,12 @@ export const DEFAULTS = {
   private_day_before: `お疲れ様です😊\n明日の非公開予約の詳細です！ご確認よろしくお願いします✨\n撮影日：{{event_date}}\n集合場所：{{meeting_place}}\n撮影時間：{{shooting_time}}\nニックネーム：{{nickname}}\nSNS URL：{{sns_url}}`,
   monthly_events_model: `【今月のイベントのお知らせ】\nおはようございます☀️\n{{month}}月がスタートしましたね！\n\n今月の季節のイベントをお知らせします❤︎\n{{events_list}}\n\n今月も楽しくみんなが過ごせますように🙏`,
   monthly_events_camera: `【今月のイベントのお知らせ】\nおはようございます☀️\n{{month}}月がスタートしましたね！\n\n今月の季節のイベントをお知らせします❤︎\n{{events_list}}\n\n今月も楽しくみんなが過ごせますように🙏`,
+  photographer_booking: `【PhotoFleur】ご予約ありがとうございます📸\n\n撮影日：{{event_date}}\n時間枠：{{slot_label}}\n担当モデル：{{model_name}}\n\n当日お気をつけてお越しください🌸\nご不明点は公式LINEよりご連絡ください。`,
+  photographer_special: `【PhotoFleur】特別予約が完了しました📸\n\n商品：{{product_name}}\n撮影日：{{event_date}}\n{{selections}}\n\nご予約ありがとうございます🌸\nご不明点は公式LINEよりご連絡ください。`,
+  photographer_private: `【PhotoFleur】非公開予約が完了しました📸\n\n商品：{{product_title}}\n担当モデル：{{model_name}}\n\n詳細は別途メールにてお送りしております🌸\nご不明点は公式LINEよりご連絡ください。`,
+  photographer_goods: `【PhotoFleur】ご注文ありがとうございます🛍️\n\n商品：{{goods_title}}\n数量：{{quantity}}点\n\nご注文を受け付けました。\nご不明点は公式LINEよりご連絡ください。`,
+  photographer_day_before: `【PhotoFleur】明日の撮影のご案内📸\n\n明日（{{event_date}}）は撮影会です！\n時間枠：{{slot_label}}\n担当モデル：{{model_name}}\n場所：{{location}}\n\nQRコードは予約完了メールに記載されています。\nどうぞよろしくお願いいたします🌸`,
+  photographer_private_day_before: `【PhotoFleur】明日の撮影のご案内📸\n\n明日は以下の撮影が予定されています。\n\n商品：{{product_title}}\n集合場所：{{meeting_place}}\n撮影時間：{{shooting_time}}\n\nよろしくお願いいたします🌸`,
 }
 
 export async function GET() {
