@@ -205,17 +205,19 @@ export async function POST(req) {
 
   // プロフィール更新
   if (user) {
-    await admin.from('customer_profiles').upsert({
-      user_id: user.id,
-      last_name: customer.last_name || null,
-      first_name: customer.first_name || null,
-      last_name_kana: customer.last_name_kana || null,
-      first_name_kana: customer.first_name_kana || null,
-      phone: customer.phone || null,
-      sns_url: customer.sns_url || null,
-      nickname: customer.nickname || null,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' }).catch(() => {})
+    try {
+      await admin.from('customer_profiles').upsert({
+        user_id: user.id,
+        last_name: customer.last_name || null,
+        first_name: customer.first_name || null,
+        last_name_kana: customer.last_name_kana || null,
+        first_name_kana: customer.first_name_kana || null,
+        phone: customer.phone || null,
+        sns_url: customer.sns_url || null,
+        nickname: customer.nickname || null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' })
+    } catch {}
   }
 
   return Response.json({ ok: true, qrTokens })
