@@ -1,5 +1,5 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
-import { sendLineMessage, sendLineGroupMessage, broadcastCameraLine, broadcastCameraLineWithImage } from '@/lib/line'
+import { sendLineMessage, broadcastCameraLine, broadcastCameraLineWithImage } from '@/lib/line'
 
 async function checkAdmin() {
   const server = await createSupabaseServerClient()
@@ -54,7 +54,11 @@ export async function POST(req) {
 
   // モデルグループLINE
   if (channel === 'group') {
-    const result = await sendLineGroupMessage(message)
+    const { data: groupRow } = await admin.from('site_settings').select('value').eq('key', 'line_group_id_all').maybeSingle()
+    const groupId = groupRow?.value || process.env.LINE_GROUP_ID
+    if (!groupId) return Response.json({ error: 'グループIDが設定されていません' }, { status: 400 })
+    const { sendLineGroupMessageToId } = await import('@/lib/line')
+    const result = await sendLineGroupMessageToId(groupId, message)
     return Response.json({ ok: result.ok, error: result.ok ? null : result.reason })
   }
 
