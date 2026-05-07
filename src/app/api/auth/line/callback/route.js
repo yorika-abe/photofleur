@@ -128,7 +128,7 @@ export async function GET(req) {
   const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
     type: 'magiclink',
     email: authEmail,
-    options: { redirectTo: `${siteUrl}/api/auth/callback?next=${encodeURIComponent(next)}` },
+    options: { redirectTo: `${siteUrl}/auth/line-complete?next=${encodeURIComponent(next)}` },
   })
 
   if (linkError || !linkData?.properties?.action_link) {
