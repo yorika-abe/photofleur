@@ -82,7 +82,7 @@ export default function Header() {
               style={{
                 color: isActive(link.href) ? '#1a3560' : '#555',
                 textDecoration: 'none',
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: isActive(link.href) ? 700 : 500,
                 padding: '5px 7px',
                 borderRadius: 5,
@@ -98,26 +98,26 @@ export default function Header() {
             <div style={{ display: 'flex', gap: 3, alignItems: 'center', marginLeft: 6, flexShrink: 0, flexWrap: 'nowrap' }}>
               {roles.includes('admin') && (
                 <Link href="/admin" style={{
-                  color: '#a07000', textDecoration: 'none', fontSize: 11, fontWeight: 600,
+                  color: '#a07000', textDecoration: 'none', fontSize: 12, fontWeight: 600,
                   padding: '5px 7px', borderRadius: 5, whiteSpace: 'nowrap',
                   background: isActive('/admin') ? 'rgba(160,112,0,0.08)' : 'transparent',
                 }}>管理画面</Link>
               )}
               {roles.includes('model') && (
-                <Link href="/model-portal" style={{ color: '#c2185b', textDecoration: 'none', fontSize: 11, fontWeight: 600, padding: '5px 7px', borderRadius: 5, whiteSpace: 'nowrap', background: isActive('/model-portal') ? 'rgba(194,24,91,0.08)' : 'transparent' }}>モデル画面</Link>
+                <Link href="/model-portal" style={{ color: '#c2185b', textDecoration: 'none', fontSize: 12, fontWeight: 600, padding: '5px 7px', borderRadius: 5, whiteSpace: 'nowrap', background: isActive('/model-portal') ? 'rgba(194,24,91,0.08)' : 'transparent' }}>モデル画面</Link>
               )}
               {roles.includes('staff') && (
-                <Link href="/staff-portal" style={{ color: '#6a1b9a', textDecoration: 'none', fontSize: 11, fontWeight: 600, padding: '5px 7px', borderRadius: 5, whiteSpace: 'nowrap', background: isActive('/staff-portal') ? 'rgba(106,27,154,0.08)' : 'transparent' }}>スタッフ画面</Link>
+                <Link href="/staff-portal" style={{ color: '#6a1b9a', textDecoration: 'none', fontSize: 12, fontWeight: 600, padding: '5px 7px', borderRadius: 5, whiteSpace: 'nowrap', background: isActive('/staff-portal') ? 'rgba(106,27,154,0.08)' : 'transparent' }}>スタッフ画面</Link>
               )}
               {!roles.includes('admin') && !roles.includes('model') && !roles.includes('staff') && (
-                <Link href="/my" style={{ color: '#1a7090', textDecoration: 'none', fontSize: 11, fontWeight: 600, padding: '5px 7px', whiteSpace: 'nowrap' }}>マイページ</Link>
+                <Link href="/my" style={{ color: '#1a7090', textDecoration: 'none', fontSize: 12, fontWeight: 600, padding: '5px 7px', whiteSpace: 'nowrap' }}>マイページ</Link>
               )}
-              <button onClick={handleLogout} style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 11px', cursor: 'pointer', fontSize: 11, whiteSpace: 'nowrap', flexShrink: 0 }}>
+              <button onClick={handleLogout} style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 11px', cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap', flexShrink: 0 }}>
                 ログアウト
               </button>
             </div>
           ) : (
-            <Link href="/login" style={{ background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '5px 11px', fontSize: 11, fontWeight: 500, marginLeft: 6, whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <Link href="/login" style={{ background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '5px 11px', fontSize: 12, fontWeight: 500, marginLeft: 6, whiteSpace: 'nowrap', flexShrink: 0 }}>
               ログイン
             </Link>
           )}
