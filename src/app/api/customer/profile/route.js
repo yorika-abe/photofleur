@@ -12,7 +12,11 @@ export async function GET() {
     .eq('user_id', user.id)
     .single()
 
-  return Response.json({ profile: profile || null, email: user.email })
+  // LINE users have a fake internal email — use stored contact email if available
+  const isLineUser = user.email?.endsWith('@photofleur-line.app')
+  const contactEmail = profile?.email || (isLineUser ? '' : user.email)
+
+  return Response.json({ profile: profile || null, email: contactEmail })
 }
 
 export async function PUT(req) {
@@ -31,6 +35,7 @@ export async function PUT(req) {
     phone: body.phone || null,
     sns_url: body.sns_url || null,
     nickname: body.nickname || null,
+    ...(body.email ? { email: body.email } : {}),
     updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id' })
 

@@ -241,7 +241,7 @@ function ConfirmForm() {
     fetch('/api/customer/profile', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ last_name: form.last_name, first_name: form.first_name, last_name_kana: form.last_name_kana, first_name_kana: form.first_name_kana, phone: form.phone, sns_url: form.sns_url, nickname: form.nickname }),
+      body: JSON.stringify({ last_name: form.last_name, first_name: form.first_name, last_name_kana: form.last_name_kana, first_name_kana: form.first_name_kana, phone: form.phone, sns_url: form.sns_url, nickname: form.nickname, email: form.email }),
     }).catch(() => {})
 
     await fetch('/api/send-booking-mail', {
