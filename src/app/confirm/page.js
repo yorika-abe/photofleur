@@ -259,7 +259,7 @@ function ConfirmForm() {
       }),
     }).catch(() => {})
 
-    window.location.href = `/complete?booking_id=${bookingData.id}&qr=${bookingData.qr_token}`
+    window.location.href = `/complete?booking_id=${bookingData.booking_id}&qr=${bookingData.qr_token}`
   }
 
   function formatDate(d) {
