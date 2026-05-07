@@ -131,6 +131,7 @@ export default function ModelPortalHome() {
   const [upcomingEvents, setUpcomingEvents] = useState([])
   const [pendingShiftCount, setPendingShiftCount] = useState(0)
   const [newPhotoCount, setNewPhotoCount] = useState(0)
+  const [newBookingCount, setNewBookingCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   const supabase = createBrowserClient(
@@ -181,6 +182,27 @@ export default function ModelPortalHome() {
       }
 
       setUpcomingEvents(upcoming)
+
+      // 新着予約カウント
+      const lastBookingsViewed = localStorage.getItem('model_bookings_last_viewed')
+      if (lastBookingsViewed) {
+        try {
+          const bRes = await fetch('/api/model-portal/bookings')
+          const bData = await bRes.json()
+          const since = new Date(lastBookingsViewed)
+          let count = 0
+          for (const { slots } of (bData.events || [])) {
+            count += slots.filter(s => s.booking?.created_at && new Date(s.booking.created_at) > since).length
+          }
+          for (const item of (bData.productBookings || [])) {
+            count += item.bookings.filter(b => b.created_at && new Date(b.created_at) > since).length
+          }
+          for (const b of (bData.privateBookings || [])) {
+            if (b.created_at && new Date(b.created_at) > since) count++
+          }
+          setNewBookingCount(count)
+        } catch {}
+      }
 
       // 新着提供写真カウント
       const lastViewed = document.cookie.split('; ').find(r => r.startsWith('model_photos_last_viewed='))?.split('=')[1] || null
@@ -306,7 +328,7 @@ export default function ModelPortalHome() {
             { href: '/admin/blog', icon: '📝', label: 'ブログ管理', desc: '記事管理' },
           ] : [
             { href: '/model-portal/profile', icon: '✏️', label: 'プロフィール編集', desc: '写真・プロフィールを更新' },
-            { href: '/model-portal/bookings', icon: '📋', label: '予約状況', desc: 'カメラマンSNS・空き確認' },
+            { href: '/model-portal/bookings', icon: '📋', label: '予約状況', desc: 'カメラマンSNS・空き確認', badge: newBookingCount },
             { href: '/model-portal/shifts', icon: '📅', label: 'シフト提出', desc: '参加可能日程を登録', badge: pendingShiftCount },
             { href: '/model-portal/blog', icon: '📝', label: 'ブログ', desc: '記事を書く' },
             { href: '/model-portal/private-info', icon: '🔒', label: '非公開登録情報', desc: '住所・連絡先・契約同意' },

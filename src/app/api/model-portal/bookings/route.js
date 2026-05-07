@@ -76,7 +76,7 @@ export async function GET(req) {
   const { data: bookings } = slotIds.length
     ? await admin
         .from('bookings')
-        .select('slot_id, last_name, first_name, nickname, sns_url, cancelled_at')
+        .select('slot_id, last_name, first_name, nickname, sns_url, cancelled_at, created_at')
         .in('slot_id', slotIds)
         .is('cancelled_at', null)
     : { data: [] }
@@ -144,18 +144,19 @@ export async function GET(req) {
   // 非公開予約
   const { data: privateProducts } = await admin
     .from('private_products')
-    .select('id')
+    .select('id, title')
     .eq('model_id', model.id)
 
   let privateBookings = []
   if (privateProducts && privateProducts.length > 0) {
     const { data: pbData } = await admin
       .from('private_bookings')
-      .select('id, event_date_input, meeting_place, shooting_time, nickname, sns_url')
+      .select('id, product_id, event_date_input, meeting_place, shooting_time, nickname, sns_url, created_at')
       .in('product_id', privateProducts.map(p => p.id))
       .is('cancelled_at', null)
       .order('event_date_input', { ascending: true })
-    privateBookings = pbData || []
+    const productTitleMap = Object.fromEntries((privateProducts || []).map(p => [p.id, p.title]))
+    privateBookings = (pbData || []).map(b => ({ ...b, product_title: productTitleMap[b.product_id] || '非公開予約' }))
   }
 
   return Response.json({
