@@ -387,6 +387,20 @@ export default function PrivateInfoPage() {
 
       </div>
 
+      {/* モデル登録を進める */}
+      {contractAgreedAt && rulesAgreedAt && (
+        <div style={{ marginTop: 8, background: '#f0f7ff', border: '1px solid #d6ecf5', borderRadius: 14, padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>契約・規約の同意が完了しました</div>
+            <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>次のステップに進んでください</div>
+          </div>
+          <a href="/model-portal/stage-name"
+            style={{ display: 'inline-block', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '12px 28px', fontWeight: 700, fontSize: 14 }}>
+            モデル登録を進める →
+          </a>
+        </div>
+      )}
+
       {/* アクションボタン */}
       <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
         {!isLocked && (

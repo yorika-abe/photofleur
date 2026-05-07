@@ -34,6 +34,7 @@ export default function UsersPage() {
   const [tab, setTab] = useState('all')
   const [changing, setChanging] = useState(null)
   const [search, setSearch] = useState('')
+  const [markingSeenId, setMarkingSeenId] = useState(null)
 
   useEffect(() => { load() }, [])
 
@@ -61,6 +62,19 @@ export default function UsersPage() {
     setChanging(null)
   }
 
+  async function markInviteSeen(userId) {
+    setMarkingSeenId(userId)
+    await fetch('/api/admin/users/mark-invite-seen', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    })
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, invite_notif_seen: true } : u))
+    setMarkingSeenId(null)
+  }
+
+  const newInviteCount = users.filter(u => u.registered_via_invite && !u.invite_notif_seen).length
+
   const filtered = users.filter(u => {
     const roles = u.roles || []
     if (tab === 'admin' && !roles.includes('admin')) return false
@@ -82,7 +96,20 @@ export default function UsersPage() {
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 16px' }}>
       <Link href="/admin" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#2f2244', margin: '8px 0 24px' }}>ユーザー権限管理</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '8px 0 24px' }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#2f2244', margin: 0 }}>ユーザー権限管理</h1>
+        {newInviteCount > 0 && (
+          <span style={{ background: '#e53935', color: '#fff', borderRadius: 12, padding: '3px 10px', fontSize: 13, fontWeight: 700 }}>
+            {newInviteCount} 新規
+          </span>
+        )}
+      </div>
+
+      {newInviteCount > 0 && (
+        <div style={{ background: '#fff3e0', border: '1px solid #ffe082', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#e65100' }}>
+          🌸 招待リンク経由で新しいモデルが {newInviteCount} 名登録しました。内容を確認して「既読」を押してください。
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         {TABS.map(t => (
@@ -102,21 +129,27 @@ export default function UsersPage() {
       ) : filtered.length === 0 ? (
         <p style={{ color: '#999' }}>該当するユーザーはいません。</p>
       ) : (
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', overflow: 'hidden' }}>
+        <div style={{ borderRadius: 12, border: '1px solid #e5e5e5', overflow: 'hidden' }}>
           {filtered.map((user, i) => {
             const userRoles = user.roles || ['photographer']
+            const isNew = user.registered_via_invite && !user.invite_notif_seen
             return (
               <div key={user.id} style={{
                 display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', flexWrap: 'wrap',
                 borderBottom: i < filtered.length - 1 ? '1px solid #f0f0f0' : 'none',
                 opacity: changing === user.id ? 0.6 : 1,
+                background: isNew ? '#fff8e1' : '#fff',
+                borderLeft: isNew ? '4px solid #ff9800' : '4px solid transparent',
               }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560' }}>{user.name || '（名前なし）'}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontWeight: 700, fontSize: 15, color: '#1a3560' }}>{user.name || '（名前なし）'}</span>
+                    {isNew && <span style={{ background: '#ff9800', color: '#fff', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>招待登録</span>}
+                  </div>
                   <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>{user.email}</div>
                 </div>
                 <RoleBadges roles={userRoles} />
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                   {ROLE_OPTIONS.map(r => (
                     <label key={r.value} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: userRoles.includes(r.value) ? r.color : '#aaa' }}>
                       <input
@@ -129,6 +162,14 @@ export default function UsersPage() {
                       {r.label}
                     </label>
                   ))}
+                  {isNew && (
+                    <button
+                      onClick={() => markInviteSeen(user.id)}
+                      disabled={markingSeenId === user.id}
+                      style={{ background: '#ff9800', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: markingSeenId === user.id ? 0.6 : 1 }}>
+                      既読
+                    </button>
+                  )}
                 </div>
               </div>
             )

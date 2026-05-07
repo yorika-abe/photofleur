@@ -4,7 +4,7 @@ export async function GET() {
   const supabase = await createSupabaseAdminClient()
   const { data, error } = await supabase
     .from('user_profiles')
-    .select('id, name, email, roles, role, created_at')
+    .select('id, name, email, roles, role, created_at, registered_via_invite, invite_notif_seen')
     .order('created_at', { ascending: false })
   if (error) return Response.json({ error: error.message }, { status: 500 })
   const normalized = (data || []).map(u => ({

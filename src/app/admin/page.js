@@ -21,6 +21,7 @@ export default async function AdminPage() {
     { count: unreadFeedback },
     { count: newPhotos },
     { count: unreadActivityReports },
+    { count: newModelInvites },
   ] = await Promise.all([
     supabase.from('model_shifts').select('*', { count: 'exact', head: true }).eq('status', 'pending_approval').gte('event_date', today),
     supabase.from('models').select('*', { count: 'exact', head: true }).not('pending_data', 'is', null),
@@ -33,6 +34,7 @@ export default async function AdminPage() {
       ? supabase.from('contributed_photos').select('*', { count: 'exact', head: true }).gt('created_at', lastViewedPhotos)
       : supabase.from('contributed_photos').select('*', { count: 'exact', head: true }),
     supabase.from('external_activity_reports').select('*', { count: 'exact', head: true }).eq('is_read', false),
+    supabase.from('user_profiles').select('*', { count: 'exact', head: true }).eq('registered_via_invite', true).eq('invite_notif_seen', false),
   ])
 
   return (
@@ -52,7 +54,7 @@ export default async function AdminPage() {
           { href: '/admin/feedback', label: 'ご意見箱', icon: '📮', badge: unreadFeedback ?? 0 },
           { href: '/admin/media', label: 'メディア管理', icon: '🖼️' },
           { href: '/admin/representative', label: '代表メッセージ', icon: '✉️' },
-          { href: '/admin/users', label: 'ユーザー権限管理', icon: '🔑' },
+          { href: '/admin/users', label: 'ユーザー権限管理', icon: '🔑', badge: newModelInvites ?? 0 },
           { href: '/admin/photos', label: 'ご提供写真', icon: '📸', badge: newPhotos ?? 0 },
           { href: '/admin/newsletter', label: 'メルマガ配信', icon: '📧' },
           { href: '/admin/line-broadcast', label: 'LINE一斉送信', icon: '💬' },

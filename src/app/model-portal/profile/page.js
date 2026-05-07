@@ -195,6 +195,7 @@ export default function ModelProfilePage() {
       setMessage('エラー: ' + data.error)
     } else {
       setMessage('申請しました。運営の確認後に公開されます。')
+      setTimeout(() => { window.location.href = '/model-portal' }, 2000)
     }
   }
 
@@ -286,12 +287,15 @@ export default function ModelProfilePage() {
         <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 18 }}>基本情報</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-            <div>{lbl('表示名', true)}<input style={inp} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+            <div>{lbl('芸名', true)}<input style={inp} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
             <div>{lbl('英字名')}<input style={inp} value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} placeholder="Hanako Yamada" /></div>
           </div>
           <div style={{ marginBottom: 14 }}>
-            {lbl('自己紹介・プロフィール')}
+            {lbl('自己紹介・プロフィール（200字程度）')}
             <textarea style={{ ...inp, resize: 'vertical' }} rows={4} value={form.bio} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))} placeholder="自己紹介を書いてください..." />
+            <div style={{ fontSize: 12, color: (form.bio || '').replace(/[\s\n\r]/g, '').length > 200 ? '#e53935' : '#888', marginTop: 4, textAlign: 'right' }}>
+              {(form.bio || '').replace(/[\s\n\r]/g, '').length} 字（改行・空白除く）
+            </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
             <div>{lbl('身長（cm）')}<input type="number" style={inp} value={form.height} onChange={e => setForm(f => ({ ...f, height: e.target.value }))} /></div>
@@ -329,17 +333,17 @@ export default function ModelProfilePage() {
 
         {/* SNS */}
         <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 18 }}>SNS</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 18 }}>SNS（公開アカウントのみ）</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div>{lbl('X / Twitter URL')}<input style={inp} value={form.twitter_url} onChange={e => setForm(f => ({ ...f, twitter_url: e.target.value }))} placeholder="https://x.com/..." /></div>
-            <div>{lbl('Instagram URL')}<input style={inp} value={form.instagram_url} onChange={e => setForm(f => ({ ...f, instagram_url: e.target.value }))} placeholder="https://instagram.com/..." /></div>
+            <div>{lbl('X / Twitter URL（撮影会用に作成したアカウント）')}<input style={inp} value={form.twitter_url} onChange={e => setForm(f => ({ ...f, twitter_url: e.target.value }))} placeholder="https://x.com/..." /></div>
+            <div>{lbl('Instagram URL（宣伝したいアカウントがある人は入力）')}<input style={inp} value={form.instagram_url} onChange={e => setForm(f => ({ ...f, instagram_url: e.target.value }))} placeholder="https://instagram.com/..." /></div>
           </div>
         </section>
 
         {/* Portfolio */}
         <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 6 }}>ポートフォリオ画像</h2>
-          <p style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>複数枚まとめて選択できます</p>
+          <p style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>複数枚まとめて選択できます（最初に入れておくものはバストアップ・全身写真で加工の少ないもの）</p>
 
           {portfolioImages.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 10, marginBottom: 20 }}>
