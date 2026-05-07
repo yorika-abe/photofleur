@@ -23,10 +23,11 @@ export async function GET() {
     .order('created_at', { ascending: false })
 
   // 特別予約商品
-  const { data: epbRaw } = await admin
+  const { data: epbRaw, error: epbError } = await admin
     .from('event_product_bookings')
-    .select('id, customer_name, customer_email, customer_phone, sns_url, nickname, payment_method, qr_token, cancelled_at, created_at, product_id, event_id, selections')
+    .select('*')
     .order('created_at', { ascending: false })
+  if (epbError) console.error('[admin/bookings] event_product_bookings error:', epbError)
 
   const epProductIds = [...new Set((epbRaw || []).map(b => b.product_id).filter(Boolean))]
   const { data: epProducts } = epProductIds.length
