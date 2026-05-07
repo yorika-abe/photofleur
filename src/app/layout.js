@@ -17,7 +17,7 @@ const cormorant = Playfair_Display({
 
 export const metadata = {
   title: "PhotoFleur | 撮影会予約サービス",
-  description: "プロカメラマンと魅力的なモデルが出会う撮影会予約プラットフォーム。ストリート撮影・スタジオ撮影・リクエスト撮影に対応。",
+  description: "PhotoFleurは、関東で開催されるポートレート撮影会です。所属モデルとカメラマンの自分らしい表現を見つける場所を提供しています。完全女性運営の安心環境でモデル活動を全力サポートします。",
 };
 
 export default function RootLayout({ children }) {
