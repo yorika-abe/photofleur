@@ -62,6 +62,7 @@ export default async function AdminPage() {
           { href: '/admin/private-products', label: '非公開商品管理', icon: '🔗' },
           { href: '/admin/goods', label: 'グッズ管理', icon: '🛍️' },
           { href: '/admin/activity-reports', label: '外部活動報告', icon: '📣', badge: unreadActivityReports ?? 0 },
+          { href: '/admin/staff-recruit', label: 'スタッフ募集', icon: '🐈‍⬛' },
         ].map(link => (
           <Link key={link.href} href={link.href} style={{ textDecoration: 'none' }}>
             <div style={{ background: '#1a3560', color: '#fff', borderRadius: 12, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
