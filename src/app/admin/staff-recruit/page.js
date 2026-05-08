@@ -41,7 +41,7 @@ function RecruitLabel({ r }) {
     const modelName = b.private_products?.models?.name || ''
     return (
       <div>
-        {b.event_date_input && <span style={{ fontWeight: 700 }}>({b.event_date_input})</span>}
+        <span style={{ fontWeight: 700 }}>{fmtDate(b.event_date_input) || '未定'}</span>
         <span style={{ marginLeft: 6 }}>📍{b.meeting_place || '未定'}</span>
         <span style={{ marginLeft: 6, color: '#555' }}>{b.shooting_time || ''}</span>
         <span style={{ marginLeft: 6, fontSize: 12, background: '#fce4ec', color: '#c2185b', borderRadius: 4, padding: '2px 7px' }}>リクエスト撮影</span>
@@ -444,7 +444,7 @@ export default function StaffRecruitPage() {
                             onChange={() => setSelectedBookingIds(ids => ids.includes(b.id) ? ids.filter(i => i !== b.id) : [...ids, b.id])}
                             style={{ marginTop: 2, flexShrink: 0 }} />
                           <div>
-                            {b.event_date_input && <span style={{ fontWeight: 700, fontSize: 14 }}>({b.event_date_input})</span>}
+                            <span style={{ fontWeight: 700, fontSize: 14 }}>{fmtDate(b.event_date_input) || '未定'}</span>
                             <span style={{ marginLeft: 4, fontSize: 14 }}>📍{b.meeting_place || '未定'}</span>
                             <span style={{ marginLeft: 6, fontSize: 13, color: '#555' }}>{b.shooting_time || ''}</span>
                             {modelName && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>モデル：{modelName}</div>}
