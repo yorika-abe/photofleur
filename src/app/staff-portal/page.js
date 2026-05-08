@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 const DOW = ['日', '月', '火', '水', '木', '金', '土']
 function fmtDate(d) {
@@ -157,7 +158,16 @@ export default function StaffPortalPage() {
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '20px 16px' }}>
       <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', marginBottom: 2 }}>受付スタッフ画面</h1>
-      <p style={{ color: '#aaa', fontSize: 12, marginBottom: 16 }}>スタッフとして参加できる募集に応募してください。</p>
+      <p style={{ color: '#aaa', fontSize: 12, marginBottom: 12 }}>スタッフとして参加できる募集に応募してください。</p>
+
+      <Link href="/staff-portal/private-info" style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 10, padding: '12px 16px', marginBottom: 14, textDecoration: 'none' }}>
+        <span style={{ fontSize: 20 }}>📋</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>非公開情報・スタッフ規約</div>
+          <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>本名・連絡先の登録と規約への同意</div>
+        </div>
+        <span style={{ color: '#aaa', fontSize: 16 }}>›</span>
+      </Link>
 
       <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '14px 16px', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>

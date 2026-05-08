@@ -7,7 +7,7 @@ const TABS = [
   { href: '/admin/private-info', label: '非公開登録情報' },
   { href: '/admin/model-invite', label: 'モデル登録リンク' },
   { href: '/admin/staff-invite', label: 'スタッフ登録リンク' },
-  { href: '/admin/staff-recruit', label: 'スタッフ管理' },
+  { href: '/admin/staff-manage', label: 'スタッフ管理' },
 ]
 
 export default function ModelStaffTabs({ badges = {} }) {
