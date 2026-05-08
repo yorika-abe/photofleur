@@ -36,7 +36,7 @@ export default async function AdminPage() {
       : supabase.from('contributed_photos').select('*', { count: 'exact', head: true }),
     supabase.from('external_activity_reports').select('*', { count: 'exact', head: true }).eq('is_read', false),
     supabase.from('user_profiles').select('*', { count: 'exact', head: true }).eq('registered_via_invite', true).eq('invite_notif_seen', false),
-    supabase.from('staff_recruitment_applications').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('staff_recruitment_applications').select('*', { count: 'exact', head: true }).eq('status', 'applied'),
   ])
 
   return (
