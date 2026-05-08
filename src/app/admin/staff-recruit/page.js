@@ -159,6 +159,11 @@ export default function StaffRecruitPage() {
     background: active ? '#1a3560' : '#f0f0f0', color: active ? '#fff' : '#555',
   })
 
+  const recruitedEventIds = new Set(recruitments.map(r => r.event_id).filter(Boolean))
+  const recruitedBookingIds = new Set(recruitments.map(r => r.private_booking_id).filter(Boolean))
+  const availableEvents = openEvents.filter(e => !recruitedEventIds.has(e.id))
+  const availableBookings = privateBookings.filter(b => !recruitedBookingIds.has(b.id))
+
   const recruitList = recruitments.filter(r => r.status !== 'cancelled')
   const confirmList = recruitments
 
@@ -397,11 +402,11 @@ export default function StaffRecruitPage() {
             ) : modalType === 'event' ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div style={{ fontSize: 13, color: '#555' }}>公開中のイベントを選択（複数可）</div>
-                {openEvents.length === 0 ? (
+                {availableEvents.length === 0 ? (
                   <p style={{ color: '#aaa', fontSize: 13 }}>公開中のイベントがありません</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 280, overflowY: 'auto' }}>
-                    {openEvents.map(e => (
+                    {availableEvents.map(e => (
                       <label key={e.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '10px 12px', borderRadius: 8, background: selectedEventIds.includes(e.id) ? '#e3f2fd' : '#f8fbff', border: `1px solid ${selectedEventIds.includes(e.id) ? '#90caf9' : '#eee'}` }}>
                         <input type="checkbox" checked={selectedEventIds.includes(e.id)}
                           onChange={() => setSelectedEventIds(ids => ids.includes(e.id) ? ids.filter(i => i !== e.id) : [...ids, e.id])}
@@ -432,11 +437,11 @@ export default function StaffRecruitPage() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div style={{ fontSize: 13, color: '#555' }}>非公開予約から選択（複数可）</div>
-                {privateBookings.length === 0 ? (
+                {availableBookings.length === 0 ? (
                   <p style={{ color: '#aaa', fontSize: 13 }}>非公開予約がありません</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 280, overflowY: 'auto' }}>
-                    {privateBookings.map(b => {
+                    {availableBookings.map(b => {
                       const modelName = b.private_products?.models?.name || ''
                       return (
                         <label key={b.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '10px 12px', borderRadius: 8, background: selectedBookingIds.includes(b.id) ? '#fce4ec' : '#f8fbff', border: `1px solid ${selectedBookingIds.includes(b.id) ? '#f48fb1' : '#eee'}` }}>
