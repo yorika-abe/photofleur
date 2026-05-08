@@ -32,19 +32,19 @@ function fmtDate(d) {
 function buildRecruitLine(r) {
   if (r.type === 'custom') {
     const models = (r.models_info || []).map(m => m.name).join('、')
-    const typeLabel = r.shoot_type === 'request' ? 'リクエスト撮影' : '通常撮影会'
+    const typeLabel = r.shoot_type === 'request' ? 'リク撮' : '通常撮影会'
     return `${fmtDate(r.recruit_date)} 📍${r.location || '未定'}　${r.shoot_time || '未定'}（${typeLabel}）${models ? `　撮影モデル：${models}` : ''}`
   }
   if (r.type === 'event') {
     const e = r.event
     if (!e) return '（イベント情報なし）'
-    return `${fmtDate(e.event_date)} 📍${e.title}${e.subtitle ? `　${e.subtitle}` : ''}`
+    return `${fmtDate(e.event_date)} 📍${e.title}${e.subtitle ? `　${e.subtitle}` : ''}　（通常イベント）`
   }
   if (r.type === 'request') {
     const b = r.booking
     if (!b) return '（予約情報なし）'
     const modelName = b.private_products?.models?.name || ''
-    return `${fmtDate(b.event_date_input) || '未定'} 📍${b.meeting_place || ''}　${b.shooting_time || ''}${modelName ? `　${modelName}` : ''}`
+    return `${fmtDate(b.event_date_input) || '未定'} 📍${b.meeting_place || ''}　${b.shooting_time || ''}${modelName ? `　${modelName}` : ''}（リク撮）`
   }
   return ''
 }
