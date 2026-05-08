@@ -109,7 +109,7 @@ export async function GET() {
   const { data: openEvents } = await admin
     .from('events')
     .select('id, title, subtitle, event_date, location')
-    .eq('status', 'published')
+    .eq('status', 'active')
     .gte('event_date', today)
     .order('event_date', { ascending: true })
 
