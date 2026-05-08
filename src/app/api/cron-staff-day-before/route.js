@@ -13,24 +13,48 @@ function fmtDate(d) {
   return `${dt.getMonth() + 1}/${dt.getDate()}（${DOW[dt.getDay()]}）`
 }
 
-function buildDetailLine(r) {
+function calcAssemblyTime(shoot_time) {
+  if (!shoot_time) return '未定'
+  const match = shoot_time.match(/(\d{1,2}):(\d{2})/)
+  if (!match) return '未定'
+  let h = parseInt(match[1])
+  let m = parseInt(match[2]) - 15
+  if (m < 0) { m += 60; h -= 1 }
+  if (h < 0) h += 24
+  return `${h}:${m.toString().padStart(2, '0')}`
+}
+
+function buildDayBeforeVars(r, modelsMap = {}) {
+  let date = '', location = '', shoot_time = '', model_names = '', photographer_info = ''
   if (r.type === 'custom') {
-    const typeLabel = r.shoot_type === 'request' ? 'リクエスト撮影' : '通常撮影会'
-    return `📍${r.location || '未定'}　${r.shoot_time || '未定'}（${typeLabel}）`
+    date = fmtDate(r.recruit_date)
+    location = r.location || '未定'
+    shoot_time = r.shoot_time || '未定'
+    model_names = (r.model_ids || []).map(id => modelsMap[id]?.name).filter(Boolean).join('、') || '未定'
+    const parts = []
+    if (r.photographer_name) parts.push(r.photographer_name)
+    if (r.photographer_nickname) parts.push(r.photographer_nickname)
+    if (r.photographer_sns) parts.push(r.photographer_sns)
+    if (r.payment_status === '支払い済み') parts.push('✅ 支払い済み')
+    else if (r.payment_status === '当日現金') parts.push('❌ 当日現金払い')
+    else if (r.payment_status) parts.push('❓ 未定')
+    photographer_info = parts.join('\n') || '未定'
+  } else if (r.type === 'event') {
+    const e = r.event || {}
+    date = fmtDate(e.event_date)
+    location = [e.title, e.subtitle, e.location].filter(Boolean).join(' ') || '未定'
+    shoot_time = '未定'
+    model_names = '（イベント詳細参照）'
+    photographer_info = '（情報なし）'
+  } else if (r.type === 'request') {
+    const b = r.booking || {}
+    date = fmtDate(b.event_date_input)
+    location = b.meeting_place || '未定'
+    shoot_time = b.shooting_time || '未定'
+    model_names = b.private_products?.models?.name || '未定'
+    photographer_info = '（情報なし）'
   }
-  if (r.type === 'event') {
-    const e = r.event
-    if (!e) return '（イベント情報なし）'
-    const SITE_URL = (process.env.NEXT_PUBLIC_BASE_URL || 'https://photofleur.vercel.app').replace(/\/$/, '')
-    return `📍${e.title}${e.subtitle ? `　${e.subtitle}` : ''}　${e.location || ''}\nイベント詳細🔗${SITE_URL}/schedule/${e.id}`
-  }
-  if (r.type === 'request') {
-    const b = r.booking
-    if (!b) return '（予約情報なし）'
-    const modelName = b.private_products?.models?.name || ''
-    return `📍${b.meeting_place || '未定'}　${b.shooting_time || ''}${modelName ? `\n${modelName}` : ''}`
-  }
-  return ''
+  return { date, location, assembly_time: calcAssemblyTime(shoot_time), shoot_time, model_names, photographer_info }
 }
 
 function getTomorrowJST() {
@@ -110,19 +134,26 @@ export async function GET(req) {
     appsMap[app.recruitment_id].push(app)
   }
 
+  // カスタム募集のモデル名を解決
+  const allModelIds = [...new Set(allRecs.flatMap(r => r.model_ids || []))]
+  let modelsMap = {}
+  if (allModelIds.length > 0) {
+    const { data: modelRows } = await admin.from('models').select('id, name').in('id', allModelIds)
+    for (const m of modelRows || []) modelsMap[m.id] = m
+  }
+
+  const { data: tmplRow } = await admin.from('line_templates').select('body').eq('key', 'staff_day_before').maybeSingle()
+  const tmpl = tmplRow?.body || DEFAULTS['staff_day_before']
+
   let sent = 0
   for (const r of allRecs) {
     const apps = appsMap[r.id] || []
-    const detail = buildDetailLine(r)
+    const vars = buildDayBeforeVars(r, modelsMap)
 
     for (const app of apps) {
       const lineId = staffLineIds[app.user_id]
       if (!lineId) continue
-
-      const { data: tmplRow } = await admin.from('line_templates').select('body').eq('key', 'staff_day_before').maybeSingle()
-      const tmpl = tmplRow?.body || DEFAULTS['staff_day_before']
-      const msg = applyVars(tmpl, { details: detail })
-
+      const msg = applyVars(tmpl, vars)
       const result = await sendLineMessage(lineId, msg)
       if (result.ok) sent++
     }

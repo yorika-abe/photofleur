@@ -29,6 +29,32 @@ function fmtDate(d) {
   return `${dt.getMonth() + 1}/${dt.getDate()}（${DOW[dt.getDay()]}）`
 }
 
+function buildRecruitNoticeBlock(r) {
+  let date = '', location = '', shoot_time = '', type_label = '', model_names = ''
+  if (r.type === 'custom') {
+    date = fmtDate(r.recruit_date)
+    location = r.location || '未定'
+    shoot_time = r.shoot_time || '未定'
+    type_label = r.shoot_type === 'request' ? 'リクエスト撮影' : '通常撮影会'
+    model_names = (r.models_info || []).map(m => m.name).join('、') || '未定'
+  } else if (r.type === 'event') {
+    const e = r.event || {}
+    date = fmtDate(e.event_date)
+    location = [e.title, e.subtitle].filter(Boolean).join(' ') || '未定'
+    shoot_time = '未定'
+    type_label = '通常撮影会'
+    model_names = '（イベント詳細参照）'
+  } else if (r.type === 'request') {
+    const b = r.booking || {}
+    date = fmtDate(b.event_date_input)
+    location = b.meeting_place || '未定'
+    shoot_time = b.shooting_time || '未定'
+    type_label = 'リクエスト撮影'
+    model_names = b.private_products?.models?.name || '未定'
+  }
+  return `ーーー${date}ーーー\n【📍集合場所】${location}\n【⏰撮影時間】${shoot_time}\n【❓撮影形式】${type_label}\n【👠撮影モデル】${model_names}`
+}
+
 function buildRecruitLine(r) {
   if (r.type === 'custom') {
     const models = (r.models_info || []).map(m => m.name).join('、')
@@ -47,6 +73,50 @@ function buildRecruitLine(r) {
     return `${fmtDate(b.event_date_input) || '未定'} 📍${b.meeting_place || ''}　${b.shooting_time || ''}${modelName ? `　${modelName}` : ''}（リク撮）`
   }
   return ''
+}
+
+function calcAssemblyTime(shoot_time) {
+  if (!shoot_time) return '未定'
+  const match = shoot_time.match(/(\d{1,2}):(\d{2})/)
+  if (!match) return '未定'
+  let h = parseInt(match[1])
+  let m = parseInt(match[2]) - 15
+  if (m < 0) { m += 60; h -= 1 }
+  if (h < 0) h += 24
+  return `${h}:${m.toString().padStart(2, '0')}`
+}
+
+function buildConfirmedVars(r) {
+  let date = '', location = '', shoot_time = '', model_names = '', photographer_info = ''
+  if (r.type === 'custom') {
+    date = fmtDate(r.recruit_date)
+    location = r.location || '未定'
+    shoot_time = r.shoot_time || '未定'
+    model_names = (r.models_info || []).map(m => m.name).join('、') || '未定'
+    const parts = []
+    if (r.photographer_name) parts.push(r.photographer_name)
+    if (r.photographer_nickname) parts.push(r.photographer_nickname)
+    if (r.photographer_sns) parts.push(r.photographer_sns)
+    if (r.payment_status === '支払い済み') parts.push('✅ 支払い済み')
+    else if (r.payment_status === '当日現金') parts.push('❌ 当日現金払い')
+    else if (r.payment_status) parts.push('❓ 未定')
+    photographer_info = parts.join('\n') || '未定'
+  } else if (r.type === 'event') {
+    const e = r.event || {}
+    date = fmtDate(e.event_date)
+    location = [e.title, e.subtitle].filter(Boolean).join(' ')  || '未定'
+    shoot_time = '未定'
+    model_names = '（イベント詳細参照）'
+    photographer_info = '（情報なし）'
+  } else if (r.type === 'request') {
+    const b = r.booking || {}
+    date = fmtDate(b.event_date_input)
+    location = b.meeting_place || '未定'
+    shoot_time = b.shooting_time || '未定'
+    model_names = b.private_products?.models?.name || '未定'
+    photographer_info = '（情報なし）'
+  }
+  return { date, location, assembly_time: calcAssemblyTime(shoot_time), shoot_time, model_names, photographer_info }
 }
 
 async function enrichRecruitments(admin, recruitments) {
@@ -166,7 +236,7 @@ export async function POST(req) {
     const groupId = groupRow?.value
     if (groupId && inserted.length > 0) {
       const enriched = await enrichRecruitments(admin, inserted)
-      const details = enriched.map(r => buildRecruitLine(r)).filter(Boolean).join('\n')
+      const details = enriched.map(r => buildRecruitNoticeBlock(r)).filter(Boolean).join('\n\n')
       const tmpl = await getTemplate(admin, 'staff_recruit_notice')
       const msg = applyVars(tmpl, { details })
       await sendLineGroupMessageToId(groupId, msg)
@@ -212,7 +282,7 @@ export async function PATCH(req) {
 
       if (staffLineId) {
         const tmpl = await getTemplate(admin, 'staff_confirmed_notice')
-        const msg = applyVars(tmpl, { details: detailLine })
+        const msg = applyVars(tmpl, buildConfirmedVars(recEnriched))
         await sendLineMessage(staffLineId, msg)
       }
 
@@ -283,7 +353,7 @@ export async function PATCH(req) {
     try {
       const { data: rec } = await admin.from('staff_recruitments').select('*').eq('id', recruitment_id).single()
       const enriched = await enrichRecruitments(admin, [rec])
-      const detailLine = buildRecruitLine(enriched[0])
+      const detailLine = buildRecruitNoticeBlock(enriched[0])
       const { data: groupRow } = await admin.from('site_settings').select('value').eq('key', 'line_group_id_staff').maybeSingle()
       const groupId = groupRow?.value
       if (groupId) {
@@ -291,6 +361,26 @@ export async function PATCH(req) {
         await sendLineGroupMessageToId(groupId, applyVars(tmpl, { details: detailLine }))
       }
     } catch {}
+    return Response.json({ ok: true })
+  }
+
+  if (action === 'delete_with_notify') {
+    const { data: rec } = await admin.from('staff_recruitments').select('*').eq('id', recruitment_id).single()
+    const { data: confirmedApps } = await admin.from('staff_recruitment_applications')
+      .select('*').eq('recruitment_id', recruitment_id).eq('status', 'confirmed')
+    try {
+      const enriched = await enrichRecruitments(admin, [rec])
+      const detailLine = buildRecruitLine(enriched[0])
+      const { data: lineIdsRow } = await admin.from('site_settings').select('value').eq('key', 'line_staff_ids').maybeSingle()
+      let staffLineIds = {}
+      try { staffLineIds = JSON.parse(lineIdsRow?.value || '{}') } catch {}
+      const tmpl = await getTemplate(admin, 'staff_event_cancel_notice')
+      for (const app of confirmedApps || []) {
+        const lineId = staffLineIds[app.user_id]
+        if (lineId) await sendLineMessage(lineId, applyVars(tmpl, { details: detailLine }))
+      }
+    } catch {}
+    await admin.from('staff_recruitments').delete().eq('id', recruitment_id)
     return Response.json({ ok: true })
   }
 
@@ -380,9 +470,8 @@ export async function PATCH(req) {
       const staffLineId = staffLineIds[staff_user_id]
       if (staffLineId && rec) {
         const enriched = await enrichRecruitments(admin, [rec])
-        const detailLine = buildRecruitLine(enriched[0])
         const tmpl = await getTemplate(admin, 'staff_confirmed_notice')
-        const msg = applyVars(tmpl, { details: detailLine })
+        const msg = applyVars(tmpl, buildConfirmedVars(enriched[0]))
         await sendLineMessage(staffLineId, msg)
       }
     } catch {}

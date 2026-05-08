@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import ModelStaffTabs from '@/components/ModelStaffTabs'
 
 const FIELD_LABELS = {
   real_name: '本名', address: '住所', station: '最寄り駅',
@@ -147,14 +148,7 @@ export default function AdminPrivateInfoPage() {
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 20px' }}>
       <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0 0' }}>
-        <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e5e5e5', flex: 1 }}>
-          <Link href="/admin/models" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>モデル管理</Link>
-          <div style={{ padding: '10px 24px', fontWeight: 700, fontSize: 15, color: '#1a3560', borderBottom: '2px solid #1a3560', marginBottom: -2, cursor: 'default', display: 'flex', alignItems: 'center', gap: 8 }}>
-            非公開登録情報
-            {pendingCount > 0 && <span style={{ background: '#e53935', color: '#fff', borderRadius: 10, padding: '1px 8px', fontSize: 12, fontWeight: 700 }}>{pendingCount}</span>}
-          </div>
-          <Link href="/admin/model-invite" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>モデル登録リンク</Link>
-        </div>
+        <ModelStaffTabs badges={{ '/admin/private-info': pendingCount }} />
       </div>
       <div style={{ marginBottom: 28 }} />
 

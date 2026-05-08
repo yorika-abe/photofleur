@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import ModelStaffTabs from '@/components/ModelStaffTabs'
 
 export default function ModelInvitePage() {
   const [inviteUrl, setInviteUrl] = useState('')
@@ -23,10 +24,8 @@ export default function ModelInvitePage() {
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 20px' }}>
       <Link href="/admin/models" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← モデル管理</Link>
 
-      <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e5e5e5', margin: '8px 0 32px' }}>
-        <Link href="/admin/models" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>モデル管理</Link>
-        <Link href="/admin/private-info" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>非公開登録情報</Link>
-        <div style={{ padding: '10px 24px', fontWeight: 700, fontSize: 15, color: '#1a3560', borderBottom: '2px solid #1a3560', marginBottom: -2 }}>モデル登録リンク</div>
+      <div style={{ margin: '8px 0 32px' }}>
+        <ModelStaffTabs />
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

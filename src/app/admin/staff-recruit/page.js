@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import ModelStaffTabs from '@/components/ModelStaffTabs'
 
 const DOW = ['日', '月', '火', '水', '木', '金', '土']
 function fmtDate(d) {
@@ -168,9 +169,8 @@ function ConfirmCard({ item, staffUsers, selectedStaffMap, setSelectedStaffMap, 
         {hasRecruitment && <>
           <button onClick={() => onEdit(item)}
             style={{ background: '#e3f2fd', color: '#1565c0', border: 'none', borderRadius: 5, padding: '3px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>編集</button>
-          <button onClick={() => onDelete(item)} disabled={confirmedApps.length > 0}
-            title={confirmedApps.length > 0 ? '確定済みスタッフがいるため削除不可' : ''}
-            style={{ background: confirmedApps.length > 0 ? '#f5f5f5' : '#ffebee', color: confirmedApps.length > 0 ? '#ccc' : '#c62828', border: 'none', borderRadius: 5, padding: '3px 8px', fontSize: 11, fontWeight: 700, cursor: confirmedApps.length > 0 ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>消去</button>
+          <button onClick={() => onDelete(item, confirmedApps.length > 0)}
+            style={{ background: '#ffebee', color: '#c62828', border: 'none', borderRadius: 5, padding: '3px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>消去</button>
         </>}
       </div>
     </div>
@@ -525,7 +525,8 @@ export default function StaffRecruitPage() {
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '16px 16px' }}>
       <Link href="/admin" style={{ color: '#1a3560', fontSize: 12, textDecoration: 'none' }}>← 管理画面</Link>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1a3560', margin: '4px 0 12px' }}>🐈‍⬛ スタッフ募集</h1>
+      <div style={{ margin: '8px 0 16px' }}><ModelStaffTabs /></div>
+      <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1a3560', margin: '0 0 12px' }}>🐈‍⬛ スタッフ募集</h1>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
         <button style={tabStyle(tab === 'confirm')} onClick={() => setTab('confirm')}>スタッフ確定状況</button>
@@ -604,7 +605,7 @@ export default function StaffRecruitPage() {
                 </button>
                 {showPast && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-                    {items.map(item => <ConfirmCard key={item.key} item={item} staffUsers={staffUsers} selectedStaffMap={selectedStaffMap} setSelectedStaffMap={setSelectedStaffMap} assigningKey={assigningKey} handleDirectAssign={handleDirectAssign} handleAction={handleAction} actionLoading={actionLoading} onEdit={setEditItem} onDelete={item => { if (confirm('この募集を消去しますか？')) handleAction('delete', item.recruitment.id) }} />)}
+                    {items.map(item => <ConfirmCard key={item.key} item={item} staffUsers={staffUsers} selectedStaffMap={selectedStaffMap} setSelectedStaffMap={setSelectedStaffMap} assigningKey={assigningKey} handleDirectAssign={handleDirectAssign} handleAction={handleAction} actionLoading={actionLoading} onEdit={setEditItem} onDelete={(item, hasConfirmed) => { if (confirm('開催予定を消去してスタッフに連絡しますか？')) handleAction(hasConfirmed ? 'delete_with_notify' : 'delete', item.recruitment.id) }} />)}
                   </div>
                 )}
               </div>
@@ -613,7 +614,7 @@ export default function StaffRecruitPage() {
               <div key="upcoming" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {items.length === 0
                   ? <p style={{ color: '#999' }}>予定はありません。</p>
-                  : items.map(item => <ConfirmCard key={item.key} item={item} staffUsers={staffUsers} selectedStaffMap={selectedStaffMap} setSelectedStaffMap={setSelectedStaffMap} assigningKey={assigningKey} handleDirectAssign={handleDirectAssign} handleAction={handleAction} actionLoading={actionLoading} onEdit={setEditItem} onDelete={item => { if (confirm('この募集を消去しますか？')) handleAction('delete', item.recruitment.id) }} />)
+                  : items.map(item => <ConfirmCard key={item.key} item={item} staffUsers={staffUsers} selectedStaffMap={selectedStaffMap} setSelectedStaffMap={setSelectedStaffMap} assigningKey={assigningKey} handleDirectAssign={handleDirectAssign} handleAction={handleAction} actionLoading={actionLoading} onEdit={setEditItem} onDelete={(item, hasConfirmed) => { if (confirm('開催予定を消去してスタッフに連絡しますか？')) handleAction(hasConfirmed ? 'delete_with_notify' : 'delete', item.recruitment.id) }} />)
                 }
               </div>
             )

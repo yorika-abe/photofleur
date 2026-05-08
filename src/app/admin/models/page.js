@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
+import ModelStaffTabs from '@/components/ModelStaffTabs'
 
 const TIER_LABELS = {
   staff:  { label: '運営スタッフ', color: '#1a3560', bg: '#e8f0fb' },
@@ -167,11 +168,7 @@ export default function AdminModelsPage() {
 
       <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0 0' }}>
-        <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e5e5e5', flex: 1 }}>
-          <div style={{ padding: '10px 24px', fontWeight: 700, fontSize: 15, color: '#1a3560', borderBottom: '2px solid #1a3560', marginBottom: -2, cursor: 'default' }}>モデル管理</div>
-          <Link href="/admin/private-info" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>非公開登録情報</Link>
-          <Link href="/admin/model-invite" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>モデル登録リンク</Link>
-        </div>
+        <ModelStaffTabs />
         <Link href="/admin/models/new"
           style={{ background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '10px 18px', fontWeight: 600, fontSize: 14, marginLeft: 16, whiteSpace: 'nowrap' }}>
           + 新規登録
