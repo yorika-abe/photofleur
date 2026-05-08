@@ -1,5 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 import { sendLineMessage } from '@/lib/line'
+import { DEFAULTS } from '@/app/api/admin/line-templates/route'
+
+function applyVars(template, vars) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '')
+}
 
 const DOW = ['日', '月', '火', '水', '木', '金', '土']
 function fmtDate(d) {
@@ -114,7 +119,9 @@ export async function GET(req) {
       const lineId = staffLineIds[app.user_id]
       if (!lineId) continue
 
-      const msg = `【🔵スタッフ　前日リマインド】\n\n明日は\n${detail}\nのスタッフをお願いします。\n\n⚠️撮影時間の前後に受付があるので撮影時刻の15分前までに必ず受付場所に行き到着し次第集合場所写真を送信してください。\n※万が一遅刻の可能性がある場合は必ずモデルと運営に連絡入れてください。\n※受付は受付マニュアル通り必ず行ってください。`
+      const { data: tmplRow } = await admin.from('line_templates').select('body').eq('key', 'staff_day_before').maybeSingle()
+      const tmpl = tmplRow?.body || DEFAULTS['staff_day_before']
+      const msg = applyVars(tmpl, { details: detail })
 
       const result = await sendLineMessage(lineId, msg)
       if (result.ok) sent++

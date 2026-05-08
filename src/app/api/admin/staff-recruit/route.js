@@ -1,5 +1,15 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
 import { sendLineMessage, sendLineGroupMessageToId } from '@/lib/line'
+import { DEFAULTS } from '@/app/api/admin/line-templates/route'
+
+function applyVars(template, vars) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '')
+}
+
+async function getTemplate(admin, key) {
+  const { data } = await admin.from('line_templates').select('body').eq('key', key).maybeSingle()
+  return data?.body || DEFAULTS[key] || ''
+}
 
 async function checkAdmin() {
   const server = await createSupabaseServerClient()
@@ -34,7 +44,7 @@ function buildRecruitLine(r) {
     const b = r.booking
     if (!b) return '（予約情報なし）'
     const modelName = b.private_products?.models?.name || ''
-    return `(${b.event_date_input || '未定'}) 📍${b.meeting_place || ''}　${b.shooting_time || ''}${modelName ? `　${modelName}` : ''}`
+    return `${fmtDate(b.event_date_input) || '未定'} 📍${b.meeting_place || ''}　${b.shooting_time || ''}${modelName ? `　${modelName}` : ''}`
   }
   return ''
 }
@@ -148,9 +158,9 @@ export async function POST(req) {
     const groupId = groupRow?.value
     if (groupId && inserted.length > 0) {
       const enriched = await enrichRecruitments(admin, inserted)
-      const lines = enriched.map(r => buildRecruitLine(r)).filter(Boolean).join('\n')
-      const SITE_URL = (process.env.NEXT_PUBLIC_BASE_URL || 'https://photofleur.vercel.app').replace(/\/$/, '')
-      const msg = `【🔵スタッフ募集のお知らせ】\n\n${lines}\n\nスタッフ募集日から確認してください！\n${SITE_URL}/staff-portal\n\n※スタッフ決定は先着順です。\n※場所未定のリクエスト撮影に関してはスタッフ応募がない場合流れる可能性が高いです。\n※確定ラインにてスタッフ確定となります。\n※応募後はキャンセルできません。代役を立ててください。`
+      const details = enriched.map(r => buildRecruitLine(r)).filter(Boolean).join('\n')
+      const tmpl = await getTemplate(admin, 'staff_recruit_notice')
+      const msg = applyVars(tmpl, { details })
       await sendLineGroupMessageToId(groupId, msg)
     }
   } catch {}
@@ -192,7 +202,8 @@ export async function PATCH(req) {
       const detailLine = buildRecruitLine(recEnriched)
 
       if (staffLineId) {
-        const msg = `【🔵スタッフ確定のお知らせ】\n\n${detailLine}\n\n※確定メール後のキャンセルはできません。\n※前日リマインドもしますが忘れないように気をつけてください。\n※撮影時間の前後に受付があるので撮影時刻の15分前までに必ず受付場所に行き到着し次第集合場所写真を送信してください。\n※万が一遅刻の可能性がある場合は必ずモデルと運営に連絡入れてください。\n※受付は受付マニュアル通り必ず行ってください。`
+        const tmpl = await getTemplate(admin, 'staff_confirmed_notice')
+        const msg = applyVars(tmpl, { details: detailLine })
         await sendLineMessage(staffLineId, msg)
       }
 
@@ -206,9 +217,12 @@ export async function PATCH(req) {
         if (rec.type === 'request' && recEnriched.booking?.private_products?.models?.line_id) {
           modelLineIds.push(recEnriched.booking.private_products.models.line_id)
         }
-        for (const lineId of modelLineIds) {
-          const msg = `【🟢受付スタッフが決定しました。】\n\n${detailLine}\n\n対応スタッフ：${staffName}\n\n※受付があるので集合時刻の10分前に集合場所へお越しください。`
-          await sendLineMessage(lineId, msg)
+        if (modelLineIds.length > 0) {
+          const modelTmpl = await getTemplate(admin, 'staff_model_notice')
+          for (const lineId of modelLineIds) {
+            const msg = applyVars(modelTmpl, { details: detailLine, staff_name: staffName })
+            await sendLineMessage(lineId, msg)
+          }
         }
       }
     } catch {}

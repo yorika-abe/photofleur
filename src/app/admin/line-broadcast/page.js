@@ -200,6 +200,15 @@ const INDIVIDUAL_TEMPLATES = [
     ],
   },
   {
+    key: 'staff_model_notice',
+    label: 'スタッフ決定通知（モデル個人）',
+    trigger: 'スタッフ応募を確定した時（モデルにも自動送信）',
+    vars: [
+      { key: '{{details}}', desc: '募集日・場所・時間・撮影種別（自動生成）' },
+      { key: '{{staff_name}}', desc: '確定したスタッフ名' },
+    ],
+  },
+  {
     key: 'model_day_before',
     label: '撮影前日案内（モデル個人）',
     trigger: '撮影前日の夜23時（自動cron）',
@@ -926,6 +935,36 @@ const PHOTOGRAPHER_TEMPLATES = [
   },
 ]
 
+const STAFF_GROUP_TEMPLATES = [
+  {
+    key: 'staff_recruit_notice',
+    label: 'スタッフ募集お知らせ（グループ）',
+    trigger: 'スタッフ募集を作成した時（自動）',
+    vars: [
+      { key: '{{details}}', desc: '募集日・場所・時間・撮影種別（自動生成）' },
+    ],
+  },
+]
+
+const STAFF_INDIVIDUAL_TEMPLATES = [
+  {
+    key: 'staff_confirmed_notice',
+    label: 'スタッフ確定通知（個人）',
+    trigger: 'スタッフ応募を確定した時（自動）',
+    vars: [
+      { key: '{{details}}', desc: '募集日・場所・時間・撮影種別（自動生成）' },
+    ],
+  },
+  {
+    key: 'staff_day_before',
+    label: 'スタッフ前日リマインド（個人）',
+    trigger: '撮影前日 21:00（自動cron）',
+    vars: [
+      { key: '{{details}}', desc: '場所・時間・撮影種別（自動生成）' },
+    ],
+  },
+]
+
 function TabStaff({ staff }) {
   // グループ送信
   const [groupMsg, setGroupMsg] = useState('')
@@ -1003,12 +1042,7 @@ function TabStaff({ staff }) {
           </div>
         </div>
       </div>
-      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
-        <button style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'default', padding: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>🤖 自動送信メッセージ設定</div>
-          <span style={{ fontSize: 12, color: '#aaa' }}>（あとで作成）</span>
-        </button>
-      </div>
+      <AutoTemplateSection templateDefs={STAFF_GROUP_TEMPLATES} />
 
       <div style={{ borderTop: '2px solid #f0f0f0', paddingTop: 8 }} />
 
@@ -1060,12 +1094,7 @@ function TabStaff({ staff }) {
           </div>
         </div>
       </div>
-      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
-        <button style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'default', padding: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>🤖 自動送信メッセージ設定</div>
-          <span style={{ fontSize: 12, color: '#aaa' }}>（あとで作成）</span>
-        </button>
-      </div>
+      <AutoTemplateSection templateDefs={STAFF_INDIVIDUAL_TEMPLATES} />
     </div>
   )
 }

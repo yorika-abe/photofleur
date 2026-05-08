@@ -24,6 +24,10 @@ export const DEFAULTS = {
   photographer_goods: `【PhotoFleur】ご注文ありがとうございます🛍️\n\n商品：{{goods_title}}\n数量：{{quantity}}点\n\nご注文を受け付けました。\nご不明点は公式LINEよりご連絡ください。`,
   photographer_day_before: `【PhotoFleur】明日の撮影のご案内📸\n\n明日（{{event_date}}）は撮影会です！\n時間枠：{{slot_label}}\n担当モデル：{{model_name}}\n場所：{{location}}\n\nQRコードは予約完了メールに記載されています。\nどうぞよろしくお願いいたします🌸`,
   photographer_private_day_before: `【PhotoFleur】明日の撮影のご案内📸\n\n明日は以下の撮影が予定されています。\n\n商品：{{product_title}}\n集合場所：{{meeting_place}}\n撮影時間：{{shooting_time}}\n\nよろしくお願いいたします🌸`,
+  staff_recruit_notice: `【🔵スタッフ募集のお知らせ】\n\n{{details}}\n\nスタッフ募集日から確認してください！\n※スタッフ決定は先着順です。\n※場所未定のリクエスト撮影に関してはスタッフ応募がない場合流れる可能性が高いです。\n※確定ラインにてスタッフ確定となります。\n※応募後はキャンセルできません。代役を立ててください。`,
+  staff_confirmed_notice: `【🔵スタッフ確定のお知らせ】\n\n{{details}}\n\n※確定メール後のキャンセルはできません。\n※前日リマインドもしますが忘れないように気をつけてください。\n※撮影時間の前後に受付があるので撮影時刻の15分前までに必ず受付場所に行き到着し次第集合場所写真を送信してください。\n※万が一遅刻の可能性がある場合は必ずモデルと運営に連絡入れてください。\n※受付は受付マニュアル通り必ず行ってください。`,
+  staff_model_notice: `【🟢受付スタッフが決定しました。】\n\n{{details}}\n\n対応スタッフ：{{staff_name}}\n\n※受付があるので集合時刻の10分前に集合場所へお越しください。`,
+  staff_day_before: `【🔵スタッフ　前日リマインド】\n\n明日は\n{{details}}\nのスタッフをお願いします。\n\n⚠️撮影時間の前後に受付があるので撮影時刻の15分前までに必ず受付場所に行き到着し次第集合場所写真を送信してください。\n※万が一遅刻の可能性がある場合は必ずモデルと運営に連絡入れてください。\n※受付は受付マニュアル通り必ず行ってください。`,
 }
 
 export async function GET() {
