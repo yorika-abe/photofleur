@@ -8,6 +8,8 @@ const FIELD_LABELS = {
   real_name: '本名', address: '住所', station: '最寄り駅',
   phone: '電話番号', email: 'メールアドレス',
   agency: '事務所名', school_company: '学校・会社名', guardian_name: '保護者名',
+  bank_name: '銀行名', branch_name: '支店名', account_type: '口座種別',
+  account_number: '口座番号', account_holder: '口座名義',
 }
 
 function InfoCard({ model, info, onApprove, onReject }) {

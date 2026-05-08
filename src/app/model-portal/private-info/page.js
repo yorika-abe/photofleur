@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 const REQUIRED_FIELDS = ['real_name', 'address', 'station', 'phone', 'email']
-const EMPTY_FORM = { real_name: '', address: '', station: '', agency: '', phone: '', email: '', school_company: '', guardian_name: '' }
+const EMPTY_FORM = { real_name: '', address: '', station: '', agency: '', phone: '', email: '', school_company: '', guardian_name: '', bank_name: '', branch_name: '', account_type: '普通', account_number: '', account_holder: '' }
 
 function ContractModal({ form, onClose, onAgree, readOnly, agreedAt }) {
   const today = agreedAt
@@ -190,6 +190,9 @@ export default function PrivateInfoPage() {
           station: data.station || '', agency: data.agency || '',
           phone: data.phone || '', email: data.email || '',
           school_company: data.school_company || '', guardian_name: data.guardian_name || '',
+          bank_name: data.bank_name || '', branch_name: data.branch_name || '',
+          account_type: data.account_type || '普通', account_number: data.account_number || '',
+          account_holder: data.account_holder || '',
         }
         setLiveData(live)
         setForm(live)
@@ -320,6 +323,34 @@ export default function PrivateInfoPage() {
             <Field label="事務所名（所属している場合）" value={form.agency} editing={isEditing} onChange={v => setForm(f => ({ ...f, agency: v }))} placeholder="〇〇プロダクション" />
             <Field label="学校名または会社名（任意）" value={form.school_company} editing={isEditing} onChange={v => setForm(f => ({ ...f, school_company: v }))} placeholder="〇〇大学 / 〇〇株式会社" />
             <Field label="保護者名（未成年の場合）" value={form.guardian_name} editing={isEditing} onChange={v => setForm(f => ({ ...f, guardian_name: v }))} placeholder="山田 太郎" />
+          </div>
+        </div>
+
+        {/* 振込先情報 */}
+        <div style={{ background: '#fff', border: '1px solid #d6ecf5', borderRadius: 14, padding: '24px' }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 20 }}>振込先情報</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <Field label="銀行名" value={form.bank_name} editing={isEditing} onChange={v => setForm(f => ({ ...f, bank_name: v }))} placeholder="○○銀行" />
+            <Field label="支店名" value={form.branch_name} editing={isEditing} onChange={v => setForm(f => ({ ...f, branch_name: v }))} placeholder="○○支店" />
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, color: '#444' }}>口座種別</div>
+              {isEditing ? (
+                <div style={{ display: 'flex', gap: 12 }}>
+                  {['普通', '当座'].map(t => (
+                    <label key={t} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14 }}>
+                      <input type="radio" name="model_account_type" value={t} checked={form.account_type === t} onChange={() => setForm(f => ({ ...f, account_type: t }))} />
+                      {t}
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ padding: '10px 12px', background: '#f5f7fa', borderRadius: 8, fontSize: 14, color: form.account_type ? '#1a3560' : '#bbb', fontWeight: form.account_type ? 600 : 400, minHeight: 42, display: 'flex', alignItems: 'center' }}>
+                  {form.account_type || '未入力'}
+                </div>
+              )}
+            </div>
+            <Field label="口座番号" value={form.account_number} editing={isEditing} onChange={v => setForm(f => ({ ...f, account_number: v }))} placeholder="1234567" />
+            <Field label="口座名義（カナ）" value={form.account_holder} editing={isEditing} onChange={v => setForm(f => ({ ...f, account_holder: v }))} placeholder="ヤマダ ハナコ" />
           </div>
         </div>
 

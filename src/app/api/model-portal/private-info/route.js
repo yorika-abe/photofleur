@@ -47,6 +47,11 @@ export async function POST(req) {
     email: body.email || null,
     school_company: body.school_company || null,
     guardian_name: body.guardian_name || null,
+    bank_name: body.bank_name || null,
+    branch_name: body.branch_name || null,
+    account_type: body.account_type || null,
+    account_number: body.account_number || null,
+    account_holder: body.account_holder || null,
     updated_at: new Date().toISOString(),
   }
   if (body.contract_agreed_at) payload.contract_agreed_at = body.contract_agreed_at
