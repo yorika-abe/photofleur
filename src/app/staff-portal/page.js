@@ -60,26 +60,26 @@ function RecruitCard({ r, onApply, applying }) {
   return (
     <div style={{
       background: '#fff', border: `1px solid ${isConfirmed ? '#a5d6a7' : hasApplied ? '#90caf9' : '#e5e5e5'}`,
-      borderRadius: 12, padding: '16px 18px',
+      borderRadius: 10, padding: '10px 14px',
       borderLeft: `4px solid ${isConfirmed ? '#388e3c' : hasApplied ? '#1565c0' : '#ddd'}`,
     }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           {label()}
-          <div style={{ marginTop: 6, fontSize: 12, color: '#888' }}>
+          <div style={{ marginTop: 2, fontSize: 11, color: '#aaa' }}>
             応募{r.counts?.total || 0}名 / 定員{r.capacity}名
           </div>
         </div>
         <div style={{ flexShrink: 0 }}>
           {isConfirmed ? (
-            <span style={{ background: '#388e3c', color: '#fff', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 700 }}>✅ スタッフ確定</span>
+            <span style={{ background: '#388e3c', color: '#fff', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700 }}>✅ スタッフ確定</span>
           ) : hasApplied ? (
-            <span style={{ background: '#1565c0', color: '#fff', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 700 }}>応募済み</span>
+            <span style={{ background: '#1565c0', color: '#fff', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700 }}>応募済み</span>
           ) : isClosed ? (
-            <span style={{ background: '#ccc', color: '#fff', borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 700 }}>募集締切</span>
+            <span style={{ background: '#ccc', color: '#fff', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700 }}>募集締切</span>
           ) : (
             <button onClick={() => setExpanded(v => !v)}
-              style={{ background: '#06c755', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              style={{ background: '#06c755', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
               スタッフとして応募する
             </button>
           )}
@@ -87,17 +87,17 @@ function RecruitCard({ r, onApply, applying }) {
       </div>
 
       {expanded && !hasApplied && !isClosed && (
-        <div style={{ marginTop: 14, borderTop: '1px solid #f0f0f0', paddingTop: 14 }}>
+        <div style={{ marginTop: 10, borderTop: '1px solid #f0f0f0', paddingTop: 10 }}>
           {!confirmed ? (
             <div>
-              <p style={{ margin: '0 0 8px', fontWeight: 700, fontSize: 14 }}>応募を確定しますか？</p>
-              <p style={{ margin: '0 0 14px', fontSize: 12, color: '#aaa', lineHeight: 1.8 }}>
+              <p style={{ margin: '0 0 6px', fontWeight: 700, fontSize: 13 }}>応募を確定しますか？</p>
+              <p style={{ margin: '0 0 10px', fontSize: 11, color: '#aaa', lineHeight: 1.6 }}>
                 ※応募確定後はキャンセル不可能です。<br />
                 ※確定ラインにてスタッフ確定となります。
               </p>
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => setExpanded(false)}
-                  style={{ flex: 1, background: '#f5f5f5', border: 'none', borderRadius: 8, padding: '9px', fontSize: 13, cursor: 'pointer' }}>
+                  style={{ flex: 1, background: '#f5f5f5', border: 'none', borderRadius: 6, padding: '7px', fontSize: 12, cursor: 'pointer' }}>
                   キャンセル
                 </button>
                 <button onClick={async () => {
@@ -105,7 +105,7 @@ function RecruitCard({ r, onApply, applying }) {
                   setExpanded(false)
                   setConfirmed(false)
                 }} disabled={applying}
-                  style={{ flex: 2, background: applying ? '#ccc' : '#06c755', color: '#fff', border: 'none', borderRadius: 8, padding: '9px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                  style={{ flex: 2, background: applying ? '#ccc' : '#06c755', color: '#fff', border: 'none', borderRadius: 6, padding: '7px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                   {applying ? '応募中...' : '応募する'}
                 </button>
               </div>
@@ -155,12 +155,12 @@ export default function StaffPortalPage() {
   const others = recruitments.filter(r => r.status !== 'open')
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: '32px 16px' }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1a3560', marginBottom: 4 }}>受付スタッフ画面</h1>
-      <p style={{ color: '#aaa', fontSize: 13, marginBottom: 28 }}>スタッフとして参加できる募集に応募してください。</p>
+    <div style={{ maxWidth: 800, margin: '0 auto', padding: '20px 16px' }}>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', marginBottom: 2 }}>受付スタッフ画面</h1>
+      <p style={{ color: '#aaa', fontSize: 12, marginBottom: 16 }}>スタッフとして参加できる募集に応募してください。</p>
 
-      <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e5e5', padding: '20px 20px', marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '14px 16px', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
           <span style={{ fontSize: 20 }}>🐈‍⬛</span>
           <span style={{ fontWeight: 700, fontSize: 18, color: '#1a3560' }}>スタッフ募集日</span>
           {newCount > 0 && (
@@ -175,16 +175,16 @@ export default function StaffPortalPage() {
         ) : recruitments.length === 0 ? (
           <p style={{ color: '#bbb', fontSize: 13 }}>現在募集はありません。</p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {open.length > 0 && (
               <>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#388e3c', marginBottom: 2 }}>📢 募集中</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#388e3c', marginBottom: 0 }}>📢 募集中</div>
                 {open.map(r => <RecruitCard key={r.id} r={r} onApply={handleApply} applying={applying} />)}
               </>
             )}
             {others.length > 0 && (
               <>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#aaa', marginTop: 8, marginBottom: 2 }}>過去の募集</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', marginTop: 4, marginBottom: 0 }}>過去の募集</div>
                 {others.map(r => <RecruitCard key={r.id} r={r} onApply={handleApply} applying={applying} />)}
               </>
             )}

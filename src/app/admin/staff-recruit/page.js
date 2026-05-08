@@ -110,13 +110,13 @@ function ConfirmCard({ item, staffUsers, selectedStaffMap, setSelectedStaffMap, 
   // 募集あり：左ボーダーで強調、背景を少し色付け
   const recStatusColor = rec?.status === 'closed' ? '#388e3c' : '#1565c0'
   const cardStyle = hasRecruitment
-    ? { background: '#f8fbff', border: `1px solid ${recStatusColor}40`, borderLeft: `4px solid ${recStatusColor}`, borderRadius: 12, padding: '16px 20px' }
-    : { background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, padding: '16px 20px' }
+    ? { background: '#f8fbff', border: `1px solid ${recStatusColor}40`, borderLeft: `4px solid ${recStatusColor}`, borderRadius: 10, padding: '10px 14px' }
+    : { background: '#fff', border: '1px solid #e5e5e5', borderRadius: 10, padding: '10px 14px' }
 
   return (
     <div style={cardStyle}>
       {hasRecruitment && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
           <StatusBadge status={rec.status} />
           <span style={{ fontSize: 12, color: '#aaa' }}>募集{rec.capacity}名</span>
           {appliedApps.length > 0 && <span style={{ fontSize: 12, background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '1px 8px', fontWeight: 700 }}>応募{appliedApps.length}名</span>}
@@ -136,9 +136,9 @@ function ConfirmCard({ item, staffUsers, selectedStaffMap, setSelectedStaffMap, 
       )}
 
       {(confirmedApps.length > 0 || appliedApps.length > 0) && (
-        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
           {[...confirmedApps, ...appliedApps].map(app => (
-            <div key={app.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 8, background: app.status === 'confirmed' ? '#e8f5e9' : '#f8fbff', border: `1px solid ${app.status === 'confirmed' ? '#a5d6a7' : '#ddd'}`, flexWrap: 'wrap' }}>
+            <div key={app.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 10px', borderRadius: 6, background: app.status === 'confirmed' ? '#e8f5e9' : '#f8fbff', border: `1px solid ${app.status === 'confirmed' ? '#a5d6a7' : '#ddd'}`, flexWrap: 'wrap' }}>
               <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>{app.user_name || '（名前なし）'}</span>
               {app.status === 'confirmed' && <span style={{ fontSize: 12, background: '#388e3c', color: '#fff', borderRadius: 4, padding: '2px 8px', fontWeight: 700 }}>✅ 確定済み</span>}
               {app.status === 'applied' && (
@@ -156,14 +156,14 @@ function ConfirmCard({ item, staffUsers, selectedStaffMap, setSelectedStaffMap, 
         </div>
       )}
 
-      <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
         <select value={selectedStaff} onChange={e => setSelectedStaffMap(m => ({ ...m, [item.key]: e.target.value }))}
-          style={{ flex: 1, minWidth: 140, padding: '7px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13 }}>
+          style={{ flex: 1, minWidth: 120, padding: '5px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12 }}>
           <option value="">スタッフを選択</option>
           {staffUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
         </select>
         <button onClick={() => handleDirectAssign(item)} disabled={!selectedStaff || assigningKey === item.key}
-          style={{ background: !selectedStaff ? '#ccc' : '#06c755', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 13, fontWeight: 700, cursor: !selectedStaff ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+          style={{ background: !selectedStaff ? '#ccc' : '#06c755', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: !selectedStaff ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
           {assigningKey === item.key ? '送信中...' : '決定してLINEを送信'}
         </button>
       </div>
@@ -367,11 +367,11 @@ export default function StaffRecruitPage() {
           {recruitList.length === 0 ? (
             <p style={{ color: '#999' }}>募集はありません。</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {recruitList.map(r => (
-                <div key={r.id} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+                <div key={r.id} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
                       <StatusBadge status={r.status} />
                       <span style={{ fontSize: 12, color: '#aaa' }}>募集{r.capacity}名</span>
                       <span style={{ fontSize: 12, color: '#aaa' }}>応募{(r.applications || []).filter(a => a.status !== 'cancelled').length}名</span>
@@ -403,14 +403,14 @@ export default function StaffRecruitPage() {
                   {showPast ? '▲' : '▼'} 過去の開催（{items.length}件）
                 </button>
                 {showPast && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
                     {items.map(item => <ConfirmCard key={item.key} item={item} staffUsers={staffUsers} selectedStaffMap={selectedStaffMap} setSelectedStaffMap={setSelectedStaffMap} assigningKey={assigningKey} handleDirectAssign={handleDirectAssign} handleAction={handleAction} actionLoading={actionLoading} />)}
                   </div>
                 )}
               </div>
             )
             return (
-              <div key="upcoming" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div key="upcoming" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {items.length === 0
                   ? <p style={{ color: '#999' }}>予定はありません。</p>
                   : items.map(item => <ConfirmCard key={item.key} item={item} staffUsers={staffUsers} selectedStaffMap={selectedStaffMap} setSelectedStaffMap={setSelectedStaffMap} assigningKey={assigningKey} handleDirectAssign={handleDirectAssign} handleAction={handleAction} actionLoading={actionLoading} />)
