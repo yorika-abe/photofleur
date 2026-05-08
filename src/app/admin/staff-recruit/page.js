@@ -60,7 +60,7 @@ function StatusBadge({ status }) {
 }
 
 export default function StaffRecruitPage() {
-  const [tab, setTab] = useState('recruit')
+  const [tab, setTab] = useState('confirm')
   const [recruitments, setRecruitments] = useState([])
   const [openEvents, setOpenEvents] = useState([])
   const [privateBookings, setPrivateBookings] = useState([])
@@ -152,8 +152,8 @@ export default function StaffRecruitPage() {
       <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1a3560', margin: '8px 0 24px' }}>🐈‍⬛ スタッフ募集</h1>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-        <button style={tabStyle(tab === 'recruit')} onClick={() => setTab('recruit')}>スタッフ募集日</button>
         <button style={tabStyle(tab === 'confirm')} onClick={() => setTab('confirm')}>スタッフ確定状況</button>
+        <button style={tabStyle(tab === 'recruit')} onClick={() => setTab('recruit')}>スタッフ募集日</button>
       </div>
 
       {loading ? <p style={{ color: '#999' }}>読み込み中...</p> : tab === 'recruit' ? (

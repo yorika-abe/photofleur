@@ -22,6 +22,7 @@ export default async function AdminPage() {
     { count: newPhotos },
     { count: unreadActivityReports },
     { count: newModelInvites },
+    { count: pendingStaffApps },
   ] = await Promise.all([
     supabase.from('model_shifts').select('*', { count: 'exact', head: true }).eq('status', 'pending_approval').gte('event_date', today),
     supabase.from('models').select('*', { count: 'exact', head: true }).not('pending_data', 'is', null),
@@ -35,6 +36,7 @@ export default async function AdminPage() {
       : supabase.from('contributed_photos').select('*', { count: 'exact', head: true }),
     supabase.from('external_activity_reports').select('*', { count: 'exact', head: true }).eq('is_read', false),
     supabase.from('user_profiles').select('*', { count: 'exact', head: true }).eq('registered_via_invite', true).eq('invite_notif_seen', false),
+    supabase.from('staff_recruitment_applications').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
   ])
 
   return (
@@ -62,7 +64,7 @@ export default async function AdminPage() {
           { href: '/admin/private-products', label: '非公開商品管理', icon: '🔗' },
           { href: '/admin/goods', label: 'グッズ管理', icon: '🛍️' },
           { href: '/admin/activity-reports', label: '外部活動報告', icon: '📣', badge: unreadActivityReports ?? 0 },
-          { href: '/admin/staff-recruit', label: 'スタッフ募集', icon: '🐈‍⬛' },
+          { href: '/admin/staff-recruit', label: 'スタッフ募集', icon: '🐈‍⬛', badge: pendingStaffApps ?? 0 },
         ].map(link => (
           <Link key={link.href} href={link.href} style={{ textDecoration: 'none' }}>
             <div style={{ background: '#1a3560', color: '#fff', borderRadius: 12, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
