@@ -58,6 +58,105 @@ function StatusBadge({ status }) {
   return <span style={{ background: bg, color, borderRadius: 6, padding: '2px 10px', fontSize: 12, fontWeight: 700 }}>{label}</span>
 }
 
+function ConfirmItemLabel({ item }) {
+  if (item.type === 'event') {
+    const e = item.event
+    return (
+      <div>
+        <span style={{ fontWeight: 700 }}>{fmtDate(e.event_date)}</span>
+        <span style={{ marginLeft: 6 }}>📍{e.title}</span>
+        {e.subtitle && <span style={{ marginLeft: 4, fontSize: 12, color: '#666' }}>{e.subtitle}</span>}
+        <span style={{ marginLeft: 8, fontSize: 11, background: '#e8f5e9', color: '#2e7d32', borderRadius: 4, padding: '1px 6px' }}>通常イベント</span>
+      </div>
+    )
+  }
+  if (item.type === 'request') {
+    const b = item.booking
+    const modelName = b.private_products?.models?.name || ''
+    return (
+      <div>
+        <span style={{ fontWeight: 700 }}>{fmtDate(b.event_date_input) || '未定'}</span>
+        <span style={{ marginLeft: 6 }}>📍{b.meeting_place || '未定'}</span>
+        <span style={{ marginLeft: 6, color: '#555', fontSize: 13 }}>{b.shooting_time || ''}</span>
+        <span style={{ marginLeft: 8, fontSize: 11, background: '#fce4ec', color: '#c2185b', borderRadius: 4, padding: '1px 6px' }}>リク撮</span>
+        {modelName && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>モデル：{modelName}</div>}
+      </div>
+    )
+  }
+  if (item.type === 'custom') {
+    const r = item.recruitment
+    const typeLabel = r.shoot_type === 'request' ? 'リク撮' : '通常撮影会'
+    const models = (r.models_info || []).map(m => m.name).join('、')
+    return (
+      <div>
+        <span style={{ fontWeight: 700 }}>{fmtDate(r.recruit_date)}</span>
+        <span style={{ marginLeft: 6 }}>📍{r.location || '未定'}</span>
+        <span style={{ marginLeft: 6, color: '#555', fontSize: 13 }}>{r.shoot_time || '未定'}</span>
+        <span style={{ marginLeft: 8, fontSize: 11, background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '1px 6px' }}>{typeLabel}</span>
+        {models && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>撮影モデル：{models}</div>}
+      </div>
+    )
+  }
+  return null
+}
+
+function ConfirmCard({ item, staffUsers, selectedStaffMap, setSelectedStaffMap, assigningKey, handleDirectAssign, handleAction, actionLoading }) {
+  const rec = item.recruitment
+  const confirmedApps = (rec?.applications || []).filter(a => a.status === 'confirmed')
+  const appliedApps = (rec?.applications || []).filter(a => a.status === 'applied')
+  const selectedStaff = selectedStaffMap[item.key] || ''
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, padding: '16px 20px' }}>
+      <ConfirmItemLabel item={item} />
+
+      {rec?.type === 'custom' && (rec.photographer_name || rec.photographer_nickname || rec.photographer_sns || rec.payment_status) && (
+        <div style={{ marginTop: 6, fontSize: 12, color: '#555', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {rec.photographer_name && <span>👤 {rec.photographer_name}</span>}
+          {rec.photographer_nickname && <span>🏷️ {rec.photographer_nickname}</span>}
+          {rec.photographer_sns && <a href={rec.photographer_sns} target="_blank" rel="noopener noreferrer" style={{ color: '#1565c0' }}>🔗 SNS</a>}
+          {rec.payment_status && <span style={{ background: rec.payment_status === '支払い済み' ? '#e8f5e9' : rec.payment_status === '当日現金' ? '#fff8e1' : '#f5f5f5', color: rec.payment_status === '支払い済み' ? '#2e7d32' : rec.payment_status === '当日現金' ? '#f57f17' : '#888', borderRadius: 4, padding: '1px 7px', fontWeight: 700 }}>
+            {rec.payment_status === '支払い済み' ? '✅ 支払い済み' : rec.payment_status === '当日現金' ? '💴 当日現金' : '❓ 未定'}
+          </span>}
+        </div>
+      )}
+
+      {(confirmedApps.length > 0 || appliedApps.length > 0) && (
+        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {[...confirmedApps, ...appliedApps].map(app => (
+            <div key={app.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 8, background: app.status === 'confirmed' ? '#e8f5e9' : '#f8fbff', border: `1px solid ${app.status === 'confirmed' ? '#a5d6a7' : '#ddd'}`, flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>{app.user_name || '（名前なし）'}</span>
+              {app.status === 'confirmed' && <span style={{ fontSize: 12, background: '#388e3c', color: '#fff', borderRadius: 4, padding: '2px 8px', fontWeight: 700 }}>✅ 確定済み</span>}
+              {app.status === 'applied' && (
+                <button onClick={() => handleAction('confirm_application', rec.id, app.id)} disabled={actionLoading === app.id}
+                  style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                  {actionLoading === app.id ? '処理中...' : '確定'}
+                </button>
+              )}
+              <button onClick={() => { if (confirm('キャンセルしますか？')) handleAction('cancel_application', rec.id, app.id) }} disabled={actionLoading === app.id}
+                style={{ background: '#ffebee', color: '#c62828', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                キャンセル
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <select value={selectedStaff} onChange={e => setSelectedStaffMap(m => ({ ...m, [item.key]: e.target.value }))}
+          style={{ flex: 1, minWidth: 140, padding: '7px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13 }}>
+          <option value="">スタッフを選択</option>
+          {staffUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+        </select>
+        <button onClick={() => handleDirectAssign(item)} disabled={!selectedStaff || assigningKey === item.key}
+          style={{ background: !selectedStaff ? '#ccc' : '#06c755', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 13, fontWeight: 700, cursor: !selectedStaff ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+          {assigningKey === item.key ? '送信中...' : '決定してLINEを送信'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function StaffRecruitPage() {
   const [tab, setTab] = useState('confirm')
   const [recruitments, setRecruitments] = useState([])
@@ -70,6 +169,10 @@ export default function StaffRecruitPage() {
   const [submitting, setSubmitting] = useState(false)
   const [actionLoading, setActionLoading] = useState(null)
   const [pendingEntries, setPendingEntries] = useState([])
+  const [staffUsers, setStaffUsers] = useState([])
+  const [selectedStaffMap, setSelectedStaffMap] = useState({})
+  const [assigningKey, setAssigningKey] = useState(null)
+  const [showPast, setShowPast] = useState(false)
 
   // custom form
   const [customForm, setCustomForm] = useState({ recruit_date: '', shoot_type: 'normal', location: '', shoot_time: '', model_ids: [], capacity: 1, photographer_name: '', photographer_nickname: '', photographer_sns: '', payment_status: '未定' })
@@ -89,6 +192,7 @@ export default function StaffRecruitPage() {
     setOpenEvents(data.openEvents || [])
     setPrivateBookings(data.privateBookings || [])
     setModels(data.models || [])
+    setStaffUsers(data.staffUsers || [])
     setLoading(false)
   }
 
@@ -142,6 +246,26 @@ export default function StaffRecruitPage() {
     else alert('エラーが発生しました')
   }
 
+  async function handleDirectAssign(item) {
+    const staffUserId = selectedStaffMap[item.key]
+    if (!staffUserId) return alert('スタッフを選択してください')
+    setAssigningKey(item.key)
+    await fetch('/api/admin/staff-recruit', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'direct_assign',
+        event_id: item.type === 'event' ? item.event.id : null,
+        private_booking_id: item.type === 'request' ? item.booking.id : null,
+        recruitment_id: item.recruitment?.id || null,
+        staff_user_id: staffUserId,
+      }),
+    })
+    setAssigningKey(null)
+    setSelectedStaffMap(m => ({ ...m, [item.key]: '' }))
+    load()
+  }
+
   async function handleAction(action, recruitment_id, application_id = null) {
     const key = application_id || recruitment_id
     setActionLoading(key)
@@ -165,7 +289,22 @@ export default function StaffRecruitPage() {
   const availableBookings = privateBookings.filter(b => !recruitedBookingIds.has(b.id))
 
   const recruitList = recruitments.filter(r => r.status !== 'cancelled')
-  const confirmList = recruitments
+
+  const recruitByEventId = Object.fromEntries(recruitments.filter(r => r.event_id).map(r => [r.event_id, r]))
+  const recruitByBookingId = Object.fromEntries(recruitments.filter(r => r.private_booking_id).map(r => [r.private_booking_id, r]))
+  const allConfirmItems = [
+    ...openEvents.map(e => ({ key: `event-${e.id}`, type: 'event', date: e.event_date, event: e, recruitment: recruitByEventId[e.id] || null })),
+    ...privateBookings.map(b => ({ key: `booking-${b.id}`, type: 'request', date: b.event_date_input, booking: b, recruitment: recruitByBookingId[b.id] || null })),
+    ...recruitments.filter(r => r.type === 'custom').map(r => ({ key: `custom-${r.id}`, type: 'custom', date: r.recruit_date, recruitment: r })),
+  ].sort((a, b) => {
+    if (!a.date && !b.date) return 0
+    if (!a.date) return 1
+    if (!b.date) return -1
+    return a.date.localeCompare(b.date)
+  })
+  const todayStr = new Date().toISOString().split('T')[0]
+  const upcomingItems = allConfirmItems.filter(item => !item.date || item.date >= todayStr)
+  const pastItems = allConfirmItems.filter(item => item.date && item.date < todayStr)
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 16px' }}>
@@ -229,67 +368,33 @@ export default function StaffRecruitPage() {
         </div>
       ) : (
         <div>
-          {confirmList.length === 0 ? (
-            <p style={{ color: '#999' }}>募集はありません。</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {confirmList.map(r => {
-                const apps = r.applications || []
-                const activeApps = apps.filter(a => a.status !== 'cancelled')
-                return (
-                  <div key={r.id} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, padding: '16px 20px' }}>
-                    {r.type === 'custom' && (r.photographer_name || r.photographer_nickname || r.photographer_sns || r.payment_status) && (
-                      <div style={{ marginBottom: 10, fontSize: 12, color: '#555', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                        {r.photographer_name && <span>👤 {r.photographer_name}</span>}
-                        {r.photographer_nickname && <span>🏷️ {r.photographer_nickname}</span>}
-                        {r.photographer_sns && <a href={r.photographer_sns} target="_blank" rel="noopener noreferrer" style={{ color: '#1565c0' }}>🔗 SNS</a>}
-                        {r.payment_status && <span style={{ background: r.payment_status === '支払い済み' ? '#e8f5e9' : r.payment_status === '当日現金' ? '#fff8e1' : '#f5f5f5', color: r.payment_status === '支払い済み' ? '#2e7d32' : r.payment_status === '当日現金' ? '#f57f17' : '#888', borderRadius: 4, padding: '1px 7px', fontWeight: 700 }}>
-                          {r.payment_status === '支払い済み' ? '✅ 支払い済み' : r.payment_status === '当日現金' ? '💴 当日現金' : '❓ 未定'}
-                        </span>}
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-                      <StatusBadge status={r.status} />
-                      <div style={{ flex: 1 }}><RecruitLabel r={r} /></div>
-                      <span style={{ fontSize: 12, color: '#aaa' }}>募集{r.capacity}名</span>
-                    </div>
-                    {activeApps.length === 0 ? (
-                      <p style={{ color: '#bbb', fontSize: 13, margin: 0 }}>応募なし</p>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {activeApps.map(app => (
-                          <div key={app.id} style={{
-                            display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, flexWrap: 'wrap',
-                            background: app.status === 'confirmed' ? '#e8f5e9' : '#f8fbff',
-                            border: `1px solid ${app.status === 'confirmed' ? '#a5d6a7' : '#ddd'}`,
-                          }}>
-                            <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>{app.user_name || '（名前なし）'}</span>
-                            {app.status === 'confirmed' && (
-                              <span style={{ fontSize: 12, background: '#388e3c', color: '#fff', borderRadius: 4, padding: '2px 8px', fontWeight: 700 }}>確定済み</span>
-                            )}
-                            {app.status === 'applied' && (
-                              <button
-                                onClick={() => handleAction('confirm_application', r.id, app.id)}
-                                disabled={actionLoading === app.id}
-                                style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: actionLoading === app.id ? 0.6 : 1 }}>
-                                {actionLoading === app.id ? '処理中...' : '確定'}
-                              </button>
-                            )}
-                            <button
-                              onClick={() => { if (confirm('この応募をキャンセルしますか？')) handleAction('cancel_application', r.id, app.id) }}
-                              disabled={actionLoading === app.id}
-                              style={{ background: '#ffebee', color: '#c62828', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                              キャンセル
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+          {[
+            { items: upcomingItems, isPast: false },
+            { items: pastItems, isPast: true },
+          ].map(({ items, isPast }) => {
+            if (items.length === 0) return null
+            if (isPast) return (
+              <div key="past" style={{ marginTop: 24 }}>
+                <button onClick={() => setShowPast(v => !v)}
+                  style={{ background: 'none', border: '1px solid #ddd', borderRadius: 8, padding: '8px 16px', fontSize: 13, color: '#888', cursor: 'pointer', fontWeight: 700 }}>
+                  {showPast ? '▲' : '▼'} 過去の開催（{items.length}件）
+                </button>
+                {showPast && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
+                    {items.map(item => <ConfirmCard key={item.key} item={item} staffUsers={staffUsers} selectedStaffMap={selectedStaffMap} setSelectedStaffMap={setSelectedStaffMap} assigningKey={assigningKey} handleDirectAssign={handleDirectAssign} handleAction={handleAction} actionLoading={actionLoading} />)}
                   </div>
-                )
-              })}
-            </div>
-          )}
+                )}
+              </div>
+            )
+            return (
+              <div key="upcoming" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {items.length === 0
+                  ? <p style={{ color: '#999' }}>予定はありません。</p>
+                  : items.map(item => <ConfirmCard key={item.key} item={item} staffUsers={staffUsers} selectedStaffMap={selectedStaffMap} setSelectedStaffMap={setSelectedStaffMap} assigningKey={assigningKey} handleDirectAssign={handleDirectAssign} handleAction={handleAction} actionLoading={actionLoading} />)
+                }
+              </div>
+            )
+          })}
         </div>
       )}
 

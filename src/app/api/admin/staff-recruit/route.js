@@ -123,7 +123,13 @@ export async function GET() {
     .eq('status', 'active')
     .order('display_order', { ascending: true })
 
-  return Response.json({ recruitments, openEvents: openEvents || [], privateBookings: privateBookings || [], models: activeModels || [] })
+  const { data: allProfiles } = await admin.from('user_profiles').select('id, name, role, roles')
+  const staffUsers = (allProfiles || []).filter(p => {
+    const roles = p.roles?.length > 0 ? p.roles : (p.role ? [p.role] : [])
+    return roles.includes('staff')
+  }).map(p => ({ id: p.id, name: p.name }))
+
+  return Response.json({ recruitments, openEvents: openEvents || [], privateBookings: privateBookings || [], models: activeModels || [], staffUsers })
 }
 
 export async function POST(req) {
@@ -174,7 +180,8 @@ export async function PATCH(req) {
   const admin = await checkAdmin()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { action, recruitment_id, application_id } = await req.json()
+  const body = await req.json()
+  const { action, recruitment_id, application_id, event_id, private_booking_id, staff_user_id } = body
 
   if (action === 'confirm_application') {
     const { data: app } = await admin.from('staff_recruitment_applications')
@@ -240,6 +247,64 @@ export async function PATCH(req) {
 
   if (action === 'delete') {
     await admin.from('staff_recruitments').delete().eq('id', recruitment_id)
+    return Response.json({ ok: true })
+  }
+
+  if (action === 'direct_assign') {
+    // Find or create recruitment for this event/booking
+    let recId = recruitment_id
+    let rec
+    if (!recId) {
+      let existing = null
+      if (event_id) {
+        const { data } = await admin.from('staff_recruitments').select('*').eq('event_id', event_id).eq('type', 'event').maybeSingle()
+        existing = data
+      } else if (private_booking_id) {
+        const { data } = await admin.from('staff_recruitments').select('*').eq('private_booking_id', private_booking_id).eq('type', 'request').maybeSingle()
+        existing = data
+      }
+      if (existing) {
+        recId = existing.id; rec = existing
+      } else {
+        const { data: newRec } = await admin.from('staff_recruitments').insert({
+          type: event_id ? 'event' : 'request',
+          event_id: event_id || null,
+          private_booking_id: private_booking_id || null,
+          capacity: 1,
+          status: 'closed',
+        }).select().single()
+        recId = newRec.id; rec = newRec
+      }
+    } else {
+      const { data } = await admin.from('staff_recruitments').select('*').eq('id', recId).single()
+      rec = data
+    }
+
+    const { data: staffProfile } = await admin.from('user_profiles').select('id, name').eq('id', staff_user_id).single()
+
+    await admin.from('staff_recruitment_applications').delete().eq('recruitment_id', recId).eq('user_id', staff_user_id)
+    await admin.from('staff_recruitment_applications').insert({
+      recruitment_id: recId,
+      user_id: staff_user_id,
+      user_name: staffProfile?.name || '',
+      status: 'confirmed',
+      confirmed_at: new Date().toISOString(),
+    })
+
+    try {
+      const { data: lineIdsRow } = await admin.from('site_settings').select('value').eq('key', 'line_staff_ids').maybeSingle()
+      let staffLineIds = {}
+      try { staffLineIds = JSON.parse(lineIdsRow?.value || '{}') } catch {}
+      const staffLineId = staffLineIds[staff_user_id]
+      if (staffLineId && rec) {
+        const enriched = await enrichRecruitments(admin, [rec])
+        const detailLine = buildRecruitLine(enriched[0])
+        const tmpl = await getTemplate(admin, 'staff_confirmed_notice')
+        const msg = applyVars(tmpl, { details: detailLine })
+        await sendLineMessage(staffLineId, msg)
+      }
+    } catch {}
+
     return Response.json({ ok: true })
   }
 
