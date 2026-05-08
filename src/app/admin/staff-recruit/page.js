@@ -110,45 +110,44 @@ function ConfirmCard({ item, staffUsers, selectedStaffMap, setSelectedStaffMap, 
   // 募集あり：左ボーダーで強調、背景を少し色付け
   const recStatusColor = rec?.status === 'closed' ? '#388e3c' : '#1565c0'
   const cardStyle = hasRecruitment
-    ? { background: '#f8fbff', border: `1px solid ${recStatusColor}40`, borderLeft: `4px solid ${recStatusColor}`, borderRadius: 10, padding: '10px 14px' }
-    : { background: '#fff', border: '1px solid #e5e5e5', borderRadius: 10, padding: '10px 14px' }
+    ? { background: '#f8fbff', border: `1px solid ${recStatusColor}40`, borderLeft: `4px solid ${recStatusColor}`, borderRadius: 8, padding: '8px 12px' }
+    : { background: '#fff', border: '1px solid #e5e5e5', borderRadius: 8, padding: '8px 12px' }
 
   return (
     <div style={cardStyle}>
-      {hasRecruitment && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
-          <StatusBadge status={rec.status} />
-          <span style={{ fontSize: 12, color: '#aaa' }}>募集{rec.capacity}名</span>
-          {appliedApps.length > 0 && <span style={{ fontSize: 12, background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '1px 8px', fontWeight: 700 }}>応募{appliedApps.length}名</span>}
-        </div>
-      )}
+      {/* ステータス + ラベル 1行 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
+        {hasRecruitment && <StatusBadge status={rec.status} />}
+        {hasRecruitment && <span style={{ fontSize: 11, color: '#aaa' }}>募集{rec.capacity}名</span>}
+        {appliedApps.length > 0 && <span style={{ fontSize: 11, background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '0px 6px', fontWeight: 700 }}>応募{appliedApps.length}名</span>}
+      </div>
       <ConfirmItemLabel item={item} />
 
       {rec?.type === 'custom' && (rec.photographer_name || rec.photographer_nickname || rec.photographer_sns || rec.payment_status) && (
-        <div style={{ marginTop: 6, fontSize: 12, color: '#555', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ marginTop: 3, fontSize: 11, color: '#666', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {rec.photographer_name && <span>👤 {rec.photographer_name}</span>}
           {rec.photographer_nickname && <span>🏷️ {rec.photographer_nickname}</span>}
           {rec.photographer_sns && <a href={rec.photographer_sns} target="_blank" rel="noopener noreferrer" style={{ color: '#1565c0' }}>🔗 SNS</a>}
-          {rec.payment_status && <span style={{ background: rec.payment_status === '支払い済み' ? '#e8f5e9' : rec.payment_status === '当日現金' ? '#fff8e1' : '#f5f5f5', color: rec.payment_status === '支払い済み' ? '#2e7d32' : rec.payment_status === '当日現金' ? '#f57f17' : '#888', borderRadius: 4, padding: '1px 7px', fontWeight: 700 }}>
+          {rec.payment_status && <span style={{ background: rec.payment_status === '支払い済み' ? '#e8f5e9' : rec.payment_status === '当日現金' ? '#fff8e1' : '#f5f5f5', color: rec.payment_status === '支払い済み' ? '#2e7d32' : rec.payment_status === '当日現金' ? '#f57f17' : '#888', borderRadius: 4, padding: '0px 6px', fontWeight: 700 }}>
             {rec.payment_status === '支払い済み' ? '✅ 支払い済み' : rec.payment_status === '当日現金' ? '💴 当日現金' : '❓ 未定'}
           </span>}
         </div>
       )}
 
       {(confirmedApps.length > 0 || appliedApps.length > 0) && (
-        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ marginTop: 5, display: 'flex', flexDirection: 'column', gap: 3 }}>
           {[...confirmedApps, ...appliedApps].map(app => (
-            <div key={app.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 10px', borderRadius: 6, background: app.status === 'confirmed' ? '#e8f5e9' : '#f8fbff', border: `1px solid ${app.status === 'confirmed' ? '#a5d6a7' : '#ddd'}`, flexWrap: 'wrap' }}>
-              <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>{app.user_name || '（名前なし）'}</span>
-              {app.status === 'confirmed' && <span style={{ fontSize: 12, background: '#388e3c', color: '#fff', borderRadius: 4, padding: '2px 8px', fontWeight: 700 }}>✅ 確定済み</span>}
+            <div key={app.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 8px', borderRadius: 5, background: app.status === 'confirmed' ? '#e8f5e9' : '#f8fbff', border: `1px solid ${app.status === 'confirmed' ? '#a5d6a7' : '#ddd'}` }}>
+              <span style={{ fontWeight: 700, fontSize: 13, flex: 1 }}>{app.user_name || '（名前なし）'}</span>
+              {app.status === 'confirmed' && <span style={{ fontSize: 11, background: '#388e3c', color: '#fff', borderRadius: 4, padding: '1px 6px', fontWeight: 700 }}>✅ 確定済み</span>}
               {app.status === 'applied' && (
                 <button onClick={() => handleAction('confirm_application', rec.id, app.id)} disabled={actionLoading === app.id}
-                  style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                  {actionLoading === app.id ? '処理中...' : '確定'}
+                  style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                  {actionLoading === app.id ? '...' : '確定'}
                 </button>
               )}
               <button onClick={() => { if (confirm('キャンセルしますか？')) handleAction('cancel_application', rec.id, app.id) }} disabled={actionLoading === app.id}
-                style={{ background: '#ffebee', color: '#c62828', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                style={{ background: '#ffebee', color: '#c62828', border: 'none', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
                 キャンセル
               </button>
             </div>
@@ -156,14 +155,14 @@ function ConfirmCard({ item, staffUsers, selectedStaffMap, setSelectedStaffMap, 
         </div>
       )}
 
-      <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div style={{ marginTop: 5, display: 'flex', gap: 5, alignItems: 'center' }}>
         <select value={selectedStaff} onChange={e => setSelectedStaffMap(m => ({ ...m, [item.key]: e.target.value }))}
-          style={{ flex: 1, minWidth: 120, padding: '5px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12 }}>
+          style={{ flex: 1, minWidth: 100, padding: '3px 6px', border: '1px solid #ddd', borderRadius: 5, fontSize: 11 }}>
           <option value="">スタッフを選択</option>
           {staffUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
         </select>
         <button onClick={() => handleDirectAssign(item)} disabled={!selectedStaff || assigningKey === item.key}
-          style={{ background: !selectedStaff ? '#ccc' : '#06c755', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: !selectedStaff ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+          style={{ background: !selectedStaff ? '#ccc' : '#06c755', color: '#fff', border: 'none', borderRadius: 5, padding: '3px 10px', fontSize: 11, fontWeight: 700, cursor: !selectedStaff ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
           {assigningKey === item.key ? '送信中...' : '決定してLINEを送信'}
         </button>
       </div>
@@ -330,11 +329,11 @@ export default function StaffRecruitPage() {
   const pastItems = allConfirmItems.filter(item => item.date && item.date < todayStr)
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 16px' }}>
-      <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1a3560', margin: '8px 0 24px' }}>🐈‍⬛ スタッフ募集</h1>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '16px 16px' }}>
+      <Link href="/admin" style={{ color: '#1a3560', fontSize: 12, textDecoration: 'none' }}>← 管理画面</Link>
+      <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1a3560', margin: '4px 0 12px' }}>🐈‍⬛ スタッフ募集</h1>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
         <button style={tabStyle(tab === 'confirm')} onClick={() => setTab('confirm')}>スタッフ確定状況</button>
         <button style={tabStyle(tab === 'recruit')} onClick={() => setTab('recruit')}>スタッフ募集日</button>
       </div>
