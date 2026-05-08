@@ -32,7 +32,6 @@ function RecruitLabel({ r }) {
         <span style={{ fontWeight: 700 }}>{fmtDate(e.event_date)}</span>
         <span style={{ marginLeft: 6 }}>📍{e.title}</span>
         {e.subtitle && <span style={{ marginLeft: 4, fontSize: 12, color: '#666' }}>{e.subtitle}</span>}
-        {e.location && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{e.location}</div>}
       </div>
     )
   }

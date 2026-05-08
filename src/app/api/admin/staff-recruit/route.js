@@ -38,7 +38,7 @@ function buildRecruitLine(r) {
   if (r.type === 'event') {
     const e = r.event
     if (!e) return '（イベント情報なし）'
-    return `${fmtDate(e.event_date)} 📍${e.title}${e.subtitle ? `　${e.subtitle}` : ''}　${e.location || ''}`
+    return `${fmtDate(e.event_date)} 📍${e.title}${e.subtitle ? `　${e.subtitle}` : ''}`
   }
   if (r.type === 'request') {
     const b = r.booking
@@ -53,7 +53,7 @@ async function enrichRecruitments(admin, recruitments) {
   const eventIds = [...new Set((recruitments).filter(r => r.event_id).map(r => r.event_id))]
   let eventsMap = {}
   if (eventIds.length > 0) {
-    const { data } = await admin.from('events').select('id, title, subtitle, event_date, location').in('id', eventIds)
+    const { data } = await admin.from('events').select('id, title, subtitle, event_date').in('id', eventIds)
     for (const e of data || []) eventsMap[e.id] = e
   }
 
@@ -105,18 +105,11 @@ export async function GET() {
   const enriched = await enrichRecruitments(admin, rawRecruitments || [])
   const recruitments = enriched.map(r => ({ ...r, applications: appsMap[r.id] || [] }))
 
-  // checkAdmin()が返すadminとは別に、フレッシュなadminクライアントで取得
-  const { createClient } = await import('@supabase/supabase-js')
-  const freshAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
-  const { data: openEvents, error: eventsError } = await freshAdmin
+  const { data: openEvents } = await admin
     .from('events')
-    .select('id, title, subtitle, event_date, location, status')
+    .select('id, title, subtitle, event_date')
+    .eq('status', 'active')
     .order('event_date', { ascending: false })
-  console.log('openEvents debug:', { count: openEvents?.length, error: eventsError, sample: openEvents?.[0] })
 
   const { data: privateBookings } = await admin
     .from('private_bookings')
@@ -130,7 +123,7 @@ export async function GET() {
     .eq('status', 'active')
     .order('display_order', { ascending: true })
 
-  return Response.json({ recruitments, openEvents: openEvents || [], privateBookings: privateBookings || [], models: activeModels || [], _debug: { eventsCount: openEvents?.length, eventsError, sample: openEvents?.[0] } })
+  return Response.json({ recruitments, openEvents: openEvents || [], privateBookings: privateBookings || [], models: activeModels || [] })
 }
 
 export async function POST(req) {
