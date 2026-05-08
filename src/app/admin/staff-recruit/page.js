@@ -193,7 +193,7 @@ export default function StaffRecruitPage() {
               </div>
               <button onClick={handleSubmitAll} disabled={submitting}
                 style={{ width: '100%', background: submitting ? '#ccc' : '#06c755', color: '#fff', border: 'none', borderRadius: 8, padding: '12px', fontWeight: 700, fontSize: 15, cursor: submitting ? 'not-allowed' : 'pointer' }}>
-                {submitting ? '送信中...' : `${pendingEntries.length}件まとめて募集開始`}
+                {submitting ? '送信中...' : `${pendingEntries.length}件まとめて募集開始してLINEで告知する`}
               </button>
             </div>
           )}
