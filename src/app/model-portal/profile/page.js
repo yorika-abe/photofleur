@@ -74,20 +74,21 @@ export default function ModelProfilePage() {
       const { model } = await res.json()
       if (model) {
         setModel(model)
-        const src = model.pending_data || model
+        const pd = model.pending_data
+        const pick = (key) => pd ? (pd[key] ?? model[key]) : model[key]
         setForm({
-          name: src.name || '',
-          name_en: src.name_en || '',
-          bio: src.bio || '',
-          height: src.height || '',
-          birthday: src.birthday || '',
-          shoe_size: src.shoe_size || '',
-          image: src.image || '',
-          twitter_url: src.twitter_url || '',
-          instagram_url: src.instagram_url || '',
-          favorite_things: src.favorite_things || '',
+          name: pick('name') || '',
+          name_en: pick('name_en') || '',
+          bio: pick('bio') || '',
+          height: pick('height') || '',
+          birthday: pick('birthday') || '',
+          shoe_size: pick('shoe_size') || '',
+          image: pick('image') || '',
+          twitter_url: pick('twitter_url') || '',
+          instagram_url: pick('instagram_url') || '',
+          favorite_things: pick('favorite_things') || '',
         })
-        setPortfolioImages(src.portfolio_images || model.portfolio_images || [])
+        setPortfolioImages((pd ? (pd.portfolio_images ?? model.portfolio_images) : model.portfolio_images) || [])
       }
       setLoading(false)
     }
