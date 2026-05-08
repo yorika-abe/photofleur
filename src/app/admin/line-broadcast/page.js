@@ -209,6 +209,15 @@ const INDIVIDUAL_TEMPLATES = [
     ],
   },
   {
+    key: 'staff_model_cancel_notice',
+    label: 'スタッフキャンセル通知（モデル個人）',
+    trigger: 'スタッフ確定をキャンセルした時（モデルにも自動送信）',
+    vars: [
+      { key: '{{details}}', desc: '募集日・場所・時間・撮影種別（自動生成）' },
+      { key: '{{staff_name}}', desc: 'キャンセルしたスタッフ名' },
+    ],
+  },
+  {
     key: 'model_day_before',
     label: '撮影前日案内（モデル個人）',
     trigger: '撮影前日の夜23時（自動cron）',
@@ -944,6 +953,14 @@ const STAFF_GROUP_TEMPLATES = [
       { key: '{{details}}', desc: '募集日・場所・時間・撮影種別（自動生成）' },
     ],
   },
+  {
+    key: 'staff_re_recruit_notice',
+    label: 'スタッフ再募集お知らせ（グループ）',
+    trigger: 'スタッフキャンセル後に再募集を選択した時（自動）',
+    vars: [
+      { key: '{{details}}', desc: '募集日・場所・時間・撮影種別（自動生成）' },
+    ],
+  },
 ]
 
 const STAFF_INDIVIDUAL_TEMPLATES = [
@@ -951,6 +968,14 @@ const STAFF_INDIVIDUAL_TEMPLATES = [
     key: 'staff_confirmed_notice',
     label: 'スタッフ確定通知（個人）',
     trigger: 'スタッフ応募を確定した時（自動）',
+    vars: [
+      { key: '{{details}}', desc: '募集日・場所・時間・撮影種別（自動生成）' },
+    ],
+  },
+  {
+    key: 'staff_cancel_notice',
+    label: 'スタッフキャンセル通知（個人）',
+    trigger: 'スタッフ確定をキャンセルした時（自動）',
     vars: [
       { key: '{{details}}', desc: '募集日・場所・時間・撮影種別（自動生成）' },
     ],

@@ -240,8 +240,57 @@ export async function PATCH(req) {
   }
 
   if (action === 'cancel_application') {
-    await admin.from('staff_recruitment_applications').update({ status: 'cancelled' }).eq('id', application_id)
+    const { data: app } = await admin.from('staff_recruitment_applications')
+      .update({ status: 'cancelled' })
+      .eq('id', application_id)
+      .select()
+      .single()
     await admin.from('staff_recruitments').update({ status: 'open' }).eq('id', recruitment_id)
+
+    try {
+      const { data: rec } = await admin.from('staff_recruitments').select('*').eq('id', recruitment_id).single()
+      const enriched = await enrichRecruitments(admin, [rec])
+      const detailLine = buildRecruitLine(enriched[0])
+      const staffName = app?.user_name || ''
+
+      const { data: lineIdsRow } = await admin.from('site_settings').select('value').eq('key', 'line_staff_ids').maybeSingle()
+      let staffLineIds = {}
+      try { staffLineIds = JSON.parse(lineIdsRow?.value || '{}') } catch {}
+      const staffLineId = app ? staffLineIds[app.user_id] : null
+      if (staffLineId) {
+        const tmpl = await getTemplate(admin, 'staff_cancel_notice')
+        await sendLineMessage(staffLineId, applyVars(tmpl, { details: detailLine }))
+      }
+
+      if (rec.type === 'custom' || rec.type === 'request') {
+        const modelLineIds = []
+        if (rec.type === 'custom' && enriched[0].models_info?.length > 0)
+          for (const m of enriched[0].models_info) if (m.line_id) modelLineIds.push(m.line_id)
+        if (rec.type === 'request' && enriched[0].booking?.private_products?.models?.line_id)
+          modelLineIds.push(enriched[0].booking.private_products.models.line_id)
+        if (modelLineIds.length > 0) {
+          const modelTmpl = await getTemplate(admin, 'staff_model_cancel_notice')
+          for (const lineId of modelLineIds)
+            await sendLineMessage(lineId, applyVars(modelTmpl, { details: detailLine, staff_name: staffName }))
+        }
+      }
+    } catch {}
+
+    return Response.json({ ok: true })
+  }
+
+  if (action === 'notify_re_recruit') {
+    try {
+      const { data: rec } = await admin.from('staff_recruitments').select('*').eq('id', recruitment_id).single()
+      const enriched = await enrichRecruitments(admin, [rec])
+      const detailLine = buildRecruitLine(enriched[0])
+      const { data: groupRow } = await admin.from('site_settings').select('value').eq('key', 'line_group_id_staff').maybeSingle()
+      const groupId = groupRow?.value
+      if (groupId) {
+        const tmpl = await getTemplate(admin, 'staff_re_recruit_notice')
+        await sendLineGroupMessageToId(groupId, applyVars(tmpl, { details: detailLine }))
+      }
+    } catch {}
     return Response.json({ ok: true })
   }
 

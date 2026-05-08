@@ -289,6 +289,15 @@ export default function StaffRecruitPage() {
       body: JSON.stringify({ action, recruitment_id, application_id }),
     })
     setActionLoading(null)
+    if (action === 'cancel_application') {
+      if (confirm('スタッフグループに再募集のLINEを送りますか？')) {
+        await fetch('/api/admin/staff-recruit', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'notify_re_recruit', recruitment_id }),
+        })
+      }
+    }
     load()
   }
 
