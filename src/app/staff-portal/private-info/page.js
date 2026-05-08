@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 const REQUIRED_FIELDS = ['real_name', 'phone', 'email', 'address', 'station']
-const EMPTY_FORM = { real_name: '', phone: '', email: '', address: '', station: '', emergency_contact: '' }
+const EMPTY_FORM = { real_name: '', phone: '', email: '', address: '', station: '', bank_name: '', branch_name: '', account_type: '普通', account_number: '', account_holder: '' }
 
 const STAFF_RULES = [
   { title: '第1条（業務内容）', body: '受付スタッフは、撮影会当日における受付業務（チェックイン、誘導、問い合わせ対応等）を担当します。' },
@@ -124,7 +124,11 @@ export default function StaffPrivateInfoPage() {
       email: src.email || '',
       address: src.address || '',
       station: src.station || '',
-      emergency_contact: src.emergency_contact || '',
+      bank_name: src.bank_name || '',
+      branch_name: src.branch_name || '',
+      account_type: src.account_type || '普通',
+      account_number: src.account_number || '',
+      account_holder: src.account_holder || '',
     })
     setContractAgreedAt(data.contract_agreed_at || null)
     setPendingChanges(data.pending_changes || null)
@@ -164,7 +168,6 @@ export default function StaffPrivateInfoPage() {
 
   const hasInfo = !!liveData?.real_name
   const hasPending = !!pendingChanges
-  const displayForm = editing ? form : (pendingChanges || form)
 
   if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#aaa' }}>読み込み中...</div>
 
@@ -205,7 +208,26 @@ export default function StaffPrivateInfoPage() {
             <Field label="メールアドレス" required value={form.email} editing onChange={v => setForm(f => ({ ...f, email: v }))} placeholder="example@email.com" />
             <Field label="住所" required value={form.address} editing onChange={v => setForm(f => ({ ...f, address: v }))} placeholder="東京都○○区○○" />
             <Field label="最寄り駅" required value={form.station} editing onChange={v => setForm(f => ({ ...f, station: v }))} placeholder="○○駅" />
-            <Field label="緊急連絡先（氏名・電話番号）" value={form.emergency_contact} editing onChange={v => setForm(f => ({ ...f, emergency_contact: v }))} placeholder="山田花子 090-0000-0001（母）" />
+          </div>
+          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #f0f0f0' }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 14 }}>振込先情報</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <Field label="銀行名" value={form.bank_name} editing onChange={v => setForm(f => ({ ...f, bank_name: v }))} placeholder="○○銀行" />
+              <Field label="支店名" value={form.branch_name} editing onChange={v => setForm(f => ({ ...f, branch_name: v }))} placeholder="○○支店" />
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, color: '#444' }}>口座種別</div>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  {['普通', '当座'].map(t => (
+                    <label key={t} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14 }}>
+                      <input type="radio" name="account_type_new" value={t} checked={form.account_type === t} onChange={() => setForm(f => ({ ...f, account_type: t }))} />
+                      {t}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <Field label="口座番号" value={form.account_number} editing onChange={v => setForm(f => ({ ...f, account_number: v }))} placeholder="1234567" />
+              <Field label="口座名義（カナ）" value={form.account_holder} editing onChange={v => setForm(f => ({ ...f, account_holder: v }))} placeholder="ヤマダ タロウ" />
+            </div>
           </div>
           <button onClick={handleFirstSave} disabled={saving}
             style={{ width: '100%', marginTop: 24, background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '14px', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
@@ -219,7 +241,7 @@ export default function StaffPrivateInfoPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', margin: 0 }}>登録情報</h2>
               {!editing && (
-                <button onClick={() => { setEditing(true); setForm({ real_name: liveData.real_name || '', phone: liveData.phone || '', email: liveData.email || '', address: liveData.address || '', station: liveData.station || '', emergency_contact: liveData.emergency_contact || '' }); setMessage('') }}
+                <button onClick={() => { setEditing(true); setForm({ real_name: liveData.real_name || '', phone: liveData.phone || '', email: liveData.email || '', address: liveData.address || '', station: liveData.station || '', bank_name: liveData.bank_name || '', branch_name: liveData.branch_name || '', account_type: liveData.account_type || '普通', account_number: liveData.account_number || '', account_holder: liveData.account_holder || '' }); setMessage('') }}
                   style={{ background: '#e3f2fd', color: '#1565c0', border: 'none', borderRadius: 7, padding: '7px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
                   編集する
                 </button>
@@ -231,7 +253,32 @@ export default function StaffPrivateInfoPage() {
               <Field label="メールアドレス" required value={editing ? form.email : (liveData.email || '')} editing={editing} onChange={v => setForm(f => ({ ...f, email: v }))} />
               <Field label="住所" required value={editing ? form.address : (liveData.address || '')} editing={editing} onChange={v => setForm(f => ({ ...f, address: v }))} />
               <Field label="最寄り駅" required value={editing ? form.station : (liveData.station || '')} editing={editing} onChange={v => setForm(f => ({ ...f, station: v }))} />
-              <Field label="緊急連絡先" value={editing ? form.emergency_contact : (liveData.emergency_contact || '')} editing={editing} onChange={v => setForm(f => ({ ...f, emergency_contact: v }))} />
+            </div>
+            <div style={{ marginTop: 20, paddingTop: 18, borderTop: '1px solid #f0f0f0' }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 14 }}>振込先情報</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <Field label="銀行名" value={editing ? form.bank_name : (liveData.bank_name || '')} editing={editing} onChange={v => setForm(f => ({ ...f, bank_name: v }))} placeholder="○○銀行" />
+                <Field label="支店名" value={editing ? form.branch_name : (liveData.branch_name || '')} editing={editing} onChange={v => setForm(f => ({ ...f, branch_name: v }))} placeholder="○○支店" />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, color: '#444' }}>口座種別</div>
+                  {editing ? (
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      {['普通', '当座'].map(t => (
+                        <label key={t} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14 }}>
+                          <input type="radio" name="account_type_edit" value={t} checked={form.account_type === t} onChange={() => setForm(f => ({ ...f, account_type: t }))} />
+                          {t}
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ padding: '10px 12px', background: '#f5f7fa', borderRadius: 8, fontSize: 14, color: liveData.account_type ? '#1a3560' : '#bbb', fontWeight: liveData.account_type ? 600 : 400, minHeight: 42, display: 'flex', alignItems: 'center' }}>
+                      {liveData.account_type || '未入力'}
+                    </div>
+                  )}
+                </div>
+                <Field label="口座番号" value={editing ? form.account_number : (liveData.account_number || '')} editing={editing} onChange={v => setForm(f => ({ ...f, account_number: v }))} placeholder="1234567" />
+                <Field label="口座名義（カナ）" value={editing ? form.account_holder : (liveData.account_holder || '')} editing={editing} onChange={v => setForm(f => ({ ...f, account_holder: v }))} placeholder="ヤマダ タロウ" />
+              </div>
             </div>
             {editing && (
               <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>

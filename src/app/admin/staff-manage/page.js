@@ -6,10 +6,12 @@ import ModelStaffTabs from '@/components/ModelStaffTabs'
 
 const FIELD_LABELS = {
   real_name: '本名', phone: '電話番号', email: 'メールアドレス',
-  address: '住所', station: '最寄り駅', emergency_contact: '緊急連絡先',
+  address: '住所', station: '最寄り駅',
+  bank_name: '銀行名', branch_name: '支店名', account_type: '口座種別',
+  account_number: '口座番号', account_holder: '口座名義',
 }
 
-function StaffCard({ staff, onApprove, onReject }) {
+function StaffCard({ staff, onApprove, onReject, actionLoading }) {
   const [open, setOpen] = useState(false)
   const info = staff.info
   const hasPending = !!info?.pending_changes
@@ -59,13 +61,13 @@ function StaffCard({ staff, onApprove, onReject }) {
                     })}
                   </div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                    <button onClick={() => onReject(staff.id)}
-                      style={{ flex: 1, background: '#ffebee', color: '#c62828', border: 'none', borderRadius: 8, padding: '9px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                    <button onClick={() => onReject(staff.id)} disabled={!!actionLoading}
+                      style={{ flex: 1, background: '#ffebee', color: '#c62828', border: 'none', borderRadius: 8, padding: '9px', fontWeight: 700, fontSize: 13, cursor: actionLoading ? 'not-allowed' : 'pointer', opacity: actionLoading ? 0.6 : 1 }}>
                       却下
                     </button>
-                    <button onClick={() => onApprove(staff.id)}
-                      style={{ flex: 2, background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '9px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-                      変更を承認
+                    <button onClick={() => onApprove(staff.id)} disabled={!!actionLoading}
+                      style={{ flex: 2, background: actionLoading ? '#ccc' : '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '9px', fontWeight: 700, fontSize: 13, cursor: actionLoading ? 'not-allowed' : 'pointer' }}>
+                      {actionLoading === staff.id ? '処理中...' : '変更を承認'}
                     </button>
                   </div>
                 </div>
@@ -143,7 +145,7 @@ export default function StaffManagePage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {staff.map(s => (
-          <StaffCard key={s.id} staff={s} onApprove={handleApprove} onReject={handleReject} />
+          <StaffCard key={s.id} staff={s} onApprove={handleApprove} onReject={handleReject} actionLoading={actionLoading} />
         ))}
         {staff.length === 0 && (
           <p style={{ color: '#aaa', textAlign: 'center', padding: 40 }}>スタッフが登録されていません。</p>
