@@ -70,6 +70,7 @@ export default function StaffRecruitPage() {
   const [modalType, setModalType] = useState(null) // null | 'custom' | 'event' | 'request'
   const [submitting, setSubmitting] = useState(false)
   const [actionLoading, setActionLoading] = useState(null)
+  const [pendingEntries, setPendingEntries] = useState([])
 
   // custom form
   const [customForm, setCustomForm] = useState({ recruit_date: '', shoot_type: 'normal', location: '', shoot_time: '', model_ids: [], capacity: 1 })
@@ -102,27 +103,43 @@ export default function StaffRecruitPage() {
     setShowModal(true)
   }
 
-  async function handleSubmit() {
-    let entries = []
+  function addToQueue() {
+    let newEntries = []
     if (modalType === 'custom') {
       if (!customForm.recruit_date) return alert('募集日を入力してください')
-      if (!customForm.shoot_type) return alert('撮影種別を選択してください')
-      entries = [{ type: 'custom', ...customForm }]
+      const typeLabel = customForm.shoot_type === 'request' ? 'リクエスト撮影' : '通常撮影会'
+      const modelNames = (customForm.model_ids || []).map(id => models.find(m => m.id === id)?.name).filter(Boolean).join('、')
+      const label = `${fmtDate(customForm.recruit_date)} 📍${customForm.location || '未定'}　${customForm.shoot_time || '未定'}（${typeLabel}）${modelNames ? `　${modelNames}` : ''}`
+      newEntries = [{ type: 'custom', ...customForm, _label: label }]
     } else if (modalType === 'event') {
       if (!selectedEventIds.length) return alert('イベントを選択してください')
-      entries = selectedEventIds.map(id => ({ type: 'event', event_id: id, capacity: eventCapacity }))
+      newEntries = selectedEventIds.map(id => {
+        const ev = openEvents.find(e => e.id === id)
+        return { type: 'event', event_id: id, capacity: eventCapacity, _label: ev ? `${fmtDate(ev.event_date)} 📍${ev.title}` : id }
+      })
     } else if (modalType === 'request') {
       if (!selectedBookingIds.length) return alert('予約を選択してください')
-      entries = selectedBookingIds.map(id => ({ type: 'request', private_booking_id: id, capacity: requestCapacity }))
+      newEntries = selectedBookingIds.map(id => {
+        const b = privateBookings.find(b => b.id === id)
+        const modelName = b?.private_products?.models?.name || ''
+        return { type: 'request', private_booking_id: id, capacity: requestCapacity, _label: `${fmtDate(b?.event_date_input) || '未定'} 📍${b?.meeting_place || '未定'}${modelName ? `　${modelName}` : ''}` }
+      })
     }
+    setPendingEntries(prev => [...prev, ...newEntries])
+    setShowModal(false)
+  }
+
+  async function handleSubmitAll() {
+    if (!pendingEntries.length) return
     setSubmitting(true)
+    const entries = pendingEntries.map(({ _label, ...e }) => e)
     const res = await fetch('/api/admin/staff-recruit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ entries }),
     })
     setSubmitting(false)
-    if (res.ok) { setShowModal(false); load() }
+    if (res.ok) { setPendingEntries([]); load() }
     else alert('エラーが発生しました')
   }
 
@@ -158,9 +175,28 @@ export default function StaffRecruitPage() {
 
       {loading ? <p style={{ color: '#999' }}>読み込み中...</p> : tab === 'recruit' ? (
         <div>
-          <button onClick={openModal} style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontWeight: 700, fontSize: 14, cursor: 'pointer', marginBottom: 20 }}>
+          <button onClick={openModal} style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontWeight: 700, fontSize: 14, cursor: 'pointer', marginBottom: 16 }}>
             ＋ 日付を追加
           </button>
+
+          {pendingEntries.length > 0 && (
+            <div style={{ marginBottom: 20, background: '#e8f5e9', border: '2px solid #81c784', borderRadius: 12, padding: '16px 20px' }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: '#2e7d32', marginBottom: 10 }}>追加済み（{pendingEntries.length}件）— まだ募集開始していません</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+                {pendingEntries.map((e, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 8, padding: '8px 14px', border: '1px solid #c8e6c9' }}>
+                    <span style={{ flex: 1, fontSize: 13 }}>{e._label}</span>
+                    <button onClick={() => setPendingEntries(prev => prev.filter((_, j) => j !== i))}
+                      style={{ background: 'none', border: 'none', color: '#e53935', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 0 }}>×</button>
+                  </div>
+                ))}
+              </div>
+              <button onClick={handleSubmitAll} disabled={submitting}
+                style={{ width: '100%', background: submitting ? '#ccc' : '#06c755', color: '#fff', border: 'none', borderRadius: 8, padding: '12px', fontWeight: 700, fontSize: 15, cursor: submitting ? 'not-allowed' : 'pointer' }}>
+                {submitting ? '送信中...' : `${pendingEntries.length}件まとめて募集開始`}
+              </button>
+            </div>
+          )}
 
           {recruitList.length === 0 ? (
             <p style={{ color: '#999' }}>募集はありません。</p>
@@ -312,9 +348,9 @@ export default function StaffRecruitPage() {
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
                   <button onClick={() => setModalType(null)} style={{ flex: 1, background: '#f5f5f5', border: 'none', borderRadius: 8, padding: '10px', fontSize: 14, cursor: 'pointer' }}>戻る</button>
-                  <button onClick={handleSubmit} disabled={submitting}
-                    style={{ flex: 2, background: submitting ? '#ccc' : '#06c755', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-                    {submitting ? '送信中...' : '募集を開始する'}
+                  <button onClick={addToQueue}
+                    style={{ flex: 2, background: '#06c755', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                    募集する
                   </button>
                 </div>
               </div>
@@ -347,9 +383,9 @@ export default function StaffRecruitPage() {
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
                   <button onClick={() => setModalType(null)} style={{ flex: 1, background: '#f5f5f5', border: 'none', borderRadius: 8, padding: '10px', fontSize: 14, cursor: 'pointer' }}>戻る</button>
-                  <button onClick={handleSubmit} disabled={submitting || !selectedEventIds.length}
-                    style={{ flex: 2, background: submitting || !selectedEventIds.length ? '#ccc' : '#06c755', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-                    {submitting ? '送信中...' : `${selectedEventIds.length}件の募集を開始する`}
+                  <button onClick={addToQueue} disabled={!selectedEventIds.length}
+                    style={{ flex: 2, background: !selectedEventIds.length ? '#ccc' : '#06c755', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontSize: 14, fontWeight: 700, cursor: !selectedEventIds.length ? 'not-allowed' : 'pointer' }}>
+                    {selectedEventIds.length > 0 ? `募集する（${selectedEventIds.length}件追加）` : '募集する'}
                   </button>
                 </div>
               </div>
@@ -386,9 +422,9 @@ export default function StaffRecruitPage() {
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
                   <button onClick={() => setModalType(null)} style={{ flex: 1, background: '#f5f5f5', border: 'none', borderRadius: 8, padding: '10px', fontSize: 14, cursor: 'pointer' }}>戻る</button>
-                  <button onClick={handleSubmit} disabled={submitting || !selectedBookingIds.length}
-                    style={{ flex: 2, background: submitting || !selectedBookingIds.length ? '#ccc' : '#06c755', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-                    {submitting ? '送信中...' : `${selectedBookingIds.length}件の募集を開始する`}
+                  <button onClick={addToQueue} disabled={!selectedBookingIds.length}
+                    style={{ flex: 2, background: !selectedBookingIds.length ? '#ccc' : '#06c755', color: '#fff', border: 'none', borderRadius: 8, padding: '10px', fontSize: 14, fontWeight: 700, cursor: !selectedBookingIds.length ? 'not-allowed' : 'pointer' }}>
+                    {selectedBookingIds.length > 0 ? `募集する（${selectedBookingIds.length}件追加）` : '募集する'}
                   </button>
                 </div>
               </div>
