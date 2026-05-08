@@ -105,11 +105,11 @@ export async function GET() {
   const enriched = await enrichRecruitments(admin, rawRecruitments || [])
   const recruitments = enriched.map(r => ({ ...r, applications: appsMap[r.id] || [] }))
 
-  const { data: openEvents } = await admin
+  const { data: openEvents, error: eventsError } = await admin
     .from('events')
-    .select('id, title, subtitle, event_date, location')
-    .eq('status', 'active')
+    .select('id, title, subtitle, event_date, location, status')
     .order('event_date', { ascending: false })
+  console.log('openEvents debug:', { count: openEvents?.length, error: eventsError, sample: openEvents?.[0] })
 
   const { data: privateBookings } = await admin
     .from('private_bookings')
@@ -123,7 +123,7 @@ export async function GET() {
     .eq('status', 'active')
     .order('display_order', { ascending: true })
 
-  return Response.json({ recruitments, openEvents: openEvents || [], privateBookings: privateBookings || [], models: activeModels || [] })
+  return Response.json({ recruitments, openEvents: openEvents || [], privateBookings: privateBookings || [], models: activeModels || [], _debug: { eventsCount: openEvents?.length, eventsError, sample: openEvents?.[0] } })
 }
 
 export async function POST(req) {
