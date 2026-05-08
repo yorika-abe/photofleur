@@ -100,7 +100,7 @@ function ConfirmItemLabel({ item }) {
   return null
 }
 
-function ConfirmCard({ item, staffUsers, selectedStaffMap, setSelectedStaffMap, assigningKey, handleDirectAssign, handleAction, actionLoading }) {
+function ConfirmCard({ item, staffUsers, selectedStaffMap, setSelectedStaffMap, assigningKey, handleDirectAssign, handleAction, actionLoading, onEdit, onDelete }) {
   const rec = item.recruitment
   const confirmedApps = (rec?.applications || []).filter(a => a.status === 'confirmed')
   const appliedApps = (rec?.applications || []).filter(a => a.status === 'applied')
@@ -165,6 +165,199 @@ function ConfirmCard({ item, staffUsers, selectedStaffMap, setSelectedStaffMap, 
           style={{ background: !selectedStaff ? '#ccc' : '#06c755', color: '#fff', border: 'none', borderRadius: 5, padding: '3px 10px', fontSize: 11, fontWeight: 700, cursor: !selectedStaff ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
           {assigningKey === item.key ? '送信中...' : '決定してLINEを送信'}
         </button>
+        {hasRecruitment && <>
+          <button onClick={() => onEdit(item)}
+            style={{ background: '#e3f2fd', color: '#1565c0', border: 'none', borderRadius: 5, padding: '3px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>編集</button>
+          <button onClick={() => onDelete(item)} disabled={confirmedApps.length > 0}
+            title={confirmedApps.length > 0 ? '確定済みスタッフがいるため削除不可' : ''}
+            style={{ background: confirmedApps.length > 0 ? '#f5f5f5' : '#ffebee', color: confirmedApps.length > 0 ? '#ccc' : '#c62828', border: 'none', borderRadius: 5, padding: '3px 8px', fontSize: 11, fontWeight: 700, cursor: confirmedApps.length > 0 ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>消去</button>
+        </>}
+      </div>
+    </div>
+  )
+}
+
+function EditModal({ item, openEvents, privateBookings, models, onClose, onSaved }) {
+  const rec = item.recruitment
+  const isCustom = rec?.type === 'custom'
+  const [convertMode, setConvertMode] = useState(null) // null | 'event' | 'request'
+  const [form, setForm] = useState({
+    recruit_date: rec?.recruit_date || '',
+    shoot_type: rec?.shoot_type || 'normal',
+    location: rec?.location || '',
+    shoot_time: rec?.shoot_time || '',
+    model_ids: rec?.model_ids || [],
+    capacity: rec?.capacity || 1,
+    photographer_name: rec?.photographer_name || '',
+    photographer_nickname: rec?.photographer_nickname || '',
+    photographer_sns: rec?.photographer_sns || '',
+    payment_status: rec?.payment_status || '未定',
+  })
+  const [convertEventId, setConvertEventId] = useState('')
+  const [convertBookingId, setConvertBookingId] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  async function handleSave() {
+    setSaving(true)
+    if (convertMode === 'event') {
+      if (!convertEventId) return alert('イベントを選択してください')
+      await fetch('/api/admin/staff-recruit', { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'convert_recruitment', recruitment_id: rec.id, to_type: 'event', to_event_id: convertEventId }) })
+    } else if (convertMode === 'request') {
+      if (!convertBookingId) return alert('予約を選択してください')
+      await fetch('/api/admin/staff-recruit', { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'convert_recruitment', recruitment_id: rec.id, to_type: 'request', to_booking_id: convertBookingId }) })
+    } else {
+      await fetch('/api/admin/staff-recruit', { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_recruitment', recruitment_id: rec.id, fields: form }) })
+    }
+    setSaving(false)
+    onSaved()
+  }
+
+  const inputStyle = { width: '100%', padding: '6px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: '#fff', borderRadius: 14, padding: '22px 24px', maxWidth: 520, width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 16 }}>募集を編集</h2>
+
+        {isCustom && !convertMode && (
+          <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
+            <button onClick={() => setConvertMode('event')}
+              style={{ flex: 1, background: '#e8f5e9', color: '#2e7d32', border: '1px solid #a5d6a7', borderRadius: 8, padding: '8px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+              📅 公開済みのイベントに変更
+            </button>
+            <button onClick={() => setConvertMode('request')}
+              style={{ flex: 1, background: '#fce4ec', color: '#c2185b', border: '1px solid #f48fb1', borderRadius: 8, padding: '8px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+              📸 リクエスト撮影に変更
+            </button>
+          </div>
+        )}
+
+        {convertMode === 'event' && (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <button onClick={() => setConvertMode(null)} style={{ background: '#f5f5f5', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>← 戻る</button>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#2e7d32' }}>公開済みのイベントを選択</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 200, overflowY: 'auto' }}>
+              {openEvents.map(e => (
+                <label key={e.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 10px', borderRadius: 7, background: convertEventId === e.id ? '#e8f5e9' : '#f8f8f8', border: `1px solid ${convertEventId === e.id ? '#81c784' : '#eee'}`, cursor: 'pointer' }}>
+                  <input type="radio" checked={convertEventId === e.id} onChange={() => setConvertEventId(e.id)} />
+                  <div style={{ fontSize: 13 }}><span style={{ fontWeight: 700 }}>{fmtDate(e.event_date)}</span> 📍{e.title}{e.subtitle && <span style={{ color: '#888', marginLeft: 4 }}>{e.subtitle}</span>}</div>
+                </label>
+              ))}
+              {openEvents.length === 0 && <p style={{ color: '#aaa', fontSize: 12 }}>公開中のイベントがありません</p>}
+            </div>
+          </div>
+        )}
+
+        {convertMode === 'request' && (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <button onClick={() => setConvertMode(null)} style={{ background: '#f5f5f5', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>← 戻る</button>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#c2185b' }}>非公開予約を選択</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 200, overflowY: 'auto' }}>
+              {privateBookings.map(b => {
+                const modelName = b.private_products?.models?.name || ''
+                return (
+                  <label key={b.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 10px', borderRadius: 7, background: convertBookingId === b.id ? '#fce4ec' : '#f8f8f8', border: `1px solid ${convertBookingId === b.id ? '#f48fb1' : '#eee'}`, cursor: 'pointer' }}>
+                    <input type="radio" checked={convertBookingId === b.id} onChange={() => setConvertBookingId(b.id)} />
+                    <div style={{ fontSize: 13 }}><span style={{ fontWeight: 700 }}>{fmtDate(b.event_date_input) || '未定'}</span> 📍{b.meeting_place || '未定'} {b.shooting_time || ''}{modelName && <span style={{ color: '#888', marginLeft: 4 }}>{modelName}</span>}</div>
+                  </label>
+                )
+              })}
+              {privateBookings.length === 0 && <p style={{ color: '#aaa', fontSize: 12 }}>非公開予約がありません</p>}
+            </div>
+          </div>
+        )}
+
+        {!convertMode && isCustom && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 3, color: '#333' }}>募集日</label>
+              <input type="date" value={form.recruit_date} onChange={e => setForm(f => ({ ...f, recruit_date: e.target.value }))} style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 3 }}>撮影種別</label>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {[{ v: 'normal', l: '通常撮影会' }, { v: 'request', l: 'リクエスト撮影' }].map(({ v, l }) => (
+                  <label key={v} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, cursor: 'pointer' }}>
+                    <input type="radio" value={v} checked={form.shoot_type === v} onChange={() => setForm(f => ({ ...f, shoot_type: v }))} />{l}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 3 }}>開催場所</label>
+              <input type="text" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="例：代々木公園" style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 3 }}>開催時間</label>
+              <input type="text" value={form.shoot_time} onChange={e => setForm(f => ({ ...f, shoot_time: e.target.value }))} placeholder="例：10:00〜15:00" style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 5 }}>撮影モデル</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {models.map(m => (
+                  <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, background: form.model_ids.includes(m.id) ? '#e3f2fd' : '#f5f5f5', borderRadius: 5, padding: '3px 8px', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={form.model_ids.includes(m.id)} onChange={() => setForm(f => ({ ...f, model_ids: f.model_ids.includes(m.id) ? f.model_ids.filter(id => id !== m.id) : [...f.model_ids, m.id] }))} />{m.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 3 }}>カメラマン氏名</label>
+                <input type="text" value={form.photographer_name} onChange={e => setForm(f => ({ ...f, photographer_name: e.target.value }))} style={inputStyle} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 3 }}>ニックネーム</label>
+                <input type="text" value={form.photographer_nickname} onChange={e => setForm(f => ({ ...f, photographer_nickname: e.target.value }))} style={inputStyle} />
+              </div>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 3 }}>SNS URL</label>
+              <input type="text" value={form.photographer_sns} onChange={e => setForm(f => ({ ...f, photographer_sns: e.target.value }))} style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 5 }}>支払い</label>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {['支払い済み', '当日現金', '未定'].map(v => (
+                  <button key={v} onClick={() => setForm(f => ({ ...f, payment_status: v }))}
+                    style={{ padding: '4px 10px', borderRadius: 6, border: `2px solid ${form.payment_status === v ? '#1a3560' : '#ddd'}`, background: form.payment_status === v ? '#1a3560' : '#fff', color: form.payment_status === v ? '#fff' : '#555', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                    {v === '支払い済み' ? '✅ 支払い済み' : v === '当日現金' ? '💴 当日現金' : '❓ 未定'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 3 }}>募集人数</label>
+              <input type="number" min={1} value={form.capacity} onChange={e => setForm(f => ({ ...f, capacity: parseInt(e.target.value) || 1 }))} style={{ width: 70, padding: '6px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13 }} />
+              <span style={{ marginLeft: 6, fontSize: 12, color: '#888' }}>名</span>
+            </div>
+          </div>
+        )}
+
+        {!convertMode && !isCustom && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 3 }}>募集人数</label>
+              <input type="number" min={1} value={form.capacity} onChange={e => setForm(f => ({ ...f, capacity: parseInt(e.target.value) || 1 }))} style={{ width: 70, padding: '6px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13 }} />
+              <span style={{ marginLeft: 6, fontSize: 12, color: '#888' }}>名</span>
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+          <button onClick={onClose} style={{ flex: 1, background: '#f5f5f5', border: 'none', borderRadius: 8, padding: '9px', fontSize: 13, cursor: 'pointer' }}>キャンセル</button>
+          <button onClick={handleSave} disabled={saving}
+            style={{ flex: 2, background: saving ? '#ccc' : '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '9px', fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer' }}>
+            {saving ? '保存中...' : convertMode ? '変更して保存（スタッフ引き継ぎ）' : '保存'}
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -186,6 +379,7 @@ export default function StaffRecruitPage() {
   const [selectedStaffMap, setSelectedStaffMap] = useState({})
   const [assigningKey, setAssigningKey] = useState(null)
   const [showPast, setShowPast] = useState(false)
+  const [editItem, setEditItem] = useState(null)
 
   // custom form
   const [customForm, setCustomForm] = useState({ recruit_date: '', shoot_type: 'normal', location: '', shoot_time: '', model_ids: [], capacity: 1, photographer_name: '', photographer_nickname: '', photographer_sns: '', payment_status: '未定' })
@@ -410,7 +604,7 @@ export default function StaffRecruitPage() {
                 </button>
                 {showPast && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-                    {items.map(item => <ConfirmCard key={item.key} item={item} staffUsers={staffUsers} selectedStaffMap={selectedStaffMap} setSelectedStaffMap={setSelectedStaffMap} assigningKey={assigningKey} handleDirectAssign={handleDirectAssign} handleAction={handleAction} actionLoading={actionLoading} />)}
+                    {items.map(item => <ConfirmCard key={item.key} item={item} staffUsers={staffUsers} selectedStaffMap={selectedStaffMap} setSelectedStaffMap={setSelectedStaffMap} assigningKey={assigningKey} handleDirectAssign={handleDirectAssign} handleAction={handleAction} actionLoading={actionLoading} onEdit={setEditItem} onDelete={item => { if (confirm('この募集を消去しますか？')) handleAction('delete', item.recruitment.id) }} />)}
                   </div>
                 )}
               </div>
@@ -419,12 +613,23 @@ export default function StaffRecruitPage() {
               <div key="upcoming" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {items.length === 0
                   ? <p style={{ color: '#999' }}>予定はありません。</p>
-                  : items.map(item => <ConfirmCard key={item.key} item={item} staffUsers={staffUsers} selectedStaffMap={selectedStaffMap} setSelectedStaffMap={setSelectedStaffMap} assigningKey={assigningKey} handleDirectAssign={handleDirectAssign} handleAction={handleAction} actionLoading={actionLoading} />)
+                  : items.map(item => <ConfirmCard key={item.key} item={item} staffUsers={staffUsers} selectedStaffMap={selectedStaffMap} setSelectedStaffMap={setSelectedStaffMap} assigningKey={assigningKey} handleDirectAssign={handleDirectAssign} handleAction={handleAction} actionLoading={actionLoading} onEdit={setEditItem} onDelete={item => { if (confirm('この募集を消去しますか？')) handleAction('delete', item.recruitment.id) }} />)
                 }
               </div>
             )
           })}
         </div>
+      )}
+
+      {editItem && (
+        <EditModal
+          item={editItem}
+          openEvents={openEvents}
+          privateBookings={privateBookings}
+          models={models}
+          onClose={() => setEditItem(null)}
+          onSaved={() => { setEditItem(null); load() }}
+        />
       )}
 
       {/* モーダル */}

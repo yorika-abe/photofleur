@@ -299,6 +299,39 @@ export async function PATCH(req) {
     return Response.json({ ok: true })
   }
 
+  if (action === 'update_recruitment') {
+    const f = body.fields || {}
+    await admin.from('staff_recruitments').update({
+      recruit_date: f.recruit_date || null,
+      shoot_type: f.shoot_type || null,
+      location: f.location || null,
+      shoot_time: f.shoot_time || null,
+      model_ids: f.model_ids || [],
+      capacity: f.capacity || 1,
+      photographer_name: f.photographer_name || null,
+      photographer_nickname: f.photographer_nickname || null,
+      photographer_sns: f.photographer_sns || null,
+      payment_status: f.payment_status || '未定',
+    }).eq('id', recruitment_id)
+    return Response.json({ ok: true })
+  }
+
+  if (action === 'convert_recruitment') {
+    const { to_type, to_event_id, to_booking_id } = body
+    await admin.from('staff_recruitments').update({
+      type: to_type,
+      event_id: to_event_id || null,
+      private_booking_id: to_booking_id || null,
+      recruit_date: null,
+      shoot_type: null,
+      location: null,
+      shoot_time: null,
+      model_ids: [],
+      status: 'closed',
+    }).eq('id', recruitment_id)
+    return Response.json({ ok: true })
+  }
+
   if (action === 'direct_assign') {
     // Find or create recruitment for this event/booking
     let recId = recruitment_id
