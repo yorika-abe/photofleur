@@ -105,9 +105,23 @@ function ConfirmCard({ item, staffUsers, selectedStaffMap, setSelectedStaffMap, 
   const confirmedApps = (rec?.applications || []).filter(a => a.status === 'confirmed')
   const appliedApps = (rec?.applications || []).filter(a => a.status === 'applied')
   const selectedStaff = selectedStaffMap[item.key] || ''
+  const hasRecruitment = !!rec
+
+  // 募集あり：左ボーダーで強調、背景を少し色付け
+  const recStatusColor = rec?.status === 'closed' ? '#388e3c' : '#1565c0'
+  const cardStyle = hasRecruitment
+    ? { background: '#f8fbff', border: `1px solid ${recStatusColor}40`, borderLeft: `4px solid ${recStatusColor}`, borderRadius: 12, padding: '16px 20px' }
+    : { background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, padding: '16px 20px' }
 
   return (
-    <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, padding: '16px 20px' }}>
+    <div style={cardStyle}>
+      {hasRecruitment && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+          <StatusBadge status={rec.status} />
+          <span style={{ fontSize: 12, color: '#aaa' }}>募集{rec.capacity}名</span>
+          {appliedApps.length > 0 && <span style={{ fontSize: 12, background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '1px 8px', fontWeight: 700 }}>応募{appliedApps.length}名</span>}
+        </div>
+      )}
       <ConfirmItemLabel item={item} />
 
       {rec?.type === 'custom' && (rec.photographer_name || rec.photographer_nickname || rec.photographer_sns || rec.payment_status) && (
