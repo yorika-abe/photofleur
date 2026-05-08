@@ -72,7 +72,7 @@ export default function StaffRecruitPage() {
   const [pendingEntries, setPendingEntries] = useState([])
 
   // custom form
-  const [customForm, setCustomForm] = useState({ recruit_date: '', shoot_type: 'normal', location: '', shoot_time: '', model_ids: [], capacity: 1 })
+  const [customForm, setCustomForm] = useState({ recruit_date: '', shoot_type: 'normal', location: '', shoot_time: '', model_ids: [], capacity: 1, photographer_name: '', photographer_nickname: '', photographer_sns: '', payment_status: '未定' })
   // event/request: multiple selection
   const [selectedEventIds, setSelectedEventIds] = useState([])
   const [selectedBookingIds, setSelectedBookingIds] = useState([])
@@ -94,7 +94,7 @@ export default function StaffRecruitPage() {
 
   function openModal() {
     setModalType(null)
-    setCustomForm({ recruit_date: '', shoot_type: 'normal', location: '', shoot_time: '', model_ids: [], capacity: 1 })
+    setCustomForm({ recruit_date: '', shoot_type: 'normal', location: '', shoot_time: '', model_ids: [], capacity: 1, photographer_name: '', photographer_nickname: '', photographer_sns: '', payment_status: '未定' })
     setSelectedEventIds([])
     setSelectedBookingIds([])
     setEventCapacity(1)
@@ -233,6 +233,16 @@ export default function StaffRecruitPage() {
                 const activeApps = apps.filter(a => a.status !== 'cancelled')
                 return (
                   <div key={r.id} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, padding: '16px 20px' }}>
+                    {r.type === 'custom' && (r.photographer_name || r.photographer_nickname || r.photographer_sns || r.payment_status) && (
+                      <div style={{ marginBottom: 10, fontSize: 12, color: '#555', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        {r.photographer_name && <span>👤 {r.photographer_name}</span>}
+                        {r.photographer_nickname && <span>🏷️ {r.photographer_nickname}</span>}
+                        {r.photographer_sns && <a href={r.photographer_sns} target="_blank" rel="noopener noreferrer" style={{ color: '#1565c0' }}>🔗 SNS</a>}
+                        {r.payment_status && <span style={{ background: r.payment_status === '支払い済み' ? '#e8f5e9' : r.payment_status === '当日現金' ? '#fff8e1' : '#f5f5f5', color: r.payment_status === '支払い済み' ? '#2e7d32' : r.payment_status === '当日現金' ? '#f57f17' : '#888', borderRadius: 4, padding: '1px 7px', fontWeight: 700 }}>
+                          {r.payment_status === '支払い済み' ? '✅ 支払い済み' : r.payment_status === '当日現金' ? '💴 当日現金' : '❓ 未定'}
+                        </span>}
+                      </div>
+                    )}
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
                       <StatusBadge status={r.status} />
                       <div style={{ flex: 1 }}><RecruitLabel r={r} /></div>
@@ -337,6 +347,37 @@ export default function StaffRecruitPage() {
                         {m.name}
                       </label>
                     ))}
+                  </div>
+                </div>
+                <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 14 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#888', marginBottom: 10 }}>カメラマン情報</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 4, color: '#333' }}>カメラマン氏名</label>
+                      <input type="text" value={customForm.photographer_name} onChange={e => setCustomForm(f => ({ ...f, photographer_name: e.target.value }))} placeholder="未定"
+                        style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 4, color: '#333' }}>カメラマンニックネーム</label>
+                      <input type="text" value={customForm.photographer_nickname} onChange={e => setCustomForm(f => ({ ...f, photographer_nickname: e.target.value }))} placeholder="未定"
+                        style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 4, color: '#333' }}>SNS URL</label>
+                      <input type="text" value={customForm.photographer_sns} onChange={e => setCustomForm(f => ({ ...f, photographer_sns: e.target.value }))} placeholder="https://..."
+                        style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 6, color: '#333' }}>支払い</label>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {['支払い済み', '当日現金', '未定'].map(v => (
+                          <button key={v} onClick={() => setCustomForm(f => ({ ...f, payment_status: v }))}
+                            style={{ padding: '6px 14px', borderRadius: 8, border: `2px solid ${customForm.payment_status === v ? '#1a3560' : '#ddd'}`, background: customForm.payment_status === v ? '#1a3560' : '#fff', color: customForm.payment_status === v ? '#fff' : '#555', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                            {v === '支払い済み' ? '✅ 支払い済み' : v === '当日現金' ? '💴 当日現金' : '❓ 未定'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div>

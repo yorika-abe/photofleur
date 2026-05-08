@@ -145,6 +145,10 @@ export async function POST(req) {
       event_id: entry.event_id || null,
       private_booking_id: entry.private_booking_id || null,
       capacity: entry.capacity || 1,
+      photographer_name: entry.photographer_name || null,
+      photographer_nickname: entry.photographer_nickname || null,
+      photographer_sns: entry.photographer_sns || null,
+      payment_status: entry.payment_status || '未定',
       status: 'open',
     }).select().single()
     if (!error && data) inserted.push(data)
