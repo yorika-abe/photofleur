@@ -34,7 +34,11 @@ export async function POST(req) {
       }
 
       const newRoles = [...currentRoles, 'staff']
-      await supabase.from('user_profiles').update({ roles: newRoles }).eq('id', profile.id)
+      await supabase.from('user_profiles').update({
+        roles: newRoles,
+        registered_via_invite: true,
+        invite_notif_seen: false,
+      }).eq('id', profile.id)
 
       return Response.json({ ok: true, mode: 'existing' })
     }
@@ -67,6 +71,8 @@ export async function POST(req) {
       email,
       roles: ['staff'],
       role: 'staff',
+      registered_via_invite: true,
+      invite_notif_seen: false,
     }, { onConflict: 'id' })
 
     return Response.json({ ok: true, mode: 'new' })
