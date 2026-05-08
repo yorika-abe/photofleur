@@ -105,7 +105,14 @@ export async function GET() {
   const enriched = await enrichRecruitments(admin, rawRecruitments || [])
   const recruitments = enriched.map(r => ({ ...r, applications: appsMap[r.id] || [] }))
 
-  const { data: openEvents, error: eventsError } = await admin
+  // checkAdmin()が返すadminとは別に、フレッシュなadminクライアントで取得
+  const { createClient } = await import('@supabase/supabase-js')
+  const freshAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+  const { data: openEvents, error: eventsError } = await freshAdmin
     .from('events')
     .select('id, title, subtitle, event_date, location, status')
     .order('event_date', { ascending: false })
