@@ -105,13 +105,11 @@ export async function GET() {
   const enriched = await enrichRecruitments(admin, rawRecruitments || [])
   const recruitments = enriched.map(r => ({ ...r, applications: appsMap[r.id] || [] }))
 
-  const today = new Date().toISOString().split('T')[0]
   const { data: openEvents } = await admin
     .from('events')
     .select('id, title, subtitle, event_date, location')
     .eq('status', 'active')
-    .gte('event_date', today)
-    .order('event_date', { ascending: true })
+    .order('event_date', { ascending: false })
 
   const { data: privateBookings } = await admin
     .from('private_bookings')
