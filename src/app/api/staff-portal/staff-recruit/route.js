@@ -43,7 +43,7 @@ export async function GET() {
   const eventIds = [...new Set((recruitments || []).filter(r => r.event_id).map(r => r.event_id))]
   let eventsMap = {}
   if (eventIds.length > 0) {
-    const { data } = await admin.from('events').select('id, title, subtitle, event_date, location').in('id', eventIds)
+    const { data } = await admin.from('events').select('id, title, subtitle, event_date').in('id', eventIds)
     for (const e of data || []) eventsMap[e.id] = e
   }
 
