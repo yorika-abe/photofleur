@@ -367,24 +367,31 @@ export default function StaffRecruitPage() {
             <p style={{ color: '#999' }}>募集はありません。</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {recruitList.map(r => (
-                <div key={r.id} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
-                      <StatusBadge status={r.status} />
-                      <span style={{ fontSize: 12, color: '#aaa' }}>募集{r.capacity}名</span>
-                      <span style={{ fontSize: 12, color: '#aaa' }}>応募{(r.applications || []).filter(a => a.status !== 'cancelled').length}名</span>
+              {recruitList.map(r => {
+                const hasConfirmed = (r.applications || []).some(a => a.status === 'confirmed')
+                return (
+                  <div key={r.id} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+                        <StatusBadge status={r.status} />
+                        <span style={{ fontSize: 12, color: '#aaa' }}>募集{r.capacity}名</span>
+                        <span style={{ fontSize: 12, color: '#aaa' }}>応募{(r.applications || []).filter(a => a.status !== 'cancelled').length}名</span>
+                      </div>
+                      <RecruitLabel r={r} />
                     </div>
-                    <RecruitLabel r={r} />
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                      <button
+                        onClick={() => { if (confirm('この募集を削除しますか？')) handleAction('delete', r.id) }}
+                        disabled={actionLoading === r.id || hasConfirmed}
+                        title={hasConfirmed ? 'スタッフ確定済みのため削除できません' : ''}
+                        style={{ background: hasConfirmed ? '#f5f5f5' : '#ffebee', color: hasConfirmed ? '#bbb' : '#c62828', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: hasConfirmed ? 'not-allowed' : 'pointer' }}>
+                        削除
+                      </button>
+                      {hasConfirmed && <span style={{ fontSize: 10, color: '#bbb', whiteSpace: 'nowrap' }}>確定済みのため削除不可</span>}
+                    </div>
                   </div>
-                  <button
-                    onClick={() => { if (confirm('この募集を削除しますか？')) handleAction('delete', r.id) }}
-                    disabled={actionLoading === r.id}
-                    style={{ background: '#ffebee', color: '#c62828', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                    削除
-                  </button>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
