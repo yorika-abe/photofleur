@@ -71,11 +71,7 @@ export default function RecruitMarquee({ items }) {
           <em style={{ color: '#5bbfd6', fontStyle: 'italic' }}>モデルに興味のある方へ</em>
         </h2>
 
-        <p style={{ fontSize: 12, color: '#778', lineHeight: 1.9, marginBottom: 18 }}>
-          完全女性運営によるサポートのもと
-          あなたのモデル活動を全力で応援いたします。
-          経験不問。公式LINEからお気軽にご連絡ください。
-        </p>
+
 
         <Link href="/model-recruit" style={{
           ...serif, display: 'inline-block', fontSize: 11, letterSpacing: '0.2em',
