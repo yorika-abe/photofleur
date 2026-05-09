@@ -100,17 +100,17 @@ export default function HeroSection({ images, mobileImages }) {
   return (
     <section style={{ position: 'relative', height: '100svh', minHeight: 600, overflow: 'hidden', display: 'flex', alignItems: 'flex-end', background: '#000' }}>
       <style>{`
-        @keyframes heroSplitLeft {
-          0%   { transform: translateX(0);    opacity: 1; animation-timing-function: cubic-bezier(0.7,0,0.8,1); }
-          28%  { transform: translateX(-50%); opacity: 1; animation-timing-function: linear; }
-          46%  { transform: translateX(-50%); opacity: 1; animation-timing-function: ease-out; }
-          100% { transform: translateX(-102%); opacity: 0; }
+        @keyframes heroSplitTopLeft {
+          0%   { transform: translate(0,0);       opacity: 1; animation-timing-function: cubic-bezier(0.7,0,0.8,1); }
+          28%  { transform: translate(-50%,-50%); opacity: 1; animation-timing-function: linear; }
+          46%  { transform: translate(-50%,-50%); opacity: 1; animation-timing-function: ease-out; }
+          100% { transform: translate(-115%,-115%); opacity: 0; }
         }
-        @keyframes heroSplitRight {
-          0%   { transform: translateX(0);   opacity: 1; animation-timing-function: cubic-bezier(0.7,0,0.8,1); }
-          28%  { transform: translateX(50%); opacity: 1; animation-timing-function: linear; }
-          46%  { transform: translateX(50%); opacity: 1; animation-timing-function: ease-out; }
-          100% { transform: translateX(102%); opacity: 0; }
+        @keyframes heroSplitBottomRight {
+          0%   { transform: translate(0,0);      opacity: 1; animation-timing-function: cubic-bezier(0.7,0,0.8,1); }
+          28%  { transform: translate(50%,50%);  opacity: 1; animation-timing-function: linear; }
+          46%  { transform: translate(50%,50%);  opacity: 1; animation-timing-function: ease-out; }
+          100% { transform: translate(115%,115%); opacity: 0; }
         }
       `}</style>
 
@@ -132,23 +132,25 @@ export default function HeroSection({ images, mobileImages }) {
       {leavingSrc && (
         <>
           {/* Left half */}
-          <div key={`left-${animKey}`} style={{
+          {/* Upper-left triangle (top-right → bottom-left diagonal) */}
+          <div key={`tl-${animKey}`} style={{
             position: 'absolute', inset: 0, display: 'block',
-            clipPath: 'inset(0 50% 0 0)',
-            animation: 'heroSplitLeft 1.65s forwards',
+            clipPath: 'polygon(0% 0%, 100% 0%, 0% 100%)',
+            animation: 'heroSplitTopLeft 1.65s forwards',
             zIndex: 5,
+            filter: 'drop-shadow(6px 6px 14px rgba(0,0,0,0.65))',
           }}>
             <img src={leavingSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-            <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: 40, background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.75))' }} />
           </div>
-          <div key={`right-${animKey}`} style={{
+          {/* Lower-right triangle */}
+          <div key={`br-${animKey}`} style={{
             position: 'absolute', inset: 0, display: 'block',
-            clipPath: 'inset(0 0 0 50%)',
-            animation: 'heroSplitRight 1.65s forwards',
+            clipPath: 'polygon(100% 0%, 100% 100%, 0% 100%)',
+            animation: 'heroSplitBottomRight 1.65s forwards',
             zIndex: 5,
+            filter: 'drop-shadow(-6px -6px 14px rgba(0,0,0,0.65))',
           }}>
             <img src={leavingSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-            <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 40, background: 'linear-gradient(to left, transparent, rgba(0,0,0,0.75))' }} />
           </div>
         </>
       )}
