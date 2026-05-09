@@ -61,11 +61,14 @@ export default async function Home() {
       .order('published_at', { ascending: false })
       .limit(8),
     adminSupabase.from('representatives').select('id, photo, role, name, message, model_id').order('sort_order', { ascending: true }).order('created_at', { ascending: true }),
-    adminSupabase.from('staff_private_info').select('display_name, real_name, profile_photo').not('profile_photo', 'is', null),
+    adminSupabase.from('user_profiles').select('name, staff_private_info(display_name, real_name, profile_photo)').or('role.eq.staff,roles.cs.{staff}'),
   ])
   const notices = noticesData || []
   const representatives = repsData || []
-  const staffMembers = (staffData || []).filter(s => s.profile_photo)
+  const staffMembers = (staffData || []).map(s => ({
+    name: s.staff_private_info?.display_name || s.staff_private_info?.real_name || s.name || '',
+    photo: s.staff_private_info?.profile_photo || '',
+  }))
 
   const { data: blogCategories } = await adminSupabase
     .from('blog_categories')
@@ -279,10 +282,12 @@ export default async function Home() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px 28px', justifyContent: 'center' }}>
               {staffMembers.map((s, i) => (
                 <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 60, height: 60, borderRadius: '50%', overflow: 'hidden', background: '#f0f4f8', border: '2px solid #e5e5e5', flexShrink: 0 }}>
-                    <img src={s.profile_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div style={{ width: 60, height: 60, borderRadius: '50%', overflow: 'hidden', background: '#f0f4f8', border: '2px solid #e5e5e5', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {s.photo
+                      ? <img src={s.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <span style={{ fontSize: 28 }}>🐈‍⬛</span>}
                   </div>
-                  <span style={{ fontSize: 12, color: '#444', fontWeight: 600 }}>{s.display_name || s.real_name || ''}</span>
+                  {s.name && <span style={{ fontSize: 12, color: '#444', fontWeight: 600 }}>{s.name}</span>}
                 </div>
               ))}
             </div>
