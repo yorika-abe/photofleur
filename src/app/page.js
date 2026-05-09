@@ -61,13 +61,13 @@ export default async function Home() {
       .order('published_at', { ascending: false })
       .limit(8),
     adminSupabase.from('representatives').select('id, photo, role, name, message, model_id').order('sort_order', { ascending: true }).order('created_at', { ascending: true }),
-    adminSupabase.from('user_profiles').select('name, staff_private_info(display_name, real_name, profile_photo)').or('role.eq.staff,roles.cs.{staff}'),
+    adminSupabase.from('staff_private_info').select('display_name, real_name, profile_photo'),
   ])
   const notices = noticesData || []
   const representatives = repsData || []
   const staffMembers = (staffData || []).map(s => ({
-    name: s.staff_private_info?.display_name || s.staff_private_info?.real_name || s.name || '',
-    photo: s.staff_private_info?.profile_photo || '',
+    name: s.display_name || s.real_name || '',
+    photo: s.profile_photo || '',
   }))
 
   const { data: blogCategories } = await adminSupabase
@@ -274,8 +274,7 @@ export default async function Home() {
       ))}
 
       {/* ─── STAFF ─── */}
-      {staffMembers.length > 0 && (
-        <section style={{ background: '#fff', padding: '60px 0 80px' }}>
+      <section style={{ background: '#fff', padding: '60px 0 80px' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)', textAlign: 'center' }}>
             <p style={{ fontSize: 11, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 6, fontWeight: 600 }}>Staff</p>
             <p style={{ fontSize: 13, color: '#bbb', marginTop: 0, marginBottom: 32 }}>受付など担当します</p>
@@ -293,7 +292,6 @@ export default async function Home() {
             </div>
           </div>
         </section>
-      )}
 
       <style>{`
         .event-card:hover .event-img { transform: scale(1.05); }
