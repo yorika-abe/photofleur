@@ -27,8 +27,7 @@ const TABS = [
   { id: 'request', label: 'リクエスト撮影' },
   { id: 'recruit_page', label: 'モデル募集' },
   { id: 'ogp', label: '共有画像設定(OGP)' },
-  { id: 'onboarding', label: 'モデル登録手続き' },
-  { id: 'staff_onboarding', label: 'スタッフ登録手続き' },
+  { id: 'registration', label: '登録手続きPDF' },
 ]
 
 const OGP_PAGES = [
@@ -596,18 +595,15 @@ export default function AdminMediaPage() {
           </Section>
         )}
 
-        {/* ── モデル登録手続き ── */}
-        {tab === 'onboarding' && (
+        {/* ── 登録手続きPDF ── */}
+        {tab === 'registration' && (
           <>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', padding: '4px 0 8px', borderBottom: '1px solid #e8f4fb' }}>モデル登録手続き</div>
             <PdfSection title="ABOUT Photo Fleur PDF" desc="モデル登録手引きページのABOUT PHOTO FLEURセクションに表示されるPDFです"
               value={onboardingPdfAbout} setter={setOnboardingPdfAbout} uploadKey="onboarding_pdf_about" />
             <PdfSection title="撮影会モデル登録説明 PDF" desc="モデル登録手引きページの撮影会モデル登録説明セクションに表示されるPDFです"
               value={onboardingPdfRegist} setter={setOnboardingPdfRegist} uploadKey="onboarding_pdf_regist" />
-          </>
-        )}
-
-        {tab === 'staff_onboarding' && (
-          <>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', padding: '12px 0 8px', borderBottom: '1px solid #e8f4fb' }}>スタッフ登録手続き</div>
             <PdfSection title="ABOUT Photo Fleur PDF" desc="スタッフ登録手引きページのABOUT PHOTO FLEURセクションに表示されるPDFです"
               value={staffOnboardingPdfAbout} setter={setStaffOnboardingPdfAbout} uploadKey="staff_onboarding_pdf_about" />
             <PdfSection title="撮影会スタッフ登録説明 PDF" desc="スタッフ登録手引きページの撮影会スタッフ登録説明セクションに表示されるPDFです"
