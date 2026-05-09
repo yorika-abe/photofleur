@@ -16,7 +16,7 @@ function formatDow(dateStr) {
 export default function ScheduleCarousel({ events }) {
   const trackRef = useRef(null)
   const isPausedRef = useRef(false)
-  const rafRef = useRef(null)
+  const currentIndexRef = useRef(0) // index in looped array
 
   if (!events || events.length === 0) return null
 
@@ -27,25 +27,23 @@ export default function ScheduleCarousel({ events }) {
     const track = trackRef.current
     if (!track) return
 
-    function getOneSetWidth() {
-      const cards = track.querySelectorAll('.s-card')
-      if (cards.length <= n) return 0
-      return cards[n].offsetLeft - cards[0].offsetLeft
+    function getCards() { return track.querySelectorAll('.s-card') }
+
+    function scrollToCard(index, smooth) {
+      const cards = getCards()
+      const card = cards[index]
+      if (!card) return
+      // Position so this card is second from left: left edge + one card width + gap
+      const cardW = card.offsetWidth
+      const gap = 20
+      const target = card.offsetLeft - cardW - gap
+      track.scrollTo({ left: Math.max(0, target), behavior: smooth ? 'smooth' : 'instant' })
     }
 
-    let oneSetWidth = 0
-
-    function updateCardStyles() {
-      const viewLeft = track.scrollLeft
-      const viewRight = viewLeft + track.clientWidth
-      const cards = track.querySelectorAll('.s-card')
-      const visible = []
-      cards.forEach(card => {
-        const center = card.offsetLeft + card.offsetWidth / 2
-        if (center > viewLeft && center < viewRight) visible.push({ card, center })
-      })
-      visible.sort((a, b) => a.center - b.center)
-      const activeCard = visible[1]?.card ?? null
+    function updateActive(index) {
+      const cards = getCards()
+      // Active = card at index+1 (second from left)
+      const activeCard = cards[index + 1] ?? cards[index]
       cards.forEach(card => {
         const active = card === activeCard
         card.style.transform = active ? 'scale(1.08)' : 'scale(0.85)'
@@ -54,28 +52,37 @@ export default function ScheduleCarousel({ events }) {
       })
     }
 
-    function tick() {
-      if (!isPausedRef.current) {
-        oneSetWidth = oneSetWidth || getOneSetWidth()
-        track.scrollLeft += 0.7
-        if (oneSetWidth > 0 && track.scrollLeft >= oneSetWidth * 2) {
-          track.scrollLeft -= oneSetWidth
-        }
-        updateCardStyles()
-      }
-      rafRef.current = requestAnimationFrame(tick)
-    }
+    // Start at beginning of second set
+    const startIndex = n
+    currentIndexRef.current = startIndex
 
     setTimeout(() => {
-      oneSetWidth = getOneSetWidth()
-      if (oneSetWidth > 0) track.scrollLeft = oneSetWidth
-      updateCardStyles()
-      rafRef.current = requestAnimationFrame(tick)
+      scrollToCard(startIndex, false)
+      updateActive(startIndex)
     }, 100)
+
+    const interval = setInterval(() => {
+      if (isPausedRef.current) return
+
+      const next = currentIndexRef.current + 1
+      currentIndexRef.current = next
+      scrollToCard(next, true)
+      updateActive(next)
+
+      // After smooth scroll animation (~600ms), silently jump back if in last set
+      setTimeout(() => {
+        if (currentIndexRef.current >= n * 2) {
+          const reset = currentIndexRef.current - n
+          currentIndexRef.current = reset
+          scrollToCard(reset, false)
+          updateActive(reset)
+        }
+      }, 650)
+    }, 3000)
 
     const pause = () => { isPausedRef.current = true }
     const resume = () => { isPausedRef.current = false }
-    const touchResume = () => setTimeout(resume, 1500)
+    const touchResume = () => setTimeout(resume, 2000)
 
     track.addEventListener('mouseenter', pause)
     track.addEventListener('mouseleave', resume)
@@ -83,7 +90,7 @@ export default function ScheduleCarousel({ events }) {
     track.addEventListener('touchend', touchResume)
 
     return () => {
-      cancelAnimationFrame(rafRef.current)
+      clearInterval(interval)
       track.removeEventListener('mouseenter', pause)
       track.removeEventListener('mouseleave', resume)
       track.removeEventListener('touchstart', pause)
@@ -99,7 +106,7 @@ export default function ScheduleCarousel({ events }) {
           display: 'flex',
           overflowX: 'scroll',
           gap: 20,
-          padding: '32px clamp(32px, 12vw, 200px) 56px',
+          padding: '32px 0 56px',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           alignItems: 'flex-start',
@@ -120,12 +127,14 @@ export default function ScheduleCarousel({ events }) {
               draggable={false}
               style={{
                 flexShrink: 0,
-                width: 'clamp(180px, 40vw, 240px)',
+                width: 'clamp(180px, 30vw, 260px)',
+                marginLeft: i === 0 ? 'clamp(32px, 12vw, 200px)' : 0,
+                marginRight: i === looped.length - 1 ? 'clamp(32px, 12vw, 200px)' : 0,
                 textDecoration: 'none',
                 display: 'block',
                 transform: 'scale(0.85)',
                 opacity: '0.55',
-                transition: 'transform 0.35s ease, opacity 0.35s ease',
+                transition: 'transform 0.4s ease, opacity 0.4s ease',
                 zIndex: 1,
                 position: 'relative',
               }}
