@@ -48,7 +48,12 @@ function BlogContent() {
       .eq('status', 'published')
       .order('published_at', { ascending: sort === 'asc' })
     if (activeCategory) query = query.eq('category', activeCategory)
-    if (activeAuthor) query = query.eq('author_id', activeAuthor)
+    if (activeAuthor === '__admin__') {
+      const adminEntry = authors.find(a => a.id === '__admin__')
+      if (adminEntry?.adminIds?.length) query = query.in('author_id', adminEntry.adminIds)
+    } else if (activeAuthor) {
+      query = query.eq('author_id', activeAuthor)
+    }
     const { data } = await query
     setPosts(data || [])
     setLoading(false)
@@ -130,8 +135,10 @@ function BlogContent() {
                   <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', margin: 0, lineHeight: 1.5 }}>{post.title}</h2>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                     {(() => {
-                      const authorInfo = authors.find(a => a.id === post.author_id)
-                      const name = authorInfo?.name || post.user_profiles?.name
+                      const adminEntry = authors.find(a => a.id === '__admin__')
+                      const isAdminAuthor = adminEntry?.adminIds?.includes(post.author_id)
+                      const authorInfo = isAdminAuthor ? adminEntry : authors.find(a => a.id === post.author_id)
+                      const name = isAdminAuthor ? '運営' : (authorInfo?.name || post.user_profiles?.name)
                       const avatar = authorInfo?.avatar
                       return (
                         <>

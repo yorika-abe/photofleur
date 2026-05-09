@@ -10,19 +10,37 @@ export async function GET() {
   ])
   const adminAvatarUrl = avatarSetting?.value || null
   if (!postsData) return Response.json([])
-  const seen = new Set()
-  const unique = []
+
+  const adminIds = []
+  const modelAuthors = []
+  const seenAdmins = new Set()
+  const seenModels = new Set()
+
   for (const p of postsData) {
-    if (p.author_id && !seen.has(p.author_id)) {
-      seen.add(p.author_id)
-      const profile = p.user_profiles
-      const isAdmin = profile?.role === 'owner' || profile?.roles?.includes('admin')
-      unique.push({
-        id: p.author_id,
-        name: profile?.name || p.author_id,
-        avatar: isAdmin ? adminAvatarUrl : null,
-      })
+    if (!p.author_id) continue
+    const profile = p.user_profiles
+    const isAdmin = profile?.role === 'owner' || profile?.roles?.includes('admin')
+    if (isAdmin) {
+      if (!seenAdmins.has(p.author_id)) {
+        seenAdmins.add(p.author_id)
+        adminIds.push(p.author_id)
+      }
+    } else {
+      if (!seenModels.has(p.author_id)) {
+        seenModels.add(p.author_id)
+        modelAuthors.push({
+          id: p.author_id,
+          name: profile?.name || p.author_id,
+          avatar: null,
+        })
+      }
     }
   }
-  return Response.json(unique)
+
+  const result = []
+  if (adminIds.length > 0) {
+    result.push({ id: '__admin__', name: '運営', avatar: adminAvatarUrl, adminIds })
+  }
+  result.push(...modelAuthors)
+  return Response.json(result)
 }
