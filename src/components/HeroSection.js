@@ -131,9 +131,12 @@ export default function HeroSection({ images, mobileImages }) {
           : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 45%, #0d2030 100%)' }} />
         }
       </span>
-      <span className="hero-mobile" style={{ position: 'absolute', inset: 0 }}>
+      <span className="hero-mobile" style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
         {mobileImgs.length > 0
-          ? <img key={current} src={mobileImgs[current]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+          ? <>
+              <img key={`mblur-${current}`} src={mobileImgs[current]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(18px) brightness(0.75)', transform: 'scale(1.12)', transformOrigin: 'center' }} />
+              <img key={`mb-${current}`} src={mobileImgs[current]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+            </>
           : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 45%, #0d2030 100%)' }} />
         }
       </span>
