@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import SectionTitle from './SectionTitle'
 
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
@@ -14,7 +15,7 @@ export default function RepMessage({ photo, role, name, message, modelId }) {
     <section style={{ background: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 48, paddingBottom: 16 }}>
-          <span className="section-big-title">MESSAGE</span>
+          <SectionTitle text="MESSAGE" />
         </div>
 
         <div style={{ display: 'flex', gap: 'clamp(24px, 4vw, 48px)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
