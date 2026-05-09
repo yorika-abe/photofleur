@@ -22,7 +22,6 @@ export default function ScheduleCarousel({ events }) {
   if (!events || events.length === 0) return null
 
   const n = events.length
-  // Enough copies to fill any screen width
   const looped = [...events, ...events, ...events, ...events, ...events]
 
   useEffect(() => {
@@ -33,25 +32,32 @@ export default function ScheduleCarousel({ events }) {
     const cards = Array.from(track.querySelectorAll('.s-card'))
     if (!cards.length) return
 
-    const wrapWidth = wrap.clientWidth
-    // Spotlight x (relative to wrap left), starts at right edge
-    let spotX = wrapWidth
+    const cardW = cards[0].offsetWidth
+    const gap = 20
+    const oneSetWidth = n * (cardW + gap)
+    // Fixed spotlight at center of the wrapper
+    const spotlight = wrap.clientWidth / 2
+
+    // Start: pos such that the first card of set 1 is just off the right edge
+    // cards[0].offsetLeft = 0, so first card center at pos=0 is at cardW/2
+    // We want set 1 to start from right edge: pos = wrap.clientWidth - oneSetWidth
+    // But let's start with a reasonable position showing set 1 from the right
+    let pos = wrap.clientWidth
     let lastActive = null
-    const speed = 0.8
 
     function tick() {
       if (!isPausedRef.current) {
-        spotX -= speed
-        // When spotlight exits left edge, jump back to right edge
-        if (spotX < -30) spotX = wrapWidth + 30
+        pos -= 0.8
+        // Seamless loop: when start of set 2 passes the left edge, jump forward one set
+        if (pos <= -(oneSetWidth * 3)) pos += oneSetWidth
 
-        // Find card whose center (relative to wrap) is closest to spotX
-        const wrapLeft = wrap.getBoundingClientRect().left
+        track.style.transform = `translateX(${pos}px)`
+
+        // Active = card closest to spotlight (center of wrap)
         let best = null, minDist = Infinity
         cards.forEach(card => {
-          const rect = card.getBoundingClientRect()
-          const center = rect.left + rect.width / 2 - wrapLeft
-          const dist = Math.abs(center - spotX)
+          const center = card.offsetLeft + cardW / 2 + pos
+          const dist = Math.abs(center - spotlight)
           if (dist < minDist) { minDist = dist; best = card }
         })
 
@@ -70,6 +76,7 @@ export default function ScheduleCarousel({ events }) {
       rafRef.current = requestAnimationFrame(tick)
     }
 
+    track.style.transform = `translateX(${pos}px)`
     rafRef.current = requestAnimationFrame(tick)
 
     const pause = () => { isPausedRef.current = true }
@@ -97,7 +104,7 @@ export default function ScheduleCarousel({ events }) {
         style={{
           display: 'flex',
           gap: 20,
-          paddingLeft: 'clamp(32px, 12vw, 200px)',
+          willChange: 'transform',
         }}
       >
         {looped.map((ev, i) => {
