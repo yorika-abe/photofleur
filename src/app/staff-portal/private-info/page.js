@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Cropper from 'react-easy-crop'
+import { compressImage } from '@/lib/compressImage'
 
 const REQUIRED_FIELDS = ['real_name', 'phone', 'email', 'address', 'station']
-const EMPTY_FORM = { real_name: '', phone: '', email: '', address: '', station: '', bank_name: '', branch_name: '', account_type: '普通', account_number: '', account_holder: '' }
+const EMPTY_FORM = { real_name: '', phone: '', email: '', address: '', station: '', bank_name: '', branch_name: '', account_type: '普通', account_number: '', account_holder: '', profile_photo: '' }
 
 const STAFF_RULES = [
   { title: '第1条（業務内容）', body: '受付スタッフは、撮影会当日における受付業務（チェックイン、誘導、問い合わせ対応等）を担当します。' },
@@ -16,6 +18,21 @@ const STAFF_RULES = [
   { title: '第6条（受付マニュアルの遵守）', body: '受付業務は別途共有する受付マニュアルに従って行ってください。' },
   { title: '第7条（違反時の措置）', body: '本規約に違反した場合、スタッフ登録を解除させていただく場合があります。' },
 ]
+
+async function getCroppedBlob(imageSrc, pixelCrop) {
+  const img = await new Promise((resolve, reject) => {
+    const i = new Image()
+    i.onload = () => resolve(i)
+    i.onerror = reject
+    i.src = imageSrc
+  })
+  const size = Math.min(pixelCrop.width, pixelCrop.height)
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  canvas.getContext('2d').drawImage(img, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, size, size)
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85))
+}
 
 function ContractModal({ form, onClose, onAgree, readOnly, agreedAt }) {
   const today = agreedAt
@@ -39,7 +56,6 @@ function ContractModal({ form, onClose, onAgree, readOnly, agreedAt }) {
           style={{ overflowY: 'auto', padding: '24px', flex: 1, fontSize: 13, lineHeight: 2, color: '#333' }}
         >
           {!readOnly && <p style={{ color: '#888', fontSize: 12, marginTop: 0 }}>※ 最後までスクロールして内容をご確認ください</p>}
-
           <h3 style={{ fontSize: 15, fontWeight: 700, borderBottom: '2px solid #1a3560', paddingBottom: 6, color: '#1a3560' }}>受付スタッフ規約</h3>
           <p style={{ margin: '8px 0' }}><strong>PhotoFleur 撮影会</strong></p>
           {STAFF_RULES.map((a, i) => (
@@ -48,16 +64,13 @@ function ContractModal({ form, onClose, onAgree, readOnly, agreedAt }) {
               <div style={{ whiteSpace: 'pre-wrap' }}>{a.body}</div>
             </div>
           ))}
-
           <h3 style={{ fontSize: 15, fontWeight: 700, borderBottom: '2px solid #1a3560', paddingBottom: 6, color: '#1a3560', marginTop: 28 }}>個人情報の取り扱いについて</h3>
           <p>氏名：{form.real_name}<br />住所：{form.address}<br />電話番号：{form.phone}</p>
           <p>上記の個人情報は、スタッフ管理・緊急連絡・契約確認のみに使用し、第三者に提供しません。<br />同意日：{today}</p>
         </div>
         <div style={{ padding: '16px 24px', borderTop: '1px solid #e5e5e5', background: '#f8fbff' }}>
           {readOnly ? (
-            <button onClick={onClose} style={{ width: '100%', background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '13px', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
-              閉じる
-            </button>
+            <button onClick={onClose} style={{ width: '100%', background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '13px', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>閉じる</button>
           ) : (
             <>
               {!scrolled && <p style={{ fontSize: 12, color: '#1565c0', margin: '0 0 12px', fontWeight: 600 }}>↓ 最後までスクロールすると同意できます</p>}
@@ -100,6 +113,103 @@ function Field({ label, required, value, editing, onChange, placeholder }) {
   )
 }
 
+function PhotoUpload({ photo, onPhotoChange }) {
+  const [cropSrc, setCropSrc] = useState(null)
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
+  const [uploading, setUploading] = useState(false)
+
+  const onCropComplete = useCallback((_, pixels) => setCroppedAreaPixels(pixels), [])
+
+  function openCrop(file) {
+    const url = URL.createObjectURL(file)
+    setCropSrc(url)
+    setCrop({ x: 0, y: 0 })
+    setZoom(1)
+  }
+
+  function closeCrop() {
+    if (cropSrc) URL.revokeObjectURL(cropSrc)
+    setCropSrc(null)
+  }
+
+  async function confirmCrop() {
+    if (!cropSrc || !croppedAreaPixels) return
+    const src = cropSrc
+    const pixels = croppedAreaPixels
+    setCropSrc(null)
+    setUploading(true)
+    try {
+      const blob = await getCroppedBlob(src, pixels)
+      URL.revokeObjectURL(src)
+      const compressed = await compressImage(new File([blob], 'photo.jpg', { type: 'image/jpeg' }))
+      const path = `staff/profile/${Date.now()}.jpg`
+      const fd = new FormData()
+      fd.append('file', compressed)
+      fd.append('path', path)
+      const res = await fetch('/api/staff-portal/upload', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      onPhotoChange(data.url)
+    } catch (e) {
+      URL.revokeObjectURL(src)
+      alert('アップロードエラー: ' + (e.message || String(e)))
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <>
+      {cropSrc && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <Cropper image={cropSrc} crop={crop} zoom={zoom} aspect={1}
+              onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={onCropComplete} />
+          </div>
+          <div style={{ background: '#1a1a2e', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, whiteSpace: 'nowrap' }}>ズーム</span>
+              <input type="range" min={1} max={3} step={0.01} value={zoom}
+                onChange={e => setZoom(Number(e.target.value))}
+                style={{ flex: 1, accentColor: '#5bbfd6' }} />
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={closeCrop} style={{ padding: '10px 24px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#fff', fontSize: 14, cursor: 'pointer' }}>キャンセル</button>
+              <button onClick={confirmCrop} style={{ padding: '10px 28px', borderRadius: 8, border: 'none', background: '#5bbfd6', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>この範囲でアップロード</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 24, paddingBottom: 20, borderBottom: '1px solid #f0f0f0' }}>
+        {/* 写真またはアイコン */}
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          {photo ? (
+            <>
+              <img src={photo} alt="" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e5e5e5', display: 'block' }} />
+              <button onClick={() => onPhotoChange('')}
+                style={{ position: 'absolute', top: -4, right: -4, width: 22, height: 22, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+            </>
+          ) : (
+            <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#f0f4f8', border: '2px solid #e5e5e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>🐈‍⬛</div>
+          )}
+        </div>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 4 }}>宣材写真</div>
+          <div style={{ fontSize: 12, color: '#888', marginBottom: 10 }}>1:1の正方形にトリミングされます（任意）</div>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a3560', color: '#fff', borderRadius: 7, padding: '8px 16px', cursor: uploading ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, opacity: uploading ? 0.6 : 1 }}>
+            {uploading ? '⏳ アップロード中...' : '📷 写真を選ぶ'}
+            <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploading}
+              onChange={e => { if (e.target.files?.[0]) { openCrop(e.target.files[0]); e.target.value = '' } }} />
+          </label>
+        </div>
+      </div>
+    </>
+  )
+}
+
 export default function StaffPrivateInfoPage() {
   const router = useRouter()
   const [liveData, setLiveData] = useState(null)
@@ -131,6 +241,7 @@ export default function StaffPrivateInfoPage() {
       account_type: src.account_type || '普通',
       account_number: src.account_number || '',
       account_holder: src.account_holder || '',
+      profile_photo: data.profile_photo || '',
     })
     setContractAgreedAt(data.contract_agreed_at || null)
     setPendingChanges(data.pending_changes || null)
@@ -168,6 +279,16 @@ export default function StaffPrivateInfoPage() {
     else setMessage('エラーが発生しました')
   }
 
+  async function handlePhotoSave(url) {
+    setForm(f => ({ ...f, profile_photo: url }))
+    // 写真は即時保存
+    await fetch('/api/staff-portal/private-info', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...form, profile_photo: url, contract_agreed_at: contractAgreedAt }),
+    })
+  }
+
   const hasInfo = !!liveData?.real_name
   const hasPending = !!pendingChanges
 
@@ -201,9 +322,9 @@ export default function StaffPrivateInfoPage() {
       )}
 
       {!hasInfo ? (
-        // 未登録：フォーム入力 + 契約同意
         <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e5e5', padding: '24px' }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 20 }}>基本情報を登録してください</h2>
+          <PhotoUpload photo={form.profile_photo} onPhotoChange={url => setForm(f => ({ ...f, profile_photo: url }))} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <Field label="本名" required value={form.real_name} editing onChange={v => setForm(f => ({ ...f, real_name: v }))} placeholder="山田 太郎" />
             <Field label="電話番号" required value={form.phone} editing onChange={v => setForm(f => ({ ...f, phone: v }))} placeholder="090-0000-0000" />
@@ -237,18 +358,23 @@ export default function StaffPrivateInfoPage() {
           </button>
         </div>
       ) : (
-        // 登録済み：表示 + 編集
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e5e5', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', margin: 0 }}>登録情報</h2>
               {!editing && (
-                <button onClick={() => { setEditing(true); setForm({ real_name: liveData.real_name || '', phone: liveData.phone || '', email: liveData.email || '', address: liveData.address || '', station: liveData.station || '', bank_name: liveData.bank_name || '', branch_name: liveData.branch_name || '', account_type: liveData.account_type || '普通', account_number: liveData.account_number || '', account_holder: liveData.account_holder || '' }); setMessage('') }}
+                <button onClick={() => { setEditing(true); setForm({ real_name: liveData.real_name || '', phone: liveData.phone || '', email: liveData.email || '', address: liveData.address || '', station: liveData.station || '', bank_name: liveData.bank_name || '', branch_name: liveData.branch_name || '', account_type: liveData.account_type || '普通', account_number: liveData.account_number || '', account_holder: liveData.account_holder || '', profile_photo: liveData.profile_photo || '' }); setMessage('') }}
                   style={{ background: '#e3f2fd', color: '#1565c0', border: 'none', borderRadius: 7, padding: '7px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
                   編集する
                 </button>
               )}
             </div>
+
+            <PhotoUpload
+              photo={form.profile_photo}
+              onPhotoChange={url => handlePhotoSave(url)}
+            />
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <Field label="本名" required value={editing ? form.real_name : (liveData.real_name || '')} editing={editing} onChange={v => setForm(f => ({ ...f, real_name: v }))} />
               <Field label="電話番号" required value={editing ? form.phone : (liveData.phone || '')} editing={editing} onChange={v => setForm(f => ({ ...f, phone: v }))} />
