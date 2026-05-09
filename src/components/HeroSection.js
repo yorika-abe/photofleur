@@ -81,22 +81,22 @@ export default function HeroSection({ images, mobileImages }) {
       setAnimKey(k => k + 1)
       setCurrent(next)
       currentRef.current = next
-    }, 3500)
+    }, 5000)
     return () => clearInterval(t)
   }, [imgs, mobileImgs])
 
-  // Drive animation via CSS transitions (no keyframes needed)
+  // Drive animation via CSS transitions on clip-path (stays within overflow:hidden bounds)
   useEffect(() => {
     if (!leavingSrc) { setAnimPhase('idle'); return }
 
     setAnimPhase('idle')
 
-    // After 2 paint cycles, start the move transition
+    // After paint, shrink triangles toward corners quickly
     const t0 = setTimeout(() => setAnimPhase('moving'), 30)
-    // After move settles + pause, start fade transition
-    const t1 = setTimeout(() => setAnimPhase('fading'), 2400)
+    // After shrink + pause, fade out slowly
+    const t1 = setTimeout(() => setAnimPhase('fading'), 1500)
     // Clean up
-    const t2 = setTimeout(() => { setLeavingSrc(null); setAnimPhase('idle') }, 4500)
+    const t2 = setTimeout(() => { setLeavingSrc(null); setAnimPhase('idle') }, 3800)
 
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2) }
   }, [animKey])
@@ -108,17 +108,19 @@ export default function HeroSection({ images, mobileImages }) {
     extractAccentColor(src).then(setAccentColor)
   }, [current, imgs, mobileImgs])
 
+  // TL triangle: polygon shrinks toward top-left corner
   const tlStyle = animPhase === 'moving'
-    ? { transform: 'translate(-50%,-50%)', opacity: 1, transition: 'transform 0.6s cubic-bezier(0,0,0.2,1)' }
+    ? { clipPath: 'polygon(0% 0%, 45% 0%, 0% 45%)', opacity: 1, transition: 'clip-path 0.5s cubic-bezier(0,0,0.2,1)' }
     : animPhase === 'fading'
-    ? { transform: 'translate(-115%,-115%)', opacity: 0, transition: 'transform 1.8s ease, opacity 1.8s ease' }
-    : { transform: 'translate(0,0)', opacity: 1, transition: 'none' }
+    ? { clipPath: 'polygon(0% 0%, 45% 0%, 0% 45%)', opacity: 0, transition: 'opacity 2s ease' }
+    : { clipPath: 'polygon(0% 0%, 100% 0%, 0% 100%)', opacity: 1, transition: 'none' }
 
+  // BR triangle: polygon shrinks toward bottom-right corner
   const brStyle = animPhase === 'moving'
-    ? { transform: 'translate(50%,50%)', opacity: 1, transition: 'transform 0.6s cubic-bezier(0,0,0.2,1)' }
+    ? { clipPath: 'polygon(100% 55%, 100% 100%, 55% 100%)', opacity: 1, transition: 'clip-path 0.5s cubic-bezier(0,0,0.2,1)' }
     : animPhase === 'fading'
-    ? { transform: 'translate(115%,115%)', opacity: 0, transition: 'transform 1.8s ease, opacity 1.8s ease' }
-    : { transform: 'translate(0,0)', opacity: 1, transition: 'none' }
+    ? { clipPath: 'polygon(100% 55%, 100% 100%, 55% 100%)', opacity: 0, transition: 'opacity 2s ease' }
+    : { clipPath: 'polygon(100% 0%, 100% 100%, 0% 100%)', opacity: 1, transition: 'none' }
 
   return (
     <section style={{ position: 'relative', height: '100svh', minHeight: 600, overflow: 'hidden', display: 'flex', alignItems: 'flex-end', background: '#000' }}>
@@ -141,18 +143,16 @@ export default function HeroSection({ images, mobileImages }) {
         <>
           <div style={{
             position: 'absolute', inset: 0, display: 'block',
-            clipPath: 'polygon(0% 0%, 100% 0%, 0% 100%)',
             zIndex: 5,
-            filter: 'drop-shadow(6px 6px 14px rgba(0,0,0,0.65))',
+            filter: 'drop-shadow(4px 4px 12px rgba(0,0,0,0.7))',
             ...tlStyle,
           }}>
             <img src={leavingSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <div style={{
             position: 'absolute', inset: 0, display: 'block',
-            clipPath: 'polygon(100% 0%, 100% 100%, 0% 100%)',
             zIndex: 5,
-            filter: 'drop-shadow(-6px -6px 14px rgba(0,0,0,0.65))',
+            filter: 'drop-shadow(-4px -4px 12px rgba(0,0,0,0.7))',
             ...brStyle,
           }}>
             <img src={leavingSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
