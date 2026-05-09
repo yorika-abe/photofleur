@@ -16,7 +16,6 @@ function formatDow(dateStr) {
 export default function ScheduleCarousel({ events }) {
   const wrapRef = useRef(null)
   const trackRef = useRef(null)
-  const isPausedRef = useRef(false)
 
   if (!events || events.length === 0) return null
 
@@ -32,7 +31,8 @@ export default function ScheduleCarousel({ events }) {
     if (!cards.length) return
 
     const cardW = cards[0].offsetWidth
-    const gap = 20
+    const gap = Math.round(cardW * 0.28) + 20
+    track.style.gap = `${gap}px`
     const wrapW = wrap.clientWidth
 
     let idx = n // start at center of middle set
@@ -69,7 +69,7 @@ export default function ScheduleCarousel({ events }) {
     goTo(idx, false)
 
     const interval = setInterval(() => {
-      if (isPausedRef.current || isJumping) return
+      if (isJumping) return
       idx++
       goTo(idx, true)
 
@@ -84,21 +84,8 @@ export default function ScheduleCarousel({ events }) {
       }
     }, 3500)
 
-    const pause = () => { isPausedRef.current = true }
-    const resume = () => { isPausedRef.current = false }
-    const touchResume = () => setTimeout(resume, 2000)
-
-    wrap.addEventListener('mouseenter', pause)
-    wrap.addEventListener('mouseleave', resume)
-    wrap.addEventListener('touchstart', pause, { passive: true })
-    wrap.addEventListener('touchend', touchResume)
-
     return () => {
       clearInterval(interval)
-      wrap.removeEventListener('mouseenter', pause)
-      wrap.removeEventListener('mouseleave', resume)
-      wrap.removeEventListener('touchstart', pause)
-      wrap.removeEventListener('touchend', touchResume)
     }
   }, [n])
 
