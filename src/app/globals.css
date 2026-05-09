@@ -41,7 +41,7 @@ body {
 
 .hero-desktop { display: contents; }
 .hero-mobile { display: none; }
-@media (max-width: 768px) {
+@media (orientation: portrait) {
   .hero-desktop { display: none; }
   .hero-mobile { display: contents; }
 }

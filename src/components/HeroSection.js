@@ -102,7 +102,7 @@ export default function HeroSection({ images, mobileImages }) {
   }, [animKey])
 
   useEffect(() => {
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640
+    const isMobile = typeof window !== 'undefined' && window.innerHeight > window.innerWidth
     const src = (isMobile && mobileImgs[current]) ? mobileImgs[current] : imgs[current]
     if (!src) return
     extractAccentColor(src).then(setAccentColor)
