@@ -14,6 +14,7 @@ function formatReportDate(dateStr) {
 }
 
 function ActivityReportCard() {
+  const [open, setOpen] = useState(false)
   const [reports, setReports] = useState([])
   const [date, setDate] = useState('')
   const [content, setContent] = useState('')
@@ -43,40 +44,43 @@ function ActivityReportCard() {
   }
 
   return (
-    <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #d6ecf5', marginTop: 24 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0d1f3a', marginTop: 0, marginBottom: 16 }}>外部活動報告</h2>
-
-      {/* 報告フォーム */}
-      <form onSubmit={submit} style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-          <input
-            type="date" value={date} onChange={e => setDate(e.target.value)}
-            style={{ border: '1px solid #d0e8f5', borderRadius: 8, padding: '8px 12px', fontSize: 14, color: '#0d1f3a' }}
-          />
+    <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #d6ecf5', overflow: 'hidden' }}>
+      <div onClick={() => setOpen(o => !o)} style={{ padding: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ fontSize: 24 }}>📢</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: 15, color: '#0d1f3a', marginBottom: 4 }}>外部活動報告</div>
+          <div style={{ fontSize: 12, color: '#888' }}>出版・動画・外部撮影などを報告</div>
         </div>
-        <textarea
-          value={content} onChange={e => setContent(e.target.value)}
-          rows={3} placeholder="例：出版物に載りました　/ 動画撮影をしてきます"
-          style={{ width: '100%', border: '1px solid #d0e8f5', borderRadius: 8, padding: '10px 12px', fontSize: 14, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
-        />
-        {error && <div style={{ color: '#e53935', fontSize: 13, marginTop: 4 }}>{error}</div>}
-        <button type="submit" disabled={submitting}
-          style={{ marginTop: 8, background: submitting ? '#ccc' : '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontWeight: 700, fontSize: 14, cursor: submitting ? 'not-allowed' : 'pointer' }}>
-          {submitting ? '送信中...' : '報告する'}
-        </button>
-      </form>
-
-      {/* 報告一覧 */}
-      {reports.length === 0 ? (
-        <p style={{ color: '#aaa', fontSize: 14, margin: 0 }}>まだ報告はありません。</p>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {reports.map(r => (
-            <div key={r.id} style={{ background: '#f8fbff', borderRadius: 8, padding: '10px 14px', border: '1px solid #e8f4fb' }}>
-              <div style={{ fontSize: 12, color: '#5bbfd6', fontWeight: 600, marginBottom: 2 }}>{formatReportDate(r.report_date)}</div>
-              <div style={{ fontSize: 14, color: '#333', whiteSpace: 'pre-wrap' }}>{r.content}</div>
+        <span style={{ color: '#aaa', fontSize: 18 }}>{open ? '▲' : '▼'}</span>
+      </div>
+      {open && (
+        <div style={{ padding: '0 20px 20px', borderTop: '1px solid #f0f0f0' }}>
+          <form onSubmit={submit} style={{ margin: '16px 0 20px' }}>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                style={{ border: '1px solid #d0e8f5', borderRadius: 8, padding: '8px 12px', fontSize: 14, color: '#0d1f3a' }} />
             </div>
-          ))}
+            <textarea value={content} onChange={e => setContent(e.target.value)}
+              rows={3} placeholder="例：出版物に載りました　/ 動画撮影をしてきます"
+              style={{ width: '100%', border: '1px solid #d0e8f5', borderRadius: 8, padding: '10px 12px', fontSize: 14, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+            {error && <div style={{ color: '#e53935', fontSize: 13, marginTop: 4 }}>{error}</div>}
+            <button type="submit" disabled={submitting}
+              style={{ marginTop: 8, background: submitting ? '#ccc' : '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontWeight: 700, fontSize: 14, cursor: submitting ? 'not-allowed' : 'pointer' }}>
+              {submitting ? '送信中...' : '報告する'}
+            </button>
+          </form>
+          {reports.length === 0 ? (
+            <p style={{ color: '#aaa', fontSize: 14, margin: 0 }}>まだ報告はありません。</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {reports.map(r => (
+                <div key={r.id} style={{ background: '#f8fbff', borderRadius: 8, padding: '10px 14px', border: '1px solid #e8f4fb' }}>
+                  <div style={{ fontSize: 12, color: '#5bbfd6', fontWeight: 600, marginBottom: 2 }}>{formatReportDate(r.report_date)}</div>
+                  <div style={{ fontSize: 14, color: '#333', whiteSpace: 'pre-wrap' }}>{r.content}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -333,6 +337,7 @@ export default function ModelPortalHome() {
             { href: '/model-portal/blog', icon: '📝', label: 'ブログ', desc: '記事を書く' },
             { href: '/model-portal/private-info', icon: '🔒', label: '非公開登録情報', desc: '住所・連絡先・契約同意' },
             { href: '/model-portal/photos', icon: '📸', label: 'ご提供写真', desc: '提供いただいた写真を確認', badge: newPhotoCount },
+            { href: '/model-portal/guide', icon: '📖', label: 'モデル活動の手引き', desc: '活動マニュアル・注意事項' },
           ]).map(item => (
             <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
               <div style={{ background: '#fff', borderRadius: 12, padding: '20px', border: '1px solid #d6ecf5', transition: 'box-shadow 0.2s', position: 'relative' }}>
@@ -350,7 +355,11 @@ export default function ModelPortalHome() {
         </div>
 
         {/* 外部活動報告 */}
-        {!isAdminView && <ActivityReportCard />}
+        {!isAdminView && (
+          <div style={{ marginBottom: 0 }}>
+            <ActivityReportCard />
+          </div>
+        )}
 
         {/* 参加予定イベント */}
         <UpcomingEvents events={upcomingEvents} />
