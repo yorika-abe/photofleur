@@ -174,10 +174,8 @@ export default async function Home() {
       {models && models.length > 0 && (
         <section style={{ background: '#fff', padding: '80px 0' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
-            <div className="reveal" style={{ textAlign: 'center', marginBottom: 56, borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: 32 }}>
-              <h2 style={{ ...serif, fontSize: 'clamp(56px, 10vw, 100px)', fontWeight: 300, margin: 0, color: '#0d1f3a', letterSpacing: '0.15em' }}>
-                MODELS
-              </h2>
+            <div className="reveal" style={{ textAlign: 'center', marginBottom: 56, borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: 32, overflow: 'hidden', paddingTop: 16 }}>
+              <h2 className="section-big-title" style={{ margin: 0 }}>MODELS</h2>
             </div>
 
             <div className="model-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(140px, 20vw, 200px), 1fr))', gap: 20 }}>
@@ -276,8 +274,10 @@ export default async function Home() {
       {/* ─── STAFF ─── */}
       <section style={{ background: '#fff', padding: '60px 0 80px' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)', textAlign: 'center' }}>
-            <p style={{ fontSize: 11, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 6, fontWeight: 600 }}>Staff</p>
-            <p style={{ fontSize: 13, color: '#bbb', marginTop: 0, marginBottom: 32 }}>受付など担当します</p>
+            <div style={{ overflow: 'hidden', paddingTop: 16, marginBottom: 8 }}>
+              <span className="section-big-title">STAFF</span>
+            </div>
+            <p style={{ fontSize: 13, color: '#bbb', marginTop: 8, marginBottom: 32 }}>受付など担当します</p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px 28px', justifyContent: 'center' }}>
               {staffMembers.map((s, i) => (
                 <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
@@ -294,6 +294,27 @@ export default async function Home() {
         </section>
 
       <style>{`
+        @keyframes shimmerText {
+          0% { background-position: -300% center; }
+          100% { background-position: 300% center; }
+        }
+        @keyframes floatTitle {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-14px); }
+        }
+        .section-big-title {
+          font-family: var(--font-cormorant), Georgia, serif;
+          font-size: clamp(56px, 10vw, 100px);
+          font-weight: 300;
+          letter-spacing: 0.15em;
+          background: linear-gradient(90deg, #0d1f3a 0%, #5bbfd6 20%, #c8e8f5 40%, #a8d8ea 55%, #5bbfd6 70%, #0d1f3a 100%);
+          background-size: 300% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: shimmerText 6s linear infinite, floatTitle 4s ease-in-out infinite;
+          display: inline-block;
+        }
         .event-card:hover .event-img { transform: scale(1.05); }
         .model-card:hover .model-img { transform: scale(1.05); }
         @media (max-width: 640px) { .concept-grid { grid-template-columns: 1fr !important; } }

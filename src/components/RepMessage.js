@@ -13,7 +13,9 @@ export default function RepMessage({ photo, role, name, message, modelId }) {
   return (
     <section style={{ background: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
-        <p style={{ ...serif, fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 32, fontStyle: 'italic', textAlign: 'center' }}>Message</p>
+        <div style={{ textAlign: 'center', marginBottom: 48, paddingBottom: 16 }}>
+          <span className="section-big-title">MESSAGE</span>
+        </div>
 
         <div style={{ display: 'flex', gap: 'clamp(24px, 4vw, 48px)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
 
