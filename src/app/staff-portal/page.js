@@ -171,7 +171,7 @@ export default function StaffPortalPage() {
   const today = new Date().toISOString().split('T')[0]
 
   const open = recruitments.filter(r => r.status === 'open')
-  const closed = recruitments.filter(r => r.status !== 'open')
+  const closed = recruitments.filter(r => r.status !== 'open' && r.my_application?.status !== 'confirmed')
 
   // 確定した担当日
   const confirmed = recruitments.filter(r => r.my_application?.status === 'confirmed')
