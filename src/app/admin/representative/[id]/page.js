@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import RichEditor from '@/components/RichEditor'
 import Cropper from 'react-easy-crop'
 
@@ -25,7 +25,6 @@ async function getCroppedBlob(imageSrc, pixelCrop, quality = 0.85, maxW = 1200, 
 
 export default function AdminRepresentativeEditPage() {
   const { id } = useParams()
-  const router = useRouter()
   const [form, setForm] = useState({ photo: '', role: '', name: '', message: '', model_id: '' })
   const [models, setModels] = useState([])
   const [uploading, setUploading] = useState(false)
@@ -117,7 +116,10 @@ export default function AdminRepresentativeEditPage() {
           model_id: form.model_id || null,
         }),
       })
-      if (!res.ok) throw new Error('保存に失敗しました')
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || `保存に失敗しました (${res.status})`)
+      }
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch (e) {
