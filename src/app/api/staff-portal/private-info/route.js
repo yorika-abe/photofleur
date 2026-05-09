@@ -25,6 +25,16 @@ export async function POST(req) {
   const { admin, user } = result
   const body = await req.json()
 
+  // guide page saves only profile_photo / display_name — do a targeted update
+  if ('profile_photo' in body || 'display_name' in body) {
+    const fields = { updated_at: new Date().toISOString() }
+    if ('profile_photo' in body) fields.profile_photo = body.profile_photo || null
+    if ('display_name' in body) fields.display_name = body.display_name || null
+    const { error } = await admin.from('staff_private_info').update(fields).eq('user_id', user.id)
+    if (error) return Response.json({ error: error.message }, { status: 500 })
+    return Response.json({ ok: true })
+  }
+
   if (body.pending_changes) {
     const { error } = await admin.from('staff_private_info')
       .update({ pending_changes: body.pending_changes, updated_at: new Date().toISOString() })
