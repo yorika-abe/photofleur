@@ -68,6 +68,20 @@ export default function HeroSection({ images, mobileImages }) {
   const [accentColor, setAccentColor] = useState(DEFAULT_COLOR)
   const currentRef = useRef(0)
 
+  useEffect(() => {
+    const id = 'hero-keyframes'
+    if (document.getElementById(id)) return
+    const style = document.createElement('style')
+    style.id = id
+    style.textContent = `
+      @keyframes heroMoveTL { from { transform: translate(0,0); } to { transform: translate(-50%,-50%); } }
+      @keyframes heroFadeTL { from { transform: translate(-50%,-50%); opacity: 1; } to { transform: translate(-115%,-115%); opacity: 0; } }
+      @keyframes heroMoveBR { from { transform: translate(0,0); } to { transform: translate(50%,50%); } }
+      @keyframes heroFadeBR { from { transform: translate(50%,50%); opacity: 1; } to { transform: translate(115%,115%); opacity: 0; } }
+    `
+    document.head.appendChild(style)
+  }, [])
+
   const imgs = images?.length > 0 ? images : []
   const mobileImgs = mobileImages?.length > 0 ? mobileImages : imgs
 
