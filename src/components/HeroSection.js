@@ -112,14 +112,14 @@ export default function HeroSection({ images, mobileImages }) {
   const tlStyle = animPhase === 'moving'
     ? { clipPath: 'polygon(0% 0%, 45% 0%, 0% 45%)', opacity: 1, transition: 'clip-path 0.25s cubic-bezier(0,0,0.2,1)' }
     : animPhase === 'fading'
-    ? { clipPath: 'polygon(0% 0%, 45% 0%, 0% 45%)', opacity: 0, transition: 'opacity 2s ease' }
+    ? { clipPath: 'polygon(0% 0%, 10% 0%, 0% 10%)', opacity: 0, transition: 'clip-path 2s ease, opacity 2s ease' }
     : { clipPath: 'polygon(0% 0%, 100% 0%, 0% 100%)', opacity: 1, transition: 'none' }
 
   // BR triangle: polygon shrinks toward bottom-right corner
   const brStyle = animPhase === 'moving'
     ? { clipPath: 'polygon(100% 55%, 100% 100%, 55% 100%)', opacity: 1, transition: 'clip-path 0.25s cubic-bezier(0,0,0.2,1)' }
     : animPhase === 'fading'
-    ? { clipPath: 'polygon(100% 55%, 100% 100%, 55% 100%)', opacity: 0, transition: 'opacity 2s ease' }
+    ? { clipPath: 'polygon(100% 90%, 100% 100%, 90% 100%)', opacity: 0, transition: 'clip-path 2s ease, opacity 2s ease' }
     : { clipPath: 'polygon(100% 0%, 100% 100%, 0% 100%)', opacity: 1, transition: 'none' }
 
   return (
