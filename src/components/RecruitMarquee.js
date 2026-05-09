@@ -53,12 +53,12 @@ export default function RecruitMarquee({ items }) {
   const actualBottom = bottomItems.length > 0 ? bottomItems : [...items].reverse()
 
   return (
-    <section style={{ background: '#fafcff', overflow: 'hidden', padding: '48px 0' }}>
+    <section style={{ background: '#fafcff', overflow: 'hidden', padding: '32px 0' }}>
 
       {hasItems && <MarqueeRow items={actualTop} direction="left" />}
 
       {/* Text */}
-      <div style={{ textAlign: 'center', padding: '28px 20px 24px' }}>
+      <div style={{ textAlign: 'center', padding: '20px 20px 16px' }}>
         <p style={{
           ...serif, fontSize: 10, letterSpacing: '0.35em', color: '#f4a0be',
           textTransform: 'uppercase', marginBottom: 8, fontStyle: 'italic',

@@ -12,9 +12,9 @@ export default function RepMessage({ photo, role, name, message, modelId }) {
   const hasMore = textContent.length > 100
 
   return (
-    <section style={{ background: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+    <section style={{ background: '#fff', padding: 'clamp(36px, 5vw, 60px) 20px' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 48, paddingBottom: 16 }}>
+        <div style={{ textAlign: 'center', marginBottom: 28, paddingBottom: 8 }}>
           <SectionTitle text="MESSAGE" />
         </div>
 

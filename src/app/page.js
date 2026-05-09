@@ -173,7 +173,7 @@ export default async function Home() {
 
       {/* ─── MODELS ─── */}
       {models && models.length > 0 && (
-        <section style={{ background: '#fff', padding: '80px 0' }}>
+        <section style={{ background: '#fff', padding: '48px 0' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
             <div className="reveal" style={{ textAlign: 'center', marginBottom: 56, borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: 32, overflow: 'hidden', paddingTop: 16 }}>
               <SectionTitle text="MODELS" />
@@ -204,9 +204,9 @@ export default async function Home() {
       )}
 
       {/* ─── HOW IT WORKS ─── */}
-      <section style={{ background: '#fff', padding: '80px 0' }}>
+      <section style={{ background: '#fff', padding: '48px 0' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
             <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>How it works</p>
             <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>ご参加の流れ</h2>
           </div>
@@ -229,9 +229,9 @@ export default async function Home() {
       </section>
 
       {/* ─── AFTER SHOOT ─── */}
-      <section style={{ background: '#fff', padding: '80px 0' }}>
+      <section style={{ background: '#fff', padding: '48px 0' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
             <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>After the shoot</p>
             <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>撮影会終了後</h2>
           </div>
@@ -297,7 +297,7 @@ export default async function Home() {
       ))}
 
       {/* ─── STAFF ─── */}
-      <section style={{ background: '#fff', padding: '60px 0 80px' }}>
+      <section style={{ background: '#fff', padding: '36px 0 48px' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)', textAlign: 'center' }}>
             <div style={{ paddingTop: 16, marginBottom: 8 }}>
               <SectionTitle text="STAFF" />
