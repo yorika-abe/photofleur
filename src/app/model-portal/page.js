@@ -134,7 +134,7 @@ function UpcomingEvents({ events, privateBookings }) {
               )
             } else {
               const b = item.b
-              const d = new Date(b.date + 'T00:00:00')
+              const d = new Date((b.event_date_input || item.date) + 'T00:00:00')
               const mm = String(d.getMonth() + 1).padStart(2, '0')
               const dd = String(d.getDate()).padStart(2, '0')
               return (
