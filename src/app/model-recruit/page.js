@@ -26,7 +26,7 @@ export default async function ModelRecruitPage() {
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 700, margin: '0 auto' }}>
           <p style={{ ...serif, fontSize: 11, letterSpacing: '0.4em', color: '#00acc1', textTransform: 'uppercase', marginBottom: 20, fontStyle: 'italic', fontWeight: 600 }}>Model Recruit</p>
           <h1 style={{ ...serif, fontSize: 'clamp(36px, 7vw, 72px)', fontWeight: 400, lineHeight: 1.1, margin: '0 0 24px', color: '#0d1f3a' }}>
-            モデル募集の<br /><em style={{ fontStyle: 'italic', fontWeight: 700, color: '#d81b60' }}>ご案内</em>
+            モデル募集の<br /><em style={{ fontStyle: 'italic', fontWeight: 700, color: '#e8829a' }}>ご案内</em>
           </h1>
           <div style={{ width: 48, height: 2, background: 'linear-gradient(90deg, #f4a0be, #5bbfd6)', margin: '0 auto 28px', borderRadius: 2 }} />
           <p style={{ fontSize: 'clamp(14px, 2vw, 17px)', lineHeight: 2, color: '#3a3050', margin: 0 }}>
@@ -43,7 +43,7 @@ export default async function ModelRecruitPage() {
           <p style={{ fontSize: 'clamp(15px, 2.2vw, 18px)', lineHeight: 2.2, color: '#3a3050' }}>
             未経験でも大丈夫。<br />
             上手くポーズが取れなくても、モデル経験がなくても、<br />
-            <strong><em style={{ ...serif, fontSize: '1.2em', color: '#d81b60' }}>"やってみたい" という気持ち</em></strong>を大切にしています。
+            <strong><em style={{ ...serif, fontSize: '1.2em', color: '#e8829a' }}>"やってみたい" という気持ち</em></strong>を大切にしています。
           </p>
           <div style={{ margin: '40px 0', padding: '28px 32px', background: 'linear-gradient(135deg, #fce8f4 0%, #e8f7fc 100%)', borderLeft: '3px solid #f4a0be', borderRadius: '0 8px 8px 0', textAlign: 'left' }}>
             <p style={{ fontSize: 15, lineHeight: 2, color: '#3a3050', margin: 0 }}>
@@ -83,7 +83,7 @@ export default async function ModelRecruitPage() {
       <section style={{ background: 'linear-gradient(135deg, #fce8f4 0%, #e8f7fc 100%)', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#d81b60', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Our Activities</p>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#e8829a', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Our Activities</p>
             <h2 style={{ ...serif, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
               活動内容
             </h2>
@@ -97,7 +97,7 @@ export default async function ModelRecruitPage() {
               '撮影会参加経験ゼロでもOK！',
             ].map((item, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '16px 20px', background: '#fff', borderRadius: 8, border: '1px solid #f4c8de', boxShadow: '0 2px 8px rgba(216,27,96,0.06)' }}>
-                <span style={{ color: '#d81b60', fontSize: 16, flexShrink: 0, marginTop: 1 }}>◇</span>
+                <span style={{ color: '#e8829a', fontSize: 16, flexShrink: 0, marginTop: 1 }}>◇</span>
                 <span style={{ fontSize: 14, lineHeight: 1.8, color: '#3a3050' }}>{item}</span>
               </div>
             ))}
@@ -167,7 +167,7 @@ export default async function ModelRecruitPage() {
           </div>
 
           <div style={{ background: 'linear-gradient(135deg, #fce8f4 0%, #e8f7fc 100%)', borderRadius: 12, padding: '32px', border: '1px solid #f4c8de' }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#d81b60', marginBottom: 18, marginTop: 0 }}>こんな方にぴったりです</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#e8829a', marginBottom: 18, marginTop: 0 }}>こんな方にぴったりです</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
               {[
                 '写真を撮られるのが好き',
@@ -178,12 +178,12 @@ export default async function ModelRecruitPage() {
                 '可愛い同年代の友だちがほしい',
               ].map((item, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#3a3050' }}>
-                  <span style={{ color: '#d81b60', fontSize: 12 }}>✓</span>
+                  <span style={{ color: '#e8829a', fontSize: 12 }}>✓</span>
                   {item}
                 </div>
               ))}
             </div>
-            <p style={{ fontSize: 14, color: '#d81b60', fontWeight: 600, margin: '20px 0 0', paddingTop: 16, borderTop: '1px solid #f4c8de' }}>
+            <p style={{ fontSize: 14, color: '#e8829a', fontWeight: 600, margin: '20px 0 0', paddingTop: 16, borderTop: '1px solid #f4c8de' }}>
               どれか1つでも当てはまったら、ぜひ一度ご連絡ください。
             </p>
           </div>
