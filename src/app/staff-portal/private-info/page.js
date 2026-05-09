@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 const REQUIRED_FIELDS = ['real_name', 'phone', 'email', 'address', 'station']
@@ -100,6 +101,7 @@ function Field({ label, required, value, editing, onChange, placeholder }) {
 }
 
 export default function StaffPrivateInfoPage() {
+  const router = useRouter()
   const [liveData, setLiveData] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [contractAgreedAt, setContractAgreedAt] = useState(null)
@@ -150,7 +152,7 @@ export default function StaffPrivateInfoPage() {
       body: JSON.stringify({ ...form, contract_agreed_at: new Date().toISOString() }),
     })
     setSaving(false)
-    if (res.ok) { setMessage('登録が完了しました'); load() }
+    if (res.ok) { router.push('/staff-portal/guide') }
     else setMessage('エラーが発生しました')
   }
 

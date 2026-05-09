@@ -28,6 +28,7 @@ const TABS = [
   { id: 'recruit_page', label: 'モデル募集' },
   { id: 'ogp', label: '共有画像設定(OGP)' },
   { id: 'onboarding', label: 'モデル登録手続き' },
+  { id: 'staff_onboarding', label: 'スタッフ登録手続き' },
 ]
 
 const OGP_PAGES = [
@@ -64,6 +65,8 @@ export default function AdminMediaPage() {
   const [saved, setSaved] = useState(false)
   const [onboardingPdfAbout, setOnboardingPdfAbout] = useState('')
   const [onboardingPdfRegist, setOnboardingPdfRegist] = useState('')
+  const [staffOnboardingPdfAbout, setStaffOnboardingPdfAbout] = useState('')
+  const [staffOnboardingPdfRegist, setStaffOnboardingPdfRegist] = useState('')
 
   useEffect(() => {
     fetch('/api/admin/site-settings').then(r => r.json()).then(data => {
@@ -82,6 +85,8 @@ export default function AdminMediaPage() {
       setOgpImages(ogp)
       setOnboardingPdfAbout(data.onboarding_pdf_about || '')
       setOnboardingPdfRegist(data.onboarding_pdf_regist || '')
+      setStaffOnboardingPdfAbout(data.staff_onboarding_pdf_about || '')
+      setStaffOnboardingPdfRegist(data.staff_onboarding_pdf_regist || '')
     })
   }, [])
 
@@ -275,6 +280,8 @@ export default function AdminMediaPage() {
         ...ogpImages,
         onboarding_pdf_about: onboardingPdfAbout,
         onboarding_pdf_regist: onboardingPdfRegist,
+        staff_onboarding_pdf_about: staffOnboardingPdfAbout,
+        staff_onboarding_pdf_regist: staffOnboardingPdfRegist,
       }),
     })
     setSaving(false)
@@ -594,8 +601,17 @@ export default function AdminMediaPage() {
           <>
             <PdfSection title="ABOUT Photo Fleur PDF" desc="モデル登録手引きページのABOUT PHOTO FLEURセクションに表示されるPDFです"
               value={onboardingPdfAbout} setter={setOnboardingPdfAbout} uploadKey="onboarding_pdf_about" />
-            <PdfSection title="撮影会登録説明 PDF" desc="モデル登録手引きページの撮影会登録説明セクションに表示されるPDFです"
+            <PdfSection title="撮影会モデル登録説明 PDF" desc="モデル登録手引きページの撮影会モデル登録説明セクションに表示されるPDFです"
               value={onboardingPdfRegist} setter={setOnboardingPdfRegist} uploadKey="onboarding_pdf_regist" />
+          </>
+        )}
+
+        {tab === 'staff_onboarding' && (
+          <>
+            <PdfSection title="ABOUT Photo Fleur PDF" desc="スタッフ登録手引きページのABOUT PHOTO FLEURセクションに表示されるPDFです"
+              value={staffOnboardingPdfAbout} setter={setStaffOnboardingPdfAbout} uploadKey="staff_onboarding_pdf_about" />
+            <PdfSection title="撮影会スタッフ登録説明 PDF" desc="スタッフ登録手引きページの撮影会スタッフ登録説明セクションに表示されるPDFです"
+              value={staffOnboardingPdfRegist} setter={setStaffOnboardingPdfRegist} uploadKey="staff_onboarding_pdf_regist" />
           </>
         )}
 

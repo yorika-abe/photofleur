@@ -160,6 +160,15 @@ export default function StaffPortalPage() {
       <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', marginBottom: 2 }}>受付スタッフ画面</h1>
       <p style={{ color: '#aaa', fontSize: 12, marginBottom: 12 }}>スタッフとして参加できる募集に応募してください。</p>
 
+      <Link href="/staff-portal/guide" style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 10, padding: '12px 16px', marginBottom: 10, textDecoration: 'none' }}>
+        <span style={{ fontSize: 20 }}>📖</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>スタッフ活動の手引き</div>
+          <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>活動マニュアル・注意事項</div>
+        </div>
+        <span style={{ color: '#aaa', fontSize: 16 }}>›</span>
+      </Link>
+
       <Link href="/staff-portal/private-info" style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 10, padding: '12px 16px', marginBottom: 14, textDecoration: 'none' }}>
         <span style={{ fontSize: 20 }}>📋</span>
         <div style={{ flex: 1 }}>

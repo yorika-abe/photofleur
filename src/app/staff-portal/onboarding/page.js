@@ -4,23 +4,21 @@ import FadingHeroBg from '@/components/FadingHeroBg'
 
 export const dynamic = 'force-dynamic'
 
-export default async function ModelOnboardingPage() {
+export default async function StaffOnboardingPage() {
   const supabase = await createSupabaseAdminClient()
-  const { data: rows } = await supabase.from('site_settings').select('key, value').in('key', ['hero_bg_images', 'onboarding_pdf_about', 'onboarding_pdf_regist'])
+  const { data: rows } = await supabase.from('site_settings').select('key, value').in('key', ['hero_bg_images', 'staff_onboarding_pdf_about', 'staff_onboarding_pdf_regist'])
   const settings = Object.fromEntries((rows || []).map(r => [r.key, r.value]))
   const heroImages = JSON.parse(settings.hero_bg_images || '[]')
-  const pdfAbout = settings.onboarding_pdf_about || ''
-  const pdfRegist = settings.onboarding_pdf_regist || ''
+  const pdfAbout = settings.staff_onboarding_pdf_about || ''
+  const pdfRegist = settings.staff_onboarding_pdf_regist || ''
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
-      {/* Background slideshow */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0 }}>
         <FadingHeroBg images={heroImages} opacity={0.55} />
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }} />
       </div>
 
-      {/* Content */}
       <div style={{ position: 'relative', zIndex: 1, maxWidth: 1300, margin: '0 auto', padding: '40px 20px' }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a3560', margin: '0 0 16px' }}>Photo Fleurにようこそ</h1>
@@ -33,9 +31,7 @@ export default async function ModelOnboardingPage() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* PDFs side by side */}
           <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-            {/* PDF 1 */}
             <div style={{ flex: '1 1 400px', background: 'rgba(255,255,255,0.88)', border: '1px solid #d6ecf5', borderRadius: 14, padding: '24px', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 12 }}>ABOUT Photo Fleur</h2>
               {pdfAbout ? (
@@ -49,12 +45,11 @@ export default async function ModelOnboardingPage() {
               )}
             </div>
 
-            {/* PDF 2 */}
             <div style={{ flex: '1 1 400px', background: 'rgba(255,255,255,0.88)', border: '1px solid #d6ecf5', borderRadius: 14, padding: '24px', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 12 }}>撮影会モデル登録説明</h2>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 12 }}>撮影会スタッフ登録説明</h2>
               {pdfRegist ? (
                 <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #d6ecf5' }}>
-                  <iframe src={`${pdfRegist}#toolbar=0&navpanes=0`} style={{ width: '100%', height: 560, border: 'none', display: 'block' }} title="撮影会登録説明" />
+                  <iframe src={`${pdfRegist}#toolbar=0&navpanes=0`} style={{ width: '100%', height: 560, border: 'none', display: 'block' }} title="撮影会スタッフ登録説明" />
                 </div>
               ) : (
                 <div style={{ background: '#f5f9ff', borderRadius: 10, padding: '32px', textAlign: 'center', color: '#aaa', fontSize: 14 }}>
@@ -65,9 +60,9 @@ export default async function ModelOnboardingPage() {
           </div>
 
           <div style={{ textAlign: 'center', paddingTop: 8 }}>
-            <Link href="/model-portal/private-info"
+            <Link href="/staff-portal/private-info"
               style={{ display: 'inline-block', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 12, padding: '16px 48px', fontWeight: 700, fontSize: 16 }}>
-              モデル登録を始める →
+              スタッフ登録を始める →
             </Link>
           </div>
         </div>
