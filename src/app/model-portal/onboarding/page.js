@@ -23,7 +23,6 @@ export default async function ModelOnboardingPage() {
       {/* Content */}
       <div style={{ position: 'relative', zIndex: 1, maxWidth: 1300, margin: '0 auto', padding: '40px 20px' }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🌸</div>
           <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a3560', margin: '0 0 16px' }}>Photo Fleurにようこそ</h1>
           <p style={{ fontSize: 15, color: '#444', lineHeight: 2, margin: 0 }}>
             ここに集まる全ての人が一人の人間として、<br />
