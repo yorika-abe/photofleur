@@ -17,11 +17,17 @@ export default function RepMessage({ photo, role, name, message, modelId }) {
 
         <div style={{ display: 'flex', gap: 'clamp(24px, 4vw, 48px)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
 
-          {/* 写真 */}
+          {/* 写真 + ボタン */}
           {photo && (
-            <div style={{ flexShrink: 0 }}>
+            <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
               <img src={photo} alt={name || ''}
                 style={{ width: 'clamp(100px, 18vw, 160px)', aspectRatio: '3/4', objectFit: 'cover', borderRadius: 12, display: 'block' }} />
+              {modelId && (
+                <Link href={`/models/${modelId}`}
+                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#1a3560', textDecoration: 'none', border: '1px solid #1a3560', borderRadius: 6, padding: '8px 20px', fontWeight: 600, letterSpacing: '0.05em', width: '100%', boxSizing: 'border-box' }}>
+                  モデルページを見る
+                </Link>
+              )}
             </div>
           )}
 
@@ -50,15 +56,6 @@ export default function RepMessage({ photo, role, name, message, modelId }) {
                   </button>
                 )}
               </>
-            )}
-
-            {modelId && (
-              <div style={{ marginTop: 24 }}>
-                <Link href={`/models/${modelId}`}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#1a3560', textDecoration: 'none', border: '1px solid #1a3560', borderRadius: 6, padding: '8px 20px', fontWeight: 600, letterSpacing: '0.05em' }}>
-                  モデルページを見る →
-                </Link>
-              </div>
             )}
           </div>
         </div>
