@@ -46,7 +46,7 @@ export default function ScheduleCarousel({ events }) {
       cards.forEach((card, j) => {
         const dist = Math.abs(j - i)
         if (dist === 0) {
-          card.style.transform = 'scale(1.12)'
+          card.style.transform = 'scale(1.28)'
           card.style.opacity = '1'
           card.style.zIndex = '2'
         } else {
