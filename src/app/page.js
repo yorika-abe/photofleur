@@ -295,16 +295,6 @@ export default async function Home() {
         </section>
 
       <style>{`
-        @keyframes letterSparklePink {
-          0%, 100% { color: #f4b8cc; text-shadow: none; }
-          12% { color: #ffe066; text-shadow: 0 0 8px #ffd700, 0 0 18px #ffcc44, 0 0 35px #ffaa00; }
-          28% { color: #f4b8cc; text-shadow: none; }
-        }
-        @keyframes letterSparkleBlue {
-          0%, 100% { color: #a8d8f0; text-shadow: none; }
-          12% { color: #ffe066; text-shadow: 0 0 8px #ffd700, 0 0 18px #ffcc44, 0 0 35px #ffaa00; }
-          28% { color: #a8d8f0; text-shadow: none; }
-        }
         .event-card:hover .event-img { transform: scale(1.05); }
         .model-card:hover .model-img { transform: scale(1.05); }
         @media (max-width: 640px) { .concept-grid { grid-template-columns: 1fr !important; } }
