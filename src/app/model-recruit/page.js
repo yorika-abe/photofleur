@@ -17,35 +17,35 @@ export default async function ModelRecruitPage() {
   try { const p = JSON.parse(raw); heroImages = Array.isArray(p) ? p : (raw ? [raw] : []) } catch { heroImages = raw ? [raw] : [] }
 
   return (
-    <div style={{ background: '#fff', color: '#1a1228' }}>
+    <div style={{ background: '#fff', color: '#1a1a2e' }}>
 
       {/* ─── HERO ─── */}
-      <section style={{ position: 'relative', background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 50%, #0d1f3a 100%)', color: '#fff', padding: 'clamp(80px, 12vw, 140px) 20px', textAlign: 'center', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 60%, rgba(91,191,214,0.12) 0%, transparent 60%)' }} />
-        <FadingHeroBg images={heroImages} opacity={0.3} />
+      <section style={{ position: 'relative', background: 'linear-gradient(160deg, #fce8f4 0%, #e8f7fc 60%, #fff0f6 100%)', padding: 'clamp(80px, 12vw, 140px) 20px', textAlign: 'center', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 60% 40%, rgba(168,226,244,0.25) 0%, transparent 60%)' }} />
+        <FadingHeroBg images={heroImages} opacity={0.18} />
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 700, margin: '0 auto' }}>
-          <p style={{ ...serif, fontSize: 11, letterSpacing: '0.4em', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginBottom: 20, fontStyle: 'italic' }}>Model Recruit</p>
-          <h1 style={{ ...serif, fontSize: 'clamp(36px, 7vw, 72px)', fontWeight: 400, lineHeight: 1.1, margin: '0 0 24px' }}>
-            モデル募集の<br /><em style={{ fontStyle: 'italic', fontWeight: 700, color: '#a8e2f4' }}>ご案内</em>
+          <p style={{ ...serif, fontSize: 11, letterSpacing: '0.4em', color: '#00acc1', textTransform: 'uppercase', marginBottom: 20, fontStyle: 'italic', fontWeight: 600 }}>Model Recruit</p>
+          <h1 style={{ ...serif, fontSize: 'clamp(36px, 7vw, 72px)', fontWeight: 400, lineHeight: 1.1, margin: '0 0 24px', color: '#0d1f3a' }}>
+            モデル募集の<br /><em style={{ fontStyle: 'italic', fontWeight: 700, color: '#d81b60' }}>ご案内</em>
           </h1>
-          <div style={{ width: 48, height: 1, background: 'rgba(168,226,244,0.5)', margin: '0 auto 28px' }} />
-          <p style={{ fontSize: 'clamp(14px, 2vw, 17px)', lineHeight: 2, color: 'rgba(255,255,255,0.8)', margin: 0 }}>
+          <div style={{ width: 48, height: 2, background: 'linear-gradient(90deg, #f4a0be, #5bbfd6)', margin: '0 auto 28px', borderRadius: 2 }} />
+          <p style={{ fontSize: 'clamp(14px, 2vw, 17px)', lineHeight: 2, color: '#3a3050', margin: 0 }}>
             Photo Fleur（フォトフルール）は、<br />
-            <strong style={{ color: '#a8e2f4' }}>「はじめの一歩を応援し、安心して挑戦できる撮影会」</strong><br />
+            <strong style={{ color: '#00acc1' }}>「はじめの一歩を応援し、安心して挑戦できる撮影会」</strong><br />
             を目指しています。
           </p>
         </div>
       </section>
 
       {/* ─── INTRO ─── */}
-      <section style={{ background: '#fafcff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+      <section style={{ background: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
         <div style={{ maxWidth: 760, margin: '0 auto', textAlign: 'center' }}>
           <p style={{ fontSize: 'clamp(15px, 2.2vw, 18px)', lineHeight: 2.2, color: '#3a3050' }}>
             未経験でも大丈夫。<br />
             上手くポーズが取れなくても、モデル経験がなくても、<br />
-            <strong><em style={{ ...serif, fontSize: '1.2em', color: '#1a3560' }}>"やってみたい" という気持ち</em></strong>を大切にしています。
+            <strong><em style={{ ...serif, fontSize: '1.2em', color: '#d81b60' }}>"やってみたい" という気持ち</em></strong>を大切にしています。
           </p>
-          <div style={{ margin: '40px 0', padding: '28px 32px', background: '#f0f7fb', borderLeft: '3px solid #5bbfd6', borderRadius: '0 8px 8px 0', textAlign: 'left' }}>
+          <div style={{ margin: '40px 0', padding: '28px 32px', background: 'linear-gradient(135deg, #fce8f4 0%, #e8f7fc 100%)', borderLeft: '3px solid #f4a0be', borderRadius: '0 8px 8px 0', textAlign: 'left' }}>
             <p style={{ fontSize: 15, lineHeight: 2, color: '#3a3050', margin: 0 }}>
               撮影会の拡大に伴い新規所属モデルを募集しています。<br />
               私たちと一緒に、<strong>あなただけの魅力を咲かせてみませんか？</strong>
@@ -55,34 +55,22 @@ export default async function ModelRecruitPage() {
       </section>
 
       {/* ─── WHAT WE VALUE ─── */}
-      <section style={{ background: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+      <section style={{ background: '#f0fbfc', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>What We Value</p>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#00acc1', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>What We Value</p>
             <h2 style={{ ...serif, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
               大切にしていること
             </h2>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
             {[
-              {
-                icon: '✿',
-                title: '安心して活動できる環境',
-                body: '所属モデルの多くが未経験からスタートしています。初めての撮影でも安心して臨めるよう、受付・撮影ルール・安全面のサポートを徹底しています。',
-              },
-              {
-                icon: '✿',
-                title: 'モデルとしての成長をサポート',
-                body: '撮影会は実践の場。ポージング、表情づくり、衣装選びなど、回数を重ねるごとに自然とスキルが身につきます。希望者には簡単なレクチャーも行っています。',
-              },
-              {
-                icon: '✿',
-                title: '女性が安心して働ける現場づくり',
-                body: '運営スタッフは完全女性のみ。不安なことや相談したいことがあれば、いつでも運営に話せる環境を整えています。',
-              },
+              { icon: '✿', title: '安心して活動できる環境', body: '所属モデルの多くが未経験からスタートしています。初めての撮影でも安心して臨めるよう、受付・撮影ルール・安全面のサポートを徹底しています。' },
+              { icon: '✿', title: 'モデルとしての成長をサポート', body: '撮影会は実践の場。ポージング、表情づくり、衣装選びなど、回数を重ねるごとに自然とスキルが身につきます。希望者には簡単なレクチャーも行っています。' },
+              { icon: '✿', title: '女性が安心して働ける現場づくり', body: '運営スタッフは完全女性のみ。不安なことや相談したいことがあれば、いつでも運営に話せる環境を整えています。' },
             ].map((item, i) => (
-              <div key={i} style={{ background: '#f8fbff', borderRadius: 12, padding: '32px 28px', border: '1px solid #d6ecf5' }}>
-                <div style={{ fontSize: 24, color: '#5bbfd6', marginBottom: 14 }}>{item.icon}</div>
+              <div key={i} style={{ background: '#fff', borderRadius: 12, padding: '32px 28px', border: '1px solid #b2ebf2', boxShadow: '0 2px 12px rgba(0,172,193,0.07)' }}>
+                <div style={{ fontSize: 24, color: '#f4a0be', marginBottom: 14 }}>{item.icon}</div>
                 <h3 style={{ ...serif, fontSize: 19, fontWeight: 600, color: '#0d1f3a', margin: '0 0 14px' }}>{item.title}</h3>
                 <p style={{ fontSize: 14, lineHeight: 2, color: '#556070', margin: 0 }}>{item.body}</p>
               </div>
@@ -91,17 +79,12 @@ export default async function ModelRecruitPage() {
         </div>
       </section>
 
-      {/* 画像エリア（後から入れる） */}
-      {/* <section style={{ background: '#000' }}>
-        <img src="..." style={{ width: '100%', maxHeight: 500, objectFit: 'cover', opacity: 0.85 }} />
-      </section> */}
-
       {/* ─── OUR ACTIVITIES ─── */}
-      <section style={{ background: '#0d1f3a', color: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+      <section style={{ background: 'linear-gradient(135deg, #fce8f4 0%, #e8f7fc 100%)', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Our Activities</p>
-            <h2 style={{ ...serif, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 400, margin: 0 }}>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#d81b60', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Our Activities</p>
+            <h2 style={{ ...serif, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
               活動内容
             </h2>
           </div>
@@ -113,9 +96,9 @@ export default async function ModelRecruitPage() {
               '都内・神奈川を中心に活動中',
               '撮影会参加経験ゼロでもOK！',
             ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '16px 20px', background: 'rgba(255,255,255,0.05)', borderRadius: 8, border: '1px solid rgba(168,226,244,0.15)' }}>
-                <span style={{ color: '#5bbfd6', fontSize: 16, flexShrink: 0, marginTop: 1 }}>◇</span>
-                <span style={{ fontSize: 14, lineHeight: 1.8, color: 'rgba(255,255,255,0.85)' }}>{item}</span>
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '16px 20px', background: '#fff', borderRadius: 8, border: '1px solid #f4c8de', boxShadow: '0 2px 8px rgba(216,27,96,0.06)' }}>
+                <span style={{ color: '#d81b60', fontSize: 16, flexShrink: 0, marginTop: 1 }}>◇</span>
+                <span style={{ fontSize: 14, lineHeight: 1.8, color: '#3a3050' }}>{item}</span>
               </div>
             ))}
           </div>
@@ -123,15 +106,15 @@ export default async function ModelRecruitPage() {
       </section>
 
       {/* ─── TRAINING ─── */}
-      <section style={{ background: '#f0f7fb', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+      <section style={{ background: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Training</p>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#00acc1', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Training</p>
             <h2 style={{ ...serif, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
               充実した研修内容
             </h2>
           </div>
-          <div style={{ background: '#fff', borderRadius: 12, padding: '36px', border: '1px solid #c8e8f5' }}>
+          <div style={{ background: 'linear-gradient(135deg, #f0fbfc 0%, #fff0f6 100%)', borderRadius: 12, padding: '36px', border: '1px solid #b2ebf2' }}>
             <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', marginTop: 0, marginBottom: 20 }}>
               不定期で開催の<strong>完全女性スタッフのみの撮影研修</strong>では
             </p>
@@ -141,12 +124,12 @@ export default async function ModelRecruitPage() {
                 '撮影研修・ポートフォリオ撮影',
               ].map((item, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, fontSize: 14, color: '#3a3050' }}>
-                  <span style={{ color: '#5bbfd6', fontWeight: 700, flexShrink: 0 }}>◇</span>
+                  <span style={{ color: '#00acc1', fontWeight: 700, flexShrink: 0 }}>◇</span>
                   {item}
                 </div>
               ))}
             </div>
-            <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0, paddingTop: 20, borderTop: '1px solid #eef4f8' }}>
+            <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0, paddingTop: 20, borderTop: '1px solid #e0f7fa' }}>
               撮影の勉強が撮影会内でしっかりできる仕組みが整っています。
             </p>
           </div>
@@ -154,16 +137,16 @@ export default async function ModelRecruitPage() {
       </section>
 
       {/* ─── CONDITIONS ─── */}
-      <section style={{ background: '#fafcff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+      <section style={{ background: '#f0fbfc', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Requirements</p>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#00acc1', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Requirements</p>
             <h2 style={{ ...serif, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
               応募条件
             </h2>
           </div>
 
-          <div style={{ background: '#fff', borderRadius: 12, padding: '36px', border: '1px solid #d6ecf5', marginBottom: 28 }}>
+          <div style={{ background: '#fff', borderRadius: 12, padding: '36px', border: '1px solid #b2ebf2', marginBottom: 28 }}>
             <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 14 }}>
               {[
                 '16歳以上の女性',
@@ -173,19 +156,18 @@ export default async function ModelRecruitPage() {
                 '未経験歓迎・学生さん歓迎',
               ].map((item, i) => (
                 <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, fontSize: 14, color: '#3a3050', lineHeight: 1.8 }}>
-                  <span style={{ color: '#5bbfd6', fontWeight: 700, flexShrink: 0 }}>・</span>
+                  <span style={{ color: '#00acc1', fontWeight: 700, flexShrink: 0 }}>・</span>
                   {item}
                 </li>
               ))}
             </ul>
-            <p style={{ fontSize: 12, color: '#aaa', marginTop: 20, marginBottom: 0, borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
+            <p style={{ fontSize: 12, color: '#aaa', marginTop: 20, marginBottom: 0, borderTop: '1px solid #e0f7fa', paddingTop: 16 }}>
               ※事務所所属の方は必ず許可をお取りください。
             </p>
           </div>
 
-          {/* こんな人に */}
-          <div style={{ background: '#f0f7fb', borderRadius: 12, padding: '32px', border: '1px solid #c8e8f5' }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', marginBottom: 18, marginTop: 0 }}>こんな方にぴったりです</p>
+          <div style={{ background: 'linear-gradient(135deg, #fce8f4 0%, #e8f7fc 100%)', borderRadius: 12, padding: '32px', border: '1px solid #f4c8de' }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#d81b60', marginBottom: 18, marginTop: 0 }}>こんな方にぴったりです</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
               {[
                 '写真を撮られるのが好き',
@@ -195,13 +177,13 @@ export default async function ModelRecruitPage() {
                 'ファッション・美容が好き',
                 '可愛い同年代の友だちがほしい',
               ].map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#3a5070' }}>
-                  <span style={{ color: '#5bbfd6', fontSize: 12 }}>✓</span>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#3a3050' }}>
+                  <span style={{ color: '#d81b60', fontSize: 12 }}>✓</span>
                   {item}
                 </div>
               ))}
             </div>
-            <p style={{ fontSize: 14, color: '#1a3560', fontWeight: 600, margin: '20px 0 0', paddingTop: 16, borderTop: '1px solid #d6ecf5' }}>
+            <p style={{ fontSize: 14, color: '#d81b60', fontWeight: 600, margin: '20px 0 0', paddingTop: 16, borderTop: '1px solid #f4c8de' }}>
               どれか1つでも当てはまったら、ぜひ一度ご連絡ください。
             </p>
           </div>
@@ -212,13 +194,13 @@ export default async function ModelRecruitPage() {
       <section style={{ background: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
         <div style={{ maxWidth: 700, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>How to Apply</p>
+            <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#00acc1', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>How to Apply</p>
             <h2 style={{ ...serif, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
               応募方法
             </h2>
           </div>
 
-          <div style={{ background: '#f8fbff', borderRadius: 12, padding: '36px', border: '1px solid #d6ecf5', marginBottom: 32 }}>
+          <div style={{ background: '#f0fbfc', borderRadius: 12, padding: '36px', border: '1px solid #b2ebf2', marginBottom: 32 }}>
             <p style={{ fontSize: 14, color: '#556070', marginTop: 0, marginBottom: 20 }}>公式LINEより以下をお送りください。</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {[
@@ -229,8 +211,8 @@ export default async function ModelRecruitPage() {
                 'SNSアカウント',
                 '顔・全身写真（アプリ加工なし推奨）',
               ].map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#3a3050', padding: '10px 0', borderBottom: '1px solid #eef4f8' }}>
-                  <span style={{ ...serif, fontSize: 18, color: '#5bbfd6', fontStyle: 'italic', lineHeight: 1 }}>{i + 1}.</span>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#3a3050', padding: '10px 0', borderBottom: '1px solid #e0f7fa' }}>
+                  <span style={{ ...serif, fontSize: 18, color: '#00acc1', fontStyle: 'italic', lineHeight: 1 }}>{i + 1}.</span>
                   {item}
                 </div>
               ))}
@@ -249,20 +231,20 @@ export default async function ModelRecruitPage() {
       </section>
 
       {/* ─── CLOSING ─── */}
-      <section style={{ background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 100%)', color: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px', textAlign: 'center' }}>
+      <section style={{ background: 'linear-gradient(135deg, #fce8f4 0%, #e8f7fc 50%, #fff0f6 100%)', padding: 'clamp(60px, 8vw, 100px) 20px', textAlign: 'center' }}>
         <div style={{ maxWidth: 640, margin: '0 auto' }}>
-          <div style={{ width: 40, height: 1, background: 'rgba(168,226,244,0.4)', margin: '0 auto 32px' }} />
-          <h2 style={{ ...serif, fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 400, lineHeight: 1.5, margin: '0 0 24px', color: '#fff' }}>
+          <div style={{ width: 40, height: 2, background: 'linear-gradient(90deg, #f4a0be, #5bbfd6)', margin: '0 auto 32px', borderRadius: 2 }} />
+          <h2 style={{ ...serif, fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 400, lineHeight: 1.5, margin: '0 0 24px', color: '#0d1f3a' }}>
             最後に
           </h2>
-          <p style={{ fontSize: 15, lineHeight: 2.2, color: 'rgba(255,255,255,0.8)', margin: '0 0 16px' }}>
-            Photo Fleur は、<strong style={{ color: '#a8e2f4' }}>「モデルの一歩目を応援する撮影会」</strong>です。
+          <p style={{ fontSize: 15, lineHeight: 2.2, color: '#3a3050', margin: '0 0 16px' }}>
+            Photo Fleur は、<strong style={{ color: '#00acc1' }}>「モデルの一歩目を応援する撮影会」</strong>です。
           </p>
-          <p style={{ fontSize: 15, lineHeight: 2.2, color: 'rgba(255,255,255,0.7)', margin: 0 }}>
+          <p style={{ fontSize: 15, lineHeight: 2.2, color: '#556070', margin: 0 }}>
             まだ知られていない魅力を見つけて、<br />
             花のようにふわっと開く瞬間を一緒に作れたら嬉しいです。
           </p>
-          <div style={{ width: 40, height: 1, background: 'rgba(168,226,244,0.4)', margin: '32px auto 0' }} />
+          <div style={{ width: 40, height: 2, background: 'linear-gradient(90deg, #f4a0be, #5bbfd6)', margin: '32px auto 0', borderRadius: 2 }} />
         </div>
       </section>
 
