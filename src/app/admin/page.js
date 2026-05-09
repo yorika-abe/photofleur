@@ -52,9 +52,13 @@ export default async function AdminPage() {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 20px' }}>
-      <AdminAvatarButton initialUrl={adminAvatarUrl} initialName={currentName} isOwner={isOwner} />
-      <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1a3560', marginBottom: 8 }}>管理ダッシュボード</h1>
-      <p style={{ color: '#666', marginBottom: 40, fontSize: 14 }}>PhotoFleur 運営管理パネル</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 40 }}>
+        <div>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1a3560', marginBottom: 8, marginTop: 0 }}>管理ダッシュボード</h1>
+          <p style={{ color: '#666', margin: 0, fontSize: 14 }}>PhotoFleur 運営管理パネル</p>
+        </div>
+        <AdminAvatarButton initialUrl={adminAvatarUrl} initialName={currentName} isOwner={isOwner} />
+      </div>
 
       {/* Quick links */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 48 }}>

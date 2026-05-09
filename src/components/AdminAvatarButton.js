@@ -78,7 +78,7 @@ export default function AdminAvatarButton({ initialUrl, initialName, isOwner }) 
   }
 
   return (
-    <div ref={panelRef} style={{ position: 'fixed', top: 88, right: 24, zIndex: 1000 }}>
+    <div ref={panelRef} style={{ position: 'relative', zIndex: 100, display: 'inline-block' }}>
       {/* Avatar button */}
       <button
         onClick={() => setOpen(v => !v)}
