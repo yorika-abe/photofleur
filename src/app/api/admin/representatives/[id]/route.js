@@ -11,14 +11,16 @@ async function checkAdmin() {
   return admin
 }
 
-export async function GET(req, { params }) {
+export async function GET(_req, { params }) {
+  const { id } = await params
   const admin = await createSupabaseAdminClient()
-  const { data, error } = await admin.from('representatives').select('*').eq('id', params.id).single()
+  const { data, error } = await admin.from('representatives').select('*').eq('id', id).single()
   if (error) return Response.json({ error: error.message }, { status: 404 })
   return Response.json(data)
 }
 
 export async function PUT(req, { params }) {
+  const { id } = await params
   const admin = await checkAdmin()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -29,17 +31,18 @@ export async function PUT(req, { params }) {
     name: body.name ?? '',
     message: body.message ?? '',
     model_id: body.model_id || null,
-  }).eq('id', params.id).select().single()
+  }).eq('id', id).select().single()
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json(data)
 }
 
-export async function DELETE(req, { params }) {
+export async function DELETE(_req, { params }) {
+  const { id } = await params
   const admin = await checkAdmin()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { error } = await admin.from('representatives').delete().eq('id', params.id)
+  const { error } = await admin.from('representatives').delete().eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json({ ok: true })
 }
