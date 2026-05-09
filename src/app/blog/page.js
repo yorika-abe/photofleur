@@ -139,7 +139,7 @@ function BlogContent() {
                       const isAdminAuthor = post.posted_as_admin && adminEntry?.adminIds?.includes(post.author_id)
                       const authorInfo = isAdminAuthor ? adminEntry : authors.find(a => a.id === post.author_id)
                       const name = isAdminAuthor ? '運営' : (authorInfo?.name || post.user_profiles?.name)
-                      const avatar = isAdminAuthor ? authorInfo?.avatar : null
+                      const avatar = authorInfo?.avatar || null
                       return (
                         <>
                           {avatar && <img src={avatar} alt="" style={{ width: 18, height: 18, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />}

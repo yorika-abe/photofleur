@@ -12,7 +12,7 @@ export async function GET() {
   if (!postsData) return Response.json([])
 
   const adminIds = []
-  const modelAuthors = []
+  const modelAuthorIds = []
   const seenAdmins = new Set()
   const seenModels = new Set()
 
@@ -29,13 +29,27 @@ export async function GET() {
     } else {
       if (!seenModels.has(p.author_id)) {
         seenModels.add(p.author_id)
-        modelAuthors.push({
-          id: p.author_id,
-          name: (profile?.name || p.author_id).replace(/^運営\s*/, '') || profile?.name || p.author_id,
-          avatar: null,
-        })
+        modelAuthorIds.push(p.author_id)
       }
     }
+  }
+
+  // モデルテーブルから芸名・宣材写真を取得
+  let modelAuthors = []
+  if (modelAuthorIds.length > 0) {
+    const { data: modelsData } = await admin
+      .from('models')
+      .select('user_id, name, image')
+      .in('user_id', modelAuthorIds)
+
+    modelAuthors = modelAuthorIds.map(id => {
+      const m = modelsData?.find(m => m.user_id === id)
+      return {
+        id,
+        name: m?.name || id,
+        avatar: m?.image || null,
+      }
+    })
   }
 
   const result = []

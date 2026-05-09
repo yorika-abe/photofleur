@@ -39,9 +39,18 @@ export default async function BlogPostPage({ params }) {
     if (profile) {
       const isAdminUser = profile.role === 'owner' || profile.roles?.includes('admin')
       const showAsAdmin = isAdminUser && post.posted_as_admin
-      const rawName = profile.name || null
-      authorName = showAsAdmin ? rawName : rawName?.replace(/^運営\s*/, '') || rawName
-      authorAvatar = showAsAdmin ? adminAvatarUrl : null
+      if (showAsAdmin) {
+        authorName = profile.name || null
+        authorAvatar = adminAvatarUrl
+      } else {
+        const { data: modelProfile } = await admin
+          .from('models')
+          .select('name, image')
+          .eq('user_id', post.author_id)
+          .maybeSingle()
+        authorName = modelProfile?.name || profile.name?.replace(/^運営\s*/, '') || profile.name
+        authorAvatar = modelProfile?.image || null
+      }
     }
   }
 
