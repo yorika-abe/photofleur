@@ -38,7 +38,7 @@ export default async function Home() {
   )
   const today = new Date().toISOString().split('T')[0]
 
-  const [{ data: events }, { data: models }, { data: siteSettingsRows }, { data: noticesData }, { data: repsData }] = await Promise.all([
+  const [{ data: events }, { data: models }, { data: siteSettingsRows }, { data: noticesData }, { data: repsData }, { data: staffData }] = await Promise.all([
     adminSupabase
       .from('events')
       .select('id, event_date, event_type, title, subtitle, location_name, main_image, thumbnail_image')
@@ -61,9 +61,11 @@ export default async function Home() {
       .order('published_at', { ascending: false })
       .limit(8),
     adminSupabase.from('representatives').select('id, photo, role, name, message, model_id').order('sort_order', { ascending: true }).order('created_at', { ascending: true }),
+    adminSupabase.from('staff_private_info').select('display_name, real_name, profile_photo').not('profile_photo', 'is', null),
   ])
   const notices = noticesData || []
   const representatives = repsData || []
+  const staffMembers = (staffData || []).filter(s => s.profile_photo)
 
   const { data: blogCategories } = await adminSupabase
     .from('blog_categories')
@@ -267,6 +269,26 @@ export default async function Home() {
       {representatives.map(rep => (
         <RepMessage key={rep.id} photo={rep.photo} role={rep.role} name={rep.name} message={rep.message} modelId={rep.model_id} />
       ))}
+
+      {/* ─── STAFF ─── */}
+      {staffMembers.length > 0 && (
+        <section style={{ background: '#fff', padding: '60px 0 80px' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)', textAlign: 'center' }}>
+            <p style={{ fontSize: 11, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 6, fontWeight: 600 }}>Staff</p>
+            <p style={{ fontSize: 13, color: '#bbb', marginTop: 0, marginBottom: 32 }}>受付など担当します</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px 28px', justifyContent: 'center' }}>
+              {staffMembers.map((s, i) => (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 60, height: 60, borderRadius: '50%', overflow: 'hidden', background: '#f0f4f8', border: '2px solid #e5e5e5', flexShrink: 0 }}>
+                    <img src={s.profile_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <span style={{ fontSize: 12, color: '#444', fontWeight: 600 }}>{s.display_name || s.real_name || ''}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <style>{`
         .event-card:hover .event-img { transform: scale(1.05); }
