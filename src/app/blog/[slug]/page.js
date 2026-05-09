@@ -6,7 +6,7 @@ import { buildMetadata } from '@/lib/ogp'
 export async function generateMetadata({ params }) {
   const admin = await createSupabaseAdminClient()
   const { slug } = await params
-  const { data } = await admin.from('blog_posts').select('title, cover_image').eq('slug', slug).single()
+  const { data } = await admin.from('blog_posts').select('title, cover_image').eq('slug', decodeURIComponent(slug)).maybeSingle()
   return buildMetadata({
     title: data?.title ? `${data.title} | PhotoFleur Blog` : 'ブログ | PhotoFleur',
     path: `/blog/${slug}`,
@@ -18,8 +18,9 @@ export default async function BlogPostPage({ params }) {
   const admin = await createSupabaseAdminClient()
   const { slug } = await params
 
+  const decodedSlug = decodeURIComponent(slug)
   const [{ data: post }, { data: avatarSetting }] = await Promise.all([
-    admin.from('blog_posts').select('*').eq('slug', slug).eq('status', 'published').single(),
+    admin.from('blog_posts').select('*').eq('slug', decodedSlug).eq('status', 'published').maybeSingle(),
     admin.from('site_settings').select('value').eq('key', 'admin_avatar_url').maybeSingle(),
   ])
 
