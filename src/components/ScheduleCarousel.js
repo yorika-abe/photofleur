@@ -31,8 +31,7 @@ export default function ScheduleCarousel({ events }) {
     if (!cards.length) return
 
     const cardW = cards[0].offsetWidth
-    const gap = Math.round(cardW * 0.28) + 20
-    track.style.gap = `${gap}px`
+    const gap = 24
     const wrapW = wrap.clientWidth
 
     let idx = n // start at center of middle set
@@ -90,10 +89,10 @@ export default function ScheduleCarousel({ events }) {
   }, [n])
 
   return (
-    <div ref={wrapRef} style={{ overflow: 'hidden', padding: '40px 0 60px' }}>
+    <div ref={wrapRef} style={{ padding: '60px 0 60px' }}>
       <div
         ref={trackRef}
-        style={{ display: 'flex', gap: 20, willChange: 'transform' }}
+        style={{ display: 'flex', gap: 24, willChange: 'transform' }}
       >
         {looped.map((ev, i) => {
           const date = formatDate(ev.event_date)

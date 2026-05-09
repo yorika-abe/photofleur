@@ -153,9 +153,9 @@ export default async function Home() {
 
       {/* ─── SCHEDULE ─── */}
       {eventsWithEntries && eventsWithEntries.length > 0 && (
-        <section style={{ background: '#f0f7fb', padding: '80px 0 0' }}>
+        <section style={{ background: '#f0f7fb', padding: '60px 0 0', overflow: 'hidden' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
-            <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8, borderBottom: '1px solid #c8e8f5', paddingBottom: 24 }}>
+            <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48, borderBottom: '1px solid #c8e8f5', paddingBottom: 24 }}>
               <div>
                 <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>Schedule</p>
                 <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>
