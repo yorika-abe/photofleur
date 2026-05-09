@@ -39,7 +39,7 @@ export default async function Home() {
   )
   const today = new Date().toISOString().split('T')[0]
 
-  const [{ data: events }, { data: models }, { data: siteSettingsRows }, { data: noticesData }, { data: repsData }, { data: staffData }] = await Promise.all([
+  const [{ data: events }, { data: models }, { data: siteSettingsRows }, { data: repsData }, { data: staffData }] = await Promise.all([
     adminSupabase
       .from('events')
       .select('id, event_date, event_type, title, subtitle, location_name, main_image, thumbnail_image')
@@ -54,41 +54,37 @@ export default async function Home() {
       .order('display_order', { ascending: true })
       .order('name', { ascending: true }),
     adminSupabase.from('site_settings').select('key, value'),
-    adminSupabase
-      .from('blog_posts')
-      .select('id, title, slug, cover_image, content, published_at, category')
-      .eq('category', 'news')
-      .eq('status', 'published')
-      .order('published_at', { ascending: false })
-      .limit(8),
     adminSupabase.from('representatives').select('id, photo, role, name, message, model_id').order('sort_order', { ascending: true }).order('created_at', { ascending: true }),
     adminSupabase.from('staff_private_info').select('display_name, real_name, profile_photo'),
   ])
-  const notices = noticesData || []
   const representatives = repsData || []
   const staffMembers = (staffData || []).map(s => ({
     name: s.display_name || s.real_name || '',
     photo: s.profile_photo || '',
   }))
 
-  const { data: blogCategories } = await adminSupabase
-    .from('blog_categories')
-    .select('name, slug')
-    .order('display_order', { ascending: true })
+  const siteSettings = Object.fromEntries((siteSettingsRows || []).map(r => [r.key, r.value]))
+  const featuredBlogIds = JSON.parse(siteSettings.blog_featured_ids || '[]')
 
-  // Fetch event entries separately
+  // Fetch event entries + blog categories + featured posts in parallel (after siteSettings)
   const eventIds = (events || []).map(e => e.id)
-  const { data: eventEntries } = eventIds.length > 0
-    ? await adminSupabase.from('event_entries').select('id, event_id, model_id, models(id, name, image)').in('event_id', eventIds)
-    : { data: [] }
+  const [{ data: blogCategories }, { data: eventEntries }, { data: noticesData }] = await Promise.all([
+    adminSupabase.from('blog_categories').select('name, slug').order('display_order', { ascending: true }),
+    eventIds.length > 0
+      ? adminSupabase.from('event_entries').select('id, event_id, model_id, models(id, name, image)').in('event_id', eventIds)
+      : { data: [] },
+    featuredBlogIds.length > 0
+      ? adminSupabase.from('blog_posts').select('id, title, slug, cover_image, content, published_at, category').in('id', featuredBlogIds).eq('status', 'published').order('published_at', { ascending: false })
+      : { data: [] },
+  ])
+  const notices = noticesData || []
+
   const entriesByEvent = {}
   for (const entry of (eventEntries || [])) {
     if (!entriesByEvent[entry.event_id]) entriesByEvent[entry.event_id] = []
     entriesByEvent[entry.event_id].push(entry)
   }
   const eventsWithEntries = (events || []).map(ev => ({ ...ev, event_entries: entriesByEvent[ev.id] || [] }))
-
-  const siteSettings = Object.fromEntries((siteSettingsRows || []).map(r => [r.key, r.value]))
   const heroImages = JSON.parse(siteSettings.hero_bg_images || '[]')
   const heroImagesMobile = JSON.parse(siteSettings.hero_bg_images_mobile || '[]')
   const heroVideo = siteSettings.hero_video || ''
@@ -259,9 +255,9 @@ export default async function Home() {
           <div className="reveal" style={{ marginBottom: 8, borderBottom: '1px solid #f0d6e8', paddingBottom: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
               <div>
-                <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#f4a0be', textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>News &amp; Notice</p>
+                <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#f4a0be', textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>Blog</p>
                 <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>
-                  お知らせ
+                  Blog
                 </h2>
               </div>
               <Link href="/blog" style={{ fontSize: 13, color: '#f4a0be', fontWeight: 600, textDecoration: 'none', borderBottom: '1px solid #f4a0be', paddingBottom: 2, whiteSpace: 'nowrap' }}>
@@ -284,7 +280,7 @@ export default async function Home() {
         </div>
         {notices.length > 0 && <NoticesCarousel notices={notices} />}
         {notices.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '40px 0 60px', color: '#ccc', fontSize: 14 }}>お知らせはまだありません</div>
+          <div style={{ textAlign: 'center', padding: '40px 0 60px', color: '#ccc', fontSize: 14 }}>お気に入りに設定されたブログ記事がありません</div>
         )}
       </section>
 

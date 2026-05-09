@@ -117,7 +117,7 @@ export default function NoticesCarousel({ notices }) {
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,25,50,0.88) 0%, rgba(10,25,50,0.05) 55%, transparent 100%)' }} />
                 <div style={{ position: 'absolute', top: 14, left: 14 }}>
                   <span style={{ fontSize: 9, letterSpacing: '0.2em', color: '#fff', textTransform: 'uppercase', background: 'rgba(244,160,190,0.75)', padding: '3px 8px', borderRadius: 2, fontWeight: 600 }}>
-                    Notice
+                    Blog
                   </span>
                 </div>
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 18px' }}>
