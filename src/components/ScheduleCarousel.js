@@ -46,15 +46,15 @@ export default function ScheduleCarousel({ events }) {
       cards.forEach((card, j) => {
         const dist = Math.abs(j - i)
         if (dist === 0) {
-          card.style.transform = 'scale(1.4)'
+          card.style.transform = 'scale(1.12)'
           card.style.opacity = '1'
           card.style.zIndex = '3'
         } else if (dist === 1) {
-          card.style.transform = 'scale(0.88)'
+          card.style.transform = 'scale(0.95)'
           card.style.opacity = '0.75'
           card.style.zIndex = '2'
         } else {
-          card.style.transform = 'scale(0.72)'
+          card.style.transform = 'scale(0.85)'
           card.style.opacity = '0.45'
           card.style.zIndex = '1'
         }
@@ -129,7 +129,7 @@ export default function ScheduleCarousel({ events }) {
                 width: 'clamp(160px, 28vw, 240px)',
                 textDecoration: 'none',
                 display: 'block',
-                transform: 'scale(0.72)',
+                transform: 'scale(0.85)',
                 opacity: '0.45',
                 transition: 'transform 0.4s ease, opacity 0.4s ease',
                 position: 'relative',
