@@ -43,21 +43,21 @@ function InfoCard({ model, info, onApprove, onReject }) {
 
       {open && (
         <div style={{ borderTop: '1px solid #f0f0f0', padding: '20px' }}>
-          {!hasInfo && !hasPending ? (
+          {!info ? (
             <p style={{ color: '#aaa', fontSize: 13, margin: 0 }}>まだ情報が入力されていません。</p>
           ) : (
             <>
               {/* 現在の情報 */}
-              {hasInfo && (
+              {(
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 700, color: '#888', marginBottom: 12, letterSpacing: '0.05em' }}>現在の登録情報</div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10, marginBottom: 16 }}>
-                    {Object.entries(FIELD_LABELS).map(([key, label]) => info[key] ? (
+                    {Object.entries(FIELD_LABELS).map(([key, label]) => (
                       <div key={key} style={{ background: '#f8fbff', borderRadius: 8, padding: '10px 14px' }}>
                         <div style={{ fontSize: 11, color: '#999', marginBottom: 2 }}>{label}</div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: '#1a3560' }}>{info[key]}</div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: info[key] ? '#1a3560' : '#bbb' }}>{info[key] || '未入力'}</div>
                       </div>
-                    ) : null)}
+                    ))}
                   </div>
                   {info.contract_agreed_at && (
                     <div style={{ fontSize: 12, color: '#388e3c', fontWeight: 600 }}>
@@ -69,7 +69,7 @@ function InfoCard({ model, info, onApprove, onReject }) {
 
               {/* 変更申請 */}
               {hasPending && (
-                <div style={{ marginTop: hasInfo ? 20 : 0, background: '#e3f2fd', borderRadius: 12, padding: '16px' }}>
+                <div style={{ marginTop: 20, background: '#e3f2fd', borderRadius: 12, padding: '16px' }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#1565c0', marginBottom: 12 }}>📋 変更申請内容</div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10, marginBottom: 16 }}>
                     {Object.entries(FIELD_LABELS).map(([key, label]) => {

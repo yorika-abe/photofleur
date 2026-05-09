@@ -328,7 +328,11 @@ export default function PrivateInfoPage() {
 
         {/* 振込先情報 */}
         <div style={{ background: '#fff', border: '1px solid #d6ecf5', borderRadius: 14, padding: '24px' }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 20 }}>振込先情報</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 4 }}>振込先情報</h2>
+          <p style={{ fontSize: 12, color: '#aaa', marginTop: 0, marginBottom: 20, lineHeight: 1.7 }}>
+            （基本的には現金手渡しなので任意です。）<br />
+            （平日撮影など特殊なケースで当日振り込み希望の場合は記入してください。）
+          </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <Field label="銀行名" value={form.bank_name} editing={isEditing} onChange={v => setForm(f => ({ ...f, bank_name: v }))} placeholder="○○銀行" />
             <Field label="支店名" value={form.branch_name} editing={isEditing} onChange={v => setForm(f => ({ ...f, branch_name: v }))} placeholder="○○支店" />
