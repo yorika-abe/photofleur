@@ -204,10 +204,10 @@ export default async function Home() {
       )}
 
       {/* ─── HOW IT WORKS ─── */}
-      <section style={{ background: '#fff', padding: '48px 0' }}>
+      <section style={{ background: '#fff', padding: '32px 0' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
-          <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>How it works</p>
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 8, fontWeight: 600 }}>How it works</p>
             <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>ご参加の流れ</h2>
           </div>
           <div className="how-grid" style={{ display: 'grid', gap: 1, background: '#e8f4f8' }}>
@@ -217,7 +217,7 @@ export default async function Home() {
               { num: '03', en: 'Confirm', ja: '確認メールを受け取る', desc: '予約確認メールが届いたら完了。当日はQRコードをご提示ください。' },
               { num: '04', en: 'Shoot', ja: '撮影当日', desc: 'カメラを持って現地へ。スタッフがご案内します。素敵な作品を作りましょう。' },
             ].map(item => (
-              <div key={item.num} className="how-item" style={{ background: '#fff', padding: '40px 28px' }}>
+              <div key={item.num} className="how-item" style={{ background: '#fff', padding: '20px 28px 28px' }}>
                 <div style={{ ...serif, fontSize: 'clamp(32px, 5vw, 64px)', fontWeight: 300, color: '#d6ecf5', lineHeight: 1, marginBottom: 16 }}>{item.num}</div>
                 <p style={{ fontSize: 10, letterSpacing: '0.15em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 6, fontWeight: 600 }}>{item.en}</p>
                 <h3 className="how-title" style={{ ...serif, fontSize: 'clamp(10px, 1.1vw, 15px)', fontWeight: 600, color: '#0d1f3a', marginBottom: 8, marginTop: 0, whiteSpace: 'nowrap' }}>{item.ja}</h3>
@@ -229,10 +229,10 @@ export default async function Home() {
       </section>
 
       {/* ─── AFTER SHOOT ─── */}
-      <section style={{ background: '#fff', padding: '48px 0' }}>
+      <section style={{ background: '#fff', padding: '32px 0' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
-          <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>After the shoot</p>
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 8, fontWeight: 600 }}>After the shoot</p>
             <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>撮影会終了後</h2>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 1, background: '#e8f4f8' }}>
@@ -242,7 +242,7 @@ export default async function Home() {
               { num: '03', en: 'Gallery', ja: 'ホームページへの掲載', desc: 'ご提供いただきました写真から選ばれたものが一定期間ホームページに使用されます。掲載報告のご連絡させていただきますのでご確認ください。' },
               { num: '04', en: 'Follow', ja: 'SNS・ブログをフォロー', desc: 'Xやインスタグラム・HPのブログやモデルページなど日々更新していきます。2025/09/16から開催されているまだ出来立ての撮影会の成長を見守っていただけたら嬉しいです。' },
             ].map(item => (
-              <div key={item.num} style={{ background: '#fff', padding: '40px 28px' }}>
+              <div key={item.num} style={{ background: '#fff', padding: '20px 28px 28px' }}>
                 <div style={{ ...serif, fontSize: 'clamp(32px, 5vw, 64px)', fontWeight: 300, color: '#d6ecf5', lineHeight: 1, marginBottom: 16 }}>{item.num}</div>
                 <p style={{ fontSize: 10, letterSpacing: '0.15em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 6, fontWeight: 600 }}>{item.en}</p>
                 <h3 style={{ ...serif, fontSize: 'clamp(13px, 1.2vw, 16px)', fontWeight: 600, color: '#0d1f3a', marginBottom: 12, marginTop: 0 }}>{item.ja}</h3>
