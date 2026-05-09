@@ -65,22 +65,9 @@ export default function HeroSection({ images, mobileImages }) {
   const [current, setCurrent] = useState(0)
   const [leavingSrc, setLeavingSrc] = useState(null)
   const [animKey, setAnimKey] = useState(0)
+  const [animPhase, setAnimPhase] = useState('idle') // 'idle' | 'moving' | 'fading'
   const [accentColor, setAccentColor] = useState(DEFAULT_COLOR)
   const currentRef = useRef(0)
-
-  useEffect(() => {
-    const id = 'hero-keyframes'
-    if (document.getElementById(id)) return
-    const style = document.createElement('style')
-    style.id = id
-    style.textContent = `
-      @keyframes heroMoveTL { from { transform: translate(0,0); } to { transform: translate(-50%,-50%); } }
-      @keyframes heroFadeTL { from { transform: translate(-50%,-50%); opacity: 1; } to { transform: translate(-115%,-115%); opacity: 0; } }
-      @keyframes heroMoveBR { from { transform: translate(0,0); } to { transform: translate(50%,50%); } }
-      @keyframes heroFadeBR { from { transform: translate(50%,50%); opacity: 1; } to { transform: translate(115%,115%); opacity: 0; } }
-    `
-    document.head.appendChild(style)
-  }, [])
 
   const imgs = images?.length > 0 ? images : []
   const mobileImgs = mobileImages?.length > 0 ? mobileImages : imgs
@@ -91,7 +78,6 @@ export default function HeroSection({ images, mobileImages }) {
       const prev = currentRef.current
       const next = (prev + 1) % imgs.length
       setLeavingSrc(imgs[prev])
-      
       setAnimKey(k => k + 1)
       setCurrent(next)
       currentRef.current = next
@@ -99,11 +85,21 @@ export default function HeroSection({ images, mobileImages }) {
     return () => clearInterval(t)
   }, [imgs, mobileImgs])
 
+  // Drive animation via CSS transitions (no keyframes needed)
   useEffect(() => {
-    if (!leavingSrc) return
-    const t = setTimeout(() => setLeavingSrc(null), 4400)
-    return () => clearTimeout(t)
-  }, [animKey]) // 2.2s animation + buffer
+    if (!leavingSrc) { setAnimPhase('idle'); return }
+
+    setAnimPhase('idle')
+
+    // After 2 paint cycles, start the move transition
+    const t0 = setTimeout(() => setAnimPhase('moving'), 30)
+    // After move settles + pause, start fade transition
+    const t1 = setTimeout(() => setAnimPhase('fading'), 2400)
+    // Clean up
+    const t2 = setTimeout(() => { setLeavingSrc(null); setAnimPhase('idle') }, 4500)
+
+    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2) }
+  }, [animKey])
 
   useEffect(() => {
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 640
@@ -111,6 +107,18 @@ export default function HeroSection({ images, mobileImages }) {
     if (!src) return
     extractAccentColor(src).then(setAccentColor)
   }, [current, imgs, mobileImgs])
+
+  const tlStyle = animPhase === 'moving'
+    ? { transform: 'translate(-50%,-50%)', opacity: 1, transition: 'transform 0.6s cubic-bezier(0,0,0.2,1)' }
+    : animPhase === 'fading'
+    ? { transform: 'translate(-115%,-115%)', opacity: 0, transition: 'transform 1.8s ease, opacity 1.8s ease' }
+    : { transform: 'translate(0,0)', opacity: 1, transition: 'none' }
+
+  const brStyle = animPhase === 'moving'
+    ? { transform: 'translate(50%,50%)', opacity: 1, transition: 'transform 0.6s cubic-bezier(0,0,0.2,1)' }
+    : animPhase === 'fading'
+    ? { transform: 'translate(115%,115%)', opacity: 0, transition: 'transform 1.8s ease, opacity 1.8s ease' }
+    : { transform: 'translate(0,0)', opacity: 1, transition: 'none' }
 
   return (
     <section style={{ position: 'relative', height: '100svh', minHeight: 600, overflow: 'hidden', display: 'flex', alignItems: 'flex-end', background: '#000' }}>
@@ -128,26 +136,24 @@ export default function HeroSection({ images, mobileImages }) {
         }
       </span>
 
-      {/* Leaving image — split animation */}
+      {/* Leaving image — diagonal split transition */}
       {leavingSrc && (
         <>
-          {/* Left half */}
-          {/* Upper-left triangle (top-right → bottom-left diagonal) */}
-          <div key={`tl-${animKey}`} style={{
+          <div style={{
             position: 'absolute', inset: 0, display: 'block',
             clipPath: 'polygon(0% 0%, 100% 0%, 0% 100%)',
-            animation: 'heroMoveTL 0.6s cubic-bezier(0,0,0.2,1) forwards, heroFadeTL 1.8s ease-in 2.4s forwards',
             zIndex: 5,
             filter: 'drop-shadow(6px 6px 14px rgba(0,0,0,0.65))',
+            ...tlStyle,
           }}>
             <img src={leavingSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
-          <div key={`br-${animKey}`} style={{
+          <div style={{
             position: 'absolute', inset: 0, display: 'block',
             clipPath: 'polygon(100% 0%, 100% 100%, 0% 100%)',
-            animation: 'heroMoveBR 0.6s cubic-bezier(0,0,0.2,1) forwards, heroFadeBR 1.8s ease-in 2.4s forwards',
             zIndex: 5,
             filter: 'drop-shadow(-6px -6px 14px rgba(0,0,0,0.65))',
+            ...brStyle,
           }}>
             <img src={leavingSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
@@ -201,7 +207,6 @@ export default function HeroSection({ images, mobileImages }) {
           {imgs.map((_, i) => (
             <button key={i} onClick={() => {
               setLeavingSrc(imgs[current])
-
               setAnimKey(k => k + 1)
               setCurrent(i)
               currentRef.current = i
