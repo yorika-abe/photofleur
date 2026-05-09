@@ -78,25 +78,25 @@ export default function AdminAvatarButton({ initialUrl, initialName, isOwner }) 
   }
 
   return (
-    <div ref={panelRef} style={{ position: 'fixed', top: 16, right: 20, zIndex: 1000 }}>
+    <div ref={panelRef} style={{ position: 'fixed', top: 88, right: 24, zIndex: 1000 }}>
       {/* Avatar button */}
       <button
         onClick={() => setOpen(v => !v)}
         style={{
-          width: 44, height: 44, borderRadius: '50%',
-          border: '2px solid rgba(26,53,96,0.3)',
+          width: 64, height: 64, borderRadius: '50%',
+          border: '2.5px solid rgba(26,53,96,0.25)',
           overflow: 'hidden', cursor: 'pointer',
           background: '#e8eef8', padding: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+          boxShadow: '0 3px 12px rgba(0,0,0,0.16)',
         }}
       >
         {avatarUrl
           ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          : <span style={{ fontSize: 20 }}>👤</span>
+          : <span style={{ fontSize: 28 }}>👤</span>
         }
       </button>
-      <div style={{ textAlign: 'center', fontSize: 10, color: '#555', marginTop: 2, fontWeight: 600, whiteSpace: 'nowrap' }}>
+      <div style={{ textAlign: 'center', fontSize: 11, color: '#444', marginTop: 4, fontWeight: 700, whiteSpace: 'nowrap' }}>
         {savedName}
       </div>
 
