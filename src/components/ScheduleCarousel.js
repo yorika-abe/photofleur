@@ -17,12 +17,11 @@ export default function ScheduleCarousel({ events }) {
   const wrapRef = useRef(null)
   const trackRef = useRef(null)
   const isPausedRef = useRef(false)
-  const rafRef = useRef(null)
 
   if (!events || events.length === 0) return null
 
   const n = events.length
-  const looped = [...events, ...events, ...events, ...events, ...events]
+  const looped = [...events, ...events, ...events]
 
   useEffect(() => {
     const wrap = wrapRef.current
@@ -34,54 +33,64 @@ export default function ScheduleCarousel({ events }) {
 
     const cardW = cards[0].offsetWidth
     const gap = 20
-    const oneSetWidth = n * (cardW + gap)
-    // Fixed spotlight at center of the wrapper
-    const spotlight = wrap.clientWidth / 2
+    const wrapW = wrap.clientWidth
 
-    // Start: pos such that the first card of set 1 is just off the right edge
-    // cards[0].offsetLeft = 0, so first card center at pos=0 is at cardW/2
-    // We want set 1 to start from right edge: pos = wrap.clientWidth - oneSetWidth
-    // But let's start with a reasonable position showing set 1 from the right
-    let pos = wrap.clientWidth
-    let lastActive = null
+    let idx = n // start at center of middle set
+    let isJumping = false
 
-    function tick() {
-      if (!isPausedRef.current) {
-        pos -= 0.8
-        // Seamless loop: when start of set 2 passes the left edge, jump forward one set
-        if (pos <= -(oneSetWidth * 3)) pos += oneSetWidth
-
-        track.style.transform = `translateX(${pos}px)`
-
-        // Active = card closest to spotlight (center of wrap)
-        let best = null, minDist = Infinity
-        cards.forEach(card => {
-          const center = card.offsetLeft + cardW / 2 + pos
-          const dist = Math.abs(center - spotlight)
-          if (dist < minDist) { minDist = dist; best = card }
-        })
-
-        if (best !== lastActive) {
-          if (lastActive) {
-            lastActive.style.transform = 'scale(0.85)'
-            lastActive.style.opacity = '0.55'
-          }
-          if (best) {
-            best.style.transform = 'scale(1.08)'
-            best.style.opacity = '1'
-          }
-          lastActive = best
-        }
-      }
-      rafRef.current = requestAnimationFrame(tick)
+    function offset(i) {
+      return -(i * (cardW + gap) + cardW / 2 - wrapW / 2)
     }
 
-    track.style.transform = `translateX(${pos}px)`
-    rafRef.current = requestAnimationFrame(tick)
+    function applyStyles(i) {
+      cards.forEach((card, j) => {
+        const dist = Math.abs(j - i)
+        if (dist === 0) {
+          card.style.transform = 'scale(1.4)'
+          card.style.opacity = '1'
+          card.style.zIndex = '3'
+        } else if (dist === 1) {
+          card.style.transform = 'scale(0.88)'
+          card.style.opacity = '0.75'
+          card.style.zIndex = '2'
+        } else {
+          card.style.transform = 'scale(0.72)'
+          card.style.opacity = '0.45'
+          card.style.zIndex = '1'
+        }
+      })
+    }
+
+    function goTo(i, animate) {
+      track.style.transition = animate
+        ? 'transform 0.65s cubic-bezier(0.25,0.46,0.45,0.94)'
+        : 'none'
+      track.style.transform = `translateX(${offset(i)}px)`
+      applyStyles(i)
+    }
+
+    // Set initial position immediately (no animation)
+    goTo(idx, false)
+
+    const interval = setInterval(() => {
+      if (isPausedRef.current || isJumping) return
+      idx++
+      goTo(idx, true)
+
+      // Seamless loop: after transition, silently jump back one set if needed
+      if (idx >= n * 2) {
+        isJumping = true
+        setTimeout(() => {
+          idx -= n
+          goTo(idx, false)
+          isJumping = false
+        }, 700)
+      }
+    }, 3500)
 
     const pause = () => { isPausedRef.current = true }
     const resume = () => { isPausedRef.current = false }
-    const touchResume = () => setTimeout(resume, 1500)
+    const touchResume = () => setTimeout(resume, 2000)
 
     wrap.addEventListener('mouseenter', pause)
     wrap.addEventListener('mouseleave', resume)
@@ -89,7 +98,7 @@ export default function ScheduleCarousel({ events }) {
     wrap.addEventListener('touchend', touchResume)
 
     return () => {
-      cancelAnimationFrame(rafRef.current)
+      clearInterval(interval)
       wrap.removeEventListener('mouseenter', pause)
       wrap.removeEventListener('mouseleave', resume)
       wrap.removeEventListener('touchstart', pause)
@@ -98,14 +107,10 @@ export default function ScheduleCarousel({ events }) {
   }, [n])
 
   return (
-    <div ref={wrapRef} style={{ overflow: 'hidden', padding: '32px 0 56px' }}>
+    <div ref={wrapRef} style={{ overflow: 'hidden', padding: '40px 0 60px' }}>
       <div
         ref={trackRef}
-        style={{
-          display: 'flex',
-          gap: 20,
-          willChange: 'transform',
-        }}
+        style={{ display: 'flex', gap: 20, willChange: 'transform' }}
       >
         {looped.map((ev, i) => {
           const date = formatDate(ev.event_date)
@@ -121,16 +126,22 @@ export default function ScheduleCarousel({ events }) {
               draggable={false}
               style={{
                 flexShrink: 0,
-                width: 'clamp(180px, 30vw, 260px)',
+                width: 'clamp(160px, 28vw, 240px)',
                 textDecoration: 'none',
                 display: 'block',
-                transform: 'scale(0.85)',
-                opacity: '0.55',
+                transform: 'scale(0.72)',
+                opacity: '0.45',
                 transition: 'transform 0.4s ease, opacity 0.4s ease',
                 position: 'relative',
               }}
             >
-              <div style={{ aspectRatio: '4/5', borderRadius: 8, overflow: 'hidden', background: thumbSrc ? '#e8e0f0' : (isStreet ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : 'linear-gradient(160deg,#f4d6e8,#e8b8d0)'), boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
+              <div style={{
+                aspectRatio: '4/5',
+                borderRadius: 10,
+                overflow: 'hidden',
+                background: thumbSrc ? '#e8e0f0' : (isStreet ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : 'linear-gradient(160deg,#f4d6e8,#e8b8d0)'),
+                boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+              }}>
                 {thumbSrc
                   ? <img src={thumbSrc} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                   : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -139,7 +150,7 @@ export default function ScheduleCarousel({ events }) {
                 }
               </div>
               <div style={{ padding: '12px 4px 0', textAlign: 'center' }}>
-                <div style={{ ...serif, fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 700, color: '#0d1f3a', lineHeight: 1, marginBottom: 6 }}>
+                <div style={{ ...serif, fontSize: 'clamp(18px, 3.5vw, 26px)', fontWeight: 700, color: '#0d1f3a', lineHeight: 1, marginBottom: 6 }}>
                   {date}（{dow}）
                 </div>
                 {ev.title && <div style={{ fontSize: 12, fontWeight: 600, color: '#333', marginBottom: 3 }}>{ev.title}</div>}
