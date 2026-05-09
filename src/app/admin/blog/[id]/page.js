@@ -74,7 +74,7 @@ export default function AdminBlogEditPage() {
 
     if (isNew) {
       const { data: { user } } = await supabase.auth.getUser()
-      const { data, error } = await supabase.from('blog_posts').insert({ ...updates, author_id: user?.id }).select('id').single()
+      const { data, error } = await supabase.from('blog_posts').insert({ ...updates, author_id: user?.id, posted_as_admin: true }).select('id').single()
       if (error) { alert('エラー: ' + error.message); setSaving(false); return }
       router.replace(`/admin/blog/${data.id}`)
     } else {

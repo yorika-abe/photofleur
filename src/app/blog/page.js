@@ -44,7 +44,7 @@ function BlogContent() {
     setLoading(true)
     let query = getSupabase()
       .from('blog_posts')
-      .select('id, title, slug, cover_image, category, published_at, author_id, user_profiles!author_id(name)')
+      .select('id, title, slug, cover_image, category, published_at, author_id, posted_as_admin, user_profiles!author_id(name)')
       .eq('status', 'published')
       .order('published_at', { ascending: sort === 'asc' })
     if (activeCategory) query = query.eq('category', activeCategory)
@@ -136,10 +136,10 @@ function BlogContent() {
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                     {(() => {
                       const adminEntry = authors.find(a => a.id === '__admin__')
-                      const isAdminAuthor = adminEntry?.adminIds?.includes(post.author_id)
+                      const isAdminAuthor = post.posted_as_admin && adminEntry?.adminIds?.includes(post.author_id)
                       const authorInfo = isAdminAuthor ? adminEntry : authors.find(a => a.id === post.author_id)
                       const name = isAdminAuthor ? '運営' : (authorInfo?.name || post.user_profiles?.name)
-                      const avatar = authorInfo?.avatar
+                      const avatar = isAdminAuthor ? authorInfo?.avatar : null
                       return (
                         <>
                           {avatar && <img src={avatar} alt="" style={{ width: 18, height: 18, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />}

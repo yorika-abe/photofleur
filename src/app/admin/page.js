@@ -34,6 +34,7 @@ export default async function AdminPage() {
     { count: unreadActivityReports },
     { count: newModelInvites },
     { count: pendingStaffApps },
+    { count: pendingBlogReview },
   ] = await Promise.all([
     supabase.from('model_shifts').select('*', { count: 'exact', head: true }).eq('status', 'pending_approval').gte('event_date', today),
     supabase.from('models').select('*', { count: 'exact', head: true }).not('pending_data', 'is', null),
@@ -48,6 +49,7 @@ export default async function AdminPage() {
     supabase.from('external_activity_reports').select('*', { count: 'exact', head: true }).eq('is_read', false),
     supabase.from('user_profiles').select('*', { count: 'exact', head: true }).eq('registered_via_invite', true).eq('invite_notif_seen', false),
     supabase.from('staff_recruitment_applications').select('*', { count: 'exact', head: true }).eq('status', 'applied'),
+    supabase.from('blog_posts').select('*', { count: 'exact', head: true }).eq('status', 'pending_review'),
   ])
 
   return (
@@ -68,7 +70,7 @@ export default async function AdminPage() {
           { href: '/admin/schedule', label: 'イベント作成', icon: '📍' },
           { href: '/admin/shifts', label: 'シフト管理', icon: '🗓️', badge: pendingShifts ?? 0 },
           { href: '/admin/coupons', label: 'クーポン管理', icon: '🎟️' },
-          { href: '/admin/blog', label: 'ブログ管理', icon: '✍️' },
+          { href: '/admin/blog', label: 'ブログ管理', icon: '✍️', badge: pendingBlogReview ?? 0 },
           { href: '/admin/feedback', label: 'ご意見箱', icon: '📮', badge: unreadFeedback ?? 0 },
           { href: '/admin/media', label: 'メディア管理', icon: '🖼️' },
           { href: '/admin/representative', label: '代表メッセージ', icon: '✉️' },

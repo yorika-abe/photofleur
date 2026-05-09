@@ -38,8 +38,9 @@ export default async function BlogPostPage({ params }) {
       .maybeSingle()
     if (profile) {
       const isAdminUser = profile.role === 'owner' || profile.roles?.includes('admin')
-      authorName = profile.name || null
-      authorAvatar = isAdminUser ? adminAvatarUrl : null
+      const showAsAdmin = isAdminUser && post.posted_as_admin
+      authorName = showAsAdmin ? (profile.name || '運営') : (profile.name || null)
+      authorAvatar = showAsAdmin ? adminAvatarUrl : null
     }
   }
 

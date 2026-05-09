@@ -4,7 +4,7 @@ export async function GET() {
   const admin = await createSupabaseAdminClient()
   const [{ data: postsData }, { data: avatarSetting }] = await Promise.all([
     admin.from('blog_posts')
-      .select('author_id, user_profiles!author_id(name, role, roles)')
+      .select('author_id, posted_as_admin, user_profiles!author_id(name, role, roles)')
       .eq('status', 'published'),
     admin.from('site_settings').select('value').eq('key', 'admin_avatar_url').maybeSingle(),
   ])
@@ -19,8 +19,9 @@ export async function GET() {
   for (const p of postsData) {
     if (!p.author_id) continue
     const profile = p.user_profiles
-    const isAdmin = profile?.role === 'owner' || profile?.roles?.includes('admin')
-    if (isAdmin) {
+    const isAdminRole = profile?.role === 'owner' || profile?.roles?.includes('admin')
+
+    if (isAdminRole && p.posted_as_admin) {
       if (!seenAdmins.has(p.author_id)) {
         seenAdmins.add(p.author_id)
         adminIds.push(p.author_id)
