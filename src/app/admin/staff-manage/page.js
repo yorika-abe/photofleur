@@ -17,73 +17,84 @@ function StaffCard({ staff, onApprove, onReject, actionLoading }) {
   const hasPending = !!info?.pending_changes
   const hasInfo = !!(info?.real_name)
   const contractAgreed = !!info?.contract_agreed_at
+  const photo = info?.profile_photo || ''
+  const displayName = info?.display_name || staff.name || '（名前なし）'
 
   return (
     <div style={{ background: '#fff', border: hasPending ? '2px solid #90caf9' : '1px solid #e5e5e5', borderRadius: 14, overflow: 'hidden' }}>
       <div onClick={() => setOpen(o => !o)}
         style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', cursor: 'pointer' }}>
-        <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#e8f0fb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🐈‍⬛</div>
+        <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#e8f0fb', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {photo
+            ? <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : <span style={{ fontSize: 20 }}>🐈‍⬛</span>}
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, color: '#0d1f3a', fontSize: 15 }}>{staff.name || '（名前なし）'}</div>
-          <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{staff.email || ''}</div>
+          <div style={{ fontWeight: 700, color: '#0d1f3a', fontSize: 15 }}>{displayName}</div>
+          <div style={{ fontSize: 12, marginTop: 2, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {contractAgreed
+              ? <span style={{ color: '#388e3c', fontWeight: 600 }}>✅ 規約締結済み</span>
+              : <span style={{ color: '#999' }}>規約未締結</span>}
+            {!hasInfo && <span style={{ color: '#bbb' }}>情報未登録</span>}
+            {hasPending && <span style={{ background: '#1565c0', color: '#fff', borderRadius: 4, padding: '1px 8px', fontWeight: 700 }}>変更申請あり</span>}
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-          {hasPending && <span style={{ background: '#e3f2fd', color: '#1565c0', borderRadius: 8, padding: '3px 10px', fontSize: 12, fontWeight: 700 }}>変更申請あり</span>}
-          {contractAgreed
-            ? <span style={{ background: '#e8f5e9', color: '#388e3c', borderRadius: 8, padding: '3px 10px', fontSize: 12, fontWeight: 700 }}>✅ 規約締結済み</span>
-            : <span style={{ background: '#fff8e1', color: '#f57f17', borderRadius: 8, padding: '3px 10px', fontSize: 12, fontWeight: 700 }}>規約未締結</span>}
-          {!hasInfo && <span style={{ background: '#ffebee', color: '#c62828', borderRadius: 8, padding: '3px 10px', fontSize: 12, fontWeight: 700 }}>情報未登録</span>}
-          <span style={{ fontSize: 18, color: '#aaa' }}>{open ? '▲' : '▼'}</span>
-        </div>
+        <span style={{ color: '#aaa', fontSize: 18 }}>{open ? '▲' : '▼'}</span>
       </div>
 
       {open && (
-        <div style={{ padding: '0 20px 18px', borderTop: '1px solid #f0f0f0' }}>
+        <div style={{ borderTop: '1px solid #f0f0f0', padding: '16px 20px' }}>
           {!hasInfo ? (
-            <p style={{ color: '#bbb', fontSize: 13, paddingTop: 14 }}>非公開情報がまだ登録されていません。</p>
+            <p style={{ color: '#aaa', fontSize: 13, margin: 0 }}>非公開情報がまだ登録されていません。</p>
           ) : (
             <>
+              {/* 現在の情報 */}
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', marginBottom: 8, letterSpacing: '0.05em' }}>現在の登録情報</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 4, marginBottom: 8 }}>
+                  {Object.entries(FIELD_LABELS).map(([key, label]) => (
+                    <div key={key} style={{ borderRadius: 6, padding: '6px 10px', borderBottom: '1px solid #f0f0f0' }}>
+                      <div style={{ fontSize: 10, color: '#aaa', marginBottom: 1 }}>{label}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: info[key] ? '#1a3560' : '#bbb' }}>{info[key] || '未入力'}</div>
+                    </div>
+                  ))}
+                </div>
+                {contractAgreed && (
+                  <div style={{ fontSize: 11, color: '#388e3c', fontWeight: 600, marginTop: 4 }}>
+                    締結日：{new Date(info.contract_agreed_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                )}
+              </div>
+
+              {/* 変更申請 */}
               {hasPending && (
-                <div style={{ background: '#e3f2fd', borderRadius: 10, padding: '14px 16px', margin: '14px 0' }}>
-                  <div style={{ fontWeight: 700, fontSize: 13, color: '#1565c0', marginBottom: 10 }}>変更申請内容</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div style={{ marginTop: 16, background: '#e3f2fd', borderRadius: 12, padding: '14px 16px' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1565c0', marginBottom: 10 }}>📋 変更申請内容</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8, marginBottom: 14 }}>
                     {Object.entries(FIELD_LABELS).map(([key, label]) => {
-                      const cur = info[key]
-                      const next = info.pending_changes[key]
-                      if (cur === next) return null
+                      const oldVal = info[key] || ''
+                      const newVal = info.pending_changes[key] || ''
+                      const changed = oldVal !== newVal
+                      if (!newVal && !changed) return null
                       return (
-                        <div key={key} style={{ background: '#fff', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>
-                          <div style={{ color: '#888', fontSize: 11, marginBottom: 3 }}>{label}</div>
-                          <div style={{ textDecoration: 'line-through', color: '#bbb' }}>{cur || '（空）'}</div>
-                          <div style={{ color: '#1a3560', fontWeight: 700 }}>→ {next || '（空）'}</div>
+                        <div key={key} style={{ background: changed ? '#dbeafe' : '#f8fbff', borderRadius: 8, padding: '8px 12px', border: changed ? '1px solid #90caf9' : 'none' }}>
+                          <div style={{ fontSize: 10, color: '#888', marginBottom: 2 }}>{label}{changed ? ' ✏️' : ''}</div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#1a3560' }}>{newVal || '（空）'}</div>
+                          {changed && oldVal && <div style={{ fontSize: 11, color: '#aaa', textDecoration: 'line-through', marginTop: 2 }}>{oldVal}</div>}
                         </div>
                       )
                     })}
                   </div>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                    <button onClick={() => onReject(staff.id)} disabled={!!actionLoading}
-                      style={{ flex: 1, background: '#ffebee', color: '#c62828', border: 'none', borderRadius: 8, padding: '9px', fontWeight: 700, fontSize: 13, cursor: actionLoading ? 'not-allowed' : 'pointer', opacity: actionLoading ? 0.6 : 1 }}>
-                      却下
-                    </button>
+                  <div style={{ display: 'flex', gap: 10 }}>
                     <button onClick={() => onApprove(staff.id)} disabled={!!actionLoading}
-                      style={{ flex: 2, background: actionLoading ? '#ccc' : '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '9px', fontWeight: 700, fontSize: 13, cursor: actionLoading ? 'not-allowed' : 'pointer' }}>
-                      {actionLoading === staff.id ? '処理中...' : '変更を承認'}
+                      style={{ background: actionLoading === staff.id ? '#ccc' : '#388e3c', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontWeight: 700, fontSize: 14, cursor: actionLoading ? 'not-allowed' : 'pointer' }}>
+                      {actionLoading === staff.id ? '処理中...' : '承認する'}
+                    </button>
+                    <button onClick={() => onReject(staff.id)} disabled={!!actionLoading}
+                      style={{ background: '#e53935', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontWeight: 700, fontSize: 14, cursor: actionLoading ? 'not-allowed' : 'pointer', opacity: actionLoading ? 0.6 : 1 }}>
+                      却下する
                     </button>
                   </div>
-                </div>
-              )}
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
-                {Object.entries(FIELD_LABELS).map(([key, label]) => (
-                  <div key={key} style={{ background: '#f8fbff', borderRadius: 8, padding: '10px 14px' }}>
-                    <div style={{ fontSize: 11, color: '#888', marginBottom: 3 }}>{label}</div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: info[key] ? '#1a3560' : '#bbb' }}>{info[key] || '未入力'}</div>
-                  </div>
-                ))}
-              </div>
-              {contractAgreed && (
-                <div style={{ marginTop: 10, fontSize: 12, color: '#388e3c' }}>
-                  規約締結日：{new Date(info.contract_agreed_at).toLocaleDateString('ja-JP')}
                 </div>
               )}
             </>
@@ -110,6 +121,7 @@ export default function StaffManagePage() {
   }
 
   async function handleApprove(userId) {
+    if (!confirm('この変更申請を承認しますか？')) return
     setActionLoading(userId)
     await fetch('/api/admin/staff-manage', {
       method: 'PATCH',
@@ -121,6 +133,7 @@ export default function StaffManagePage() {
   }
 
   async function handleReject(userId) {
+    if (!confirm('この変更申請を却下しますか？')) return
     setActionLoading(userId)
     await fetch('/api/admin/staff-manage', {
       method: 'PATCH',
