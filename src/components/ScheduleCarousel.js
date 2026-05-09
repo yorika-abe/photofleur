@@ -18,58 +18,88 @@ function formatDow(dateStr) {
 
 export default function ScheduleCarousel({ events }) {
   const trackRef = useRef(null)
-  const [activeIndex, setActiveIndex] = useState(0)
-  const activeIndexRef = useRef(0)
+  const [activeReal, setActiveReal] = useState(0)
+  const displayIndexRef = useRef(0)
   const isPausedRef = useRef(false)
+  const isJumpingRef = useRef(false)
+
+  if (!events || events.length === 0) return null
+
+  const n = events.length
+  // Triple the events for seamless infinite loop
+  const looped = [...events, ...events, ...events]
 
   useEffect(() => {
     const track = trackRef.current
     if (!track) return
+
+    function getCardAt(i) {
+      return track.querySelectorAll('.s-card')[i]
+    }
+
+    function scrollToIndex(i, smooth) {
+      const card = getCardAt(i)
+      if (!card) return
+      const left = card.offsetLeft - (track.clientWidth - card.offsetWidth) / 2
+      track.scrollTo({ left, behavior: smooth ? 'smooth' : 'instant' })
+    }
+
+    // Start in the middle set
+    displayIndexRef.current = n
+    setTimeout(() => {
+      scrollToIndex(n, false)
+      setActiveReal(0)
+    }, 50)
+
     const handleScroll = () => {
+      if (isJumpingRef.current) return
       const center = track.scrollLeft + track.clientWidth / 2
       const cards = track.querySelectorAll('.s-card')
-      let closest = 0
-      let minDist = Infinity
+      let closest = 0, minDist = Infinity
       cards.forEach((card, i) => {
-        const cardCenter = card.offsetLeft + card.offsetWidth / 2
-        const dist = Math.abs(center - cardCenter)
+        const dist = Math.abs(card.offsetLeft + card.offsetWidth / 2 - center)
         if (dist < minDist) { minDist = dist; closest = i }
       })
-      activeIndexRef.current = closest
-      setActiveIndex(closest)
+      displayIndexRef.current = closest
+      setActiveReal(closest % n)
     }
+
     track.addEventListener('scroll', handleScroll, { passive: true })
     track.addEventListener('mouseenter', () => { isPausedRef.current = true })
     track.addEventListener('mouseleave', () => { isPausedRef.current = false })
-    track.addEventListener('touchstart', () => { isPausedRef.current = true })
+    track.addEventListener('touchstart', () => { isPausedRef.current = true }, { passive: true })
     track.addEventListener('touchend', () => { setTimeout(() => { isPausedRef.current = false }, 2000) })
-    setTimeout(() => {
-      const cards = track.querySelectorAll('.s-card')
-      if (cards.length > 0) {
-        const card = cards[0]
-        track.scrollLeft = card.offsetWidth * 0 - (track.clientWidth - card.offsetWidth) / 2
-        handleScroll()
-      }
-    }, 50)
 
     const interval = setInterval(() => {
-      if (isPausedRef.current) return
-      const t = trackRef.current
-      if (!t) return
-      const cards = t.querySelectorAll('.s-card')
-      if (!cards.length) return
-      const nextIndex = (activeIndexRef.current + 1) % cards.length
-      const card = cards[nextIndex]
-      t.scrollTo({ left: card.offsetLeft - (t.clientWidth - card.offsetWidth) / 2, behavior: 'smooth' })
+      if (isPausedRef.current || isJumpingRef.current) return
+      const next = displayIndexRef.current + 1
+      scrollToIndex(next, true)
+      displayIndexRef.current = next
+
+      // After animation, silently jump to middle-set equivalent if in outer thirds
+      setTimeout(() => {
+        const cur = displayIndexRef.current
+        if (cur >= n * 2) {
+          isJumpingRef.current = true
+          const target = cur - n
+          scrollToIndex(target, false)
+          displayIndexRef.current = target
+          setTimeout(() => { isJumpingRef.current = false }, 50)
+        } else if (cur < n) {
+          isJumpingRef.current = true
+          const target = cur + n
+          scrollToIndex(target, false)
+          displayIndexRef.current = target
+          setTimeout(() => { isJumpingRef.current = false }, 50)
+        }
+      }, 500)
     }, 4000)
 
     return () => {
       track.removeEventListener('scroll', handleScroll)
       clearInterval(interval)
     }
-  }, [])
-
-  if (!events || events.length === 0) return null
+  }, [n])
 
   return (
     <div style={{ position: 'relative', overflow: 'hidden' }}>
@@ -86,16 +116,17 @@ export default function ScheduleCarousel({ events }) {
           alignItems: 'flex-start',
         }}
       >
-        {events.map((ev, i) => {
+        {looped.map((ev, i) => {
+          const realI = i % n
           const date = formatDate(ev.event_date)
           const dow = formatDow(ev.event_date)
           const isStreet = ev.event_type === 'street'
-          const isActive = i === activeIndex
+          const isActive = realI === activeReal
           const thumbSrc = ev.thumbnail_image || ev.main_image
 
           return (
             <Link
-              key={ev.id}
+              key={`${ev.id}-${i}`}
               href={`/events/${ev.id}`}
               className="s-card"
               style={{
@@ -111,7 +142,6 @@ export default function ScheduleCarousel({ events }) {
                 opacity: isActive ? 1 : 0.65,
               }}
             >
-              {/* 4:5 image, no overlay */}
               <div style={{ aspectRatio: '4/5', borderRadius: 8, overflow: 'hidden', background: thumbSrc ? '#e8e0f0' : (isStreet ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : 'linear-gradient(160deg,#f4d6e8,#e8b8d0)'), boxShadow: isActive ? '0 16px 48px rgba(0,0,0,0.22)' : '0 4px 12px rgba(0,0,0,0.1)' }}>
                 {thumbSrc
                   ? <img src={thumbSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
@@ -120,8 +150,6 @@ export default function ScheduleCarousel({ events }) {
                     </div>
                 }
               </div>
-
-              {/* text below image, centered */}
               <div style={{ padding: '12px 4px 0', textAlign: 'center' }}>
                 <div style={{ ...serif, fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 700, color: '#0d1f3a', lineHeight: 1, marginBottom: 6, letterSpacing: '0.02em' }}>
                   {date}（{dow}）
