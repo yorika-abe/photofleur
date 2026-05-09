@@ -92,25 +92,26 @@ export default function HeroSection({ images, mobileImages }) {
   }, [animKey])
 
   useEffect(() => {
-    const src = imgs[current]
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640
+    const src = (isMobile && mobileImgs[current]) ? mobileImgs[current] : imgs[current]
     if (!src) return
     extractAccentColor(src).then(setAccentColor)
-  }, [current, imgs])
+  }, [current, imgs, mobileImgs])
 
   return (
     <section style={{ position: 'relative', height: '100svh', minHeight: 600, overflow: 'hidden', display: 'flex', alignItems: 'flex-end', background: '#000' }}>
       <style>{`
         @keyframes heroSplitTopLeft {
-          0%   { transform: translate(0,0);       opacity: 1; animation-timing-function: cubic-bezier(0.7,0,0.8,1); }
-          28%  { transform: translate(-50%,-50%); opacity: 1; animation-timing-function: linear; }
-          46%  { transform: translate(-50%,-50%); opacity: 1; animation-timing-function: ease-out; }
+          0%   { transform: translate(0,0);         opacity: 1; animation-timing-function: cubic-bezier(0,0,0.2,1); }
+          28%  { transform: translate(-50%,-50%);   opacity: 1; animation-timing-function: linear; }
+          46%  { transform: translate(-50%,-50%);   opacity: 1; animation-timing-function: ease-in; }
           100% { transform: translate(-115%,-115%); opacity: 0; }
         }
         @keyframes heroSplitBottomRight {
-          0%   { transform: translate(0,0);      opacity: 1; animation-timing-function: cubic-bezier(0.7,0,0.8,1); }
-          28%  { transform: translate(50%,50%);  opacity: 1; animation-timing-function: linear; }
-          46%  { transform: translate(50%,50%);  opacity: 1; animation-timing-function: ease-out; }
-          100% { transform: translate(115%,115%); opacity: 0; }
+          0%   { transform: translate(0,0);        opacity: 1; animation-timing-function: cubic-bezier(0,0,0.2,1); }
+          28%  { transform: translate(50%,50%);    opacity: 1; animation-timing-function: linear; }
+          46%  { transform: translate(50%,50%);    opacity: 1; animation-timing-function: ease-in; }
+          100% { transform: translate(115%,115%);  opacity: 0; }
         }
       `}</style>
 
