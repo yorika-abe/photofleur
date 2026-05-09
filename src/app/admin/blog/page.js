@@ -73,9 +73,7 @@ export default function AdminBlogPage() {
   }
 
   async function toggleFeatured(id) {
-    const { data: settingRow } = await supabase.from('site_settings').select('value').eq('key', 'blog_featured_ids').maybeSingle()
-    const current = JSON.parse(settingRow?.value || '[]')
-    const next = current.includes(id) ? current.filter(x => x !== id) : [...current, id]
+    const next = featuredIds.includes(id) ? featuredIds.filter(x => x !== id) : [...featuredIds, id]
     await supabase.from('site_settings').upsert({ key: 'blog_featured_ids', value: JSON.stringify(next) }, { onConflict: 'key' })
     setFeaturedIds(next)
   }
@@ -129,7 +127,7 @@ export default function AdminBlogPage() {
         <select value={catFilter} onChange={e => setCatFilter(e.target.value)}
           style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, background: '#fff' }}>
           <option value="">カテゴリー：すべて</option>
-          <option value="__none__">未カテゴリー</option>
+          <option value="__none__">未分類</option>
           {categories.map(c => <option key={c.id} value={c.slug}>{c.name}</option>)}
         </select>
         {authors.length > 1 && (

@@ -1,12 +1,12 @@
 import Link from 'next/link'
-import { createClient } from '@supabase/supabase-js'
+import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import { buildMetadata } from '@/lib/ogp'
 
 export async function generateMetadata({ params }) {
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  const admin = await createSupabaseAdminClient()
   const { slug } = await params
-  const { data } = await supabase.from('blog_posts').select('title, cover_image').eq('slug', slug).single()
+  const { data } = await admin.from('blog_posts').select('title, cover_image').eq('slug', slug).single()
   return buildMetadata({
     title: data?.title ? `${data.title} | PhotoFleur Blog` : 'ブログ | PhotoFleur',
     path: `/blog/${slug}`,
@@ -15,25 +15,33 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function BlogPostPage({ params }) {
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  const admin = await createSupabaseAdminClient()
   const { slug } = await params
 
-  const { data: post } = await supabase
-    .from('blog_posts')
-    .select('*')
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single()
+  const [{ data: post }, { data: avatarSetting }] = await Promise.all([
+    admin.from('blog_posts').select('*').eq('slug', slug).eq('status', 'published').single(),
+    admin.from('site_settings').select('value').eq('key', 'admin_avatar_url').maybeSingle(),
+  ])
 
   if (!post) notFound()
 
-  let author = null
+  const adminAvatarUrl = avatarSetting?.value || null
+
+  let authorName = null
+  let authorAvatar = null
   if (post.author_id) {
-    const { data } = await supabase.from('models').select('name, image').eq('user_id', post.author_id).maybeSingle()
-    author = data
+    const { data: profile } = await admin
+      .from('user_profiles')
+      .select('name, role, roles')
+      .eq('id', post.author_id)
+      .maybeSingle()
+    if (profile) {
+      const isAdminUser = profile.role === 'owner' || profile.roles?.includes('admin')
+      authorName = profile.name || null
+      authorAvatar = isAdminUser ? adminAvatarUrl : null
+    }
   }
 
-  // HTMLタグが含まれているか判定（リッチエディター出力）
   const isHtml = (post.content || '').includes('<')
 
   return (
@@ -51,12 +59,12 @@ export default async function BlogPostPage({ params }) {
           {post.title}
         </h1>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
-          {author?.image && (
-            <img src={author.image} alt={author.name} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
+          {authorAvatar && (
+            <img src={authorAvatar} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
           )}
           <div style={{ fontSize: 13, color: '#aaa' }}>
-            {author?.name && <span style={{ marginRight: 8 }}>{author.name}</span>}
+            {authorName && <span style={{ marginRight: 8, color: '#888' }}>{authorName}</span>}
             {post.published_at && new Date(post.published_at).toLocaleDateString('ja-JP')}
           </div>
         </div>

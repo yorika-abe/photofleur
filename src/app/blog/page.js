@@ -35,20 +35,9 @@ function BlogContent() {
   useEffect(() => { load() }, [activeCategory, activeAuthor, sort])
 
   async function loadAuthors() {
-    const { data } = await getSupabase()
-      .from('blog_posts')
-      .select('author_id, user_profiles!author_id(name)')
-      .eq('status', 'published')
-    if (!data) return
-    const seen = new Set()
-    const unique = []
-    for (const p of data) {
-      if (p.author_id && !seen.has(p.author_id)) {
-        seen.add(p.author_id)
-        unique.push({ id: p.author_id, name: p.user_profiles?.name || p.author_id })
-      }
-    }
-    setAuthors(unique)
+    const res = await fetch('/api/blog/authors')
+    const data = await res.json()
+    setAuthors(Array.isArray(data) ? data : [])
   }
 
   async function load() {
@@ -140,9 +129,17 @@ function BlogContent() {
                   )}
                   <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', margin: 0, lineHeight: 1.5 }}>{post.title}</h2>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                    {post.user_profiles?.name && (
-                      <span style={{ fontSize: 11, color: '#888' }}>{post.user_profiles.name}</span>
-                    )}
+                    {(() => {
+                      const authorInfo = authors.find(a => a.id === post.author_id)
+                      const name = authorInfo?.name || post.user_profiles?.name
+                      const avatar = authorInfo?.avatar
+                      return (
+                        <>
+                          {avatar && <img src={avatar} alt="" style={{ width: 18, height: 18, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />}
+                          {name && <span style={{ fontSize: 11, color: '#888' }}>{name}</span>}
+                        </>
+                      )
+                    })()}
                     {post.published_at && (
                       <span style={{ fontSize: 11, color: '#aaa' }}>
                         {new Date(post.published_at).toLocaleDateString('ja-JP')}

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { cookies } from 'next/headers'
-import { createSupabaseAdminClient } from '@/lib/supabase-server'
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase-server'
+import AdminAvatarButton from '@/components/AdminAvatarButton'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: '管理画面 | PhotoFleur' }
@@ -12,6 +13,16 @@ export default async function AdminPage() {
   const cookieStore = await cookies()
   const lastViewed = cookieStore.get('bookings_last_viewed')?.value
   const lastViewedPhotos = cookieStore.get('photos_last_viewed')?.value
+
+  const serverClient = await createSupabaseServerClient()
+  const { data: { user: currentUser } } = await serverClient.auth.getUser()
+  const [{ data: avatarSetting }, { data: currentProfile }] = await Promise.all([
+    supabase.from('site_settings').select('value').eq('key', 'admin_avatar_url').maybeSingle(),
+    currentUser ? supabase.from('user_profiles').select('name, role').eq('id', currentUser.id).single() : { data: null },
+  ])
+  const adminAvatarUrl = avatarSetting?.value || null
+  const isOwner = currentProfile?.role === 'owner'
+  const currentName = currentProfile?.name || '運営'
 
   const [
     { count: pendingShifts },
@@ -41,6 +52,7 @@ export default async function AdminPage() {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 20px' }}>
+      <AdminAvatarButton initialUrl={adminAvatarUrl} initialName={currentName} isOwner={isOwner} />
       <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1a3560', marginBottom: 8 }}>管理ダッシュボード</h1>
       <p style={{ color: '#666', marginBottom: 40, fontSize: 14 }}>PhotoFleur 運営管理パネル</p>
 
