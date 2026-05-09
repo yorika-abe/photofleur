@@ -64,7 +64,6 @@ function extractAccentColor(src) {
 export default function HeroSection({ images, mobileImages }) {
   const [current, setCurrent] = useState(0)
   const [leavingSrc, setLeavingSrc] = useState(null)
-  const [leavingMobileSrc, setLeavingMobileSrc] = useState(null)
   const [animKey, setAnimKey] = useState(0)
   const [accentColor, setAccentColor] = useState(DEFAULT_COLOR)
   const currentRef = useRef(0)
@@ -78,7 +77,7 @@ export default function HeroSection({ images, mobileImages }) {
       const prev = currentRef.current
       const next = (prev + 1) % imgs.length
       setLeavingSrc(imgs[prev])
-      setLeavingMobileSrc(mobileImgs[prev] || imgs[prev])
+      
       setAnimKey(k => k + 1)
       setCurrent(next)
       currentRef.current = next
@@ -88,7 +87,7 @@ export default function HeroSection({ images, mobileImages }) {
 
   useEffect(() => {
     if (!leavingSrc) return
-    const t = setTimeout(() => { setLeavingSrc(null); setLeavingMobileSrc(null) }, 1800)
+    const t = setTimeout(() => setLeavingSrc(null), 1800)
     return () => clearTimeout(t)
   }, [animKey])
 
@@ -134,42 +133,21 @@ export default function HeroSection({ images, mobileImages }) {
         <>
           {/* Left half */}
           <div key={`left-${animKey}`} style={{
-            position: 'absolute', inset: 0,
+            position: 'absolute', inset: 0, display: 'block',
             clipPath: 'inset(0 50% 0 0)',
             animation: 'heroSplitLeft 1.65s forwards',
             zIndex: 5,
-          }} className="hero-desktop">
+          }}>
             <img src={leavingSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
             <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: 40, background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.75))' }} />
           </div>
-          {/* Right half */}
           <div key={`right-${animKey}`} style={{
-            position: 'absolute', inset: 0,
+            position: 'absolute', inset: 0, display: 'block',
             clipPath: 'inset(0 0 0 50%)',
             animation: 'heroSplitRight 1.65s forwards',
             zIndex: 5,
-          }} className="hero-desktop">
+          }}>
             <img src={leavingSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-            <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 40, background: 'linear-gradient(to left, transparent, rgba(0,0,0,0.75))' }} />
-          </div>
-
-          {/* Mobile split */}
-          <div key={`mleft-${animKey}`} style={{
-            position: 'absolute', inset: 0,
-            clipPath: 'inset(0 50% 0 0)',
-            animation: 'heroSplitLeft 1.65s forwards',
-            zIndex: 5,
-          }} className="hero-mobile">
-            <img src={leavingMobileSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
-            <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: 40, background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.75))' }} />
-          </div>
-          <div key={`mright-${animKey}`} style={{
-            position: 'absolute', inset: 0,
-            clipPath: 'inset(0 0 0 50%)',
-            animation: 'heroSplitRight 1.65s forwards',
-            zIndex: 5,
-          }} className="hero-mobile">
-            <img src={leavingMobileSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
             <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 40, background: 'linear-gradient(to left, transparent, rgba(0,0,0,0.75))' }} />
           </div>
         </>
@@ -222,7 +200,7 @@ export default function HeroSection({ images, mobileImages }) {
           {imgs.map((_, i) => (
             <button key={i} onClick={() => {
               setLeavingSrc(imgs[current])
-              setLeavingMobileSrc(mobileImgs[current] || imgs[current])
+
               setAnimKey(k => k + 1)
               setCurrent(i)
               currentRef.current = i
