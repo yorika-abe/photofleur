@@ -45,3 +45,20 @@ body {
   .hero-desktop { display: none; }
   .hero-mobile { display: contents; }
 }
+
+@keyframes heroMoveTL {
+  from { transform: translate(0, 0); }
+  to   { transform: translate(-50%, -50%); }
+}
+@keyframes heroFadeTL {
+  from { transform: translate(-50%, -50%); opacity: 1; }
+  to   { transform: translate(-115%, -115%); opacity: 0; }
+}
+@keyframes heroMoveBR {
+  from { transform: translate(0, 0); }
+  to   { transform: translate(50%, 50%); }
+}
+@keyframes heroFadeBR {
+  from { transform: translate(50%, 50%); opacity: 1; }
+  to   { transform: translate(115%, 115%); opacity: 0; }
+}

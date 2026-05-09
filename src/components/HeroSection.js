@@ -100,25 +100,6 @@ export default function HeroSection({ images, mobileImages }) {
 
   return (
     <section style={{ position: 'relative', height: '100svh', minHeight: 600, overflow: 'hidden', display: 'flex', alignItems: 'flex-end', background: '#000' }}>
-      <style>{`
-        @keyframes heroMoveTL {
-          from { transform: translate(0,0); }
-          to   { transform: translate(-50%,-50%); }
-        }
-        @keyframes heroFadeTL {
-          from { transform: translate(-50%,-50%); opacity: 1; }
-          to   { transform: translate(-115%,-115%); opacity: 0; }
-        }
-        @keyframes heroMoveBR {
-          from { transform: translate(0,0); }
-          to   { transform: translate(50%,50%); }
-        }
-        @keyframes heroFadeBR {
-          from { transform: translate(50%,50%); opacity: 1; }
-          to   { transform: translate(115%,115%); opacity: 0; }
-        }
-      `}</style>
-
       {/* Current image */}
       <span className="hero-desktop" style={{ position: 'absolute', inset: 0 }}>
         {imgs.length > 0
