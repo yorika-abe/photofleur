@@ -255,7 +255,7 @@ export default async function Home() {
           <div className="reveal" style={{ marginBottom: 8, borderBottom: '1px solid #f0d6e8', paddingBottom: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
               <div>
-                <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#f4a0be', textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>Blog</p>
+                <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#f4a0be', textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>News &amp; Info</p>
                 <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>
                   Blog
                 </h2>
