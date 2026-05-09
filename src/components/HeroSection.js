@@ -87,9 +87,9 @@ export default function HeroSection({ images, mobileImages }) {
 
   useEffect(() => {
     if (!leavingSrc) return
-    const t = setTimeout(() => setLeavingSrc(null), 1800)
+    const t = setTimeout(() => setLeavingSrc(null), 2400)
     return () => clearTimeout(t)
-  }, [animKey])
+  }, [animKey]) // 2.2s animation + buffer
 
   useEffect(() => {
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 640
@@ -103,14 +103,14 @@ export default function HeroSection({ images, mobileImages }) {
       <style>{`
         @keyframes heroSplitTopLeft {
           0%   { transform: translate(0,0);         opacity: 1; animation-timing-function: cubic-bezier(0,0,0.2,1); }
-          28%  { transform: translate(-50%,-50%);   opacity: 1; animation-timing-function: linear; }
-          46%  { transform: translate(-50%,-50%);   opacity: 1; animation-timing-function: ease-in; }
+          25%  { transform: translate(-50%,-50%);   opacity: 1; animation-timing-function: linear; }
+          52%  { transform: translate(-50%,-50%);   opacity: 1; animation-timing-function: ease-in; }
           100% { transform: translate(-115%,-115%); opacity: 0; }
         }
         @keyframes heroSplitBottomRight {
           0%   { transform: translate(0,0);        opacity: 1; animation-timing-function: cubic-bezier(0,0,0.2,1); }
-          28%  { transform: translate(50%,50%);    opacity: 1; animation-timing-function: linear; }
-          46%  { transform: translate(50%,50%);    opacity: 1; animation-timing-function: ease-in; }
+          25%  { transform: translate(50%,50%);    opacity: 1; animation-timing-function: linear; }
+          52%  { transform: translate(50%,50%);    opacity: 1; animation-timing-function: ease-in; }
           100% { transform: translate(115%,115%);  opacity: 0; }
         }
       `}</style>
@@ -137,7 +137,7 @@ export default function HeroSection({ images, mobileImages }) {
           <div key={`tl-${animKey}`} style={{
             position: 'absolute', inset: 0, display: 'block',
             clipPath: 'polygon(0% 0%, 100% 0%, 0% 100%)',
-            animation: 'heroSplitTopLeft 1.65s forwards',
+            animation: 'heroSplitTopLeft 2.2s forwards',
             zIndex: 5,
             filter: 'drop-shadow(6px 6px 14px rgba(0,0,0,0.65))',
           }}>
@@ -147,7 +147,7 @@ export default function HeroSection({ images, mobileImages }) {
           <div key={`br-${animKey}`} style={{
             position: 'absolute', inset: 0, display: 'block',
             clipPath: 'polygon(100% 0%, 100% 100%, 0% 100%)',
-            animation: 'heroSplitBottomRight 1.65s forwards',
+            animation: 'heroSplitBottomRight 2.2s forwards',
             zIndex: 5,
             filter: 'drop-shadow(-6px -6px 14px rgba(0,0,0,0.65))',
           }}>
