@@ -31,8 +31,8 @@ export default async function ModelRecruitPage() {
           <div style={{ width: 48, height: 2, background: 'linear-gradient(90deg, #f4a0be, #5bbfd6)', margin: '0 auto 28px', borderRadius: 2 }} />
           <p style={{ fontSize: 'clamp(14px, 2vw, 17px)', lineHeight: 2, color: '#3a3050', margin: 0 }}>
             Photo Fleur（フォトフルール）は、<br />
-            <strong style={{ color: '#00acc1' }}>「はじめの一歩を応援し、安心して挑戦できる撮影会」</strong><br />
-            を目指しています。
+            完全女性運営によるサポートのもと<br />
+            <strong style={{ color: '#00acc1' }}>あなたのモデル活動を全力で応援いたします。</strong>
           </p>
         </div>
       </section>
@@ -241,8 +241,8 @@ export default async function ModelRecruitPage() {
             Photo Fleur は、<strong style={{ color: '#00acc1' }}>「モデルの一歩目を応援する撮影会」</strong>です。
           </p>
           <p style={{ fontSize: 15, lineHeight: 2.2, color: '#556070', margin: 0 }}>
-            まだ知られていない魅力を見つけて、<br />
-            花のようにふわっと開く瞬間を一緒に作れたら嬉しいです。
+            まだ知られていない魅力を咲かせて、<br />
+            花のように見る人を魅了する作品を一緒に作れたら嬉しいです。
           </p>
           <div style={{ width: 40, height: 2, background: 'linear-gradient(90deg, #f4a0be, #5bbfd6)', margin: '32px auto 0', borderRadius: 2 }} />
         </div>
