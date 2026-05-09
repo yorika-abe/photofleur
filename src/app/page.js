@@ -302,12 +302,12 @@ export default async function Home() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px 28px', justifyContent: 'center' }}>
               {staffMembers.map((s, i) => (
                 <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 60, height: 60, borderRadius: '50%', overflow: 'hidden', background: '#f0f4f8', border: '2px solid #e5e5e5', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 120, height: 120, borderRadius: '50%', overflow: 'hidden', background: '#f0f4f8', border: '3px solid #e5e5e5', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {s.photo
                       ? <img src={s.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <span style={{ fontSize: 28 }}>🐈‍⬛</span>}
+                      : <span style={{ fontSize: 48 }}>🐈‍⬛</span>}
                   </div>
-                  {s.name && <span style={{ fontSize: 12, color: '#444', fontWeight: 600 }}>{s.name}</span>}
+                  {s.name && <span style={{ fontSize: 13, color: '#444', fontWeight: 600 }}>{s.name}</span>}
                 </div>
               ))}
             </div>
