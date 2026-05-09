@@ -31,7 +31,7 @@ export async function GET() {
         seenModels.add(p.author_id)
         modelAuthors.push({
           id: p.author_id,
-          name: profile?.name || p.author_id,
+          name: (profile?.name || p.author_id).replace(/^運営\s*/, '') || profile?.name || p.author_id,
           avatar: null,
         })
       }

@@ -39,7 +39,8 @@ export default async function BlogPostPage({ params }) {
     if (profile) {
       const isAdminUser = profile.role === 'owner' || profile.roles?.includes('admin')
       const showAsAdmin = isAdminUser && post.posted_as_admin
-      authorName = showAsAdmin ? (profile.name || '運営') : (profile.name || null)
+      const rawName = profile.name || null
+      authorName = showAsAdmin ? rawName : rawName?.replace(/^運営\s*/, '') || rawName
       authorAvatar = showAsAdmin ? adminAvatarUrl : null
     }
   }
