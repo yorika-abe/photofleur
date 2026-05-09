@@ -19,7 +19,7 @@ export default function SectionTitle({ text }) {
           -webkit-text-fill-color: transparent;
           background-clip: text;
           animation: shimmerTitle 10s linear infinite;
-          filter: drop-shadow(2px 5px 10px rgba(13,31,58,0.45)) drop-shadow(0px 2px 4px rgba(13,31,58,0.25));
+          filter: drop-shadow(2px 4px 0px rgba(13,31,58,0.55));
         }
       `}</style>
       <span className="shimmer-section-title">{text}</span>
