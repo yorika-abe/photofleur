@@ -123,8 +123,15 @@ export default function StaffPortalPage() {
   const [newCount, setNewCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [applying, setApplying] = useState(false)
+  const [profile, setProfile] = useState({ photo: '', name: '' })
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    fetch('/api/staff-portal/private-info')
+      .then(r => r.json())
+      .then(d => setProfile({ photo: d.profile_photo || '', name: d.display_name || d.real_name || '' }))
+      .catch(() => {})
+  }, [])
 
   async function load() {
     setLoading(true)
@@ -157,7 +164,17 @@ export default function StaffPortalPage() {
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '20px 16px' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', marginBottom: 2 }}>受付スタッフ画面</h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: 0 }}>受付スタッフ画面</h1>
+        <Link href="/staff-portal/guide" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+          <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#f0f4f8', border: '2px solid #e5e5e5', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            {profile.photo
+              ? <img src={profile.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <span style={{ fontSize: 20 }}>🐈‍⬛</span>}
+          </div>
+          {profile.name && <span style={{ fontSize: 13, fontWeight: 600, color: '#1a3560' }}>{profile.name}</span>}
+        </Link>
+      </div>
       <p style={{ color: '#aaa', fontSize: 12, marginBottom: 12 }}>スタッフとして参加できる募集に応募してください。</p>
 
       <Link href="/staff-portal/guide" style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 10, padding: '12px 16px', marginBottom: 10, textDecoration: 'none' }}>
