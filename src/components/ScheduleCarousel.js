@@ -31,7 +31,8 @@ export default function ScheduleCarousel({ events }) {
     if (!cards.length) return
 
     const cardW = cards[0].offsetWidth
-    const gap = 24
+    const gap = Math.round(cardW * 0.14) + 20
+    track.style.gap = `${gap}px`
     const wrapW = wrap.clientWidth
 
     let idx = n // start at center of middle set
