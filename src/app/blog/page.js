@@ -99,7 +99,7 @@ function BlogContent() {
             placeholder="タイトルで検索..."
             style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, minWidth: 200, outline: 'none' }}
           />
-          {authors.length > 1 && (
+          {authors.length > 0 && (
             <select value={activeAuthor} onChange={e => setActiveAuthor(e.target.value)}
               style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, background: '#fff', cursor: 'pointer' }}>
               <option value="">作者：すべて</option>
