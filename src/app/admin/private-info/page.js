@@ -50,17 +50,20 @@ function InfoCard({ model, info, onApprove, onReject }) {
               {/* 現在の情報 */}
               {(
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#888', marginBottom: 12, letterSpacing: '0.05em' }}>現在の登録情報</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10, marginBottom: 16 }}>
-                    {Object.entries(FIELD_LABELS).map(([key, label]) => (
-                      <div key={key} style={{ background: '#f8fbff', borderRadius: 8, padding: '10px 14px' }}>
-                        <div style={{ fontSize: 11, color: '#999', marginBottom: 2 }}>{label}</div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: info[key] ? '#1a3560' : '#bbb' }}>{info[key] || '未入力'}</div>
-                      </div>
-                    ))}
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', marginBottom: 8, letterSpacing: '0.05em' }}>現在の登録情報</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 6, marginBottom: 10 }}>
+                    {Object.entries(FIELD_LABELS).map(([key, label]) => {
+                      if (key === 'guardian_name' && !info[key]) return null
+                      return (
+                        <div key={key} style={{ borderRadius: 6, padding: '6px 10px', borderBottom: '1px solid #f0f0f0' }}>
+                          <div style={{ fontSize: 10, color: '#aaa', marginBottom: 1 }}>{label}</div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: info[key] ? '#1a3560' : '#bbb' }}>{info[key] || '未入力'}</div>
+                        </div>
+                      )
+                    })}
                   </div>
                   {info.contract_agreed_at && (
-                    <div style={{ fontSize: 12, color: '#388e3c', fontWeight: 600 }}>
+                    <div style={{ fontSize: 11, color: '#388e3c', fontWeight: 600 }}>
                       締結日：{new Date(info.contract_agreed_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </div>
                   )}
