@@ -1,5 +1,5 @@
 'use client'
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect } from 'react'
 import Link from 'next/link'
 
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
@@ -8,7 +8,6 @@ function formatDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00')
   return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
 }
-
 function formatDow(dateStr) {
   const d = new Date(dateStr + 'T00:00:00')
   return ['日', '月', '火', '水', '木', '金', '土'][d.getDay()]
@@ -16,7 +15,6 @@ function formatDow(dateStr) {
 
 export default function ScheduleCarousel({ events }) {
   const trackRef = useRef(null)
-  const [activeReal, setActiveReal] = useState(0)
   const isPausedRef = useRef(false)
   const rafRef = useRef(null)
 
@@ -29,56 +27,51 @@ export default function ScheduleCarousel({ events }) {
     const track = trackRef.current
     if (!track) return
 
-    // Width of one full set of cards (from card[0].offsetLeft to card[n].offsetLeft)
     function getOneSetWidth() {
       const cards = track.querySelectorAll('.s-card')
       if (cards.length <= n) return 0
       return cards[n].offsetLeft - cards[0].offsetLeft
     }
 
-    // Active = second card whose center is visible from the left
-    function updateActive() {
-      const cards = track.querySelectorAll('.s-card')
+    let oneSetWidth = 0
+
+    function updateCardStyles() {
       const viewLeft = track.scrollLeft
       const viewRight = viewLeft + track.clientWidth
+      const cards = track.querySelectorAll('.s-card')
       const visible = []
-      cards.forEach((card, i) => {
+      cards.forEach(card => {
         const center = card.offsetLeft + card.offsetWidth / 2
-        if (center > viewLeft && center < viewRight) {
-          visible.push({ realI: i % n, center })
-        }
+        if (center > viewLeft && center < viewRight) visible.push({ card, center })
       })
       visible.sort((a, b) => a.center - b.center)
-      if (visible[1]) setActiveReal(visible[1].realI)
-      else if (visible[0]) setActiveReal(visible[0].realI)
+      const activeCard = visible[1]?.card ?? null
+      cards.forEach(card => {
+        const active = card === activeCard
+        card.style.transform = active ? 'scale(1.08)' : 'scale(0.85)'
+        card.style.opacity = active ? '1' : '0.55'
+        card.style.zIndex = active ? '2' : '1'
+      })
     }
-
-    // Start at beginning of second copy so we have room to loop in both directions
-    let oneSetWidth = 0
-    setTimeout(() => {
-      oneSetWidth = getOneSetWidth()
-      if (oneSetWidth > 0) track.scrollLeft = oneSetWidth
-      updateActive()
-    }, 100)
-
-    const speed = 0.7 // px per frame (~42px/s at 60fps)
 
     function tick() {
       if (!isPausedRef.current) {
         oneSetWidth = oneSetWidth || getOneSetWidth()
-        track.scrollLeft += speed
-
-        // Seamless loop: when past second set, jump back by one set
+        track.scrollLeft += 0.7
         if (oneSetWidth > 0 && track.scrollLeft >= oneSetWidth * 2) {
           track.scrollLeft -= oneSetWidth
         }
-
-        updateActive()
+        updateCardStyles()
       }
       rafRef.current = requestAnimationFrame(tick)
     }
 
-    rafRef.current = requestAnimationFrame(tick)
+    setTimeout(() => {
+      oneSetWidth = getOneSetWidth()
+      if (oneSetWidth > 0) track.scrollLeft = oneSetWidth
+      updateCardStyles()
+      rafRef.current = requestAnimationFrame(tick)
+    }, 100)
 
     const pause = () => { isPausedRef.current = true }
     const resume = () => { isPausedRef.current = false }
@@ -114,8 +107,6 @@ export default function ScheduleCarousel({ events }) {
         }}
       >
         {looped.map((ev, i) => {
-          const realI = i % n
-          const isActive = realI === activeReal
           const date = formatDate(ev.event_date)
           const dow = formatDow(ev.event_date)
           const isStreet = ev.event_type === 'street'
@@ -132,14 +123,14 @@ export default function ScheduleCarousel({ events }) {
                 width: 'clamp(180px, 40vw, 240px)',
                 textDecoration: 'none',
                 display: 'block',
-                transform: isActive ? 'scale(1.08)' : 'scale(0.85)',
-                transition: 'transform 0.4s ease, opacity 0.4s ease',
-                zIndex: isActive ? 2 : 1,
+                transform: 'scale(0.85)',
+                opacity: '0.55',
+                transition: 'transform 0.35s ease, opacity 0.35s ease',
+                zIndex: 1,
                 position: 'relative',
-                opacity: isActive ? 1 : 0.55,
               }}
             >
-              <div style={{ aspectRatio: '4/5', borderRadius: 8, overflow: 'hidden', background: thumbSrc ? '#e8e0f0' : (isStreet ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : 'linear-gradient(160deg,#f4d6e8,#e8b8d0)'), boxShadow: isActive ? '0 16px 48px rgba(0,0,0,0.22)' : '0 4px 12px rgba(0,0,0,0.08)' }}>
+              <div style={{ aspectRatio: '4/5', borderRadius: 8, overflow: 'hidden', background: thumbSrc ? '#e8e0f0' : (isStreet ? 'linear-gradient(160deg,#c8e8f5,#a8d8ea)' : 'linear-gradient(160deg,#f4d6e8,#e8b8d0)'), boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
                 {thumbSrc
                   ? <img src={thumbSrc} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                   : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
