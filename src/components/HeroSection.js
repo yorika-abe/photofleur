@@ -87,7 +87,7 @@ export default function HeroSection({ images, mobileImages }) {
 
   useEffect(() => {
     if (!leavingSrc) return
-    const t = setTimeout(() => setLeavingSrc(null), 5200)
+    const t = setTimeout(() => setLeavingSrc(null), 4400)
     return () => clearTimeout(t)
   }, [animKey]) // 2.2s animation + buffer
 
@@ -101,17 +101,21 @@ export default function HeroSection({ images, mobileImages }) {
   return (
     <section style={{ position: 'relative', height: '100svh', minHeight: 600, overflow: 'hidden', display: 'flex', alignItems: 'flex-end', background: '#000' }}>
       <style>{`
-        @keyframes heroSplitTopLeft {
-          0%   { transform: translate(0,0);         opacity: 1; animation-timing-function: cubic-bezier(0,0,0.2,1); }
-          13%  { transform: translate(-50%,-50%);   opacity: 1; animation-timing-function: linear; }
-          68%  { transform: translate(-50%,-50%);   opacity: 1; animation-timing-function: ease-in; }
-          100% { transform: translate(-115%,-115%); opacity: 0; }
+        @keyframes heroMoveTL {
+          from { transform: translate(0,0); }
+          to   { transform: translate(-50%,-50%); }
         }
-        @keyframes heroSplitBottomRight {
-          0%   { transform: translate(0,0);        opacity: 1; animation-timing-function: cubic-bezier(0,0,0.2,1); }
-          13%  { transform: translate(50%,50%);    opacity: 1; animation-timing-function: linear; }
-          68%  { transform: translate(50%,50%);    opacity: 1; animation-timing-function: ease-in; }
-          100% { transform: translate(115%,115%);  opacity: 0; }
+        @keyframes heroFadeTL {
+          from { transform: translate(-50%,-50%); opacity: 1; }
+          to   { transform: translate(-115%,-115%); opacity: 0; }
+        }
+        @keyframes heroMoveBR {
+          from { transform: translate(0,0); }
+          to   { transform: translate(50%,50%); }
+        }
+        @keyframes heroFadeBR {
+          from { transform: translate(50%,50%); opacity: 1; }
+          to   { transform: translate(115%,115%); opacity: 0; }
         }
       `}</style>
 
@@ -137,17 +141,16 @@ export default function HeroSection({ images, mobileImages }) {
           <div key={`tl-${animKey}`} style={{
             position: 'absolute', inset: 0, display: 'block',
             clipPath: 'polygon(0% 0%, 100% 0%, 0% 100%)',
-            animation: 'heroSplitTopLeft 5s forwards',
+            animation: 'heroMoveTL 0.6s cubic-bezier(0,0,0.2,1) forwards, heroFadeTL 1.8s ease-in 2.4s forwards',
             zIndex: 5,
             filter: 'drop-shadow(6px 6px 14px rgba(0,0,0,0.65))',
           }}>
             <img src={leavingSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
-          {/* Lower-right triangle */}
           <div key={`br-${animKey}`} style={{
             position: 'absolute', inset: 0, display: 'block',
             clipPath: 'polygon(100% 0%, 100% 100%, 0% 100%)',
-            animation: 'heroSplitBottomRight 5s forwards',
+            animation: 'heroMoveBR 0.6s cubic-bezier(0,0,0.2,1) forwards, heroFadeBR 1.8s ease-in 2.4s forwards',
             zIndex: 5,
             filter: 'drop-shadow(-6px -6px 14px rgba(0,0,0,0.65))',
           }}>
