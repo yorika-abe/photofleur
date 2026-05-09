@@ -68,8 +68,7 @@ export default function RecruitMarquee({ items }) {
           ...serif, fontSize: 'clamp(22px, 3.5vw, 44px)', fontWeight: 300,
           color: '#0d1f3a', lineHeight: 1.3, margin: '0 0 10px',
         }}>
-          モデルとして<br />
-          <em style={{ color: '#5bbfd6', fontStyle: 'italic' }}>PhotoFleurの一員になりませんか？</em>
+          <em style={{ color: '#5bbfd6', fontStyle: 'italic' }}>モデルに興味のある方へ</em>
         </h2>
 
         <p style={{ fontSize: 12, color: '#778', lineHeight: 1.9, marginBottom: 18 }}>
