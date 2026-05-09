@@ -7,6 +7,7 @@ import ModelStaffTabs from '@/components/ModelStaffTabs'
 const STAFF_STEPS = [
   { num: 1, title: 'スタッフ登録手引き', desc: 'ようこそページ・PDF説明', href: '/staff-portal/onboarding' },
   { num: 2, title: '非公開情報・スタッフ規約', desc: '本名・連絡先の登録と規約への同意', href: '/staff-portal/private-info' },
+  { num: 3, title: 'スタッフ活動の手引き', desc: '活動マニュアル・注意事項', href: '/staff-portal/guide' },
 ]
 
 export default function StaffInvitePage() {
