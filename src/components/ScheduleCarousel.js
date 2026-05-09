@@ -16,73 +16,75 @@ function formatDow(dateStr) {
 export default function ScheduleCarousel({ events }) {
   const trackRef = useRef(null)
   const isPausedRef = useRef(false)
-  const currentIndexRef = useRef(0) // index in looped array
+  const rafRef = useRef(null)
 
   if (!events || events.length === 0) return null
 
   const n = events.length
+  // Triple for seamless infinite loop
   const looped = [...events, ...events, ...events]
 
   useEffect(() => {
     const track = trackRef.current
     if (!track) return
 
-    function getCards() { return track.querySelectorAll('.s-card') }
-
-    function scrollToCard(index, smooth) {
-      const cards = getCards()
-      const card = cards[index]
-      if (!card) return
-      // Position so this card is second from left: left edge + one card width + gap
-      const cardW = card.offsetWidth
-      const gap = 20
-      const target = card.offsetLeft - cardW - gap
-      track.scrollTo({ left: Math.max(0, target), behavior: smooth ? 'smooth' : 'instant' })
+    function getOneSetWidth() {
+      const cards = track.querySelectorAll('.s-card')
+      if (cards.length <= n) return 0
+      return cards[n].offsetLeft - cards[0].offsetLeft
     }
 
-    function updateActive(index) {
-      const cards = getCards()
-      // Active = card at index+1 (second from left)
-      const activeCard = cards[index + 1] ?? cards[index]
+    // Active = card whose center is at "second from left" fixed position on screen
+    // = track.scrollLeft + cardWidth + gap (one card width from left edge)
+    function updateStyles() {
+      const cards = track.querySelectorAll('.s-card')
+      if (!cards.length) return
+      const cardW = cards[0].offsetWidth
+      const gap = 20
+      // The "spotlight" x position = left edge + one card's worth of space
+      const spotlightX = track.scrollLeft + cardW + gap + cardW / 2
+
+      let closestCard = null
+      let minDist = Infinity
       cards.forEach(card => {
-        const active = card === activeCard
+        const center = card.offsetLeft + card.offsetWidth / 2
+        const dist = Math.abs(center - spotlightX)
+        if (dist < minDist) { minDist = dist; closestCard = card }
+      })
+
+      cards.forEach(card => {
+        const active = card === closestCard
         card.style.transform = active ? 'scale(1.08)' : 'scale(0.85)'
         card.style.opacity = active ? '1' : '0.55'
         card.style.zIndex = active ? '2' : '1'
       })
     }
 
-    // Start at beginning of second set
-    const startIndex = n
-    currentIndexRef.current = startIndex
+    let oneSetWidth = 0
+
+    function tick() {
+      if (!isPausedRef.current) {
+        oneSetWidth = oneSetWidth || getOneSetWidth()
+        track.scrollLeft += 0.8
+        // Seamless loop: jump back one set when entering last set
+        if (oneSetWidth > 0 && track.scrollLeft >= oneSetWidth * 2) {
+          track.scrollLeft -= oneSetWidth
+        }
+        updateStyles()
+      }
+      rafRef.current = requestAnimationFrame(tick)
+    }
 
     setTimeout(() => {
-      scrollToCard(startIndex, false)
-      updateActive(startIndex)
+      oneSetWidth = getOneSetWidth()
+      if (oneSetWidth > 0) track.scrollLeft = oneSetWidth
+      updateStyles()
+      rafRef.current = requestAnimationFrame(tick)
     }, 100)
-
-    const interval = setInterval(() => {
-      if (isPausedRef.current) return
-
-      const next = currentIndexRef.current + 1
-      currentIndexRef.current = next
-      scrollToCard(next, true)
-      updateActive(next)
-
-      // After smooth scroll animation (~600ms), silently jump back if in last set
-      setTimeout(() => {
-        if (currentIndexRef.current >= n * 2) {
-          const reset = currentIndexRef.current - n
-          currentIndexRef.current = reset
-          scrollToCard(reset, false)
-          updateActive(reset)
-        }
-      }, 650)
-    }, 3000)
 
     const pause = () => { isPausedRef.current = true }
     const resume = () => { isPausedRef.current = false }
-    const touchResume = () => setTimeout(resume, 2000)
+    const touchResume = () => setTimeout(resume, 1500)
 
     track.addEventListener('mouseenter', pause)
     track.addEventListener('mouseleave', resume)
@@ -90,7 +92,7 @@ export default function ScheduleCarousel({ events }) {
     track.addEventListener('touchend', touchResume)
 
     return () => {
-      clearInterval(interval)
+      cancelAnimationFrame(rafRef.current)
       track.removeEventListener('mouseenter', pause)
       track.removeEventListener('mouseleave', resume)
       track.removeEventListener('touchstart', pause)
@@ -106,7 +108,7 @@ export default function ScheduleCarousel({ events }) {
           display: 'flex',
           overflowX: 'scroll',
           gap: 20,
-          padding: '32px 0 56px',
+          padding: '32px clamp(32px, 12vw, 200px) 56px',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           alignItems: 'flex-start',
@@ -128,8 +130,6 @@ export default function ScheduleCarousel({ events }) {
               style={{
                 flexShrink: 0,
                 width: 'clamp(180px, 30vw, 260px)',
-                marginLeft: i === 0 ? 'clamp(32px, 12vw, 200px)' : 0,
-                marginRight: i === looped.length - 1 ? 'clamp(32px, 12vw, 200px)' : 0,
                 textDecoration: 'none',
                 display: 'block',
                 transform: 'scale(0.85)',
