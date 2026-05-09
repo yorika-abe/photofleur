@@ -63,9 +63,11 @@ function extractAccentColor(src) {
 
 export default function HeroSection({ images, mobileImages }) {
   const [current, setCurrent] = useState(0)
-  const [leaving, setLeaving] = useState(null)
+  const [leavingSrc, setLeavingSrc] = useState(null)
+  const [leavingMobileSrc, setLeavingMobileSrc] = useState(null)
+  const [animKey, setAnimKey] = useState(0)
   const [accentColor, setAccentColor] = useState(DEFAULT_COLOR)
-  const leavingKey = useRef(0)
+  const currentRef = useRef(0)
 
   const imgs = images?.length > 0 ? images : []
   const mobileImgs = mobileImages?.length > 0 ? mobileImages : imgs
@@ -73,29 +75,28 @@ export default function HeroSection({ images, mobileImages }) {
   useEffect(() => {
     if (imgs.length <= 1) return
     const t = setInterval(() => {
-      setCurrent(prev => {
-        const next = (prev + 1) % imgs.length
-        setLeaving(prev)
-        leavingKey.current += 1
-        return next
-      })
+      const prev = currentRef.current
+      const next = (prev + 1) % imgs.length
+      setLeavingSrc(imgs[prev])
+      setLeavingMobileSrc(mobileImgs[prev] || imgs[prev])
+      setAnimKey(k => k + 1)
+      setCurrent(next)
+      currentRef.current = next
     }, 5000)
     return () => clearInterval(t)
-  }, [imgs.length])
+  }, [imgs, mobileImgs])
 
   useEffect(() => {
-    if (leaving === null) return
-    const t = setTimeout(() => setLeaving(null), 1700)
+    if (!leavingSrc) return
+    const t = setTimeout(() => { setLeavingSrc(null); setLeavingMobileSrc(null) }, 1800)
     return () => clearTimeout(t)
-  }, [leaving])
+  }, [animKey])
 
   useEffect(() => {
     const src = imgs[current]
     if (!src) return
     extractAccentColor(src).then(setAccentColor)
   }, [current, imgs])
-
-  const lk = leavingKey.current
 
   return (
     <section style={{ position: 'relative', height: '100svh', minHeight: 600, overflow: 'hidden', display: 'flex', alignItems: 'flex-end', background: '#000' }}>
@@ -129,48 +130,46 @@ export default function HeroSection({ images, mobileImages }) {
       </span>
 
       {/* Leaving image — split animation */}
-      {leaving !== null && imgs[leaving] && (
+      {leavingSrc && (
         <>
           {/* Left half */}
-          <div key={`left-${lk}`} style={{
+          <div key={`left-${animKey}`} style={{
             position: 'absolute', inset: 0,
             clipPath: 'inset(0 50% 0 0)',
             animation: 'heroSplitLeft 1.65s forwards',
             zIndex: 5,
           }} className="hero-desktop">
-            <img src={imgs[leaving]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-            {/* Shadow at cut edge */}
+            <img src={leavingSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
             <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: 40, background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.75))' }} />
           </div>
           {/* Right half */}
-          <div key={`right-${lk}`} style={{
+          <div key={`right-${animKey}`} style={{
             position: 'absolute', inset: 0,
             clipPath: 'inset(0 0 0 50%)',
             animation: 'heroSplitRight 1.65s forwards',
             zIndex: 5,
           }} className="hero-desktop">
-            <img src={imgs[leaving]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-            {/* Shadow at cut edge */}
+            <img src={leavingSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
             <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 40, background: 'linear-gradient(to left, transparent, rgba(0,0,0,0.75))' }} />
           </div>
 
           {/* Mobile split */}
-          <div key={`mleft-${lk}`} style={{
+          <div key={`mleft-${animKey}`} style={{
             position: 'absolute', inset: 0,
             clipPath: 'inset(0 50% 0 0)',
             animation: 'heroSplitLeft 1.65s forwards',
             zIndex: 5,
           }} className="hero-mobile">
-            <img src={mobileImgs[leaving]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+            <img src={leavingMobileSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
             <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: 40, background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.75))' }} />
           </div>
-          <div key={`mright-${lk}`} style={{
+          <div key={`mright-${animKey}`} style={{
             position: 'absolute', inset: 0,
             clipPath: 'inset(0 0 0 50%)',
             animation: 'heroSplitRight 1.65s forwards',
             zIndex: 5,
           }} className="hero-mobile">
-            <img src={mobileImgs[leaving]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+            <img src={leavingMobileSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
             <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 40, background: 'linear-gradient(to left, transparent, rgba(0,0,0,0.75))' }} />
           </div>
         </>
@@ -222,9 +221,11 @@ export default function HeroSection({ images, mobileImages }) {
         <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 6, zIndex: 10 }}>
           {imgs.map((_, i) => (
             <button key={i} onClick={() => {
-              setLeaving(current)
-              leavingKey.current += 1
+              setLeavingSrc(imgs[current])
+              setLeavingMobileSrc(mobileImgs[current] || imgs[current])
+              setAnimKey(k => k + 1)
               setCurrent(i)
+              currentRef.current = i
             }}
               style={{ width: i === current ? 20 : 6, height: 6, borderRadius: 3, border: 'none', cursor: 'pointer', padding: 0, background: i === current ? accentColor : 'rgba(255,255,255,0.35)', transition: 'all 0.4s ease' }} />
           ))}
