@@ -90,38 +90,65 @@ function ActivityReportCard() {
 const TYPE_LABEL = { street: 'ストリート', studio: 'スタジオ', irregular: '不定期' }
 const TYPE_COLOR = { street: { color: '#388e3c', bg: '#e8f5e9' }, studio: { color: '#1a3560', bg: '#e3f2fd' }, irregular: { color: '#1565c0', bg: '#e3f2fd' } }
 
-function UpcomingEvents({ events }) {
+function UpcomingEvents({ events, privateBookings }) {
+  const today = new Date().toISOString().split('T')[0]
+  const items = [
+    ...events.map(ev => ({ type: 'event', date: ev.event_date, ev })),
+    ...(privateBookings || [])
+      .filter(b => b.event_date_input && b.event_date_input >= today)
+      .map(b => ({ type: 'private', date: b.event_date_input, b })),
+  ].sort((a, b) => a.date.localeCompare(b.date))
+
   return (
     <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #d6ecf5' }}>
-      <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0d1f3a', marginTop: 0, marginBottom: 16 }}>公開中の参加イベント</h2>
-      {events.length === 0 ? (
+      <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0d1f3a', marginTop: 0, marginBottom: 16 }}>公開中の参加イベント・非公開予定</h2>
+      {items.length === 0 ? (
         <p style={{ color: '#aaa', fontSize: 14, margin: 0 }}>現在出演予定のイベントはありません。</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {events.map(ev => {
-            const mm = String(new Date(ev.event_date + 'T00:00:00').getMonth() + 1).padStart(2, '0')
-            const dd = String(new Date(ev.event_date + 'T00:00:00').getDate()).padStart(2, '0')
-            const tc = TYPE_COLOR[ev.event_type] || TYPE_COLOR.irregular
-            const tl = TYPE_LABEL[ev.event_type] || ev.event_type
-            return (
-              <Link key={ev.id} href={`/events/${ev.id}`} style={{ textDecoration: 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: '#f8fbff', borderRadius: 10, border: '1px solid #e8f4fb' }}>
-                  {ev.main_image && (
-                    <div style={{ width: 48, height: 48, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
-                      <img src={ev.main_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          {items.map((item) => {
+            if (item.type === 'event') {
+              const ev = item.ev
+              const mm = String(new Date(ev.event_date + 'T00:00:00').getMonth() + 1).padStart(2, '0')
+              const dd = String(new Date(ev.event_date + 'T00:00:00').getDate()).padStart(2, '0')
+              const tc = TYPE_COLOR[ev.event_type] || TYPE_COLOR.irregular
+              const tl = TYPE_LABEL[ev.event_type] || ev.event_type
+              return (
+                <Link key={`ev-${ev.id}`} href={`/events/${ev.id}`} style={{ textDecoration: 'none' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: '#f8fbff', borderRadius: 10, border: '1px solid #e8f4fb' }}>
+                    {ev.main_image && (
+                      <div style={{ width: 48, height: 48, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
+                        <img src={ev.main_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 700, fontSize: 16, color: '#0d1f3a' }}>{mm}/{dd}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: tc.color, background: tc.bg, borderRadius: 4, padding: '1px 8px', flexShrink: 0 }}>{tl}</span>
+                      </div>
+                      {ev.title && <div style={{ fontSize: 13, color: '#555', marginTop: 2 }}>{ev.title}</div>}
                     </div>
-                  )}
+                    <span style={{ fontSize: 12, color: '#5bbfd6', fontWeight: 600, flexShrink: 0 }}>詳細 →</span>
+                  </div>
+                </Link>
+              )
+            } else {
+              const b = item.b
+              const d = new Date(b.date + 'T00:00:00')
+              const mm = String(d.getMonth() + 1).padStart(2, '0')
+              const dd = String(d.getDate()).padStart(2, '0')
+              return (
+                <div key={`pb-${b.id}`} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: '#fef9f0', borderRadius: 10, border: '1px solid #f0e0c0' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <span style={{ fontWeight: 700, fontSize: 16, color: '#0d1f3a' }}>{mm}/{dd}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: tc.color, background: tc.bg, borderRadius: 4, padding: '1px 8px', flexShrink: 0 }}>{tl}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#b45309', background: '#fef3c7', borderRadius: 4, padding: '1px 8px', flexShrink: 0 }}>非公開予約</span>
                     </div>
-                    {ev.title && <div style={{ fontSize: 13, color: '#555', marginTop: 2 }}>{ev.title}</div>}
+                    <div style={{ fontSize: 13, color: '#555', marginTop: 2 }}>{b.product_title}{b.meeting_place ? `　📍${b.meeting_place}` : ''}</div>
                   </div>
-                  <span style={{ fontSize: 12, color: '#5bbfd6', fontWeight: 600, flexShrink: 0 }}>詳細 →</span>
                 </div>
-              </Link>
-            )
+              )
+            }
           })}
         </div>
       )}
@@ -133,6 +160,7 @@ export default function ModelPortalHome() {
   const [model, setModel] = useState(null)
   const [allModels, setAllModels] = useState(null) // null = not admin, [] = admin with no selection
   const [upcomingEvents, setUpcomingEvents] = useState([])
+  const [privateBookings, setPrivateBookings] = useState([])
   const [pendingShiftCount, setPendingShiftCount] = useState(0)
   const [newPhotoCount, setNewPhotoCount] = useState(0)
   const [newBookingCount, setNewBookingCount] = useState(0)
@@ -186,6 +214,13 @@ export default function ModelPortalHome() {
       }
 
       setUpcomingEvents(upcoming)
+
+      // 非公開予約を取得
+      const pbRes = await fetch('/api/model-portal/bookings')
+      if (pbRes.ok) {
+        const pbData = await pbRes.json()
+        setPrivateBookings(pbData.privateBookings || [])
+      }
 
       // 新着予約カウント
       const lastBookingsViewed = localStorage.getItem('model_bookings_last_viewed')
@@ -362,7 +397,7 @@ export default function ModelPortalHome() {
         )}
 
         {/* 参加予定イベント */}
-        <UpcomingEvents events={upcomingEvents} />
+        <UpcomingEvents events={upcomingEvents} privateBookings={privateBookings} />
       </div>
     </div>
   )
