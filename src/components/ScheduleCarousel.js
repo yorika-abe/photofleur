@@ -15,104 +15,95 @@ function formatDow(dateStr) {
 
 export default function ScheduleCarousel({ events }) {
   const trackRef = useRef(null)
+  const wrapRef = useRef(null)
   const isPausedRef = useRef(false)
   const rafRef = useRef(null)
 
   if (!events || events.length === 0) return null
 
   const n = events.length
-  // Triple for seamless infinite loop
-  const looped = [...events, ...events, ...events]
+  // 5 copies to cover any container width
+  const looped = [...events, ...events, ...events, ...events, ...events]
 
   useEffect(() => {
     const track = trackRef.current
-    if (!track) return
+    const wrap = wrapRef.current
+    if (!track || !wrap) return
 
-    function getOneSetWidth() {
-      const cards = track.querySelectorAll('.s-card')
-      if (cards.length <= n) return 0
-      return cards[n].offsetLeft - cards[0].offsetLeft
-    }
+    const cards = Array.from(track.querySelectorAll('.s-card'))
+    if (!cards.length) return
 
-    // Active = card whose center is at "second from left" fixed position on screen
-    // = track.scrollLeft + cardWidth + gap (one card width from left edge)
-    function updateStyles() {
-      const cards = track.querySelectorAll('.s-card')
-      if (!cards.length) return
-      const cardW = cards[0].offsetWidth
-      const gap = 20
-      // The "spotlight" x position = left edge + one card's worth of space
-      const spotlightX = track.scrollLeft + cardW + gap + cardW / 2
+    const cardW = cards[0].offsetWidth
+    const gap = 20
+    const oneSetWidth = n * (cardW + gap)
+    // Spotlight = center of second card from left edge of wrapper
+    const spotlight = cardW + gap + cardW / 2
 
-      let closestCard = null
-      let minDist = Infinity
-      cards.forEach(card => {
-        const center = card.offsetLeft + card.offsetWidth / 2
-        const dist = Math.abs(center - spotlightX)
-        if (dist < minDist) { minDist = dist; closestCard = card }
-      })
-
-      cards.forEach(card => {
-        const active = card === closestCard
-        card.style.transform = active ? 'scale(1.08)' : 'scale(0.85)'
-        card.style.opacity = active ? '1' : '0.55'
-        card.style.zIndex = active ? '2' : '1'
-      })
-    }
-
-    let oneSetWidth = 0
+    // Start showing set 1 (pos = -oneSetWidth)
+    let pos = -oneSetWidth
+    let lastActive = null
 
     function tick() {
       if (!isPausedRef.current) {
-        oneSetWidth = oneSetWidth || getOneSetWidth()
-        track.scrollLeft += 0.8
-        // Seamless loop: jump back one set when entering last set
-        if (oneSetWidth > 0 && track.scrollLeft >= oneSetWidth * 2) {
-          track.scrollLeft -= oneSetWidth
+        pos -= 0.8
+        // Loop: stay within sets 1-4 range
+        if (pos <= -oneSetWidth * 4) pos += oneSetWidth
+        track.style.transform = `translateX(${pos}px)`
+
+        // Find card closest to spotlight
+        let best = null, minDist = Infinity
+        cards.forEach(card => {
+          const center = card.offsetLeft + cardW / 2 + pos
+          const dist = Math.abs(center - spotlight)
+          if (dist < minDist) { minDist = dist; best = card }
+        })
+
+        if (best !== lastActive) {
+          if (lastActive) {
+            lastActive.style.transform = 'scale(0.85)'
+            lastActive.style.opacity = '0.55'
+          }
+          if (best) {
+            best.style.transform = 'scale(1.08)'
+            best.style.opacity = '1'
+          }
+          lastActive = best
         }
-        updateStyles()
       }
       rafRef.current = requestAnimationFrame(tick)
     }
 
-    setTimeout(() => {
-      oneSetWidth = getOneSetWidth()
-      if (oneSetWidth > 0) track.scrollLeft = oneSetWidth
-      updateStyles()
-      rafRef.current = requestAnimationFrame(tick)
-    }, 100)
+    // Set initial position before starting
+    track.style.transform = `translateX(${pos}px)`
+    rafRef.current = requestAnimationFrame(tick)
 
     const pause = () => { isPausedRef.current = true }
     const resume = () => { isPausedRef.current = false }
     const touchResume = () => setTimeout(resume, 1500)
 
-    track.addEventListener('mouseenter', pause)
-    track.addEventListener('mouseleave', resume)
-    track.addEventListener('touchstart', pause, { passive: true })
-    track.addEventListener('touchend', touchResume)
+    wrap.addEventListener('mouseenter', pause)
+    wrap.addEventListener('mouseleave', resume)
+    wrap.addEventListener('touchstart', pause, { passive: true })
+    wrap.addEventListener('touchend', touchResume)
 
     return () => {
       cancelAnimationFrame(rafRef.current)
-      track.removeEventListener('mouseenter', pause)
-      track.removeEventListener('mouseleave', resume)
-      track.removeEventListener('touchstart', pause)
-      track.removeEventListener('touchend', touchResume)
+      wrap.removeEventListener('mouseenter', pause)
+      wrap.removeEventListener('mouseleave', resume)
+      wrap.removeEventListener('touchstart', pause)
+      wrap.removeEventListener('touchend', touchResume)
     }
   }, [n])
 
   return (
-    <div style={{ position: 'relative', overflow: 'hidden' }}>
+    <div ref={wrapRef} style={{ overflow: 'hidden', padding: '32px 0 56px' }}>
       <div
         ref={trackRef}
         style={{
           display: 'flex',
-          overflowX: 'scroll',
           gap: 20,
-          padding: '32px clamp(32px, 12vw, 200px) 56px',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          alignItems: 'flex-start',
-          userSelect: 'none',
+          willChange: 'transform',
+          paddingLeft: 'clamp(32px, 12vw, 200px)',
         }}
       >
         {looped.map((ev, i) => {
@@ -135,7 +126,6 @@ export default function ScheduleCarousel({ events }) {
                 transform: 'scale(0.85)',
                 opacity: '0.55',
                 transition: 'transform 0.4s ease, opacity 0.4s ease',
-                zIndex: 1,
                 position: 'relative',
               }}
             >
@@ -148,7 +138,7 @@ export default function ScheduleCarousel({ events }) {
                 }
               </div>
               <div style={{ padding: '12px 4px 0', textAlign: 'center' }}>
-                <div style={{ ...serif, fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 700, color: '#0d1f3a', lineHeight: 1, marginBottom: 6, letterSpacing: '0.02em' }}>
+                <div style={{ ...serif, fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 700, color: '#0d1f3a', lineHeight: 1, marginBottom: 6 }}>
                   {date}（{dow}）
                 </div>
                 {ev.title && <div style={{ fontSize: 12, fontWeight: 600, color: '#333', marginBottom: 3 }}>{ev.title}</div>}
@@ -158,7 +148,6 @@ export default function ScheduleCarousel({ events }) {
           )
         })}
       </div>
-      <style>{`div::-webkit-scrollbar{display:none}`}</style>
     </div>
   )
 }
