@@ -10,7 +10,7 @@ function StaffRegisterForm() {
   const token = searchParams.get('token') || ''
   const router = useRouter()
 
-  const [mode, setMode] = useState('new') // 'new' | 'existing'
+  const [mode, setMode] = useState('existing') // 'new' | 'existing'
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -119,7 +119,7 @@ function StaffRegisterForm() {
 
         {mode === 'existing' && (
           <div style={{ background: '#e8f4fb', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#1565c0', lineHeight: 1.7 }}>
-            すでにモデルやカメラマンとして登録済みのメールアドレスを入力してください。そのアカウントにスタッフ権限が追加されます。
+            すでにモデルやカメラマンとして登録済み場合はメールアドレスを入力してください。そのアカウントにスタッフ権限が追加されます。
           </div>
         )}
 

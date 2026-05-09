@@ -38,7 +38,7 @@ export default async function Home() {
   )
   const today = new Date().toISOString().split('T')[0]
 
-  const [{ data: events }, { data: models }, { data: siteSettingsRows }, { data: noticesData }] = await Promise.all([
+  const [{ data: events }, { data: models }, { data: siteSettingsRows }, { data: noticesData }, { data: repsData }] = await Promise.all([
     adminSupabase
       .from('events')
       .select('id, event_date, event_type, title, subtitle, location_name, main_image, thumbnail_image')
@@ -60,8 +60,10 @@ export default async function Home() {
       .eq('status', 'published')
       .order('published_at', { ascending: false })
       .limit(8),
+    adminSupabase.from('representatives').select('id, photo, role, name, message, model_id').order('sort_order', { ascending: true }).order('created_at', { ascending: true }),
   ])
   const notices = noticesData || []
+  const representatives = repsData || []
 
   const { data: blogCategories } = await adminSupabase
     .from('blog_categories')
@@ -87,11 +89,6 @@ export default async function Home() {
   const heroVideo2 = siteSettings.hero_video_2 || ''
   const missionBg = siteSettings.mission_bg || ''
   const recruitBgImages = JSON.parse(siteSettings.recruit_bg_images || '[]')
-  const repPhoto = siteSettings.rep_photo || ''
-  const repRole = siteSettings.rep_role || ''
-  const repName = siteSettings.rep_name || ''
-  const repMessage = siteSettings.rep_message || ''
-  const repModelId = siteSettings.rep_model_id || ''
   const isYoutube = heroVideo.includes('youtube') || heroVideo.includes('youtu.be')
   const isYoutube2 = heroVideo2.includes('youtube') || heroVideo2.includes('youtu.be')
 
@@ -267,9 +264,9 @@ export default async function Home() {
       <RecruitMarquee items={recruitBgImages} />
 
       {/* ─── REPRESENTATIVE MESSAGE ─── */}
-      {(repName || repMessage) && (
-        <RepMessage photo={repPhoto} role={repRole} name={repName} message={repMessage} modelId={repModelId} />
-      )}
+      {representatives.map(rep => (
+        <RepMessage key={rep.id} photo={rep.photo} role={rep.role} name={rep.name} message={rep.message} modelId={rep.model_id} />
+      ))}
 
       <style>{`
         .event-card:hover .event-img { transform: scale(1.05); }
