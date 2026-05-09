@@ -216,13 +216,35 @@ export default async function Home() {
               { num: '02', en: 'Reserve', ja: '時間枠を選んで予約', desc: '好きな時間枠を選択し、お名前・メールアドレスを入力するだけ。' },
               { num: '03', en: 'Confirm', ja: '確認メールを受け取る', desc: '予約確認メールが届いたら完了。当日はQRコードをご提示ください。' },
               { num: '04', en: 'Shoot', ja: '撮影当日', desc: 'カメラを持って現地へ。スタッフがご案内します。素敵な作品を作りましょう。' },
-              { num: '05', en: 'After', ja: '撮影会終了後', desc: 'PhotoFleurでは日々改善・改良を重ねています。ご予約のメール宛にご意見箱やお知らせを送信いたします。' },
             ].map(item => (
               <div key={item.num} className="how-item" style={{ background: '#fff', padding: '40px 28px' }}>
                 <div style={{ ...serif, fontSize: 'clamp(32px, 5vw, 64px)', fontWeight: 300, color: '#d6ecf5', lineHeight: 1, marginBottom: 16 }}>{item.num}</div>
                 <p style={{ fontSize: 10, letterSpacing: '0.15em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 6, fontWeight: 600 }}>{item.en}</p>
                 <h3 className="how-title" style={{ ...serif, fontSize: 'clamp(10px, 1.1vw, 15px)', fontWeight: 600, color: '#0d1f3a', marginBottom: 8, marginTop: 0, whiteSpace: 'nowrap' }}>{item.ja}</h3>
                 <p className="how-desc" style={{ fontSize: 13, color: '#667', lineHeight: 1.7, margin: 0 }}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── AFTER SHOOT ─── */}
+      <section style={{ background: '#f0f7fb', padding: '80px 0' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>After the shoot</p>
+            <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>撮影会終了後</h2>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+            {[
+              { num: '1', text: 'PhotoFleurでは日々改善・改良を重ねています。ご予約のメール宛にご意見箱を送信させていただきます。開催ご提案や感想・改善点などお送りください。' },
+              { num: '2', text: 'ご予約のメール宛に撮っていただいた写真をアップロードしていただくフォームを送信させていただきます。対象のモデルを選択いただきますと運営とモデルに送信されます。' },
+              { num: '3', text: 'ご提供いただきました写真から選ばれたものが一定期間ホームページに使用されます。掲載報告のご連絡させていただきますのでご確認ください。' },
+              { num: '4', text: 'Xやインスタグラム・HPのブログやモデルページなど日々更新していきます。2025/09/16から開催されているまだ出来立ての撮影会の成長を見守っていただけたら嬉しいです。' },
+            ].map(item => (
+              <div key={item.num} style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+                <div style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, color: '#c8e4f0', lineHeight: 1, flexShrink: 0, width: 56, textAlign: 'right' }}>{item.num}</div>
+                <p style={{ fontSize: 15, color: '#445', lineHeight: 2, margin: 0, paddingTop: 8 }}>{item.text}</p>
               </div>
             ))}
           </div>
@@ -302,7 +324,7 @@ export default async function Home() {
         @media (max-width: 640px) { .model-grid a > div > div:last-child { padding: 6px 4px 8px !important; } }
         @media (max-width: 640px) { .model-grid a > div > div:last-child > div:first-child { font-size: 10px !important; } }
         @media (max-width: 640px) { .model-grid a > div > div:last-child > div:last-child { font-size: 9px !important; } }
-        .how-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+        .how-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         @media (max-width: 900px) { .how-grid { grid-template-columns: repeat(3, 1fr); } }
         @media (max-width: 600px) { .how-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 640px) { .how-item { padding: 20px 14px !important; } }
