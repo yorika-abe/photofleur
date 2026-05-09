@@ -94,9 +94,9 @@ export default function HeroSection({ images, mobileImages }) {
     // After paint, shrink triangles toward corners quickly
     const t0 = setTimeout(() => setAnimPhase('moving'), 30)
     // After shrink + pause, fade out slowly
-    const t1 = setTimeout(() => setAnimPhase('fading'), 1500)
+    const t1 = setTimeout(() => setAnimPhase('fading'), 700)
     // Clean up
-    const t2 = setTimeout(() => { setLeavingSrc(null); setAnimPhase('idle') }, 3800)
+    const t2 = setTimeout(() => { setLeavingSrc(null); setAnimPhase('idle') }, 3100)
 
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2) }
   }, [animKey])
