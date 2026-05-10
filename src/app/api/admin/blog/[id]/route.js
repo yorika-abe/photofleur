@@ -6,17 +6,28 @@ function extractStoragePaths(content, base) {
   return urls.filter(u => u.startsWith(base)).map(u => u.replace(base, ''))
 }
 
-export async function DELETE(req, { params }) {
+function findRemovedPaths(oldContent, newContent, base) {
+  const oldPaths = extractStoragePaths(oldContent, base)
+  const newSet = new Set(extractStoragePaths(newContent, base))
+  return oldPaths.filter(p => !newSet.has(p))
+}
+
+export async function DELETE(_req, { params }) {
   const { id } = await params
   const supabase = await createSupabaseAdminClient()
   const base = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/`
 
-  const { data: post } = await supabase.from('blog_posts').select('content, cover_image').eq('id', id).single()
+  const { data: post } = await supabase.from('blog_posts').select('content, cover_image, pending_edits').eq('id', id).single()
   if (post) {
-    const toDelete = []
-    if (post.cover_image?.startsWith(base)) toDelete.push(post.cover_image.replace(base, ''))
-    toDelete.push(...extractStoragePaths(post.content, base))
-    if (toDelete.length > 0) await supabase.storage.from('images').remove(toDelete)
+    const toDelete = new Set()
+    if (post.cover_image?.startsWith(base)) toDelete.add(post.cover_image.replace(base, ''))
+    // pending_edits のカバーも削除（本番と異なる場合）
+    const pendingCover = post.pending_edits?.cover_image
+    if (pendingCover && pendingCover !== post.cover_image && pendingCover.startsWith(base)) toDelete.add(pendingCover.replace(base, ''))
+    extractStoragePaths(post.content, base).forEach(p => toDelete.add(p))
+    // pending_edits のコンテンツ内メディアも削除（本番と重複しないもの）
+    findRemovedPaths(post.content, post.pending_edits?.content || post.content, base).forEach(p => toDelete.add(p))
+    if (toDelete.size > 0) await supabase.storage.from('images').remove([...toDelete])
   }
 
   await supabase.from('blog_posts').delete().eq('id', id)
@@ -42,22 +53,33 @@ export async function PATCH(req, { params }) {
     if ('cover_image' in edits) updates.cover_image = edits.cover_image
     if (edits.category !== undefined) updates.category = edits.category
 
-    // 古いカバー画像を削除（pending側の新しい画像と異なる場合）
+    const toDelete = new Set()
+    // 古いカバーが新しいカバーと違う場合は削除
     if ('cover_image' in edits && post.cover_image && post.cover_image !== edits.cover_image && post.cover_image.startsWith(base)) {
-      await supabase.storage.from('images').remove([post.cover_image.replace(base, '')])
+      toDelete.add(post.cover_image.replace(base, ''))
     }
+    // 本文から削除されたメディアを削除
+    if (edits.content !== undefined) {
+      findRemovedPaths(post.content, edits.content, base).forEach(p => toDelete.add(p))
+    }
+    if (toDelete.size > 0) await supabase.storage.from('images').remove([...toDelete])
 
     const { error } = await supabase.from('blog_posts').update(updates).eq('id', id)
     if (error) return Response.json({ error: error.message }, { status: 500 })
     return Response.json({ ok: true, updates })
   }
 
-  // カバー画像が変わった場合、旧画像を削除
-  if ('cover_image' in body) {
-    const { data: current } = await supabase.from('blog_posts').select('cover_image').eq('id', id).single()
-    if (current?.cover_image && current.cover_image !== body.cover_image && current.cover_image.startsWith(base)) {
-      await supabase.storage.from('images').remove([current.cover_image.replace(base, '')])
+  // 通常編集：古いカバー・コンテンツ内メディアを削除
+  const { data: current } = await supabase.from('blog_posts').select('cover_image, content').eq('id', id).single()
+  if (current) {
+    const toDelete = new Set()
+    if ('cover_image' in body && current.cover_image && current.cover_image !== body.cover_image && current.cover_image.startsWith(base)) {
+      toDelete.add(current.cover_image.replace(base, ''))
     }
+    if ('content' in body) {
+      findRemovedPaths(current.content, body.content, base).forEach(p => toDelete.add(p))
+    }
+    if (toDelete.size > 0) await supabase.storage.from('images').remove([...toDelete])
   }
 
   const { error } = await supabase.from('blog_posts').update(body).eq('id', id)

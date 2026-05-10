@@ -6,6 +6,12 @@ function extractStoragePaths(content, base) {
   return urls.filter(u => u.startsWith(base)).map(u => u.replace(base, ''))
 }
 
+function findRemovedPaths(oldContent, newContent, base) {
+  const oldPaths = extractStoragePaths(oldContent, base)
+  const newSet = new Set(extractStoragePaths(newContent, base))
+  return oldPaths.filter(p => !newSet.has(p))
+}
+
 async function getAuthUser() {
   const server = await createSupabaseServerClient()
   const { data: { user } } = await server.auth.getUser()
@@ -54,10 +60,17 @@ export async function PATCH(req, { params }) {
     // 公開中記事は pending_edits に保存（本番には反映しない）
     const newPendingCover = body.cover_image !== undefined ? body.cover_image : (post.pending_edits?.cover_image ?? null)
     const oldPendingCover = post.pending_edits?.cover_image
-    // 古い pending カバーを削除（ライブカバーとは別）
+    const toDelete = new Set()
+    // 古い pending カバー削除（ライブカバーとは別）
     if (oldPendingCover && oldPendingCover !== newPendingCover && oldPendingCover !== post.cover_image && oldPendingCover.startsWith(base)) {
-      await admin.storage.from('images').remove([oldPendingCover.replace(base, '')])
+      toDelete.add(oldPendingCover.replace(base, ''))
     }
+    // pending コンテンツから削除されたメディア
+    if (body.content !== undefined) {
+      findRemovedPaths(post.pending_edits?.content ?? '', body.content, base).forEach(p => toDelete.add(p))
+    }
+    if (toDelete.size > 0) await admin.storage.from('images').remove([...toDelete])
+
     const pendingEdits = {
       ...post.pending_edits,
       title: body.title ?? post.pending_edits?.title,
@@ -70,9 +83,14 @@ export async function PATCH(req, { params }) {
     await admin.from('blog_posts').update({ pending_edits: pendingEdits, updated_at: new Date().toISOString() }).eq('id', id)
   } else {
     // 非公開記事はメインフィールドを更新
+    const toDelete = new Set()
     if ('cover_image' in body && post.cover_image && post.cover_image !== body.cover_image && post.cover_image.startsWith(base)) {
-      await admin.storage.from('images').remove([post.cover_image.replace(base, '')])
+      toDelete.add(post.cover_image.replace(base, ''))
     }
+    if ('content' in body) {
+      findRemovedPaths(post.content, body.content, base).forEach(p => toDelete.add(p))
+    }
+    if (toDelete.size > 0) await admin.storage.from('images').remove([...toDelete])
     const { error } = await admin.from('blog_posts').update({ ...body, updated_at: new Date().toISOString() }).eq('id', id)
     if (error) return Response.json({ error: error.message }, { status: 500 })
   }
