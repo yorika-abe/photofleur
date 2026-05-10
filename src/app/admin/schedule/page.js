@@ -22,6 +22,12 @@ export default function AdminSchedulePage() {
   const [cameraNotify, setCameraNotify] = useState(null)
   const [cameraNotifySending, setCameraNotifySending] = useState(false)
   const [cameraNotifySent, setCameraNotifySent] = useState(false)
+  const [modelNotify, setModelNotify] = useState(null)
+  const [modelNotifySending, setModelNotifySending] = useState(false)
+  const [modelNotifySent, setModelNotifySent] = useState(false)
+  const [xNotify, setXNotify] = useState(null)
+  const [xNotifySending, setXNotifySending] = useState(false)
+  const [xNotifySent, setXNotifySent] = useState(false)
 
   useEffect(() => { load() }, [])
 
@@ -79,30 +85,61 @@ export default function AdminSchedulePage() {
     setEvents(prev => prev.map(e => e.id === ev.id ? { ...e, status: newStatus } : e))
 
     if (newStatus === 'active') {
-      const siteUrl = window.location.origin
-      const eventLabel = buildEventDateLabel(ev.event_date, ev.event_end_date)
-      const bookingLabel = buildBookingLabel(ev.booking_open_at)
-      const title = ev.title || ev.location_name || ''
-      // モデフル（全体グループ）へ自動送信
-      fetch('/api/admin/line-templates')
-        .then(r => r.json())
-        .then(({ templates }) => {
-          const template = templates?.event_publish ?? `📢開催イベントが解放されました。\n\n📍{{event_date}} {{title}}\n予約受付開始日→{{booking_open_at}}~\n\n詳細は🔗{{event_url}}`
-          const message = template
-            .replace('{{event_date}}', eventLabel)
-            .replace('{{title}}', title)
-            .replace('{{booking_open_at}}', bookingLabel)
-            .replace('{{event_url}}', `${siteUrl}/schedule/${ev.id}`)
-          fetch('/api/admin/line-broadcast', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, channel: 'group' }),
-          })
-        })
-      // 公式LINEバナーを表示
+      setModelNotifySent(false)
+      setModelNotify({ ev })
       setCameraNotifySent(false)
       setCameraNotify({ ev })
+      setXNotifySent(false)
+      setXNotify({ ev })
     }
+  }
+
+  async function sendModelNotify() {
+    if (!modelNotify) return
+    setModelNotifySending(true)
+    const ev = modelNotify.ev
+    const siteUrl = window.location.origin
+    const eventLabel = buildEventDateLabel(ev.event_date, ev.event_end_date)
+    const bookingLabel = buildBookingLabel(ev.booking_open_at)
+    const { templates } = await fetch('/api/admin/line-templates').then(r => r.json())
+    const template = templates?.event_publish ?? `📢開催イベントが解放されました。\n\n📍{{event_date}} {{title}}\n予約受付開始日→{{booking_open_at}}~\n\n詳細は🔗{{event_url}}`
+    const message = template
+      .replace('{{event_date}}', eventLabel)
+      .replace('{{title}}', ev.title || ev.location_name || '')
+      .replace('{{booking_open_at}}', bookingLabel)
+      .replace('{{event_url}}', `${siteUrl}/schedule/${ev.id}`)
+    await fetch('/api/admin/line-broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, channel: 'group' }),
+    })
+    setModelNotifySending(false)
+    setModelNotifySent(true)
+  }
+
+  async function sendXNotify() {
+    if (!xNotify) return
+    setXNotifySending(true)
+    const ev = xNotify.ev
+    const siteUrl = window.location.origin
+    const eventLabel = buildEventDateLabel(ev.event_date, ev.event_end_date)
+    const bookingLabel = buildBookingLabel(ev.booking_open_at)
+    const { templates } = await fetch('/api/admin/line-templates').then(r => r.json())
+    const template = templates?.x_event_publish ?? `📢お知らせ\n【開催イベントが公開されました】\n\n{{event_date}} {{title}}\n{{subtitle}}\n\n{{description}}\n\n予約受付開始：{{booking_open_at}}~\n{{event_url}}`
+    const text = template
+      .replace(/\{\{event_date\}\}/g, eventLabel)
+      .replace(/\{\{title\}\}/g, ev.title || '')
+      .replace(/\{\{subtitle\}\}/g, ev.subtitle || '')
+      .replace(/\{\{description\}\}/g, ev.description || '')
+      .replace(/\{\{booking_open_at\}\}/g, bookingLabel)
+      .replace(/\{\{event_url\}\}/g, `${siteUrl}/schedule/${ev.id}`)
+    await fetch('/api/admin/x-post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, imageUrl: ev.thumbnail_image || null }),
+    })
+    setXNotifySending(false)
+    setXNotifySent(true)
   }
 
   async function sendCameraNotify() {
@@ -201,8 +238,31 @@ export default function AdminSchedulePage() {
 
       {loadError && <div style={{ background: '#fce4ec', border: '1px solid #ef9a9a', borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#c62828' }}>エラー: {loadError}</div>}
 
+      {modelNotify && (
+        <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 12, padding: '14px 18px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <div style={{ fontWeight: 700, color: '#1b5e20', fontSize: 14, marginBottom: 4 }}>👥 モデル全体グループLINEに配信しますか？</div>
+            <div style={{ fontSize: 13, color: '#2e7d32' }}>「{modelNotify.ev.title || modelNotify.ev.location_name}」の公開をモデルに告知します</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            {modelNotifySent ? (
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#2e7d32' }}>✅ 送信済み</span>
+            ) : (
+              <button onClick={sendModelNotify} disabled={modelNotifySending}
+                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: modelNotifySending ? '#ccc' : '#388e3c', color: '#fff', fontWeight: 700, fontSize: 13, cursor: modelNotifySending ? 'not-allowed' : 'pointer' }}>
+                {modelNotifySending ? '送信中...' : 'はい、送信する'}
+              </button>
+            )}
+            <button onClick={() => setModelNotify(null)}
+              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', color: '#888', fontSize: 13, cursor: 'pointer' }}>
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+
       {cameraNotify && (
-        <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 12, padding: '14px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 12, padding: '14px 18px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <div style={{ fontWeight: 700, color: '#1a3560', fontSize: 14, marginBottom: 4 }}>📣 公式LINE（カメラマン向け）でも告知しますか？</div>
             <div style={{ fontSize: 13, color: '#1565c0' }}>「{cameraNotify.ev.title || cameraNotify.ev.location_name}」を公開告知します{cameraNotify.ev.thumbnail_image ? '（サムネイル画像も送信）' : ''}</div>
@@ -217,6 +277,29 @@ export default function AdminSchedulePage() {
               </button>
             )}
             <button onClick={() => setCameraNotify(null)}
+              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', color: '#888', fontSize: 13, cursor: 'pointer' }}>
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+
+      {xNotify && (
+        <div style={{ background: '#f3f3f3', border: '1px solid #ccc', borderRadius: 12, padding: '14px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <div style={{ fontWeight: 700, color: '#000', fontSize: 14, marginBottom: 4 }}>𝕏 Xにも投稿しますか？</div>
+            <div style={{ fontSize: 13, color: '#555' }}>「{xNotify.ev.title || xNotify.ev.location_name}」{xNotify.ev.thumbnail_image ? '（サムネイル画像付き）' : ''}をXに投稿します</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            {xNotifySent ? (
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#2e7d32' }}>✅ 投稿済み</span>
+            ) : (
+              <button onClick={sendXNotify} disabled={xNotifySending}
+                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: xNotifySending ? '#ccc' : '#000', color: '#fff', fontWeight: 700, fontSize: 13, cursor: xNotifySending ? 'not-allowed' : 'pointer' }}>
+                {xNotifySending ? '投稿中...' : 'はい、投稿する'}
+              </button>
+            )}
+            <button onClick={() => setXNotify(null)}
               style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', color: '#888', fontSize: 13, cursor: 'pointer' }}>
               閉じる
             </button>
