@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import LayerOptionPicker from '@/components/LayerOptionPicker'
-import { buildSelectionsLabel } from '@/lib/product-layers'
+import { buildSelectionsLabel, getLeafChoicePrice } from '@/lib/product-layers'
 
 const SQUARE_APP_ID = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID
 const SQUARE_LOCATION_ID = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || ''
@@ -196,7 +196,11 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart }) {
   const isSelectionsComplete = isLayersComplete && isGroupsComplete
   const hasOptions = isLayers ? layers.length > 0 : optionGroups.length > 0
 
-  const totalPrice = goods.price * form.quantity
+  const choicePrice = isLayers && layerPath.length === layers.length && layerPath.length > 0
+    ? getLeafChoicePrice(goods.options, layerPath)
+    : null
+  const unitPrice = choicePrice ?? goods.price
+  const totalPrice = unitPrice * form.quantity
   const maxQty = goods.stock >= 0 ? goods.stock : 99
 
   function buildCartItem() {
@@ -211,7 +215,7 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart }) {
     return {
       goods_id: goods.id,
       title: goods.title,
-      price: goods.price,
+      price: unitPrice,
       image: goods.image,
       quantity: form.quantity,
       layers_path: isLayers && layerPath.length > 0 ? layerPath : null,
@@ -278,7 +282,7 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart }) {
         <div style={{ padding: '24px 24px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: 18, color: '#1a3560' }}>{goods.title}</div>
-            <div style={{ fontSize: 14, color: '#888', marginTop: 4 }}>¥{goods.price.toLocaleString()} / 個</div>
+            <div style={{ fontSize: 14, color: '#888', marginTop: 4 }}>¥{unitPrice.toLocaleString()} / 個{choicePrice != null && choicePrice !== goods.price && <span style={{ fontSize: 11, color: '#aaa', marginLeft: 4 }}>（選択肢価格）</span>}</div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#aaa', lineHeight: 1 }}>×</button>
         </div>

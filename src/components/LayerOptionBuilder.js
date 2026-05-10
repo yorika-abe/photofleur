@@ -184,6 +184,50 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
     update(layers.map((l, i) => i !== layerIdx ? l : { ...l, choices }))
   }
 
+  // --- Per-parent pricing (per-model price within a sub-choice) ---
+  function updateParentPrice(layerIdx, choiceId, parentId, val) {
+    update(layers.map((l, i) => i !== layerIdx ? l : {
+      ...l,
+      choices: (l.choices || []).map(c => c.id !== choiceId ? c : {
+        ...c, parent_prices: { ...(c.parent_prices || {}), [parentId]: val === '' ? null : Number(val) },
+      }),
+    }))
+  }
+
+  function addParentCost(layerIdx, choiceId, parentId) {
+    const id = genId()
+    update(layers.map((l, i) => i !== layerIdx ? l : {
+      ...l,
+      choices: (l.choices || []).map(c => {
+        if (c.id !== choiceId) return c
+        const existing = c.parent_costs?.[parentId] || []
+        return { ...c, parent_costs: { ...(c.parent_costs || {}), [parentId]: [...existing, { id, name: '', amount: 0, per_unit: true }] } }
+      }),
+    }))
+  }
+
+  function updateParentCost(layerIdx, choiceId, parentId, itemId, field, val) {
+    update(layers.map((l, i) => i !== layerIdx ? l : {
+      ...l,
+      choices: (l.choices || []).map(c => {
+        if (c.id !== choiceId) return c
+        const items = (c.parent_costs?.[parentId] || []).map(item => item.id !== itemId ? item : { ...item, [field]: val })
+        return { ...c, parent_costs: { ...(c.parent_costs || {}), [parentId]: items } }
+      }),
+    }))
+  }
+
+  function removeParentCost(layerIdx, choiceId, parentId, itemId) {
+    update(layers.map((l, i) => i !== layerIdx ? l : {
+      ...l,
+      choices: (l.choices || []).map(c => {
+        if (c.id !== choiceId) return c
+        const items = (c.parent_costs?.[parentId] || []).filter(item => item.id !== itemId)
+        return { ...c, parent_costs: { ...(c.parent_costs || {}), [parentId]: items } }
+      }),
+    }))
+  }
+
   // --- Per-choice pricing (leaf layer only) ---
   function updateChoicePrice(layerIdx, choiceKey, choiceId, val) {
     update(layers.map((l, i) => i !== layerIdx ? l : {
@@ -337,23 +381,63 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
                         {layerIdx > 0 && parentChoices.map(pc => {
                           const linked = choice.parent_stocks && pc.id in choice.parent_stocks
                           const ps = choice.parent_stocks?.[pc.id] ?? -1
+                          const parentPrice = choice.parent_prices?.[pc.id]
+                          const parentCosts = choice.parent_costs?.[pc.id] || []
                           return (
-                            <div key={pc.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, paddingLeft: 8 }}>
-                              <input type="checkbox" checked={linked}
-                                onChange={() => toggleParentLink(layerIdx, choice.id, pc.id)} />
-                              <span style={{ fontSize: 12, color: '#555', minWidth: 60 }}>{pc.name || pc.model_name || '?'}</span>
-                              {linked && (
-                                <>
-                                  <span style={{ fontSize: 11, color: '#888' }}>在庫</span>
-                                  <input type="number" value={ps < 0 ? '' : ps} placeholder="∞"
-                                    onChange={e => updateParentStock(layerIdx, choice.id, pc.id, e.target.value)}
-                                    style={{ ...inp, width: 52, textAlign: 'center' }} />
-                                </>
+                            <div key={pc.id} style={{ marginTop: 4, paddingLeft: 8 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                <input type="checkbox" checked={linked}
+                                  onChange={() => toggleParentLink(layerIdx, choice.id, pc.id)} />
+                                <span style={{ fontSize: 12, color: '#555', minWidth: 60 }}>{pc.name || pc.model_name || '?'}</span>
+                                {linked && (
+                                  <>
+                                    <span style={{ fontSize: 11, color: '#888' }}>在庫</span>
+                                    <input type="number" value={ps < 0 ? '' : ps} placeholder="∞"
+                                      onChange={e => updateParentStock(layerIdx, choice.id, pc.id, e.target.value)}
+                                      style={{ ...inp, width: 52, textAlign: 'center' }} />
+                                    {isLeaf && layer.per_choice_pricing && (
+                                      <>
+                                        <span style={{ fontSize: 11, color: '#888' }}>料金¥</span>
+                                        <input type="number" value={parentPrice ?? ''} placeholder="デフォルト"
+                                          onChange={e => updateParentPrice(layerIdx, choice.id, pc.id, e.target.value)}
+                                          style={{ ...inp, width: 90, textAlign: 'right' }} />
+                                      </>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                              {linked && isLeaf && layer.per_choice_pricing && (
+                                <div style={{ paddingLeft: 20, marginTop: 4 }}>
+                                  {parentCosts.map(item => (
+                                    <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3, flexWrap: 'wrap' }}>
+                                      <input value={item.name} placeholder="項目名"
+                                        onChange={e => updateParentCost(layerIdx, choice.id, pc.id, item.id, 'name', e.target.value)}
+                                        style={{ ...inp, width: 100 }} />
+                                      <span style={{ fontSize: 11 }}>¥</span>
+                                      <input type="number" value={item.amount}
+                                        onChange={e => updateParentCost(layerIdx, choice.id, pc.id, item.id, 'amount', Number(e.target.value))}
+                                        style={{ ...inp, width: 72, textAlign: 'right' }} />
+                                      <select value={item.per_unit ? 'unit' : 'fixed'}
+                                        onChange={e => updateParentCost(layerIdx, choice.id, pc.id, item.id, 'per_unit', e.target.value === 'unit')}
+                                        style={{ ...inp, fontSize: 11, padding: '6px 4px' }}>
+                                        <option value="unit">1個あたり</option>
+                                        <option value="fixed">まとめて</option>
+                                      </select>
+                                      <button type="button" onClick={() => removeParentCost(layerIdx, choice.id, pc.id, item.id)}
+                                        style={{ background: 'none', border: 'none', color: '#bbb', fontSize: 16, cursor: 'pointer', padding: '0 2px' }}>×</button>
+                                    </div>
+                                  ))}
+                                  <button type="button" onClick={() => addParentCost(layerIdx, choice.id, pc.id)}
+                                    style={{ fontSize: 11, color: '#888', background: 'none', border: '1px dashed #ddd', borderRadius: 5, padding: '2px 8px', cursor: 'pointer', marginTop: 2 }}>
+                                    + 販管費を追加
+                                  </button>
+                                </div>
                               )}
                             </div>
                           )
                         })}
-                        {renderPerChoicePricing(layerIdx, 'choices', choice)}
+                        {/* 親リンクなし or per_choice_pricing オフ の場合のみ共通料金表示 */}
+                        {!(isLeaf && layer.per_choice_pricing && parentChoices.some(pc => choice.parent_stocks && pc.id in choice.parent_stocks)) && renderPerChoicePricing(layerIdx, 'choices', choice)}
                       </div>
                     ))}
                   </div>
