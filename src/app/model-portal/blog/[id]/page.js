@@ -119,7 +119,7 @@ export default function ModelBlogEditPage() {
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>タイトル *</label>
             <input style={inp} value={form.title}
-              onChange={e => setForm(f => ({ ...f, title: e.target.value, slug: f.slug || slugify(e.target.value) }))}
+              onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
               placeholder="記事タイトル" />
           </div>
           <div>
