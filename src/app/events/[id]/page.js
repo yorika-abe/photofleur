@@ -133,7 +133,7 @@ export default async function EventDetailPage({ params }) {
         <div style={{
           fontFamily: 'var(--font-cormorant), Georgia, serif',
           fontStyle: 'italic',
-          fontSize: 52,
+          fontSize: 'clamp(32px, 8vw, 52px)',
           fontWeight: 700,
           letterSpacing: 4,
           lineHeight: 1,

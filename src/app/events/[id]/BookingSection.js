@@ -107,16 +107,27 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
       {/* モーダル */}
       {modal && (
         <div onClick={closeModal} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', maxWidth: 700, width: '100%', display: 'flex', flexDirection: 'row', maxHeight: '90vh' }}>
+          <style>{`
+            .booking-modal-inner { display: flex; flex-direction: row; }
+            .booking-modal-image { width: 45%; flex-shrink: 0; background: #f0f4fb; }
+            .booking-modal-body { flex: 1; padding: 32px 28px; overflow-y: auto; display: flex; flex-direction: column; gap: 20; }
+            @media (max-width: 600px) {
+              .booking-modal-inner { flex-direction: column; }
+              .booking-modal-image { width: 100% !important; height: 220px; flex-shrink: 0; }
+              .booking-modal-body { padding: 20px 18px; }
+            }
+          `}</style>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', maxWidth: 700, width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="booking-modal-inner">
             {/* 写真 */}
-            <div style={{ width: '45%', flexShrink: 0, background: '#f0f4fb' }}>
+            <div className="booking-modal-image">
               {modal.models.image
                 ? <img src={modal.models.image} alt={modal.models.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 60 }}>👤</div>
               }
             </div>
             {/* 情報 */}
-            <div style={{ flex: 1, padding: '32px 28px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div className="booking-modal-body">
               <div>
                 <div style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', marginBottom: 4 }}>{modal.models.name}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -200,6 +211,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
                 ×
               </button>
             </div>
+            </div>{/* booking-modal-inner */}
           </div>
         </div>
       )}
