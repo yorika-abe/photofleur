@@ -23,6 +23,7 @@ export default function ModelBlogEditPage() {
   const [saving, setSaving] = useState(false)
   const [coverUploading, setCoverUploading] = useState(false)
   const [userId, setUserId] = useState(null)
+  const [modelCategorySlug, setModelCategorySlug] = useState(null)
   const coverInputRef = useRef(null)
 
   const supabase = createBrowserClient(
@@ -38,6 +39,12 @@ export default function ModelBlogEditPage() {
       const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
       if (!roles.includes('model')) { window.location.href = '/'; return }
       setUserId(user.id)
+
+      // モデル記事カテゴリーを取得
+      fetch('/api/admin/blog/categories').then(r => r.json()).then(cats => {
+        const modelCat = Array.isArray(cats) && cats.find(c => c.name.includes('モデルの記事'))
+        if (modelCat) setModelCategorySlug(modelCat.slug)
+      })
 
       if (!isNew) {
         const { data } = await supabase.from('blog_posts').select('*').eq('id', id).eq('author_id', user.id).single()
@@ -73,7 +80,8 @@ export default function ModelBlogEditPage() {
       ? `${baseSlug || 'post'}-${Date.now()}`
       : baseSlug || `post-${Date.now()}`
     const status = submitForReview ? 'pending_review' : 'draft'
-    const updates = { title: form.title, slug, content: form.content, cover_image: form.cover_image || null, status, updated_at: new Date().toISOString() }
+    const category = submitForReview && modelCategorySlug ? modelCategorySlug : undefined
+    const updates = { title: form.title, slug, content: form.content, cover_image: form.cover_image || null, status, updated_at: new Date().toISOString(), ...(category ? { category } : {}) }
 
     if (isNew) {
       const { data, error } = await supabase.from('blog_posts').insert({ ...updates, author_id: userId }).select('id').single()
