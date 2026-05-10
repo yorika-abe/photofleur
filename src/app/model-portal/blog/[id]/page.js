@@ -68,7 +68,10 @@ export default function ModelBlogEditPage() {
     if (!form.title) { alert('タイトルを入力してください'); return }
     setSaving(true)
 
-    const slug = form.slug || slugify(form.title) || `post-${Date.now()}`
+    const baseSlug = form.slug || slugify(form.title)
+    const slug = isNew && !form.slug
+      ? `${baseSlug || 'post'}-${Date.now()}`
+      : baseSlug || `post-${Date.now()}`
     const status = submitForReview ? 'pending_review' : 'draft'
     const updates = { title: form.title, slug, content: form.content, cover_image: form.cover_image || null, status, updated_at: new Date().toISOString() }
 
