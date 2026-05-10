@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/context/CartContext'
 import LayerOptionPicker from '@/components/LayerOptionPicker'
-import { buildSelectionsLabel } from '@/lib/product-layers'
+import { buildSelectionsLabel, getLeafChoicePrice } from '@/lib/product-layers'
 
 function getOptionGroups(product) {
   const opts = product.options
@@ -103,12 +103,17 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
         .join(' / ')
     }
 
+    const choicePrice = isLayers && layerPath.length > 0 && layerPath.length >= (selected.options?.layers?.length || 0)
+      ? getLeafChoicePrice(selected.options, layerPath)
+      : null
+    const unitPrice = choicePrice ?? selected.price ?? 0
+
     return {
       type: 'product',
       productId: selected.id,
       name: selected.name,
       image: selected.image,
-      price: selected.price || 0,
+      price: unitPrice,
       eventId,
       eventDate,
       eventLocation,
@@ -226,12 +231,21 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
               {selected.description && (
                 <p style={{ fontSize: 14, color: '#555', lineHeight: 1.8, marginBottom: 16, whiteSpace: 'pre-wrap' }}>{selected.description}</p>
               )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, borderTop: '1px solid #f0f0f0', marginBottom: 20 }}>
-                <span style={{ fontSize: 22, fontWeight: 700, color: '#1a3560' }}>¥{(selected.price || 0).toLocaleString()}</span>
-                <span style={{ fontSize: 13, color: selected.stock <= 0 ? '#e53935' : '#888', fontWeight: selected.stock <= 0 ? 700 : 400 }}>
-                  {selected.stock <= 0 ? '在庫なし' : `在庫 ${selected.stock}件`}
-                </span>
-              </div>
+              {(selectedChoicePrice => {
+                const displayPrice = selectedChoicePrice ?? selected.price ?? 0
+                return (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, borderTop: '1px solid #f0f0f0', marginBottom: 20 }}>
+                    <span style={{ fontSize: 22, fontWeight: 700, color: '#1a3560' }}>
+                      ¥{displayPrice.toLocaleString()}
+                      {selectedChoicePrice != null && selectedChoicePrice !== selected.price && <span style={{ fontSize: 12, color: '#aaa', marginLeft: 4 }}>（選択肢価格）</span>}
+                    </span>
+                    <span style={{ fontSize: 13, color: selected.stock <= 0 ? '#e53935' : '#888', fontWeight: selected.stock <= 0 ? 700 : 400 }}>
+                      {selected.stock <= 0 ? '在庫なし' : `在庫 ${selected.stock}件`}
+                    </span>
+                  </div>
+                )
+              })(isSelectedLayers && layerPath.length > 0 && layerPath.length >= (selected.options?.layers?.length || 0)
+                ? getLeafChoicePrice(selected.options, layerPath) : null)}
 
               {hasBookableOptions ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
