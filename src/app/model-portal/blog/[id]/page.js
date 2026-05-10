@@ -50,7 +50,6 @@ export default function ModelBlogEditPage() {
       if (!isNew) {
         const { data } = await supabase.from('blog_posts').select('*').eq('id', id).eq('author_id', user.id).single()
         if (!data) { router.push('/model-portal/blog'); return }
-        if (data.status !== 'draft') { router.push('/model-portal/blog'); return }
         setForm({ title: data.title || '', slug: data.slug || '', content: data.content || '', cover_image: data.cover_image || '' })
         setSavedCoverImage(data.cover_image || '')
       }

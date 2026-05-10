@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
 
-const STATUS_LABEL = { draft: '下書き', pending_review: '承認待ち', published: '公開中' }
+const STATUS_LABEL = { draft: '下書き', pending_review: '承認待ち', published: '公開中', pending_delete: '削除申請中' }
 const STATUS_COLOR = {
   draft: { bg: '#f5f5f5', color: '#888' },
   pending_review: { bg: '#ffebee', color: '#c62828' },
   published: { bg: '#e8f5e9', color: '#388e3c' },
+  pending_delete: { bg: '#fce4ec', color: '#ad1457' },
 }
 
 export default function ModelBlogPage() {
@@ -41,11 +42,6 @@ export default function ModelBlogPage() {
     load()
   }, [])
 
-  async function submitForReview(id) {
-    await supabase.from('blog_posts').update({ status: 'pending_review' }).eq('id', id)
-    setPosts(prev => prev.map(p => p.id === id ? { ...p, status: 'pending_review' } : p))
-  }
-
   async function cancelReview(id) {
     await supabase.from('blog_posts').update({ status: 'draft' }).eq('id', id)
     setPosts(prev => prev.map(p => p.id === id ? { ...p, status: 'draft' } : p))
@@ -57,11 +53,15 @@ export default function ModelBlogPage() {
     setPosts(prev => prev.map(p => p.id === id ? { ...p, status: 'pending_review' } : p))
   }
 
-  async function deletePost(id) {
-    if (!confirm('この記事を削除しますか？画像も含めて完全に削除されます。')) return
-    const res = await fetch(`/api/model-portal/blog/${id}`, { method: 'DELETE' })
-    if (!res.ok) { alert('削除に失敗しました'); return }
-    setPosts(prev => prev.filter(p => p.id !== id))
+  async function requestDelete(id) {
+    if (!confirm('削除を申請しますか？運営が確認後に削除されます。')) return
+    await supabase.from('blog_posts').update({ status: 'pending_delete' }).eq('id', id)
+    setPosts(prev => prev.map(p => p.id === id ? { ...p, status: 'pending_delete' } : p))
+  }
+
+  async function cancelDelete(id) {
+    await supabase.from('blog_posts').update({ status: 'draft' }).eq('id', id)
+    setPosts(prev => prev.map(p => p.id === id ? { ...p, status: 'draft' } : p))
   }
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>読み込み中...</div>
@@ -103,18 +103,13 @@ export default function ModelBlogPage() {
                 <span style={{ background: sc.bg, color: sc.color, borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>
                   {STATUS_LABEL[post.status]}
                 </span>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {post.status === 'draft' && (
-                    <>
-                      <Link href={`/model-portal/blog/${post.id}`}
-                        style={{ background: '#2f2244', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 13, fontWeight: 600 }}>
-                        編集
-                      </Link>
-                      <button onClick={() => submitForReview(post.id)}
-                        style={{ background: '#e3f2fd', color: '#1a3560', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
-                        承認申請
-                      </button>
-                    </>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                  {/* 非公開申請 */}
+                  {post.status === 'published' && (
+                    <button onClick={() => requestUnpublish(post.id)}
+                      style={{ background: '#f5f5f5', color: '#888', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13 }}>
+                      非公開申請
+                    </button>
                   )}
                   {post.status === 'pending_review' && (
                     <button onClick={() => cancelReview(post.id)}
@@ -122,22 +117,35 @@ export default function ModelBlogPage() {
                       申請取消
                     </button>
                   )}
-                  {post.status === 'published' && (
-                    <>
-                      <Link href={`/blog/${post.slug}`} target="_blank"
-                        style={{ background: '#e8f5e9', color: '#388e3c', textDecoration: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 13, fontWeight: 600 }}>
-                        表示 →
-                      </Link>
-                      <button onClick={() => requestUnpublish(post.id)}
-                        style={{ background: '#f5f5f5', color: '#888', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13 }}>
-                        非公開申請
-                      </button>
-                    </>
+
+                  {/* 編集（削除申請中以外は編集可） */}
+                  {post.status !== 'pending_delete' && (
+                    <Link href={`/model-portal/blog/${post.id}`}
+                      style={{ background: '#2f2244', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 13, fontWeight: 600 }}>
+                      編集
+                    </Link>
                   )}
-                  <button onClick={() => deletePost(post.id)}
-                    style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}>
-                    削除
-                  </button>
+
+                  {/* 削除申請 / 申請取消 */}
+                  {post.status !== 'pending_delete' ? (
+                    <button onClick={() => requestDelete(post.id)}
+                      style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}>
+                      削除申請
+                    </button>
+                  ) : (
+                    <button onClick={() => cancelDelete(post.id)}
+                      style={{ background: '#fff8e1', color: '#f57f17', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+                      申請取消
+                    </button>
+                  )}
+
+                  {/* 表示→ */}
+                  {post.status === 'published' && (
+                    <Link href={`/blog/${post.slug}`} target="_blank"
+                      style={{ background: '#e8f5e9', color: '#388e3c', textDecoration: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 13, fontWeight: 600 }}>
+                      表示 →
+                    </Link>
+                  )}
                 </div>
               </div>
             )

@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
 
-const STATUS_LABEL = { draft: '下書き', pending_review: '承認待ち', published: '公開中' }
+const STATUS_LABEL = { draft: '下書き', pending_review: '承認待ち', published: '公開中', pending_delete: '削除申請中' }
 const STATUS_COLOR = {
   draft: { bg: '#f5f5f5', color: '#888' },
   pending_review: { bg: '#ffebee', color: '#c62828' },
   published: { bg: '#e8f5e9', color: '#388e3c' },
+  pending_delete: { bg: '#fce4ec', color: '#ad1457' },
 }
 
 export default function AdminBlogPage() {
@@ -123,7 +124,7 @@ export default function AdminBlogPage() {
 
       {/* Status filter */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-        {[['all', '全て'], ['pending_review', '承認待ち'], ['published', '公開中'], ['draft', '下書き']].map(([key, label]) => (
+        {[['all', '全て'], ['pending_review', '承認待ち'], ['pending_delete', '削除申請'], ['published', '公開中'], ['draft', '下書き']].map(([key, label]) => (
           <button key={key} onClick={() => setStatusFilter(key)}
             style={{ padding: '6px 14px', borderRadius: 20, border: '2px solid', borderColor: statusFilter === key ? '#2f2244' : '#ddd', background: statusFilter === key ? '#2f2244' : '#fff', color: statusFilter === key ? '#fff' : '#555', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
             {label}
@@ -191,6 +192,12 @@ export default function AdminBlogPage() {
                     <button onClick={() => updateStatus(post.id, 'published')}
                       style={{ background: '#e8f5e9', color: '#388e3c', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                       承認・公開
+                    </button>
+                  )}
+                  {post.status === 'pending_delete' && (
+                    <button onClick={() => deletePost(post.id)}
+                      style={{ background: '#fce4ec', color: '#ad1457', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      削除を実行
                     </button>
                   )}
                   {post.status === 'published' && (
