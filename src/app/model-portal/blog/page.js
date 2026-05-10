@@ -36,6 +36,7 @@ export default function ModelBlogPage() {
         .from('blog_posts')
         .select('id, title, slug, status, published_at, created_at')
         .eq('author_id', user.id)
+        .neq('posted_as_admin', true)
         .order('created_at', { ascending: false })
       setPosts(data || [])
       setLoading(false)
