@@ -318,6 +318,13 @@ export default async function EventDetailPage({ params }) {
         }
         const hasCapacity = (event.event_type === 'studio' || event.event_type === 'irregular') && event.studio_capacity
         const capacity = hasCapacity ? event.studio_capacity : null
+        const totalRows = entries.length
+        // count all bookings (indoor + outdoor) per label
+        const totalCountByLabel = {}
+        for (const b of bookingCounts || []) {
+          const slot = slotMap[b.slot_id]
+          if (slot) totalCountByLabel[slot.slot_label] = (totalCountByLabel[slot.slot_label] || 0) + 1
+        }
         return (
           <div style={{ marginBottom: 32, overflowX: 'auto' }}>
             <h2 style={{ fontSize: 17, fontWeight: 700, color: '#333', marginBottom: 12, marginTop: 0 }}>予約状況</h2>
@@ -332,16 +339,15 @@ export default async function EventDetailPage({ params }) {
               <tbody>
                 <tr>
                   {uniqueLabels.map(label => {
-                    const count = indoorCountByLabel[label] || 0
+                    const count = totalCountByLabel[label] || 0
                     return (
                       <td key={label} style={{ padding: '10px 14px', border: '1px solid #e0e0e0', textAlign: 'center', verticalAlign: 'top' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                          {capacity
-                            ? Array.from({ length: capacity }, (_, i) => (
-                                <span key={i} style={{ fontSize: 18, lineHeight: 1 }}>{i < count ? '🈵' : '🈳'}</span>
-                              ))
-                            : <span style={{ fontSize: 18, lineHeight: 1 }}>{count > 0 ? '🈵' : '🈳'}</span>
-                          }
+                          {Array.from({ length: totalRows }, (_, i) => {
+                            if (i < count) return <span key={i} style={{ fontSize: 18, lineHeight: 1 }}>🈵</span>
+                            if (capacity !== null && i >= capacity) return <span key={i} style={{ fontSize: 14, lineHeight: 1, color: '#888' }}>（🈳）</span>
+                            return <span key={i} style={{ fontSize: 18, lineHeight: 1 }}>🈳</span>
+                          })}
                         </div>
                       </td>
                     )
