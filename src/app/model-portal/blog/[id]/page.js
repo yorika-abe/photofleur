@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
 import RichEditor from '@/components/RichEditor'
+import { compressImage } from '@/lib/compressImage'
 
 function slugify(text) {
   return text
@@ -19,6 +20,7 @@ export default function ModelBlogEditPage() {
   const isNew = id === 'new'
 
   const [form, setForm] = useState({ title: '', slug: '', content: '', cover_image: '' })
+  const [savedCoverImage, setSavedCoverImage] = useState('')
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
   const [coverUploading, setCoverUploading] = useState(false)
@@ -40,7 +42,6 @@ export default function ModelBlogEditPage() {
       if (!roles.includes('model')) { window.location.href = '/'; return }
       setUserId(user.id)
 
-      // モデル記事カテゴリーを取得
       fetch('/api/admin/blog/categories').then(r => r.json()).then(cats => {
         const modelCat = Array.isArray(cats) && cats.find(c => c.name.includes('モデルの記事'))
         if (modelCat) setModelCategorySlug(modelCat.slug)
@@ -51,6 +52,7 @@ export default function ModelBlogEditPage() {
         if (!data) { router.push('/model-portal/blog'); return }
         if (data.status !== 'draft') { router.push('/model-portal/blog'); return }
         setForm({ title: data.title || '', slug: data.slug || '', content: data.content || '', cover_image: data.cover_image || '' })
+        setSavedCoverImage(data.cover_image || '')
       }
       setLoading(false)
     }
@@ -59,16 +61,40 @@ export default function ModelBlogEditPage() {
 
   async function uploadCover(file) {
     setCoverUploading(true)
-    const ext = file.name.split('.').pop()
-    const path = `blog/cover/${userId || 'u'}-${Date.now()}.${ext}`
-    const fd = new FormData()
-    fd.append('file', file)
-    fd.append('path', path)
-    const res = await fetch('/api/model-portal/upload', { method: 'POST', body: fd })
-    const data = await res.json()
-    setCoverUploading(false)
-    if (data.error) { alert('アップロードエラー: ' + data.error); return }
-    setForm(f => ({ ...f, cover_image: data.url }))
+    try {
+      const compressed = await compressImage(file, { maxWidth: 1600, quality: 0.85 })
+      const path = `blog/cover/${userId || 'u'}-${Date.now()}.jpg`
+      const fd = new FormData()
+      fd.append('file', compressed, 'cover.jpg')
+      fd.append('path', path)
+      const res = await fetch('/api/model-portal/upload', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (data.error) { alert('アップロードエラー: ' + data.error); return }
+      // 古いカバー画像をストレージから削除
+      if (form.cover_image && form.cover_image !== savedCoverImage) {
+        deleteStorageUrl(form.cover_image)
+      }
+      setForm(f => ({ ...f, cover_image: data.url }))
+    } finally {
+      setCoverUploading(false)
+    }
+  }
+
+  function deleteStorageUrl(url) {
+    const base = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/`
+    if (!url?.startsWith(base)) return
+    fetch('/api/model-portal/upload', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: url.replace(base, '') }),
+    })
+  }
+
+  function removeCover() {
+    const old = form.cover_image
+    setForm(f => ({ ...f, cover_image: '' }))
+    // DBに保存済みの画像はsave時にAPIで削除。未保存アップロードは即削除
+    if (old && old !== savedCoverImage) deleteStorageUrl(old)
   }
 
   async function save(submitForReview = false) {
@@ -81,7 +107,12 @@ export default function ModelBlogEditPage() {
       : baseSlug || `post-${Date.now()}`
     const status = submitForReview ? 'pending_review' : 'draft'
     const category = submitForReview && modelCategorySlug ? modelCategorySlug : undefined
-    const updates = { title: form.title, slug, content: form.content, cover_image: form.cover_image || null, status, updated_at: new Date().toISOString(), ...(category ? { category } : {}) }
+    const updates = {
+      title: form.title, slug, content: form.content,
+      cover_image: form.cover_image || null, status,
+      updated_at: new Date().toISOString(),
+      ...(category ? { category } : {}),
+    }
 
     if (isNew) {
       const { data, error } = await supabase.from('blog_posts').insert({ ...updates, author_id: userId }).select('id').single()
@@ -90,15 +121,22 @@ export default function ModelBlogEditPage() {
         alert('承認申請しました。運営の確認後に公開されます。')
         router.push('/model-portal/blog')
       } else {
+        setSavedCoverImage(form.cover_image)
         router.replace(`/model-portal/blog/${data.id}`)
       }
     } else {
-      const { error } = await supabase.from('blog_posts').update(updates).eq('id', id)
-      if (error) { alert('エラー: ' + error.message); setSaving(false); return }
+      // カバー画像が変わった場合、API経由で古い画像削除
+      const res = await fetch(`/api/model-portal/blog/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      })
+      if (!res.ok) { alert('エラーが発生しました'); setSaving(false); return }
       if (submitForReview) {
         alert('承認申請しました。運営の確認後に公開されます。')
         router.push('/model-portal/blog')
       } else {
+        setSavedCoverImage(form.cover_image)
         alert('下書きを保存しました')
       }
     }
@@ -122,7 +160,6 @@ export default function ModelBlogEditPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-        {/* タイトル・スラッグ */}
         <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>タイトル *</label>
@@ -136,30 +173,25 @@ export default function ModelBlogEditPage() {
           </div>
         </div>
 
-        {/* カバー画像 */}
         <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
           <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 12 }}>カバー画像（任意）</label>
           {form.cover_image && (
             <div style={{ position: 'relative', marginBottom: 12, borderRadius: 10, overflow: 'hidden', height: 200 }}>
               <img src={form.cover_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              <button
-                type="button"
-                onClick={() => setForm(f => ({ ...f, cover_image: '' }))}
-                style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >✕</button>
+              <button type="button" onClick={removeCover}
+                style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                ✕
+              </button>
             </div>
           )}
           <input ref={coverInputRef} type="file" accept="image/*" style={{ display: 'none' }}
             onChange={e => e.target.files?.[0] && uploadCover(e.target.files[0])} />
-          <label
-            onMouseDown={() => coverInputRef.current?.click()}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#f0f7fb', color: '#1a3560', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600, border: '2px dashed #5bbfd6' }}
-          >
+          <label onMouseDown={() => coverInputRef.current?.click()}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#f0f7fb', color: '#1a3560', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600, border: '2px dashed #5bbfd6' }}>
             {coverUploading ? '⏳ アップロード中...' : '📷 カバー画像をアップロード'}
           </label>
         </div>
 
-        {/* 本文エディター */}
         <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
           <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 12 }}>本文 *</label>
           <RichEditor
@@ -169,7 +201,6 @@ export default function ModelBlogEditPage() {
           />
         </div>
 
-        {/* ボタン */}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button onClick={() => save(false)} disabled={saving || coverUploading}
             style={{ background: '#f0f0f0', color: '#555', border: 'none', borderRadius: 10, padding: '13px 24px', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>

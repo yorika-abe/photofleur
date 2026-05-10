@@ -14,7 +14,6 @@ const STATUS_COLOR = {
 export default function ModelBlogPage() {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
-  const [userId, setUserId] = useState(null)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -29,8 +28,6 @@ export default function ModelBlogPage() {
       const { data: profile } = await supabase.from('user_profiles').select('roles, role').eq('id', user.id).single()
       const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
       if (!roles.includes('model')) { window.location.href = '/'; return }
-
-      setUserId(user.id)
 
       const { data } = await supabase
         .from('blog_posts')
@@ -49,9 +46,21 @@ export default function ModelBlogPage() {
     setPosts(prev => prev.map(p => p.id === id ? { ...p, status: 'pending_review' } : p))
   }
 
+  async function cancelReview(id) {
+    await supabase.from('blog_posts').update({ status: 'draft' }).eq('id', id)
+    setPosts(prev => prev.map(p => p.id === id ? { ...p, status: 'draft' } : p))
+  }
+
+  async function requestUnpublish(id) {
+    if (!confirm('この記事の非公開を申請しますか？運営が確認後に非公開になります。')) return
+    await supabase.from('blog_posts').update({ status: 'pending_review' }).eq('id', id)
+    setPosts(prev => prev.map(p => p.id === id ? { ...p, status: 'pending_review' } : p))
+  }
+
   async function deletePost(id) {
-    if (!confirm('この記事を削除しますか？')) return
-    await supabase.from('blog_posts').delete().eq('id', id)
+    if (!confirm('この記事を削除しますか？画像も含めて完全に削除されます。')) return
+    const res = await fetch(`/api/model-portal/blog/${id}`, { method: 'DELETE' })
+    if (!res.ok) { alert('削除に失敗しました'); return }
     setPosts(prev => prev.filter(p => p.id !== id))
   }
 
@@ -94,7 +103,7 @@ export default function ModelBlogPage() {
                 <span style={{ background: sc.bg, color: sc.color, borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>
                   {STATUS_LABEL[post.status]}
                 </span>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {post.status === 'draft' && (
                     <>
                       <Link href={`/model-portal/blog/${post.id}`}
@@ -102,26 +111,33 @@ export default function ModelBlogPage() {
                         編集
                       </Link>
                       <button onClick={() => submitForReview(post.id)}
-                        style={{ background: '#ffebee', color: '#c62828', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+                        style={{ background: '#e3f2fd', color: '#1a3560', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
                         承認申請
                       </button>
                     </>
                   )}
                   {post.status === 'pending_review' && (
-                    <span style={{ fontSize: 13, color: '#888' }}>審査中...</span>
-                  )}
-                  {post.status === 'published' && (
-                    <Link href={`/blog/${post.slug}`} target="_blank"
-                      style={{ background: '#e8f5e9', color: '#388e3c', textDecoration: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 13, fontWeight: 600 }}>
-                      表示 →
-                    </Link>
-                  )}
-                  {post.status !== 'published' && (
-                    <button onClick={() => deletePost(post.id)}
-                      style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}>
-                      削除
+                    <button onClick={() => cancelReview(post.id)}
+                      style={{ background: '#fff8e1', color: '#f57f17', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+                      申請取消
                     </button>
                   )}
+                  {post.status === 'published' && (
+                    <>
+                      <Link href={`/blog/${post.slug}`} target="_blank"
+                        style={{ background: '#e8f5e9', color: '#388e3c', textDecoration: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 13, fontWeight: 600 }}>
+                        表示 →
+                      </Link>
+                      <button onClick={() => requestUnpublish(post.id)}
+                        style={{ background: '#f5f5f5', color: '#888', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13 }}>
+                        非公開申請
+                      </button>
+                    </>
+                  )}
+                  <button onClick={() => deletePost(post.id)}
+                    style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}>
+                    削除
+                  </button>
                 </div>
               </div>
             )

@@ -24,3 +24,16 @@ export async function POST(req) {
   const { data } = admin.storage.from('images').getPublicUrl(path)
   return Response.json({ url: data.publicUrl })
 }
+
+export async function DELETE(req) {
+  const server = await createSupabaseServerClient()
+  const { data: { user } } = await server.auth.getUser()
+  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const admin = await createSupabaseAdminClient()
+  const { path } = await req.json()
+  if (!path) return Response.json({ error: 'path required' }, { status: 400 })
+
+  await admin.storage.from('images').remove([path])
+  return Response.json({ ok: true })
+}
