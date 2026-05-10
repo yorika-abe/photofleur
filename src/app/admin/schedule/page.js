@@ -294,9 +294,9 @@ export default function AdminSchedulePage() {
             {xNotifySent ? (
               <span style={{ fontSize: 13, fontWeight: 700, color: '#2e7d32' }}>✅ 投稿済み</span>
             ) : (
-              <button onClick={sendXNotify} disabled={xNotifySending}
-                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: xNotifySending ? '#ccc' : '#000', color: '#fff', fontWeight: 700, fontSize: 13, cursor: xNotifySending ? 'not-allowed' : 'pointer' }}>
-                {xNotifySending ? '投稿中...' : 'はい、投稿する'}
+              <button disabled
+                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#aaa', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'not-allowed' }}>
+                課金設定後利用可能
               </button>
             )}
             <button onClick={() => setXNotify(null)}
