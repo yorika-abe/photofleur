@@ -197,17 +197,17 @@ export default async function EventDetailPage({ params }) {
 
       {/* Map + Address + Thumbnail */}
       {(embedUrl || event.location_name || event.access_note || event.studio_url || mapsLink || event.thumbnail_image) && (
-        <div style={{ display: 'flex', gap: 16, marginBottom: 32, alignItems: 'stretch' }}>
+        <div className="event-map-section" style={{ display: 'flex', gap: 16, marginBottom: 32, alignItems: 'stretch', flexWrap: 'wrap' }}>
           {embedUrl && (
-            <div style={{ flexShrink: 0, width: 260, borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e5e5', minHeight: 220 }}>
+            <div className="event-map-iframe" style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e5e5', minHeight: 200 }}>
               <iframe
                 src={embedUrl}
-                style={{ border: 0, display: 'block', width: '100%', height: '100%', minHeight: 220 }}
+                style={{ border: 0, display: 'block', width: '100%', height: '100%', minHeight: 200 }}
                 allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"
               />
             </div>
           )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, justifyContent: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, minWidth: 180, justifyContent: 'center' }}>
             {(event.address || event.location_name) && (
               <div>
                 <div style={{ fontSize: 12, color: '#999', marginBottom: 3 }}>開催場所</div>
@@ -234,7 +234,7 @@ export default async function EventDetailPage({ params }) {
             )}
           </div>
           {event.thumbnail_image && (
-            <div style={{ flexShrink: 0, width: 130, borderRadius: 12, overflow: 'hidden' }}>
+            <div className="event-map-thumb" style={{ flexShrink: 0, width: 130, borderRadius: 12, overflow: 'hidden' }}>
               <img src={event.thumbnail_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             </div>
           )}
@@ -401,6 +401,13 @@ export default async function EventDetailPage({ params }) {
         .blog-content video { max-width: 100%; border-radius: 8px; margin: 8px 0; }
         .blog-content a { color: #1a3560; }
         .blog-content p { margin: 0 0 12px; }
+        .event-map-iframe { flex-shrink: 0; width: 260px; }
+        .event-map-thumb { display: block; }
+        @media (max-width: 600px) {
+          .event-map-section { flex-direction: column; }
+          .event-map-iframe { width: 100% !important; min-height: 200px; }
+          .event-map-thumb { display: none; }
+        }
       `}</style>
     </div>
   )
