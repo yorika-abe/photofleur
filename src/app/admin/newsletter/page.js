@@ -284,8 +284,31 @@ function rowToHtml(row) {
   return `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="table-layout:fixed;margin:0 0 8px;${bg}"><tr>${cols}</tr></table>`
 }
 
-function generateHtml(rows, header, footer) {
-  return `<!DOCTYPE html><html><head><link href="${GOOGLE_FONTS_URL}" rel="stylesheet"></head><body style="margin:0;padding:0;background:#f5f5f5;font-family:'Helvetica Neue',Arial,sans-serif;">
+function hexToRgba(hex, opacity) {
+  const h = hex.replace('#', '')
+  const r = parseInt(h.substring(0, 2), 16)
+  const g = parseInt(h.substring(2, 4), 16)
+  const b = parseInt(h.substring(4, 6), 16)
+  return `rgba(${r},${g},${b},${opacity})`
+}
+
+function generateHtml(rows, header, footer, bodyBg = {}) {
+  const hasImg = !!bodyBg.imageUrl
+  const hasColor = !!bodyBg.color
+  const overlayOpacity = (bodyBg.opacity ?? 30) / 100
+
+  const outerStyle = hasImg
+    ? `background:url('${bodyBg.imageUrl}') center/cover no-repeat;`
+    : hasColor
+      ? `background:${bodyBg.color};`
+      : 'background:#f5f5f5;'
+  const overlayStyle = hasImg && hasColor
+    ? `background:${hexToRgba(bodyBg.color, overlayOpacity)};padding:32px 0;`
+    : 'padding:32px 0;'
+
+  return `<!DOCTYPE html><html><head><link href="${GOOGLE_FONTS_URL}" rel="stylesheet"></head><body style="margin:0;padding:0;font-family:'Helvetica Neue',Arial,sans-serif;">
+<div style="${outerStyle}">
+<div style="${overlayStyle}">
 <div style="max-width:600px;margin:0 auto;background:#fff;">
 <div style="background:${header.bgColor};padding:24px 32px;text-align:center;">
 <span style="color:${header.textColor};font-size:${header.fontSize}px;font-weight:700;letter-spacing:0.05em;">${header.text}</span>
@@ -295,6 +318,8 @@ ${rows.map(rowToHtml).join('\n')}
 </div>
 <div style="background:#f5f5f5;padding:16px 32px;font-size:11px;color:#999;text-align:center;">
 ${footer}
+</div>
+</div>
 </div>
 </div>
 </body></html>`
@@ -420,7 +445,55 @@ function VarsPanel({ templateVars }) {
   )
 }
 
-function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRowBgChange, header, onHeaderChange, footer, onFooterChange, templateVars = [] }) {
+function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRowBgChange, header, onHeaderChange, footer, onFooterChange, bodyBg, onBodyBgChange, templateVars = [] }) {
+  if (selection === 'body') {
+    return (
+      <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#1a3560' }}>メール全体の背景</div>
+        <div>
+          <label style={lbl}>背景画像をアップロード</label>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', background: '#e0f2fe', color: '#0369a1', border: '2px dashed #0369a1', borderRadius: 8, padding: '10px 16px', fontSize: 13, fontWeight: 600 }}>
+            📁 ファイルを選択
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => {
+              const file = e.target.files[0]; if (!file) return
+              const fd = new FormData(); fd.append('file', file)
+              const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd })
+              const json = await res.json()
+              if (json.url) onBodyBgChange({ ...bodyBg, imageUrl: json.url })
+              else alert('アップロード失敗: ' + json.error)
+            }} />
+          </label>
+          {bodyBg.imageUrl && (
+            <div style={{ marginTop: 8 }}>
+              <img src={bodyBg.imageUrl} alt="" style={{ width: '100%', height: 60, objectFit: 'cover', borderRadius: 6 }} />
+              <button onClick={() => onBodyBgChange({ ...bodyBg, imageUrl: '' })} style={{ ...ctrlBtn, background: '#aaa', marginTop: 6, width: '100%' }}>画像を解除</button>
+            </div>
+          )}
+        </div>
+        <div>
+          <label style={lbl}>オーバーレイカラー（画像の上に重ねる色）</label>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input type="color" value={bodyBg.color || '#ffffff'} onChange={e => onBodyBgChange({ ...bodyBg, color: e.target.value })} style={{ ...inp, padding: 2, height: 36, flex: 1 }} />
+            {bodyBg.color && <button onClick={() => onBodyBgChange({ ...bodyBg, color: '' })} style={{ ...ctrlBtn, background: '#aaa', whiteSpace: 'nowrap' }}>解除</button>}
+          </div>
+        </div>
+        {bodyBg.color && (
+          <div>
+            <label style={lbl}>オーバーレイ不透明度: {bodyBg.opacity ?? 30}%</label>
+            <input type="range" min={0} max={100} value={bodyBg.opacity ?? 30}
+              onChange={e => onBodyBgChange({ ...bodyBg, opacity: Number(e.target.value) })}
+              style={{ width: '100%' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#aaa' }}>
+              <span>透明</span><span>不透明</span>
+            </div>
+          </div>
+        )}
+        {!bodyBg.imageUrl && !bodyBg.color && (
+          <p style={{ fontSize: 11, color: '#aaa' }}>画像または色を設定するとメール全体の背景に適用されます</p>
+        )}
+      </div>
+    )
+  }
   if (selection === 'header') {
     return (
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -639,6 +712,7 @@ export default function NewsletterPage() {
   const [rows, setRows] = useState(() => [newRow('heading'), newRow('text')])
   const [selection, setSelection] = useState(null)
   const [header, setHeader] = useState({ bgColor: '#1a3560', text: 'PhotoFleur', textColor: '#ffffff', fontSize: 20 })
+  const [bodyBg, setBodyBg] = useState({ imageUrl: '', color: '', opacity: 30 })
   const [footer, setFooter] = useState('PhotoFleur｜このメールはメルマガを希望されたカメラマン様にお送りしています。')
   const [subject, setSubject] = useState('')
   const [subscriberCount, setSubscriberCount] = useState(null)
@@ -697,7 +771,7 @@ export default function NewsletterPage() {
       const res = await fetch('/api/admin/newsletter-templates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, subject, rows_json: rows, header_json: header, footer }),
+        body: JSON.stringify({ name, subject, rows_json: rows, header_json: { ...header, _bodyBg: bodyBg }, footer }),
       })
       const json = await res.json()
       if (!res.ok) setResult({ error: json.error || '保存に失敗しました' })
@@ -714,7 +788,11 @@ export default function NewsletterPage() {
       if (json.template) {
         const t = json.template
         setRows(t.rows_json?.length > 0 ? restoreRowsFromDb(t.rows_json) : [newRow('heading'), newRow('text')])
-        if (t.header_json && Object.keys(t.header_json).length > 0) setHeader(t.header_json)
+        if (t.header_json && Object.keys(t.header_json).length > 0) {
+          const { _bodyBg, ...headerOnly } = t.header_json
+          setHeader(headerOnly)
+          if (_bodyBg) setBodyBg(_bodyBg)
+        }
         if (t.footer) setFooter(t.footer)
         if (t.subject) setSubject(t.subject)
         setSelection(null)
@@ -748,9 +826,13 @@ export default function NewsletterPage() {
           restoredRows = getDefaultRows(tmplId)
         }
         setRows(restoredRows.length > 0 ? restoredRows : getDefaultRows(tmplId))
-        setHeader(t.header_json && Object.keys(t.header_json).length > 0
-          ? t.header_json
-          : { bgColor: '#1a3560', text: 'PhotoFleur', textColor: '#ffffff', fontSize: 20 })
+        if (t.header_json && Object.keys(t.header_json).length > 0) {
+          const { _bodyBg, ...headerOnly } = t.header_json
+          setHeader(headerOnly)
+          if (_bodyBg) setBodyBg(_bodyBg)
+        } else {
+          setHeader({ bgColor: '#1a3560', text: 'PhotoFleur', textColor: '#ffffff', fontSize: 20 })
+        }
         setFooter(t.footer || '')
         setSubject(t.subject || TEMPLATE_DEFS.find(d => d.id === tmplId)?.defaultSubject || '')
       } else {
@@ -784,7 +866,7 @@ export default function NewsletterPage() {
           name: activeTemplDef?.name || activeTemplateId,
           subject,
           rows_json: rows,
-          header_json: header,
+          header_json: { ...header, _bodyBg: bodyBg },
           footer,
         }),
       })
@@ -886,7 +968,7 @@ export default function NewsletterPage() {
 
   async function handleSend() {
     setSending(true); setResult(null)
-    const html = generateHtml(rows, header, footer)
+    const html = generateHtml(rows, header, footer, bodyBg)
     const couponBlock = rows.flatMap(r => r.cells).map(c => c.block).find(b => b?.type === 'coupon')
     const couponConfig = couponBlock ? couponBlock.data : null
     const res = await fetch('/api/admin/newsletter', {
@@ -1045,46 +1127,67 @@ export default function NewsletterPage() {
           {templateLoading ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#aaa', fontSize: 15 }}>読み込み中...</div>
           ) : (
-            <div style={{ maxWidth: 620, margin: '0 auto', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', borderRadius: 8, overflow: 'hidden' }}>
-              {/* Header */}
-              <div onClick={e => { e.stopPropagation(); setSelection('header') }}
-                style={{ background: header.bgColor, padding: '20px 32px', textAlign: 'center', cursor: 'pointer', outline: selection === 'header' ? '2px solid #5bbfd6' : 'none' }}>
-                <span style={{ color: header.textColor, fontSize: header.fontSize, fontWeight: 700, letterSpacing: '0.05em' }}>{header.text}</span>
-                {selection === 'header' && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>クリックして編集</div>}
-              </div>
-
-              {/* Rows */}
-              <div style={{ padding: '16px 20px' }} onClick={e => e.stopPropagation()}>
-                {rows.length === 0 && (
-                  <div style={{ textAlign: 'center', color: '#ccc', padding: '40px 0', fontSize: 14 }}>左のパネルからブロックを追加してください</div>
+            <>
+              {/* Outer bg wrapper */}
+              <div style={{
+                position: 'relative',
+                ...(bodyBg.imageUrl ? { backgroundImage: `url('${bodyBg.imageUrl}')`, backgroundSize: 'cover', backgroundPosition: 'center' } : bodyBg.color ? { background: bodyBg.color } : {}),
+                padding: (bodyBg.imageUrl || bodyBg.color) ? '16px' : 0, borderRadius: 8,
+              }}>
+                {bodyBg.imageUrl && bodyBg.color && (
+                  <div style={{ position: 'absolute', inset: 0, background: hexToRgba(bodyBg.color, (bodyBg.opacity ?? 30) / 100), borderRadius: 8, pointerEvents: 'none' }} />
                 )}
-                {rows.map((row, rowIdx) => (
-                  <RowView
-                    key={row.id}
-                    row={row}
-                    isFirst={rowIdx === 0}
-                    isLast={rowIdx === rows.length - 1}
-                    selection={selection}
-                    onSelectBlock={blockId => setSelection({ kind: 'block', blockId })}
-                    onSelectRow={() => setSelection({ kind: 'row', rowId: row.id })}
-                    onUpdateBlock={updateBlock}
-                    onAddBlockToCell={addBlockToCell}
-                    onMoveRow={moveRow}
-                    onDeleteRow={deleteRow}
-                    onAddCol={addCol}
-                    onRemoveCol={removeCol}
-                    onUpdateWidths={updateRowWidths}
-                  />
-                ))}
+                <div style={{ maxWidth: 620, margin: '0 auto', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+                  {/* Header */}
+                  <div onClick={e => { e.stopPropagation(); setSelection('header') }}
+                    style={{ background: header.bgColor, padding: '20px 32px', textAlign: 'center', cursor: 'pointer', outline: selection === 'header' ? '2px solid #5bbfd6' : 'none' }}>
+                    <span style={{ color: header.textColor, fontSize: header.fontSize, fontWeight: 700, letterSpacing: '0.05em' }}>{header.text}</span>
+                    {selection === 'header' && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>クリックして編集</div>}
+                  </div>
+
+                  {/* Rows */}
+                  <div style={{ padding: '16px 20px' }} onClick={e => e.stopPropagation()}>
+                    {rows.length === 0 && (
+                      <div style={{ textAlign: 'center', color: '#ccc', padding: '40px 0', fontSize: 14 }}>左のパネルからブロックを追加してください</div>
+                    )}
+                    {rows.map((row, rowIdx) => (
+                      <RowView
+                        key={row.id}
+                        row={row}
+                        isFirst={rowIdx === 0}
+                        isLast={rowIdx === rows.length - 1}
+                        selection={selection}
+                        onSelectBlock={blockId => setSelection({ kind: 'block', blockId })}
+                        onSelectRow={() => setSelection({ kind: 'row', rowId: row.id })}
+                        onUpdateBlock={updateBlock}
+                        onAddBlockToCell={addBlockToCell}
+                        onMoveRow={moveRow}
+                        onDeleteRow={deleteRow}
+                        onAddCol={addCol}
+                        onRemoveCol={removeCol}
+                        onUpdateWidths={updateRowWidths}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Footer */}
+                  <div onClick={e => { e.stopPropagation(); setSelection('footer') }}
+                    style={{ background: '#f5f5f5', padding: '14px 32px', fontSize: 11, color: '#999', textAlign: 'center', cursor: 'pointer', outline: selection === 'footer' ? '2px solid #5bbfd6' : 'none' }}>
+                    {footer}
+                    {selection === 'footer' && <div style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>クリックして編集</div>}
+                  </div>
+                </div>
               </div>
 
-              {/* Footer */}
-              <div onClick={e => { e.stopPropagation(); setSelection('footer') }}
-                style={{ background: '#f5f5f5', padding: '14px 32px', fontSize: 11, color: '#999', textAlign: 'center', cursor: 'pointer', outline: selection === 'footer' ? '2px solid #5bbfd6' : 'none' }}>
-                {footer}
-                {selection === 'footer' && <div style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>クリックして編集</div>}
+              {/* Body background button */}
+              <div style={{ marginTop: 10, textAlign: 'center' }}>
+                <button onClick={e => { e.stopPropagation(); setSelection('body') }}
+                  style={{ background: selection === 'body' ? '#e8f0ff' : '#f0f4fb', border: `1.5px solid ${selection === 'body' ? '#1a3560' : '#c8d4e8'}`, borderRadius: 8, padding: '7px 18px', fontSize: 12, color: '#1a3560', fontWeight: 600, cursor: 'pointer' }}>
+                  🖼️ メール全体の背景設定
+                  {(bodyBg.imageUrl || bodyBg.color) && <span style={{ marginLeft: 6, fontSize: 10, background: '#1a3560', color: '#fff', borderRadius: 4, padding: '1px 6px' }}>設定済み</span>}
+                </button>
               </div>
-            </div>
+            </>
           )}
         </div>
 
@@ -1101,6 +1204,8 @@ export default function NewsletterPage() {
             onHeaderChange={setHeader}
             footer={footer}
             onFooterChange={setFooter}
+            bodyBg={bodyBg}
+            onBodyBgChange={setBodyBg}
             templateVars={activeTemplDef?.vars || []}
           />
         </div>
