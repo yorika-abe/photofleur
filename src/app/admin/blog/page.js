@@ -77,16 +77,14 @@ export default function AdminBlogPage() {
   }
 
   async function approvePendingEdits(post) {
-    const edits = post.pending_edits
-    if (!edits) return
-    const updates = { pending_edits: null }
-    if (edits.title) updates.title = edits.title
-    if (edits.slug) updates.slug = edits.slug
-    if (edits.content !== undefined) updates.content = edits.content
-    if ('cover_image' in edits) updates.cover_image = edits.cover_image
-    if (edits.category) updates.category = edits.category
-    await supabase.from('blog_posts').update(updates).eq('id', post.id)
-    setPosts(prev => prev.map(p => p.id === post.id ? { ...p, ...updates } : p))
+    const res = await fetch(`/api/admin/blog/${post.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ _action: 'approve_pending_edits' }),
+    })
+    if (!res.ok) { alert('エラーが発生しました'); return }
+    const { updates } = await res.json()
+    setPosts(prev => prev.map(p => p.id === post.id ? { ...p, ...updates, pending_edits: null } : p))
   }
 
   async function rejectPendingEdits(id) {

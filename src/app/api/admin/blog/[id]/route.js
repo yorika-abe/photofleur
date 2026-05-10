@@ -29,6 +29,29 @@ export async function PATCH(req, { params }) {
   const supabase = await createSupabaseAdminClient()
   const base = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/`
 
+  // pending_edits の承認処理
+  if (body._action === 'approve_pending_edits') {
+    const { data: post } = await supabase.from('blog_posts').select('cover_image, content, pending_edits').eq('id', id).single()
+    if (!post?.pending_edits) return Response.json({ error: 'No pending edits' }, { status: 400 })
+
+    const edits = post.pending_edits
+    const updates = { pending_edits: null }
+    if (edits.title !== undefined) updates.title = edits.title
+    if (edits.slug !== undefined) updates.slug = edits.slug
+    if (edits.content !== undefined) updates.content = edits.content
+    if ('cover_image' in edits) updates.cover_image = edits.cover_image
+    if (edits.category !== undefined) updates.category = edits.category
+
+    // 古いカバー画像を削除（pending側の新しい画像と異なる場合）
+    if ('cover_image' in edits && post.cover_image && post.cover_image !== edits.cover_image && post.cover_image.startsWith(base)) {
+      await supabase.storage.from('images').remove([post.cover_image.replace(base, '')])
+    }
+
+    const { error } = await supabase.from('blog_posts').update(updates).eq('id', id)
+    if (error) return Response.json({ error: error.message }, { status: 500 })
+    return Response.json({ ok: true, updates })
+  }
+
   // カバー画像が変わった場合、旧画像を削除
   if ('cover_image' in body) {
     const { data: current } = await supabase.from('blog_posts').select('cover_image').eq('id', id).single()
