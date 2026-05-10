@@ -8,6 +8,7 @@ const BLOCK_TYPES = [
   { type: 'text', label: 'テキスト', icon: 'T' },
   { type: 'image', label: '画像', icon: '🖼️' },
   { type: 'button', label: 'ボタン', icon: '□' },
+  { type: 'coupon', label: 'クーポン', icon: '🎟️' },
   { type: 'divider', label: '区切り線', icon: '—' },
   { type: 'spacer', label: '余白', icon: '↕' },
 ]
@@ -118,6 +119,7 @@ const DEFAULTS = {
   text: { text: '本文テキストを入力してください。', size: 14, align: 'left', color: '#333333', font: 'Arial, sans-serif', bold: false, italic: false, shadow: false, letterSpacing: 0, lineHeight: 1.8, ...BOX_DEFAULTS },
   image: { url: '', alt: '', link: '', width: '100%', height: 'auto', borderRadius: 0, opacity: 100, shadow: false, grayscale: false, ...BOX_DEFAULTS },
   button: { label: 'ボタン', url: '', bgColor: '#1a3560', textColor: '#ffffff', align: 'center', ...BOX_DEFAULTS },
+  coupon: { discount_type: 'fixed', discount_value: 500, valid_days: 30, description: '', bgColor: '#fff8e8', borderColor: '#f5a623', textColor: '#c07800', ...BOX_DEFAULTS },
   divider: { color: '#e0e0e0', thickness: 1, ...BOX_DEFAULTS },
   spacer: { height: 24, ...BOX_DEFAULTS },
 }
@@ -246,6 +248,17 @@ function blockToHtml(b) {
     return boxWrap(data, `<div style="text-align:center;">${data.link ? `<a href="${data.link}" style="display:inline-block;">${img}</a>` : img}</div>`)
   }
   if (type === 'button') return boxWrap(data, `<div style="text-align:${data.align};"><a href="${data.url || '#'}" style="display:inline-block;background:${data.bgColor};color:${data.textColor};text-decoration:none;border-radius:8px;padding:12px 32px;font-size:15px;font-weight:700;">${data.label}</a></div>`)
+  if (type === 'coupon') {
+    const label = data.discount_type === 'fixed' ? `¥${Number(data.discount_value).toLocaleString()} OFF` : `${data.discount_value}% OFF`
+    const desc = data.description ? `（${data.description}）` : ''
+    const expiry = data.valid_days ? `<div style="font-size:11px;color:#999;margin-top:6px;">配信から${data.valid_days}日間有効</div>` : ''
+    return boxWrap(data, `<div style="border:2px dashed ${data.borderColor||'#f5a623'};background:${data.bgColor||'#fff8e8'};border-radius:10px;padding:18px 24px;text-align:center;">
+      <div style="font-size:12px;color:${data.textColor||'#c07800'};font-weight:700;margin-bottom:8px;">${label} クーポン${desc}</div>
+      <div style="font-family:'Courier New',monospace;font-size:22px;font-weight:700;color:${data.textColor||'#c07800'};letter-spacing:4px;background:#fff;border:1px solid ${data.borderColor||'#f5a623'};padding:10px 20px;border-radius:6px;display:inline-block;">{{unique_coupon}}</div>
+      ${expiry}
+      <div style="font-size:10px;color:#bbb;margin-top:4px;">※ 1回のみ使用可能・あなた専用のコードです</div>
+    </div>`)
+  }
   if (type === 'divider') return boxWrap(data, `<hr style="border:none;border-top:${data.thickness}px solid ${data.color};margin:0;" />`)
   if (type === 'spacer') return `<div style="height:${data.height}px;"></div>`
   return ''
@@ -561,6 +574,38 @@ function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRow
           </div></div>
       </>}
 
+      {type === 'coupon' && <>
+        <div style={{ background: '#fff8e8', border: '1px solid #f5a623', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: '#c07800', marginBottom: 4 }}>
+          🎟️ 送信時に受信者ごとの1回限り専用コードが自動生成されます
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div>
+            <label style={lbl}>割引種類</label>
+            <select value={data.discount_type} onChange={e => set('discount_type', e.target.value)} style={inp}>
+              <option value="fixed">固定額（円）</option>
+              <option value="percent">割合（%）</option>
+            </select>
+          </div>
+          <div>
+            <label style={lbl}>{data.discount_type === 'fixed' ? '割引額（円）' : '割引率（%）'}</label>
+            <input type="number" value={data.discount_value} onChange={e => set('discount_value', Number(e.target.value))} min={1} max={data.discount_type === 'percent' ? 100 : undefined} style={inp} />
+          </div>
+        </div>
+        <div>
+          <label style={lbl}>有効日数（配信後N日間）</label>
+          <input type="number" value={data.valid_days} onChange={e => set('valid_days', Number(e.target.value))} min={1} max={365} style={inp} placeholder="30" />
+        </div>
+        <div>
+          <label style={lbl}>説明文（任意・例: メルマガ限定）</label>
+          <input value={data.description} onChange={e => set('description', e.target.value)} style={inp} placeholder="メルマガ限定" />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+          <div><label style={lbl}>背景色</label><input type="color" value={data.bgColor||'#fff8e8'} onChange={e => set('bgColor', e.target.value)} style={{ ...inp, padding: 2, height: 36 }} /></div>
+          <div><label style={lbl}>枠線色</label><input type="color" value={data.borderColor||'#f5a623'} onChange={e => set('borderColor', e.target.value)} style={{ ...inp, padding: 2, height: 36 }} /></div>
+          <div><label style={lbl}>文字色</label><input type="color" value={data.textColor||'#c07800'} onChange={e => set('textColor', e.target.value)} style={{ ...inp, padding: 2, height: 36 }} /></div>
+        </div>
+      </>}
+
       {type === 'divider' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div><label style={lbl}>線の色</label><input type="color" value={data.color} onChange={e => set('color', e.target.value)} style={{ ...inp, padding: 2, height: 36 }} /></div>
@@ -842,10 +887,12 @@ export default function NewsletterPage() {
   async function handleSend() {
     setSending(true); setResult(null)
     const html = generateHtml(rows, header, footer)
+    const couponBlock = rows.flatMap(r => r.cells).map(c => c.block).find(b => b?.type === 'coupon')
+    const couponConfig = couponBlock ? couponBlock.data : null
     const res = await fetch('/api/admin/newsletter', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subject, html, filter }),
+      body: JSON.stringify({ subject, html, filter, couponConfig }),
     })
     const json = await res.json()
     setSending(false); setConfirmed(false)

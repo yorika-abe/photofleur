@@ -1,5 +1,10 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
 import { Resend } from 'resend'
+import crypto from 'crypto'
+
+function generateCouponCode() {
+  return 'PF' + crypto.randomBytes(4).toString('hex').toUpperCase()
+}
 
 async function checkAdmin() {
   const server = await createSupabaseServerClient()
@@ -89,7 +94,7 @@ export async function POST(req) {
   const admin = await checkAdmin()
   if (!admin) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { subject, html, filter } = await req.json()
+  const { subject, html, filter, couponConfig } = await req.json()
   if (!subject?.trim() || !html?.trim()) return Response.json({ error: 'subject and html required' }, { status: 400 })
 
   const emails = await getFilteredEmails(admin, filter || { type: 'all' })
@@ -98,11 +103,28 @@ export async function POST(req) {
   const resend = new Resend(process.env.RESEND_API_KEY)
   let sent = 0, failed = 0
   for (const email of emails) {
+    let personalizedHtml = html
+    if (couponConfig) {
+      const code = generateCouponCode()
+      const validUntil = couponConfig.valid_days
+        ? new Date(Date.now() + Number(couponConfig.valid_days) * 86400000).toISOString()
+        : null
+      await admin.from('coupons').insert({
+        code,
+        discount_type: couponConfig.discount_type || 'fixed',
+        discount_value: Number(couponConfig.discount_value) || 0,
+        max_uses: 1,
+        valid_until: validUntil,
+        description: couponConfig.description || 'メルマガクーポン',
+        is_active: true,
+      })
+      personalizedHtml = personalizedHtml.replace(/\{\{unique_coupon\}\}/g, code)
+    }
     const { error } = await resend.emails.send({
       from: 'PhotoFleur <noreply@photofleur.jp>',
       to: email,
       subject,
-      html,
+      html: personalizedHtml,
     })
     if (error) failed++; else sent++
   }
