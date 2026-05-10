@@ -309,6 +309,50 @@ export default async function EventDetailPage({ params }) {
         <div>※続けての撮影の場合モデルと別行動による15分休憩でお願い致します。</div>
       </div>
 
+      {/* Slot availability table */}
+      {entries.length > 0 && (allSlots || []).length > 0 && (() => {
+        const uniqueLabels = []
+        const seenLabels = new Set()
+        for (const s of allSlots || []) {
+          if (!seenLabels.has(s.slot_label)) { seenLabels.add(s.slot_label); uniqueLabels.push(s.slot_label) }
+        }
+        const slotByEntryLabel = {}
+        for (const s of allSlots || []) {
+          slotByEntryLabel[`${s.event_entry_id}__${s.slot_label}`] = s
+        }
+        return (
+          <div style={{ marginBottom: 32, overflowX: 'auto' }}>
+            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#333', marginBottom: 12, marginTop: 0 }}>予約状況</h2>
+            <table style={{ borderCollapse: 'collapse', minWidth: '100%', fontSize: 13 }}>
+              <thead>
+                <tr>
+                  <th style={{ padding: '8px 12px', background: '#f5f5f5', border: '1px solid #e0e0e0', whiteSpace: 'nowrap', fontWeight: 700, color: '#555', minWidth: 56 }}></th>
+                  {uniqueLabels.map(label => (
+                    <th key={label} style={{ padding: '8px 10px', background: '#f5f5f5', border: '1px solid #e0e0e0', whiteSpace: 'nowrap', fontWeight: 700, color: '#444', textAlign: 'center', minWidth: 64 }}>{label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((entry, i) => (
+                  <tr key={entry.id}>
+                    <td style={{ padding: '8px 12px', border: '1px solid #e0e0e0', background: '#fafafa', fontWeight: 600, color: '#888', whiteSpace: 'nowrap', textAlign: 'center' }}>#{i + 1}</td>
+                    {uniqueLabels.map(label => {
+                      const slot = slotByEntryLabel[`${entry.id}__${label}`]
+                      const booked = slot && (indoorCountBySlot[slot.id] || 0) > 0
+                      return (
+                        <td key={label} style={{ padding: '8px 10px', border: '1px solid #e0e0e0', textAlign: 'center', fontSize: 18, background: slot ? (booked ? '#f0fff4' : '#fff') : '#f9f9f9' }}>
+                          {slot ? (booked ? '🈵' : '🈳') : <span style={{ color: '#ccc' }}>—</span>}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      })()}
+
       {/* Gallery - horizontal scroll, no title */}
       <GalleryMarquee images={event.gallery_images} />
 
