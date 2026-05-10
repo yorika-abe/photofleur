@@ -264,24 +264,33 @@ function blockToHtml(b) {
   return ''
 }
 
-function rowBgStyle(bg) {
-  if (!bg) return ''
-  if (bg.imageUrl) return `background:url('${bg.imageUrl}') center/cover no-repeat;`
-  if (bg.color) return `background:${bg.color};`
-  return ''
-}
-
 function rowToHtml(row) {
-  const bg = rowBgStyle(row.bg)
-  const wrapStyle = `padding:8px;${bg}`
+  const bg = row.bg || {}
+  const hasBg = !!(bg.imageUrl || bg.color)
+  const bgCss = bg.imageUrl
+    ? `background:url('${bg.imageUrl}') center/cover no-repeat;`
+    : bg.color ? `background:${bg.color};` : ''
+
+  const overlayOpacity = bg.imageUrl ? (100 - (bg.opacity ?? 100)) / 100 : 0
+  const hasOverlay = overlayOpacity > 0
+  const overlayDiv = hasOverlay
+    ? `<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,${overlayOpacity.toFixed(2)});pointer-events:none;"></div>`
+    : ''
+  const wrapStyle = `padding:8px;${bgCss}${hasOverlay ? 'position:relative;' : ''}`
+
   if (row.cells.length === 1) {
     const inner = row.cells[0].block ? blockToHtml(row.cells[0].block) : ''
-    return bg ? `<div style="${wrapStyle}">${inner}</div>` : inner
+    if (!hasBg) return inner
+    const content = hasOverlay ? `<div style="position:relative;z-index:1;">${inner}</div>` : inner
+    return `<div style="${wrapStyle}">${overlayDiv}${content}</div>`
   }
   const cols = row.cells.map((c, i) =>
     `<td width="${Math.round(row.colWidths[i])}%" style="vertical-align:top;padding:6px;">${c.block ? blockToHtml(c.block) : ''}</td>`
   ).join('')
-  return `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="table-layout:fixed;margin:0 0 8px;${bg}"><tr>${cols}</tr></table>`
+  const table = `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="table-layout:fixed;"><tr>${cols}</tr></table>`
+  if (!hasBg) return table
+  const content = hasOverlay ? `<div style="position:relative;z-index:1;">${table}</div>` : table
+  return `<div style="${wrapStyle}margin:0 0 8px;">${overlayDiv}${content}</div>`
 }
 
 function hexToRgba(hex, opacity) {
@@ -549,6 +558,17 @@ function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRow
             </div>
           )}
         </div>
+        {bg.imageUrl && (
+          <div>
+            <label style={lbl}>画像の不透明度: {bg.opacity ?? 100}%</label>
+            <input type="range" min={0} max={100} value={bg.opacity ?? 100}
+              onChange={e => onRowBgChange({ ...bg, opacity: Number(e.target.value) })}
+              style={{ width: '100%' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#aaa' }}>
+              <span>透明（文字が読みやすい）</span><span>不透明（画像がくっきり）</span>
+            </div>
+          </div>
+        )}
         <VarsPanel templateVars={templateVars} />
       </div>
     )
@@ -1218,13 +1238,11 @@ function RowView({ row, isFirst, isLast, selection, onSelectBlock, onSelectRow, 
   const containerRef = useRef(null)
   const isRowSelected = selection?.kind === 'row' && selection.rowId === row.id
 
-  const bgStyle = (() => {
-    const bg = row.bg
-    if (!bg) return {}
-    if (bg.imageUrl) return { backgroundImage: `url('${bg.imageUrl}')`, backgroundSize: 'cover', backgroundPosition: 'center' }
-    if (bg.color) return { background: bg.color }
-    return {}
-  })()
+  const bg = row.bg || {}
+  const bgStyle = bg.imageUrl
+    ? { backgroundImage: `url('${bg.imageUrl}')`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : bg.color ? { background: bg.color } : {}
+  const overlayOpacity = bg.imageUrl ? (100 - (bg.opacity ?? 100)) / 100 : 0
 
   return (
     <div style={{ marginBottom: 8 }}>
@@ -1255,11 +1273,14 @@ function RowView({ row, isFirst, isLast, selection, onSelectBlock, onSelectRow, 
 
       {/* Cells */}
       <div ref={containerRef}
-        style={{ display: 'flex', alignItems: 'stretch', border: `2px solid ${isRowSelected ? '#5bbfd6' : '#e8eef5'}`, borderRadius: 8, overflow: 'hidden', minHeight: 70, ...bgStyle }}>
+        style={{ position: 'relative', display: 'flex', alignItems: 'stretch', border: `2px solid ${isRowSelected ? '#5bbfd6' : '#e8eef5'}`, borderRadius: 8, overflow: 'hidden', minHeight: 70, ...bgStyle }}>
+        {overlayOpacity > 0 && (
+          <div style={{ position: 'absolute', inset: 0, background: `rgba(255,255,255,${overlayOpacity.toFixed(2)})`, pointerEvents: 'none', zIndex: 0 }} />
+        )}
         {row.cells.map((cell, ci) => {
           const isBlockSelected = cell.block?.id === selection?.blockId
           return (
-            <div key={cell.id} style={{ display: 'flex', alignItems: 'stretch', width: `${row.colWidths[ci]}%`, minWidth: 0, flexShrink: 0 }}>
+            <div key={cell.id} style={{ display: 'flex', alignItems: 'stretch', width: `${row.colWidths[ci]}%`, minWidth: 0, flexShrink: 0, position: 'relative', zIndex: 1 }}>
               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                 {cell.block ? (
                   <>
