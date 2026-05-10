@@ -316,37 +316,37 @@ export default async function EventDetailPage({ params }) {
         for (const s of allSlots || []) {
           if (!seenLabels.has(s.slot_label)) { seenLabels.add(s.slot_label); uniqueLabels.push(s.slot_label) }
         }
-        const slotByEntryLabel = {}
-        for (const s of allSlots || []) {
-          slotByEntryLabel[`${s.event_entry_id}__${s.slot_label}`] = s
-        }
+        const hasCapacity = (event.event_type === 'studio' || event.event_type === 'irregular') && event.studio_capacity
+        const capacity = hasCapacity ? event.studio_capacity : null
         return (
           <div style={{ marginBottom: 32, overflowX: 'auto' }}>
             <h2 style={{ fontSize: 17, fontWeight: 700, color: '#333', marginBottom: 12, marginTop: 0 }}>予約状況</h2>
-            <table style={{ borderCollapse: 'collapse', minWidth: '100%', fontSize: 13 }}>
+            <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr>
-                  <th style={{ padding: '8px 12px', background: '#f5f5f5', border: '1px solid #e0e0e0', whiteSpace: 'nowrap', fontWeight: 700, color: '#555', minWidth: 56 }}></th>
                   {uniqueLabels.map(label => (
-                    <th key={label} style={{ padding: '8px 10px', background: '#f5f5f5', border: '1px solid #e0e0e0', whiteSpace: 'nowrap', fontWeight: 700, color: '#444', textAlign: 'center', minWidth: 64 }}>{label}</th>
+                    <th key={label} style={{ padding: '8px 14px', background: '#f5f5f5', border: '1px solid #e0e0e0', whiteSpace: 'nowrap', fontWeight: 700, color: '#444', textAlign: 'center', minWidth: 72 }}>{label}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {entries.map((entry, i) => (
-                  <tr key={entry.id}>
-                    <td style={{ padding: '8px 12px', border: '1px solid #e0e0e0', background: '#fafafa', fontWeight: 600, color: '#888', whiteSpace: 'nowrap', textAlign: 'center' }}>#{i + 1}</td>
-                    {uniqueLabels.map(label => {
-                      const slot = slotByEntryLabel[`${entry.id}__${label}`]
-                      const booked = slot && (indoorCountBySlot[slot.id] || 0) > 0
-                      return (
-                        <td key={label} style={{ padding: '8px 10px', border: '1px solid #e0e0e0', textAlign: 'center', fontSize: 18, background: slot ? (booked ? '#f0fff4' : '#fff') : '#f9f9f9' }}>
-                          {slot ? (booked ? '🈵' : '🈳') : <span style={{ color: '#ccc' }}>—</span>}
-                        </td>
-                      )
-                    })}
-                  </tr>
-                ))}
+                <tr>
+                  {uniqueLabels.map(label => {
+                    const count = indoorCountByLabel[label] || 0
+                    return (
+                      <td key={label} style={{ padding: '10px 14px', border: '1px solid #e0e0e0', textAlign: 'center', verticalAlign: 'top' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                          {capacity
+                            ? Array.from({ length: capacity }, (_, i) => (
+                                <span key={i} style={{ fontSize: 18, lineHeight: 1 }}>{i < count ? '🈵' : '🈳'}</span>
+                              ))
+                            : <span style={{ fontSize: 18, lineHeight: 1 }}>{count > 0 ? '🈵' : '🈳'}</span>
+                          }
+                        </div>
+                      </td>
+                    )
+                  })}
+                </tr>
               </tbody>
             </table>
           </div>
