@@ -56,7 +56,11 @@ export default function GoodsShop() {
           {goods.map(g => {
             const soldOut = g.stock === 0
             return (
-              <div key={g.id} style={{ background: '#fff', borderRadius: 16, border: '1px solid #eee', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', opacity: soldOut ? 0.75 : 1 }}>
+              <div key={g.id}
+                onClick={() => !soldOut && setOrderTarget(g)}
+                style={{ background: '#fff', borderRadius: 16, border: '1px solid #eee', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', opacity: soldOut ? 0.75 : 1, cursor: soldOut ? 'default' : 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}
+                onMouseEnter={e => { if (!soldOut) { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(26,53,96,0.15)' } }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)' }}>
                 {g.image ? (
                   <img src={g.image} alt={g.title} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
                 ) : (
@@ -71,15 +75,9 @@ export default function GoodsShop() {
                       {g.stock >= 0 && g.stock <= 5 && !soldOut && (
                         <span style={{ marginLeft: 8, fontSize: 12, color: '#c62828' }}>残{g.stock}個</span>
                       )}
+                      <div style={{ fontSize: 11, color: '#aaa', marginTop: 3 }}>※対象によって料金が変動します</div>
                     </div>
-                    {soldOut ? (
-                      <span style={{ fontSize: 13, color: '#e53935', fontWeight: 700 }}>完売御礼</span>
-                    ) : (
-                      <button onClick={() => setOrderTarget(g)}
-                        style={{ padding: '10px 18px', borderRadius: 10, border: 'none', background: '#1a3560', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-                        購入する
-                      </button>
-                    )}
+                    {soldOut && <span style={{ fontSize: 13, color: '#e53935', fontWeight: 700 }}>完売御礼</span>}
                   </div>
                 </div>
               </div>

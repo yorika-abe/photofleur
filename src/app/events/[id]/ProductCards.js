@@ -200,8 +200,11 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
                       🕐 {p.available_slots.join(' / ')}
                     </div>
                   )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+                  <div style={{ marginTop: 6 }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: '#555' }}>¥{(p.price || 0).toLocaleString()}</span>
+                    <div style={{ fontSize: 10, color: '#aaa', marginTop: 2 }}>※対象によって料金が変動します</div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}><span />
                     <span style={{ fontSize: 11, color: soldOut ? '#e53935' : p.stock > 0 ? '#999' : '#e53935', fontWeight: p.stock <= 0 ? 700 : 400 }}>
                       {soldOut ? '完売御礼' : p.stock > 0 ? `在庫 ${p.stock}` : '在庫なし'}
                     </span>
