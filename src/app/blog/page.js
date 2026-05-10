@@ -50,9 +50,9 @@ function BlogContent() {
     if (activeCategory) query = query.eq('category', activeCategory)
     if (activeAuthor === '__admin__') {
       const adminEntry = authors.find(a => a.id === '__admin__')
-      if (adminEntry?.adminIds?.length) query = query.in('author_id', adminEntry.adminIds)
+      if (adminEntry?.adminIds?.length) query = query.in('author_id', adminEntry.adminIds).eq('posted_as_admin', true)
     } else if (activeAuthor) {
-      query = query.eq('author_id', activeAuthor)
+      query = query.eq('author_id', activeAuthor).neq('posted_as_admin', true)
     }
     const { data } = await query
     setPosts(data || [])
