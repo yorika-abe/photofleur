@@ -327,7 +327,15 @@ export default async function EventDetailPage({ params }) {
         }
         return (
           <div style={{ marginBottom: 32, overflowX: 'auto' }}>
-            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#333', marginBottom: 12, marginTop: 0 }}>予約状況</h2>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 10, flexWrap: 'wrap' }}>
+              <h2 style={{ fontSize: 17, fontWeight: 700, color: '#333', margin: 0 }}>予約状況</h2>
+              <span style={{ fontSize: 11, color: '#aaa', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                ※時間あたりの埋まり状況
+                <span>🈵 予約済み</span>
+                <span>🈳 空き</span>
+                {capacity !== null && <span>（🈳）定員超えの予約可能枠</span>}
+              </span>
+            </div>
             <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr>
