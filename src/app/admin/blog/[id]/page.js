@@ -42,7 +42,7 @@ export default function AdminBlogEditPage() {
 
   async function uploadCover(rawFile) {
     setUploading(true)
-    const file = await compressImage(rawFile)
+    const file = await compressImage(rawFile, { maxWidth: 1600, quality: 0.85, aspectRatio: 16 / 9 })
     const ext = file.name.split('.').pop()
     const path = `blog/${Date.now()}.${ext}`
     const fd = new FormData()

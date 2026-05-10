@@ -1,4 +1,4 @@
-export async function compressImage(file, { maxWidth = 1920, quality = 0.85 } = {}) {
+export async function compressImage(file, { maxWidth = 1920, quality = 0.85, aspectRatio = null } = {}) {
   if (!file.type.startsWith('image/') || file.type === 'image/svg+xml') return file
 
   return new Promise((resolve) => {
@@ -6,15 +6,30 @@ export async function compressImage(file, { maxWidth = 1920, quality = 0.85 } = 
     reader.onload = (e) => {
       const img = new Image()
       img.onload = () => {
-        let { width, height } = img
-        if (width > maxWidth) {
-          height = Math.round(height * maxWidth / width)
-          width = maxWidth
+        let srcX = 0, srcY = 0, srcW = img.width, srcH = img.height
+
+        if (aspectRatio) {
+          const imgRatio = img.width / img.height
+          if (imgRatio > aspectRatio) {
+            srcW = Math.round(img.height * aspectRatio)
+            srcX = Math.round((img.width - srcW) / 2)
+          } else {
+            srcH = Math.round(img.width / aspectRatio)
+            srcY = Math.round((img.height - srcH) / 2)
+          }
         }
+
+        let dstW = srcW
+        let dstH = srcH
+        if (dstW > maxWidth) {
+          dstH = Math.round(dstH * maxWidth / dstW)
+          dstW = maxWidth
+        }
+
         const canvas = document.createElement('canvas')
-        canvas.width = width
-        canvas.height = height
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height)
+        canvas.width = dstW
+        canvas.height = dstH
+        canvas.getContext('2d').drawImage(img, srcX, srcY, srcW, srcH, 0, 0, dstW, dstH)
         canvas.toBlob((blob) => {
           if (!blob || blob.size >= file.size) { resolve(file); return }
           const name = file.name.replace(/\.[^.]+$/, '.jpg')

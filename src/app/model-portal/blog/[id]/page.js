@@ -62,7 +62,7 @@ export default function ModelBlogEditPage() {
   async function uploadCover(file) {
     setCoverUploading(true)
     try {
-      const compressed = await compressImage(file, { maxWidth: 1600, quality: 0.85 })
+      const compressed = await compressImage(file, { maxWidth: 1600, quality: 0.85, aspectRatio: 16 / 9 })
       const path = `blog/cover/${userId || 'u'}-${Date.now()}.jpg`
       const fd = new FormData()
       fd.append('file', compressed, 'cover.jpg')
