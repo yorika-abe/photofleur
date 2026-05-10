@@ -39,7 +39,7 @@ export default function AdminBlogPage() {
     const [{ data: postsData }, { data: settingRow }] = await Promise.all([
       supabase
         .from('blog_posts')
-        .select('id, title, slug, status, category, published_at, created_at, author_id, posted_as_admin, user_profiles!author_id(name)')
+        .select('id, title, slug, status, category, published_at, created_at, author_id, posted_as_admin, pending_edits, user_profiles!author_id(name)')
         .order('created_at', { ascending: false }),
       supabase.from('site_settings').select('value').eq('key', 'blog_featured_ids').maybeSingle(),
     ])
@@ -74,6 +74,24 @@ export default function AdminBlogPage() {
     }
     setAuthors(unique)
     setLoading(false)
+  }
+
+  async function approvePendingEdits(post) {
+    const edits = post.pending_edits
+    if (!edits) return
+    const updates = { pending_edits: null }
+    if (edits.title) updates.title = edits.title
+    if (edits.slug) updates.slug = edits.slug
+    if (edits.content !== undefined) updates.content = edits.content
+    if ('cover_image' in edits) updates.cover_image = edits.cover_image
+    if (edits.category) updates.category = edits.category
+    await supabase.from('blog_posts').update(updates).eq('id', post.id)
+    setPosts(prev => prev.map(p => p.id === post.id ? { ...p, ...updates } : p))
+  }
+
+  async function rejectPendingEdits(id) {
+    await supabase.from('blog_posts').update({ pending_edits: null }).eq('id', id)
+    setPosts(prev => prev.map(p => p.id === id ? { ...p, pending_edits: null } : p))
   }
 
   async function updateStatus(id, status) {
@@ -173,7 +191,12 @@ export default function AdminBlogPage() {
             return (
               <div key={post.id} style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', border: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: 200 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: '#2f2244', marginBottom: 4 }}>{post.title}</div>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: '#2f2244', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {post.title}
+                    {post.pending_edits?.submitted && (
+                      <span style={{ fontSize: 10, background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '2px 6px', fontWeight: 700 }}>編集申請</span>
+                    )}
+                  </div>
                   <div style={{ fontSize: 12, color: '#aaa', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {post.category && <span style={{ background: '#e8f5e9', color: '#388e3c', borderRadius: 4, padding: '1px 6px' }}>{catLabel}</span>}
                     {post._authorName && <span>{post._authorName}</span>}
@@ -199,6 +222,18 @@ export default function AdminBlogPage() {
                       style={{ background: '#fce4ec', color: '#ad1457', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                       削除を実行
                     </button>
+                  )}
+                  {post.status === 'published' && post.pending_edits?.submitted && (
+                    <>
+                      <button onClick={() => approvePendingEdits(post)}
+                        style={{ background: '#e8f5e9', color: '#388e3c', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        編集承認
+                      </button>
+                      <button onClick={() => rejectPendingEdits(post.id)}
+                        style={{ background: '#f5f5f5', color: '#888', border: 'none', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}>
+                        却下
+                      </button>
+                    </>
                   )}
                   {post.status === 'published' && (
                     <button onClick={() => updateStatus(post.id, 'draft')}

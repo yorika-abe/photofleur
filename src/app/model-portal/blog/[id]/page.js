@@ -20,7 +20,7 @@ export default function ModelBlogEditPage() {
   const isNew = id === 'new'
 
   const [form, setForm] = useState({ title: '', slug: '', content: '', cover_image: '' })
-  const [savedCoverImage, setSavedCoverImage] = useState('')
+  const [postStatus, setPostStatus] = useState('draft')
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
   const [coverUploading, setCoverUploading] = useState(false)
@@ -50,8 +50,10 @@ export default function ModelBlogEditPage() {
       if (!isNew) {
         const { data } = await supabase.from('blog_posts').select('*').eq('id', id).eq('author_id', user.id).single()
         if (!data) { router.push('/model-portal/blog'); return }
-        setForm({ title: data.title || '', slug: data.slug || '', content: data.content || '', cover_image: data.cover_image || '' })
-        setSavedCoverImage(data.cover_image || '')
+        setPostStatus(data.status)
+        // 公開中は pending_edits から（なければ本番フィールドを初期値に）
+        const src = (data.status === 'published' && data.pending_edits) ? data.pending_edits : data
+        setForm({ title: src.title || '', slug: src.slug || data.slug || '', content: src.content || '', cover_image: src.cover_image || '' })
       }
       setLoading(false)
     }
@@ -69,31 +71,14 @@ export default function ModelBlogEditPage() {
       const res = await fetch('/api/model-portal/upload', { method: 'POST', body: fd })
       const data = await res.json()
       if (data.error) { alert('アップロードエラー: ' + data.error); return }
-      // 古いカバー画像をストレージから削除
-      if (form.cover_image && form.cover_image !== savedCoverImage) {
-        deleteStorageUrl(form.cover_image)
-      }
       setForm(f => ({ ...f, cover_image: data.url }))
     } finally {
       setCoverUploading(false)
     }
   }
 
-  function deleteStorageUrl(url) {
-    const base = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/`
-    if (!url?.startsWith(base)) return
-    fetch('/api/model-portal/upload', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: url.replace(base, '') }),
-    })
-  }
-
   function removeCover() {
-    const old = form.cover_image
     setForm(f => ({ ...f, cover_image: '' }))
-    // DBに保存済みの画像はsave時にAPIで削除。未保存アップロードは即削除
-    if (old && old !== savedCoverImage) deleteStorageUrl(old)
   }
 
   async function save(submitForReview = false) {
@@ -104,27 +89,42 @@ export default function ModelBlogEditPage() {
     const slug = isNew && !form.slug
       ? `${baseSlug || 'post'}-${Date.now()}`
       : baseSlug || `post-${Date.now()}`
-    const status = submitForReview ? 'pending_review' : 'draft'
     const category = submitForReview && modelCategorySlug ? modelCategorySlug : undefined
-    const updates = {
-      title: form.title, slug, content: form.content,
-      cover_image: form.cover_image || null, status,
-      updated_at: new Date().toISOString(),
+    const payload = {
+      title: form.title,
+      slug,
+      content: form.content,
+      cover_image: form.cover_image || null,
       ...(category ? { category } : {}),
     }
 
     if (isNew) {
+      const updates = { ...payload, status: submitForReview ? 'pending_review' : 'draft', updated_at: new Date().toISOString() }
       const { data, error } = await supabase.from('blog_posts').insert({ ...updates, author_id: userId }).select('id').single()
       if (error) { alert('エラー: ' + error.message); setSaving(false); return }
       if (submitForReview) {
         alert('承認申請しました。運営の確認後に公開されます。')
         router.push('/model-portal/blog')
       } else {
-        setSavedCoverImage(form.cover_image)
         router.replace(`/model-portal/blog/${data.id}`)
       }
+    } else if (postStatus === 'published') {
+      // 公開中：pending_edits に保存（本番は変えない）
+      const res = await fetch(`/api/model-portal/blog/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, submitted: submitForReview }),
+      })
+      if (!res.ok) { alert('エラーが発生しました'); setSaving(false); return }
+      if (submitForReview) {
+        alert('編集内容の承認を申請しました。運営が確認後に反映されます。')
+        router.push('/model-portal/blog')
+      } else {
+        alert('編集内容を保存しました（まだ公開記事には反映されていません）')
+      }
     } else {
-      // カバー画像が変わった場合、API経由で古い画像削除
+      // 非公開記事：メインフィールドを更新
+      const updates = { ...payload, status: submitForReview ? 'pending_review' : 'draft', updated_at: new Date().toISOString() }
       const res = await fetch(`/api/model-portal/blog/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -135,7 +135,6 @@ export default function ModelBlogEditPage() {
         alert('承認申請しました。運営の確認後に公開されます。')
         router.push('/model-portal/blog')
       } else {
-        setSavedCoverImage(form.cover_image)
         alert('下書きを保存しました')
       }
     }
@@ -143,6 +142,7 @@ export default function ModelBlogEditPage() {
   }
 
   const inp = { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }
+  const isPublished = postStatus === 'published'
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>読み込み中...</div>
 
@@ -153,12 +153,13 @@ export default function ModelBlogEditPage() {
         {isNew ? '新規記事作成' : '記事編集'}
       </h1>
 
-      <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#1565c0' }}>
-        💡 「承認を申請する」を押すと運営に送信されます。承認後に公開されます。
+      <div style={{ background: isPublished ? '#fff8e1' : '#e3f2fd', border: `1px solid ${isPublished ? '#ffe082' : '#90caf9'}`, borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: isPublished ? '#f57f17' : '#1565c0' }}>
+        {isPublished
+          ? '⚠️ 公開中の記事です。編集内容は承認申請後、運営が承認してから公開記事に反映されます。'
+          : '💡 「承認を申請する」を押すと運営に送信されます。承認後に公開されます。'}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
         <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>タイトル *</label>
@@ -203,11 +204,11 @@ export default function ModelBlogEditPage() {
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button onClick={() => save(false)} disabled={saving || coverUploading}
             style={{ background: '#f0f0f0', color: '#555', border: 'none', borderRadius: 10, padding: '13px 24px', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-            下書き保存
+            {isPublished ? '編集を保存（未申請）' : '下書き保存'}
           </button>
           <button onClick={() => save(true)} disabled={saving || coverUploading}
             style={{ background: '#2f2244', color: '#fff', border: 'none', borderRadius: 10, padding: '13px 28px', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
-            {saving ? '送信中...' : '承認を申請する'}
+            {saving ? '送信中...' : isPublished ? '編集を申請する' : '承認を申請する'}
           </button>
         </div>
       </div>
