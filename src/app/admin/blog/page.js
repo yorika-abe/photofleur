@@ -38,21 +38,37 @@ export default function AdminBlogPage() {
     const [{ data: postsData }, { data: settingRow }] = await Promise.all([
       supabase
         .from('blog_posts')
-        .select('id, title, slug, status, category, published_at, created_at, author_id, user_profiles!author_id(name)')
+        .select('id, title, slug, status, category, published_at, created_at, author_id, posted_as_admin, user_profiles!author_id(name)')
         .order('created_at', { ascending: false }),
       supabase.from('site_settings').select('value').eq('key', 'blog_featured_ids').maybeSingle(),
     ])
     const posts = postsData || []
-    setPosts(posts)
     const ids = JSON.parse(settingRow?.value || '[]')
     setFeaturedIds(ids)
+
+    // モデル画面投稿の author_id を収集してモデルテーブルから芸名取得
+    const modelAuthorIds = [...new Set(posts.filter(p => !p.posted_as_admin && p.author_id).map(p => p.author_id))]
+    let modelNameMap = {}
+    if (modelAuthorIds.length > 0) {
+      const { data: modelsData } = await supabase.from('models').select('user_id, name').in('user_id', modelAuthorIds)
+      if (modelsData) modelsData.forEach(m => { modelNameMap[m.user_id] = m.name })
+    }
+
+    const postsWithName = posts.map(p => ({
+      ...p,
+      _authorName: p.posted_as_admin
+        ? (p.user_profiles?.name || p.author_id)
+        : (modelNameMap[p.author_id] || p.user_profiles?.name?.replace(/^運営\s*/, '') || p.author_id),
+    }))
+    setPosts(postsWithName)
+
     // build unique authors
     const seen = new Set()
     const unique = []
-    for (const p of posts) {
+    for (const p of postsWithName) {
       if (p.author_id && !seen.has(p.author_id)) {
         seen.add(p.author_id)
-        unique.push({ id: p.author_id, name: p.user_profiles?.name || p.author_id })
+        unique.push({ id: p.author_id, name: p._authorName })
       }
     }
     setAuthors(unique)
@@ -159,7 +175,7 @@ export default function AdminBlogPage() {
                   <div style={{ fontWeight: 700, fontSize: 15, color: '#2f2244', marginBottom: 4 }}>{post.title}</div>
                   <div style={{ fontSize: 12, color: '#aaa', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {post.category && <span style={{ background: '#e8f5e9', color: '#388e3c', borderRadius: 4, padding: '1px 6px' }}>{catLabel}</span>}
-                    {post.user_profiles?.name && <span>{post.user_profiles.name}</span>}
+                    {post._authorName && <span>{post._authorName}</span>}
                     <span>
                       {post.published_at
                         ? `公開: ${new Date(post.published_at).toLocaleDateString('ja-JP')}`
