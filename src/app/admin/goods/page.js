@@ -255,8 +255,8 @@ export default function GoodsAdminPage() {
           </div>
           <div>
             <label style={lbl}>デフォルトの在庫</label>
-            <input type="number" min="-1" value={form.stock}
-              onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} style={inp} placeholder="∞（-1で無制限）" />
+            <input type="number" min="0" value={form.stock < 0 ? '' : form.stock}
+              onChange={e => setForm(f => ({ ...f, stock: e.target.value === '' ? -1 : Number(e.target.value) }))} style={inp} placeholder="∞" />
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={lbl}>詳細説明</label>

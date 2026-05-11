@@ -80,7 +80,7 @@ export default function EventEditPage() {
   const [uploadCount, setUploadCount] = useState({ current: 0, total: 0 })
   const [products, setProducts] = useState([])
   const [modelsSubTab, setModelsSubTab] = useState('models')
-  const [newProduct, setNewProduct] = useState({ name: '', image: '', description: '', price: 0, stock: -1, layers: [], is_delivery: false, notify_model: true })
+  const [newProduct, setNewProduct] = useState({ name: '', image: '', description: '', price: 0, stock: -1, layers: [], is_delivery: false, notify_model: true, sale_end: '', hansellingItems: [{ id: 'h0', label: '', amount: 0 }] })
   const [editingProductId, setEditingProductId] = useState(null)
   const productFormRef = useRef(null)
 
@@ -435,8 +435,11 @@ export default function EventEditPage() {
       optionsObj.layers = validLayers
     }
     if (validLayers.some(l => l.type === 'models')) optionsObj.notify_model = newProduct.notify_model
+    if (newProduct.sale_end) optionsObj.sale_end = new Date(newProduct.sale_end).toISOString()
+    const validHanselling = newProduct.hansellingItems.filter(i => i.label || i.amount > 0)
+    if (validHanselling.length > 0) optionsObj.hanselling_items = validHanselling
     const options = Object.keys(optionsObj).length > 0 ? optionsObj : null
-    const RESET_PRODUCT = { name: '', image: '', description: '', price: 0, stock: -1, layers: [], is_delivery: false, notify_model: true }
+    const RESET_PRODUCT = { name: '', image: '', description: '', price: 0, stock: -1, layers: [], is_delivery: false, notify_model: true, sale_end: '', hansellingItems: [{ id: 'h0', label: '', amount: 0 }] }
     if (editingProductId) {
       await fetch(`/api/admin/events/${id}/products`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -486,7 +489,11 @@ export default function EventEditPage() {
         }
       })
     }
-    setNewProduct({ name: p.name, image: p.image || '', description: p.description || '', price: p.price || 0, stock: p.stock ?? -1, layers, is_delivery: p.options?.is_delivery || false, notify_model: p.options?.notify_model !== false })
+    const saleEnd = p.options?.sale_end ? new Date(p.options.sale_end).toISOString().slice(0, 16) : ''
+    const hansellingItems = p.options?.hanselling_items?.length > 0
+      ? p.options.hanselling_items
+      : [{ id: 'h0', label: '', amount: 0 }]
+    setNewProduct({ name: p.name, image: p.image || '', description: p.description || '', price: p.price || 0, stock: p.stock ?? -1, layers, is_delivery: p.options?.is_delivery || false, notify_model: p.options?.notify_model !== false, sale_end: saleEnd, hansellingItems })
     setEditingProductId(p.id)
     setModelsSubTab('products')
     setTimeout(() => productFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
@@ -1047,6 +1054,36 @@ export default function EventEditPage() {
                         <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>詳細説明</label>
                         <textarea value={newProduct.description} onChange={e => setNewProduct(p => ({ ...p, description: e.target.value }))}
                           rows={2} style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, resize: 'vertical', boxSizing: 'border-box' }} placeholder="商品の説明..." />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>販売締め切り日時（任意）</label>
+                        <input type="datetime-local" value={newProduct.sale_end}
+                          onChange={e => setNewProduct(p => ({ ...p, sale_end: e.target.value }))}
+                          style={{ padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13 }} />
+                        {newProduct.sale_end && <span style={{ fontSize: 11, color: '#888', marginLeft: 8 }}>この日時以降は商品が非表示になります</span>}
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 6 }}>販管費 <span style={{ fontWeight: 400, color: '#bbb', fontSize: 11 }}>（仕入れ・手数料など）</span></label>
+                        {newProduct.hansellingItems.map((item, i) => (
+                          <div key={item.id || i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                            <input value={item.label} onChange={e => setNewProduct(p => ({ ...p, hansellingItems: p.hansellingItems.map((h, idx) => idx === i ? { ...h, label: e.target.value } : h) }))}
+                              placeholder="項目名" style={{ flex: 2, padding: '6px 9px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
+                            <input type="number" min="0" value={item.amount}
+                              onChange={e => setNewProduct(p => ({ ...p, hansellingItems: p.hansellingItems.map((h, idx) => idx === i ? { ...h, amount: Number(e.target.value) } : h) }))}
+                              placeholder="0" style={{ flex: 1, padding: '6px 9px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
+                            {newProduct.hansellingItems.length > 1 && (
+                              <button type="button" onClick={() => setNewProduct(p => ({ ...p, hansellingItems: p.hansellingItems.filter((_, idx) => idx !== i) }))}
+                                style={{ padding: '0 10px', border: '1px solid #ddd', borderRadius: 7, background: '#fff', color: '#e53935', cursor: 'pointer', fontSize: 16 }}>×</button>
+                            )}
+                          </div>
+                        ))}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                          <button type="button" onClick={() => setNewProduct(p => ({ ...p, hansellingItems: [...p.hansellingItems, { id: String(Date.now()), label: '', amount: 0 }] }))}
+                            style={{ fontSize: 12, color: '#1a3560', background: 'none', border: '1px solid #1a3560', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}>+ 追加</button>
+                          <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>
+                            合計 ¥{newProduct.hansellingItems.reduce((s, h) => s + (Number(h.amount) || 0), 0).toLocaleString()}
+                          </span>
+                        </div>
                       </div>
                       <label style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontSize: 12 }}>
                         <input type="checkbox" checked={newProduct.is_delivery}

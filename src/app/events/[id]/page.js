@@ -84,7 +84,7 @@ export default async function EventDetailPage({ params }) {
 
   const [{ data: allSlots }, { data: bookingCounts }] = await Promise.all([
     entryIds.length
-      ? supabase.from('booking_slots').select('id, slot_label, start_time, price, is_reserved, max_reservations, slot_order, event_entry_id').in('event_entry_id', entryIds).order('slot_order', { ascending: true })
+      ? supabase.from('booking_slots').select('id, slot_label, start_time, end_time, price, is_reserved, max_reservations, slot_order, event_entry_id').in('event_entry_id', entryIds).order('slot_order', { ascending: true })
       : Promise.resolve({ data: [] }),
     entryIds.length
       ? supabase.from('bookings').select('slot_id, is_outdoor').in('slot_id',
@@ -95,6 +95,7 @@ export default async function EventDetailPage({ params }) {
 
   const slotsByEntry = {}
   for (const slot of allSlots || []) {
+    if (slot.end_time && new Date(slot.end_time) <= now) continue
     if (!slotsByEntry[slot.event_entry_id]) slotsByEntry[slot.event_entry_id] = []
     slotsByEntry[slot.event_entry_id].push(slot)
   }
@@ -388,7 +389,7 @@ export default async function EventDetailPage({ params }) {
 
       {/* Products */}
       <ProductCards
-        products={products || []}
+        products={(products || []).filter(p => !p.options?.sale_end || new Date(p.options.sale_end) > now)}
         eventId={id}
         slotLabels={[...new Set((allSlots || []).map(s => s.slot_label))]}
         eventModels={[...new Map(entries.filter(e => e.models).map(e => [e.model_id, e.models])).values()]}
