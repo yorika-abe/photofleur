@@ -6,18 +6,28 @@ export function genId() {
   return Math.random().toString(36).slice(2, 9)
 }
 
-// Get choices for a given layer, filtering by parent selection id (layer 2+)
-export function getLayerChoices(layer, parentSelectionId) {
+// Get choices for a given layer, filtering by parent/grandparent selection id
+export function getLayerChoices(layer, parentSelectionId, grandparentSelectionId) {
   const choices = layer.type === 'models' ? (layer.model_choices || []) : (layer.choices || [])
   if (!parentSelectionId) return choices
-  return choices.filter(c => c.parent_stocks && parentSelectionId in c.parent_stocks)
+  return choices.filter(c => {
+    if (grandparentSelectionId && c.nested_stocks?.[parentSelectionId]) {
+      return grandparentSelectionId in c.nested_stocks[parentSelectionId]
+    }
+    return c.parent_stocks && parentSelectionId in c.parent_stocks
+  })
 }
 
-// Get display stock for a choice at a given layer index
+// Get display stock for a choice
 // For layer 0: choice.stock
-// For layer 1+: choice.parent_stocks[parentChoiceId]
-export function getChoiceStock(choice, layerIdx, parentChoiceId) {
+// For layer 1: choice.parent_stocks[parentChoiceId]
+// For layer 2+: choice.nested_stocks[parentId][grandparentId] if available, else parent_stocks[parentId]
+export function getChoiceStock(choice, layerIdx, parentChoiceId, grandparentChoiceId) {
   if (layerIdx === 0) return choice.stock ?? -1
+  if (grandparentChoiceId && choice.nested_stocks?.[parentChoiceId]) {
+    const ns = choice.nested_stocks[parentChoiceId][grandparentChoiceId]
+    if (ns !== undefined) return ns
+  }
   return choice.parent_stocks?.[parentChoiceId] ?? -1
 }
 
@@ -36,8 +46,14 @@ export function checkLayersStock(options, path) {
       if (choice.stock === 0) return false
     } else {
       const parentId = path[i - 1]
-      const ps = choice.parent_stocks?.[parentId]
-      if (ps === 0) return false
+      const grandparentId = i >= 2 ? path[i - 2] : null
+      if (grandparentId && choice.nested_stocks?.[parentId]) {
+        const ns = choice.nested_stocks[parentId][grandparentId]
+        if (ns === 0) return false
+      } else {
+        const ps = choice.parent_stocks?.[parentId]
+        if (ps === 0) return false
+      }
     }
   }
   return true
@@ -58,6 +74,20 @@ export function decrementLayersStock(options, path) {
           return c.stock > 0 ? { ...c, stock: c.stock - 1 } : c
         }
         const parentId = path[i - 1]
+        const grandparentId = i >= 2 ? path[i - 2] : null
+        if (grandparentId && c.nested_stocks?.[parentId]?.[grandparentId] != null) {
+          const ns = c.nested_stocks[parentId][grandparentId]
+          if (ns > 0) {
+            return {
+              ...c,
+              nested_stocks: {
+                ...c.nested_stocks,
+                [parentId]: { ...c.nested_stocks[parentId], [grandparentId]: ns - 1 },
+              },
+            }
+          }
+          return c
+        }
         const ps = c.parent_stocks?.[parentId]
         if (ps > 0) return { ...c, parent_stocks: { ...c.parent_stocks, [parentId]: ps - 1 } }
         return c
@@ -68,7 +98,7 @@ export function decrementLayersStock(options, path) {
 }
 
 // Get the price override for the leaf choice in a selection path.
-// Checks parent_prices[parentId] first (per-model pricing), then choice.price, then null.
+// Checks nested_prices[parentId][grandparentId] first, then parent_prices[parentId], then choice.price.
 export function getLeafChoicePrice(options, path) {
   if (!options || options.type !== 'layers' || !path?.length) return null
   const layers = options.layers || []
@@ -78,6 +108,12 @@ export function getLeafChoicePrice(options, path) {
   const choices = layer.type === 'models' ? (layer.model_choices || []) : (layer.choices || [])
   const choice = choices.find(c => c.id === path[leafIdx])
   if (!choice) return null
+  if (leafIdx >= 2 && choice.nested_prices) {
+    const parentId = path[leafIdx - 1]
+    const grandparentId = path[leafIdx - 2]
+    const np = choice.nested_prices?.[parentId]?.[grandparentId]
+    if (np != null) return np
+  }
   if (leafIdx > 0 && choice.parent_prices) {
     const parentChoiceId = path[leafIdx - 1]
     if (parentChoiceId != null && choice.parent_prices[parentChoiceId] != null) {
