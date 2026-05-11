@@ -912,7 +912,19 @@ export default function AdminBookingStatusPage() {
               {!currentItem ? (
                 <p style={{ color: '#999' }}>イベントを選択してください。</p>
               ) : currentItem.rows.length === 0 ? (
-                <p style={{ color: '#999' }}>出演モデルがいません。</p>
+                <div>
+                  <p style={{ color: '#999', marginBottom: 16 }}>出演モデルがいません。</p>
+                  {isPastEvent && (
+                    <button
+                      onClick={() => {
+                        if (!window.confirm('このイベントを要対応から消去しますか？')) return
+                        doSave(currentItem, 0, 0, 0, 0, 0, 0, 0)
+                      }}
+                      style={{ background: '#e53935', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                      要対応から消去
+                    </button>
+                  )}
+                </div>
               ) : (() => {
                 let prevTier = null
 
