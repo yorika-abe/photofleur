@@ -13,6 +13,7 @@ import ScheduleCarousel from '@/components/ScheduleCarousel'
 import NoticesCarousel from '@/components/NoticesCarousel'
 import RepMessage from '@/components/RepMessage'
 import SectionTitle from '@/components/SectionTitle'
+import FeaturedPhotosSection from '@/components/FeaturedPhotosSection'
 
 export const dynamic = 'force-dynamic'
 
@@ -76,7 +77,7 @@ export default async function Home() {
     featuredBlogIds.length > 0
       ? adminSupabase.from('blog_posts').select('id, title, slug, cover_image, content, published_at, category').in('id', featuredBlogIds).eq('status', 'published').order('published_at', { ascending: false })
       : { data: [] },
-    adminSupabase.from('contributed_photos').select('id, photo_url, sns_url, display_name').eq('is_featured', true).order('featured_order', { ascending: true }),
+    adminSupabase.from('contributed_photos').select('id, photo_url, sns_url, display_name, model_ids').eq('is_featured', true).order('featured_order', { ascending: true }),
   ])
   const featuredPhotos = rawFeaturedPhotos || []
   const notices = noticesData || []
@@ -252,34 +253,7 @@ export default async function Home() {
       </section>
 
       {/* ─── FEATURED PHOTOS ─── */}
-      {featuredPhotos.length > 0 && (
-        <section style={{ background: '#f7fbfd', padding: '80px 0' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
-            <div style={{ textAlign: 'center', marginBottom: 40 }}>
-              <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 8, fontWeight: 600 }}>Gallery</p>
-              <h2 style={{ ...serif, fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>ご提供いただいた写真</h2>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
-              {featuredPhotos.map(p => (
-                <div key={p.id} style={{ borderRadius: 14, overflow: 'hidden', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
-                  <div style={{ aspectRatio: '4/3', overflow: 'hidden' }}>
-                    <img src={p.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                  <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                    <span style={{ fontSize: 13, color: '#555', fontWeight: 500 }}>{p.display_name || 'カメラマン'}</span>
-                    {p.sns_url && (
-                      <a href={p.sns_url} target="_blank" rel="noopener noreferrer"
-                        style={{ flexShrink: 0, fontSize: 12, padding: '5px 14px', borderRadius: 20, background: '#e8f4f8', color: '#5bbfd6', textDecoration: 'none', fontWeight: 600, border: '1px solid #c3e4ef', whiteSpace: 'nowrap' }}>
-                        SNS →
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      <FeaturedPhotosSection photos={featuredPhotos} models={models || []} />
 
       {/* ─── NOTICES / BLOG ─── */}
       <section style={{ background: '#fdf7fb', padding: '80px 0 0' }}>
