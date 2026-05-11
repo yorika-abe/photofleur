@@ -112,7 +112,7 @@ export default async function Home() {
               <iframe src={toEmbedUrl(heroVideo)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen />
             </div>
           ) : (
-            <video src={heroVideo} autoPlay loop muted playsInline preload="auto" style={{ width: '100%', display: 'block', verticalAlign: 'bottom' }} />
+            <video src={heroVideo} autoPlay loop muted playsInline preload="metadata" style={{ width: '100%', display: 'block', verticalAlign: 'bottom' }} />
           )}
         </section>
       )}
@@ -125,7 +125,7 @@ export default async function Home() {
               <iframe src={toEmbedUrl(heroVideo2)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen />
             </div>
           ) : (
-            <video src={heroVideo2} autoPlay loop muted playsInline preload="auto" style={{ width: '100%', display: 'block', verticalAlign: 'bottom' }} />
+            <video src={heroVideo2} autoPlay loop muted playsInline preload="metadata" style={{ width: '100%', display: 'block', verticalAlign: 'bottom' }} />
           )}
         </section>
       )}
