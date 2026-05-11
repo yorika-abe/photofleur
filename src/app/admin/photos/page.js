@@ -129,6 +129,9 @@ export default function AdminPhotosPage() {
   const [lastViewed, setLastViewed] = useState(null)
   const [starring, setStarring] = useState(null)
   const [savingOrder, setSavingOrder] = useState(false)
+  const [notifyModal, setNotifyModal] = useState(null) // { photo }
+  const [notifying, setNotifying] = useState(false)
+  const [notifyResult, setNotifyResult] = useState(null) // { emailSent, lineSent, lineError }
   const dragItem = useRef(null)
   const dragOver = useRef(null)
 
@@ -164,14 +167,26 @@ export default function AdminPhotosPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: p.id, is_featured: newVal }),
     })
-    // ローカル更新
     setPhotos(prev => prev.map(ph => ph.id === p.id ? { ...ph, is_featured: newVal } : ph))
     if (newVal) {
       setFavorites(prev => [...prev, { ...p, is_featured: true }])
+      setNotifyModal({ photo: p })
     } else {
       setFavorites(prev => prev.filter(f => f.id !== p.id))
     }
     setStarring(null)
+  }
+
+  async function sendNotify(photo) {
+    setNotifying(true)
+    const res = await fetch('/api/admin/notify-contributor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photo_id: photo.id }),
+    })
+    const data = await res.json()
+    setNotifying(false)
+    setNotifyResult(data)
   }
 
   // ドラッグ並び替え
@@ -300,6 +315,51 @@ export default function AdminPhotosPage() {
             onClick={e => e.stopPropagation()} />
           <button onClick={() => setExpanded(null)}
             style={{ position: 'absolute', top: 20, right: 24, background: 'none', border: 'none', color: '#fff', fontSize: 32, cursor: 'pointer', lineHeight: 1 }}>✕</button>
+        </div>
+      )}
+
+      {/* 掲載通知モーダル */}
+      {notifyModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 28, maxWidth: 380, width: '100%', boxShadow: '0 4px 32px rgba(0,0,0,0.18)' }} onClick={e => e.stopPropagation()}>
+            {!notifyResult ? (
+              <>
+                <p style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginBottom: 8 }}>📢 カメラマンに通知しますか？</p>
+                <p style={{ fontSize: 13, color: '#666', marginBottom: 24, lineHeight: 1.7 }}>
+                  メール・LINE（連携済みの場合）でホームページ掲載をお知らせします。
+                </p>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    onClick={() => sendNotify(notifyModal.photo)}
+                    disabled={notifying}
+                    style={{ flex: 1, background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 0', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: notifying ? 0.6 : 1 }}>
+                    {notifying ? '送信中...' : 'はい、送る'}
+                  </button>
+                  <button
+                    onClick={() => { setNotifyModal(null); setNotifyResult(null) }}
+                    disabled={notifying}
+                    style={{ flex: 1, background: '#f5f5f5', color: '#555', border: 'none', borderRadius: 8, padding: '10px 0', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                    いいえ
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginBottom: 12 }}>送信結果</p>
+                <p style={{ fontSize: 13, color: '#444', marginBottom: 6 }}>
+                  📧 メール：{notifyResult.emailSent ? '✅ 送信しました' : '❌ 失敗しました'}
+                </p>
+                <p style={{ fontSize: 13, color: '#444', marginBottom: 20 }}>
+                  💬 LINE：{notifyResult.lineSent ? '✅ 送信しました' : `❌ ${notifyResult.lineError || '失敗しました'}`}
+                </p>
+                <button
+                  onClick={() => { setNotifyModal(null); setNotifyResult(null) }}
+                  style={{ width: '100%', background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 0', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                  閉じる
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>
