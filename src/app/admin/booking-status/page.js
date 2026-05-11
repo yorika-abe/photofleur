@@ -1132,7 +1132,7 @@ export default function AdminBookingStatusPage() {
                                     </span>
                                     {b.cancelled_at && <span style={{ fontSize: 11, background: '#ffcdd2', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>キャンセル済</span>}
                                   </div>
-                                  {Object.entries(b.selections || {}).filter(([k]) => k !== 'delivery_address').map(([k, v]) => (
+                                  {Object.entries(b.selections || {}).filter(([k]) => k !== 'delivery_address' && k !== '_final_price').map(([k, v]) => (
                                     <div key={k} style={{ color: '#555', marginBottom: 2 }}>
                                       <span style={{ color: '#aaa', marginRight: 6 }}>{k}</span>
                                       {Array.isArray(v) ? v.join(', ') : v}
@@ -1149,7 +1149,7 @@ export default function AdminBookingStatusPage() {
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
                                   <div style={{ fontWeight: 700, color: '#1a3560', fontSize: 15 }}>
-                                    ¥{(b.product?.price || 0).toLocaleString()}
+                                    ¥{(b.final_price ?? b.product?.price ?? 0).toLocaleString()}
                                   </div>
                                   {!b.cancelled_at && (
                                     <button onClick={() => setCancelTarget(b)}

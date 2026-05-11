@@ -329,7 +329,7 @@ export default function AdminBookingsPage() {
                           <>
                             <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>商品</span>{b.product?.name || '—'}</div>
                             {b.event?.event_date && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>開催日</span>{b.event.event_date}{b.event?.location_name ? ` ${b.event.location_name}` : ''}</div>}
-                            {Object.entries(b.selections || {}).filter(([k]) => k !== 'delivery_address').map(([k, v]) => (
+                            {Object.entries(b.selections || {}).filter(([k]) => k !== 'delivery_address' && k !== '_final_price').map(([k, v]) => (
                               <div key={k}><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>{k}</span>{Array.isArray(v) ? v.join(', ') : v}</div>
                             ))}
                             {b.selections?.delivery_address && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>配送先</span><span style={{ whiteSpace: 'pre-wrap' }}>{b.selections.delivery_address}</span></div>}
