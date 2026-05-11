@@ -48,6 +48,7 @@ export async function POST(req) {
   const files = formData.getAll('files')
   const modelIds = JSON.parse(formData.get('model_ids') || '[]')
   const snsUrl = formData.get('sns_url') || ''
+  const displayName = formData.get('display_name') || null
 
   const urls = []
   for (const file of files) {
@@ -68,6 +69,7 @@ export async function POST(req) {
     photo_url: url,
     model_ids: modelIds,
     sns_url: snsUrl,
+    display_name: displayName,
   }))
 
   const { error } = await admin.from('contributed_photos').insert(rows)

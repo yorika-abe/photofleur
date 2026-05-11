@@ -76,28 +76,9 @@ export default async function Home() {
     featuredBlogIds.length > 0
       ? adminSupabase.from('blog_posts').select('id, title, slug, cover_image, content, published_at, category').in('id', featuredBlogIds).eq('status', 'published').order('published_at', { ascending: false })
       : { data: [] },
-    adminSupabase.from('contributed_photos').select('id, photo_url, sns_url, user_email').eq('is_featured', true).order('featured_order', { ascending: true }),
+    adminSupabase.from('contributed_photos').select('id, photo_url, sns_url, display_name').eq('is_featured', true).order('featured_order', { ascending: true }),
   ])
-
-  // ご提供写真のuser_email → display_name マップ
-  const featuredPhotos = await (async () => {
-    if (!rawFeaturedPhotos || rawFeaturedPhotos.length === 0) return []
-    const emails = [...new Set(rawFeaturedPhotos.map(p => p.user_email).filter(Boolean))]
-    let nameMap = {}
-    if (emails.length > 0) {
-      const { data: { users } } = await adminSupabase.auth.admin.listUsers({ perPage: 1000 })
-      const emailToId = Object.fromEntries((users || []).map(u => [u.email, u.id]))
-      const ids = emails.map(e => emailToId[e]).filter(Boolean)
-      if (ids.length > 0) {
-        const { data: profiles } = await adminSupabase.from('customer_profiles').select('id, last_name, first_name').in('id', ids)
-        for (const p of profiles || []) {
-          const user = (users || []).find(u => u.id === p.id)
-          if (user) nameMap[user.email] = [p.last_name, p.first_name].filter(Boolean).join(' ')
-        }
-      }
-    }
-    return rawFeaturedPhotos.map(p => ({ ...p, display_name: nameMap[p.user_email] || null }))
-  })()
+  const featuredPhotos = rawFeaturedPhotos || []
   const notices = noticesData || []
 
   const entriesByEvent = {}
