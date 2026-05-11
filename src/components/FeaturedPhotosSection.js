@@ -18,7 +18,9 @@ export default function FeaturedPhotosSection({ photos, models }) {
             const hasInfo = p.display_name || p.sns_url || photoModels.length > 0
             return (
               <div key={p.id} style={{ breakInside: 'avoid', marginBottom: 16, borderRadius: 14, overflow: 'hidden', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
-                <img src={p.photo_url} alt="" style={{ width: '100%', display: 'block' }} />
+                <div style={{ height: 220, background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  <img src={p.photo_url} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block' }} />
+                </div>
                 {hasInfo && (
                   <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {/* SNS行：名前右揃え＋ボタン */}
