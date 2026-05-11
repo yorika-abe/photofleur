@@ -78,31 +78,30 @@ export async function POST(req) {
     { table: 'models', columns: ['image'] },
     { table: 'goods', columns: ['image'] },
     { table: 'blog_posts', columns: ['cover_image'] },
-    { table: 'site_settings', columns: ['value'], isJson: true },
+    { table: 'site_settings', columns: ['value'], isJson: true, pk: 'key' },
     { table: 'event_products', columns: ['image'] },
     { table: 'private_products', columns: ['image'] },
   ]
 
-  for (const { table, columns, isJson } of updates) {
+  for (const { table, columns, isJson, pk = 'id' } of updates) {
     for (const col of columns) {
       try {
         if (isJson) {
-          // For JSON array columns like gallery_images (stored as text)
-          const { data: rows } = await admin.from(table).select(`id, ${col}`).not(col, 'is', null)
+          const { data: rows } = await admin.from(table).select(`${pk}, ${col}`).not(col, 'is', null)
           for (const row of rows || []) {
             if (!row[col]) continue
             const oldVal = typeof row[col] === 'string' ? row[col] : JSON.stringify(row[col])
             if (!oldVal.includes(SUPABASE_STORAGE_PREFIX)) continue
             const newVal = oldVal.replaceAll(SUPABASE_STORAGE_PREFIX, `${R2_PUBLIC_URL}/`)
-            await admin.from(table).update({ [col]: newVal }).eq('id', row.id)
+            await admin.from(table).update({ [col]: newVal }).eq(pk, row[pk])
             results.dbUpdated++
           }
         } else {
-          const { data: rows } = await admin.from(table).select(`id, ${col}`).like(col, `${SUPABASE_STORAGE_PREFIX}%`)
+          const { data: rows } = await admin.from(table).select(`${pk}, ${col}`).like(col, `${SUPABASE_STORAGE_PREFIX}%`)
           for (const row of rows || []) {
             if (!row[col]) continue
             const newUrl = row[col].replace(SUPABASE_STORAGE_PREFIX, `${R2_PUBLIC_URL}/`)
-            await admin.from(table).update({ [col]: newUrl }).eq('id', row.id)
+            await admin.from(table).update({ [col]: newUrl }).eq(pk, row[pk])
             results.dbUpdated++
           }
         }
