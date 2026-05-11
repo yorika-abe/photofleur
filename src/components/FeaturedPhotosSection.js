@@ -15,23 +15,30 @@ export default function FeaturedPhotosSection({ photos, models }) {
         <div style={{ columns: 2, columnGap: 16 }}>
           {photos.map(p => {
             const photoModels = (p.model_ids || []).map(id => modelMap[id]).filter(Boolean)
+            const hasInfo = p.display_name || p.sns_url || photoModels.length > 0
             return (
               <div key={p.id} style={{ breakInside: 'avoid', marginBottom: 16, borderRadius: 14, overflow: 'hidden', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
                 <img src={p.photo_url} alt="" style={{ width: '100%', display: 'block' }} />
-                {(p.display_name || p.sns_url || photoModels.length > 0) && (
-                  <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                      <span style={{ fontSize: 13, color: '#555', fontWeight: 500 }}>{p.display_name || ''}</span>
+                {hasInfo && (
+                  <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {/* SNS行：名前右揃え＋ボタン */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ flex: 1, textAlign: 'right', fontSize: 12, color: '#666', fontWeight: 500 }}>
+                        {p.display_name || ''}
+                      </span>
                       {p.sns_url && (
                         <a href={p.sns_url} target="_blank" rel="noopener noreferrer"
-                          style={{ flexShrink: 0, fontSize: 12, padding: '5px 12px', borderRadius: 20, background: '#e8f4f8', color: '#5bbfd6', textDecoration: 'none', fontWeight: 600, border: '1px solid #c3e4ef', whiteSpace: 'nowrap' }}>
+                          style={{ flexShrink: 0, fontSize: 11, padding: '4px 10px', borderRadius: 20, background: '#e8f4f8', color: '#5bbfd6', textDecoration: 'none', fontWeight: 600, border: '1px solid #c3e4ef', whiteSpace: 'nowrap' }}>
                           📸SNS
                         </a>
                       )}
                     </div>
+                    {/* モデル行：モデル名右揃え＋ボタン */}
                     {photoModels.map(m => (
-                      <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                        <span style={{ fontSize: 12, color: '#888' }}>{m.name}</span>
+                      <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ flex: 1, textAlign: 'right', fontSize: 11, color: '#999' }}>
+                          {m.name}
+                        </span>
                         <Link href={`/models/${m.id}`}
                           style={{ flexShrink: 0, fontSize: 11, padding: '3px 10px', borderRadius: 20, background: '#fdf0f7', color: '#f4a0be', textDecoration: 'none', fontWeight: 600, border: '1px solid #f4c8dc', whiteSpace: 'nowrap' }}>
                           MODEL →
