@@ -104,7 +104,7 @@ export default function Header() {
                 }}>管理画面</Link>
               )}
               {roles.includes('model') && (
-                <Link href="/model-portal" style={{ color: '#c2185b', textDecoration: 'none', fontSize: 12, fontWeight: 600, padding: '5px 7px', borderRadius: 5, whiteSpace: 'nowrap', background: isActive('/model-portal') ? 'rgba(194,24,91,0.08)' : 'transparent' }}>モデル画面</Link>
+                <Link href="/model-portal" style={{ color: '#c2185b', textDecoration: 'none', fontSize: 12, fontWeight: 600, padding: '5px 7px', borderRadius: 5, whiteSpace: 'nowrap', background: isActive('/model-portal') ? 'rgba(194,24,91,0.08)' : 'transparent' }}>モデフル</Link>
               )}
               {roles.includes('staff') && (
                 <Link href="/staff-portal" style={{ color: '#0097a7', textDecoration: 'none', fontSize: 12, fontWeight: 600, padding: '5px 7px', borderRadius: 5, whiteSpace: 'nowrap', background: isActive('/staff-portal') ? 'rgba(0,151,167,0.08)' : 'transparent' }}>スタッフ画面</Link>
@@ -160,7 +160,7 @@ export default function Header() {
           {user ? (
             <>
               {roles.includes('admin') && <Link href="/admin" onClick={() => setMenuOpen(false)} style={{ color: '#a07000', textDecoration: 'none', fontSize: 15, padding: '10px 12px' }}>管理画面</Link>}
-              {roles.includes('model') && <Link href="/model-portal" onClick={() => setMenuOpen(false)} style={{ color: '#c2185b', textDecoration: 'none', fontSize: 15, padding: '10px 12px' }}>モデル画面</Link>}
+              {roles.includes('model') && <Link href="/model-portal" onClick={() => setMenuOpen(false)} style={{ color: '#c2185b', textDecoration: 'none', fontSize: 15, padding: '10px 12px' }}>モデフル</Link>}
               {roles.includes('staff') && <Link href="/staff-portal" onClick={() => setMenuOpen(false)} style={{ color: '#0097a7', textDecoration: 'none', fontSize: 15, padding: '10px 12px' }}>スタッフ画面</Link>}
               {!roles.includes('admin') && !roles.includes('model') && !roles.includes('staff') && <Link href="/my" onClick={() => setMenuOpen(false)} style={{ color: '#1a7090', textDecoration: 'none', fontSize: 15, padding: '10px 12px' }}>マイページ</Link>}
               <button onClick={handleLogout} style={{ background: 'none', color: '#888', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 15, padding: '10px 12px' }}>ログアウト</button>
