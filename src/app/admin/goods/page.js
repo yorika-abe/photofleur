@@ -249,14 +249,14 @@ export default function GoodsAdminPage() {
               placeholder="PhotoFleurオリジナルステッカー" style={inp} />
           </div>
           <div>
-            <label style={lbl}>料金 ¥</label>
+            <label style={lbl}>デフォルトの料金 ¥</label>
             <input type="number" min="0" value={form.price}
               onChange={e => setForm(f => ({ ...f, price: e.target.value }))} style={inp} />
           </div>
           <div>
-            <label style={lbl}>在庫数（-1で無制限）</label>
+            <label style={lbl}>デフォルトの在庫</label>
             <input type="number" min="-1" value={form.stock}
-              onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} style={inp} />
+              onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} style={inp} placeholder="∞（-1で無制限）" />
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={lbl}>詳細説明</label>
@@ -284,6 +284,7 @@ export default function GoodsAdminPage() {
               layers={form.layers}
               onChange={newLayers => setForm(f => ({ ...f, layers: newLayers }))}
               models={models}
+              defaultStock={Number(form.stock)}
             />
           </div>
 
