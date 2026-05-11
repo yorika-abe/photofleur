@@ -32,9 +32,14 @@ export async function POST(req) {
   const layersLabel = layers_path?.length > 0 && goods.options?.type === 'layers'
     ? buildSelectionsLabel(goods.options, layers_path)
     : null
-  const storedOptions = layersLabel
-    ? { _label: layersLabel }
-    : (options_selected || null)
+  const leafChoicePrice = layers_path?.length > 0 && goods.options?.type === 'layers'
+    ? getLeafChoicePrice(goods.options, layers_path)
+    : null
+  const unitFinalPrice = leafChoicePrice ?? goods.price ?? 0
+  const storedOptions = {
+    ...(layersLabel ? { _label: layersLabel } : (options_selected || {})),
+    _final_price: unitFinalPrice,
+  }
 
   const insertBase = {
     goods_id: goods.id,

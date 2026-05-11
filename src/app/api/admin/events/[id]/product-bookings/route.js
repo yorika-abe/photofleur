@@ -20,6 +20,7 @@ export async function GET(req, { params }) {
   const bookings = (data || []).map(b => ({
     ...b,
     product: productMap[b.product_id] || {},
+    final_price: b.selections?._final_price ?? productMap[b.product_id]?.price ?? 0,
   }))
   return Response.json({ bookings })
 }

@@ -21,13 +21,17 @@ export async function GET() {
       .is('cancelled_at', null)
       .order('created_at', { ascending: false }),
     admin.from('goods_orders')
-      .select('id, goods_id, last_name, first_name, email, payment_method, quantity, created_at, goods(id, title, price, hanselling)')
+      .select('id, goods_id, last_name, first_name, email, payment_method, quantity, created_at, options_selected, goods(id, title, price, hanselling)')
       .is('cancelled_at', null)
       .order('created_at', { ascending: false }),
   ])
 
   return Response.json({
     privateBookings: (privateBookings || []).map(b => ({ ...b, product: b.private_products || {} })),
-    goodsOrders: (goodsOrders || []).map(o => ({ ...o, goods: o.goods || {} })),
+    goodsOrders: (goodsOrders || []).map(o => ({
+      ...o,
+      goods: o.goods || {},
+      final_price: ((o.options_selected?._final_price ?? o.goods?.price) || 0) * (o.quantity || 1),
+    })),
   })
 }

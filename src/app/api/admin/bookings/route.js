@@ -99,7 +99,7 @@ export async function GET() {
     model: {},
     event: epEventMap[b.event_id] || {},
     slot: { slot_label: b.selections?.slot || '' },
-    final_price: epProductMap[b.product_id]?.price || 0,
+    final_price: b.selections?._final_price ?? epProductMap[b.product_id]?.price ?? 0,
   }))
 
   const goodsBookings = (goodsRaw || []).map(b => ({
@@ -110,7 +110,7 @@ export async function GET() {
     model: {},
     event: {},
     slot: { slot_label: '' },
-    final_price: (b.goods?.price || 0) * (b.quantity || 1),
+    final_price: ((b.options_selected?._final_price ?? b.goods?.price) || 0) * (b.quantity || 1),
   }))
 
   const merged = [...regular, ...privateBookings, ...epBookings, ...goodsBookings]

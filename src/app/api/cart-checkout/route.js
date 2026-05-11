@@ -105,7 +105,7 @@ export async function POST(req) {
         nickname: customer.nickname || null,
         payment_method: paymentMethod || null,
         square_payment_id: squarePaymentId || null,
-        selections: { ...(item.selections || {}), ...(item.deliveryAddress ? { delivery_address: item.deliveryAddress } : {}) },
+        selections: { ...(item.selections || {}), ...(item.deliveryAddress ? { delivery_address: item.deliveryAddress } : {}), _final_price: item.price ?? 0 },
         qr_token: productQrToken,
         cart_token: cartToken,
       }).select('id').single()

@@ -939,7 +939,7 @@ export default function AdminBookingStatusPage() {
                     }
                   }
                 }
-                const productRevenue = eventProducts.reduce((s, p) => s + p.price * (productSales[p.id] || 0), 0)
+                const productRevenue = epBookings.filter(b => !b.cancelled_at).reduce((s, b) => s + (b.final_price || 0), 0)
                 const totalRevenue = revenue + productRevenue
                 const lunchTotal = (costs.lunchCount || 0) * (costs.lunchRate || 0)
                 const slotHanselling = costs.hansellingMode === 'per_booking'
@@ -1174,6 +1174,7 @@ export default function AdminBookingStatusPage() {
                           const ph = productHansellingMap[p.id] || { mode: 'flat', amount: 0 }
                           const cnt = productSales[p.id] || 0
                           const phTotal = ph.mode === 'per_item' ? (ph.amount || 0) * cnt : (ph.amount || 0)
+                          const actualRevenue = epBookings.filter(b => !b.cancelled_at && b.product_id === p.id).reduce((s, b) => s + (b.final_price || 0), 0)
                           return (
                             <div key={p.id} style={{ padding: '10px 0', borderBottom: '1px solid #f5f5f5' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
@@ -1187,7 +1188,7 @@ export default function AdminBookingStatusPage() {
                                     onChange={e => updateProductSale(p.id, e.target.value)}
                                     style={{ ...inp, width: 60 }} />
                                   <span style={{ color: '#777' }}>個 =</span>
-                                  <span style={{ fontWeight: 700, color: '#388e3c', minWidth: 80, textAlign: 'right' }}>¥{(p.price * cnt).toLocaleString()}</span>
+                                  <span style={{ fontWeight: 700, color: '#388e3c', minWidth: 80, textAlign: 'right' }}>¥{(actualRevenue || p.price * cnt).toLocaleString()}</span>
                                 </div>
                               </div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
