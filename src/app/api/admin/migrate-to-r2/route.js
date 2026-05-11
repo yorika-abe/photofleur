@@ -78,7 +78,7 @@ export async function POST(req) {
     { table: 'models', columns: ['image'] },
     { table: 'goods', columns: ['image'] },
     { table: 'blog_posts', columns: ['cover_image'] },
-    { table: 'site_settings', columns: ['value'] },
+    { table: 'site_settings', columns: ['value'], isJson: true },
     { table: 'event_products', columns: ['image'] },
     { table: 'private_products', columns: ['image'] },
   ]
