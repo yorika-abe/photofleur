@@ -34,6 +34,7 @@ function loadSavedIds() {
   try { return new Set(JSON.parse(localStorage.getItem('pf_saved_events_list') || '[]')) } catch { return new Set() }
 }
 
+
 function loadHistoryRecords() {
   try {
     const list = JSON.parse(localStorage.getItem('pf_saved_events_list') || '[]')
@@ -282,14 +283,8 @@ export default function AdminBookingStatusPage() {
   function deleteHistory(eventId) {
     if (!window.confirm('この履歴を削除しますか？')) return
     try {
-      const list = JSON.parse(localStorage.getItem('pf_saved_events_list') || '[]')
-      const newList = list.filter(id => id !== eventId)
-      localStorage.setItem('pf_saved_events_list', JSON.stringify(newList))
       localStorage.removeItem(`pf_saved_event_${eventId}`)
     } catch {}
-    const newSavedIds = new Set([...savedIds])
-    newSavedIds.delete(eventId)
-    setSavedIds(newSavedIds)
     setHistoryRecords(prev => prev.filter(r => r.eventId !== eventId))
   }
 
