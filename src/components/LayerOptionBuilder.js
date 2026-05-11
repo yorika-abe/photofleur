@@ -42,8 +42,15 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
     const parentChoices = parentLayer
       ? (parentLayer.type === 'manual' || parentLayer.type === 'slots' ? parentLayer.choices : parentLayer.model_choices) || []
       : []
+    const grandparentLayer = layerIdx > 1 ? layers[layerIdx - 2] : null
+    const grandparentChoices = grandparentLayer
+      ? (grandparentLayer.type === 'manual' || grandparentLayer.type === 'slots' ? grandparentLayer.choices : grandparentLayer.model_choices) || []
+      : []
     const parent_stocks = layerIdx > 0 ? Object.fromEntries(parentChoices.map(pc => [pc.id, -1])) : undefined
-    const newChoice = { id, name: '', stock: -1, ...(parent_stocks ? { parent_stocks } : {}) }
+    const nested_stocks = layerIdx > 1 && parentChoices.length > 0 && grandparentChoices.length > 0
+      ? Object.fromEntries(parentChoices.map(pc => [pc.id, Object.fromEntries(grandparentChoices.map(gpc => [gpc.id, -1]))]))
+      : undefined
+    const newChoice = { id, name: '', stock: -1, ...(parent_stocks ? { parent_stocks } : {}), ...(nested_stocks ? { nested_stocks } : {}) }
     update(layers.map((l, i) => i !== layerIdx ? l : { ...l, choices: [...(l.choices || []), newChoice] }))
   }
 
@@ -186,12 +193,19 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
     const parentChoices = parentLayer
       ? (parentLayer.type === 'manual' || parentLayer.type === 'slots' ? parentLayer.choices : parentLayer.model_choices) || []
       : []
+    const grandparentLayer = layerIdx > 1 ? layers[layerIdx - 2] : null
+    const grandparentChoices = grandparentLayer
+      ? (grandparentLayer.type === 'manual' || grandparentLayer.type === 'slots' ? grandparentLayer.choices : grandparentLayer.model_choices) || []
+      : []
     update(layers.map((l, i) => {
       if (i !== layerIdx) return l
       if (exists) return { ...l, model_choices: l.model_choices.filter(mc => mc.model_id !== model.id) }
       const id = genId()
       const parent_stocks = layerIdx > 0 ? Object.fromEntries(parentChoices.map(pc => [pc.id, -1])) : undefined
-      return { ...l, model_choices: [...(l.model_choices || []), { id, model_id: model.id, model_name: model.name, stock: -1, ...(parent_stocks ? { parent_stocks } : {}) }] }
+      const nested_stocks = layerIdx > 1 && parentChoices.length > 0 && grandparentChoices.length > 0
+        ? Object.fromEntries(parentChoices.map(pc => [pc.id, Object.fromEntries(grandparentChoices.map(gpc => [gpc.id, -1]))]))
+        : undefined
+      return { ...l, model_choices: [...(l.model_choices || []), { id, model_id: model.id, model_name: model.name, stock: -1, ...(parent_stocks ? { parent_stocks } : {}), ...(nested_stocks ? { nested_stocks } : {}) }] }
     }))
   }
 
@@ -201,10 +215,18 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
     const parentChoices = parentLayer
       ? (parentLayer.type === 'manual' || parentLayer.type === 'slots' ? parentLayer.choices : parentLayer.model_choices) || []
       : []
+    const grandparentLayer = layerIdx > 1 ? layers[layerIdx - 2] : null
+    const grandparentChoices = grandparentLayer
+      ? (grandparentLayer.type === 'manual' || grandparentLayer.type === 'slots' ? grandparentLayer.choices : grandparentLayer.model_choices) || []
+      : []
     const parent_stocks = layerIdx > 0 ? Object.fromEntries(parentChoices.map(pc => [pc.id, -1])) : undefined
+    const nested_stocks = layerIdx > 1 && parentChoices.length > 0 && grandparentChoices.length > 0
+      ? Object.fromEntries(parentChoices.map(pc => [pc.id, Object.fromEntries(grandparentChoices.map(gpc => [gpc.id, -1]))]))
+      : undefined
     const toAdd = eventModels.filter(m => !existing.has(m.id)).map(m => ({
       id: genId(), model_id: m.id, model_name: m.name, stock: -1,
       ...(parent_stocks ? { parent_stocks } : {}),
+      ...(nested_stocks ? { nested_stocks } : {}),
     }))
     update(layers.map((l, i) => i !== layerIdx ? l : { ...l, model_choices: [...(l.model_choices || []), ...toAdd] }))
   }
@@ -326,12 +348,19 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
     const parentChoices = parentLayer
       ? (parentLayer.type === 'manual' || parentLayer.type === 'slots' ? parentLayer.choices : parentLayer.model_choices) || []
       : []
+    const grandparentLayer = layerIdx > 1 ? layers[layerIdx - 2] : null
+    const grandparentChoices = grandparentLayer
+      ? (grandparentLayer.type === 'manual' || grandparentLayer.type === 'slots' ? grandparentLayer.choices : grandparentLayer.model_choices) || []
+      : []
     const choices = slotLabels.map((label, si) => {
       const id = `slot_${si}`
       const parent_stocks = layerIdx > 0 && parentChoices.length > 0
         ? Object.fromEntries(parentChoices.map(pc => [pc.id, -1]))
         : undefined
-      return { id, name: label, stock: -1, ...(parent_stocks ? { parent_stocks } : {}) }
+      const nested_stocks = layerIdx > 1 && parentChoices.length > 0 && grandparentChoices.length > 0
+        ? Object.fromEntries(parentChoices.map(pc => [pc.id, Object.fromEntries(grandparentChoices.map(gpc => [gpc.id, -1]))]))
+        : undefined
+      return { id, name: label, stock: -1, ...(parent_stocks ? { parent_stocks } : {}), ...(nested_stocks ? { nested_stocks } : {}) }
     })
     update(layers.map((l, i) => i !== layerIdx ? l : { ...l, choices }))
   }
@@ -529,7 +558,7 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
                     <input type="checkbox" checked={!!linked}
                       onChange={() => isManual ? toggleParentLink(layerIdx, choiceId, pc.id) : toggleModelParentLink(layerIdx, choiceId, pc.id)} />
                     <span style={{ fontSize: 12, color: '#444', fontWeight: 600, minWidth: 60 }}>{pc.name || pc.model_name || '?'}</span>
-                    {linked && grandparentChoices.length === 0 && (
+                    {linked && (
                       <>
                         <span style={{ fontSize: 11, color: '#888' }}>在庫</span>
                         <input type="number" value={ps < 0 ? '' : ps} placeholder="∞"
@@ -546,7 +575,7 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
                       </>
                     )}
                   </div>
-                  {linked && isLeaf && perPricingOn && grandparentChoices.length === 0 && renderParentCostItems(layerIdx, choiceId, pc.id, isManual ? 'parent_costs' : 'parent_costs', !isManual)}
+                  {linked && isLeaf && perPricingOn && renderParentCostItems(layerIdx, choiceId, pc.id, isManual ? 'parent_costs' : 'parent_costs', !isManual)}
                   {linked && grandparentChoices.length > 0 && renderGrandparentPanel(layerIdx, choiceId, pc.id, isManual, grandparentChoices, isLeaf, perPricingOn, choice)}
                 </div>
               )
