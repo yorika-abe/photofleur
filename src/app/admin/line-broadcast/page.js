@@ -942,6 +942,14 @@ const PHOTOGRAPHER_TEMPLATES = [
       { key: '{{shooting_time}}', desc: '撮影時間' },
     ],
   },
+  {
+    key: 'photo_featured',
+    label: 'ホームページ掲載通知（カメラマン個人）',
+    trigger: 'ご提供写真に⭐をつけた時（管理画面→ご提供写真から手動送信）',
+    vars: [
+      { key: '{{site_url}}', desc: 'ホームページURL（自動挿入）' },
+    ],
+  },
 ]
 
 const STAFF_GROUP_TEMPLATES = [

@@ -1,6 +1,7 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
 import { Resend } from 'resend'
 import { sendLineCameraUser } from '@/lib/line'
+import { DEFAULTS } from '@/app/api/admin/line-templates/route'
 
 async function checkAdmin() {
   const server = await createSupabaseServerClient()
@@ -13,10 +14,10 @@ async function checkAdmin() {
 }
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://photofleur.jp'
-
 const EMAIL_SUBJECT = '【📢お知らせ】お写真がホームページに掲載されました'
 
-function buildEmailHtml() {
+function buildEmailHtml(lineMessage) {
+  const bodyText = lineMessage.replace(/\n/g, '<br>').replace(SITE_URL, '')
   return `<!DOCTYPE html>
 <html lang="ja">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -26,35 +27,17 @@ function buildEmailHtml() {
       <p style="color:#fff;font-size:22px;font-weight:700;margin:0">Photo Fleur</p>
     </div>
     <div style="padding:32px">
-      <p style="font-size:15px;color:#333;line-height:1.8">
-        いつもPhoto Fleurをご利用いただきありがとうございます。<br><br>
-        ご提供いただきました写真がホームページに掲載されました。<br>
-        ぜひご確認ください📸
-      </p>
+      <p style="font-size:15px;color:#333;line-height:1.8">${bodyText}</p>
       <div style="text-align:center;margin:32px 0">
         <a href="${SITE_URL}" style="display:inline-block;background:#5bbfd6;color:#fff;text-decoration:none;padding:14px 36px;border-radius:30px;font-size:15px;font-weight:700">
           ホームページを見る →
         </a>
       </div>
-      <p style="font-size:13px;color:#999;border-top:1px solid #eee;padding-top:20px;margin-top:20px">
-        Photo Fleur 運営
-      </p>
     </div>
   </div>
 </body>
 </html>`
 }
-
-const LINE_MESSAGE = `【📢お知らせ】
-
-いつもPhoto Fleurをご利用いただきありがとうございます。
-
-ご提供いただきました写真がホームページに掲載されました。
-ぜひご確認ください📸
-
-${SITE_URL}
-
-Photo Fleur 運営`
 
 export async function POST(req) {
   const admin = await checkAdmin()
@@ -71,6 +54,10 @@ export async function POST(req) {
 
   if (!photo?.user_email) return Response.json({ error: 'photo not found' }, { status: 404 })
 
+  // DBからテンプレート取得（なければデフォルト）
+  const { data: tmplRow } = await admin.from('line_templates').select('body').eq('key', 'photo_featured').maybeSingle()
+  const lineMessage = (tmplRow?.body || DEFAULTS.photo_featured).replace('{{site_url}}', SITE_URL)
+
   const email = photo.user_email
   let emailSent = false
   let lineSent = false
@@ -83,7 +70,7 @@ export async function POST(req) {
       from: 'Photo Fleur運営 <onboarding@resend.dev>',
       to: email,
       subject: EMAIL_SUBJECT,
-      html: buildEmailHtml(),
+      html: buildEmailHtml(lineMessage),
     })
     emailSent = !error
   } catch {}
@@ -99,7 +86,7 @@ export async function POST(req) {
         .eq('id', user.id)
         .single()
       if (profile?.line_user_id) {
-        const result = await sendLineCameraUser(profile.line_user_id, LINE_MESSAGE)
+        const result = await sendLineCameraUser(profile.line_user_id, lineMessage)
         lineSent = result.ok
         if (!result.ok) lineError = result.reason
       } else {
