@@ -66,9 +66,9 @@ export default async function Home() {
   const siteSettings = Object.fromEntries((siteSettingsRows || []).map(r => [r.key, r.value]))
   const featuredBlogIds = JSON.parse(siteSettings.blog_featured_ids || '[]')
 
-  // Fetch event entries + blog categories + featured posts in parallel (after siteSettings)
+  // Fetch event entries + blog categories + featured posts + featured photos in parallel (after siteSettings)
   const eventIds = (events || []).map(e => e.id)
-  const [{ data: blogCategories }, { data: eventEntries }, { data: noticesData }] = await Promise.all([
+  const [{ data: blogCategories }, { data: eventEntries }, { data: noticesData }, { data: rawFeaturedPhotos }] = await Promise.all([
     adminSupabase.from('blog_categories').select('name, slug').order('display_order', { ascending: true }),
     eventIds.length > 0
       ? adminSupabase.from('event_entries').select('id, event_id, model_id, models(id, name, image)').in('event_id', eventIds)
@@ -76,7 +76,28 @@ export default async function Home() {
     featuredBlogIds.length > 0
       ? adminSupabase.from('blog_posts').select('id, title, slug, cover_image, content, published_at, category').in('id', featuredBlogIds).eq('status', 'published').order('published_at', { ascending: false })
       : { data: [] },
+    adminSupabase.from('contributed_photos').select('id, photo_url, sns_url, user_email').eq('is_featured', true).order('featured_order', { ascending: true }),
   ])
+
+  // ご提供写真のuser_email → display_name マップ
+  const featuredPhotos = await (async () => {
+    if (!rawFeaturedPhotos || rawFeaturedPhotos.length === 0) return []
+    const emails = [...new Set(rawFeaturedPhotos.map(p => p.user_email).filter(Boolean))]
+    let nameMap = {}
+    if (emails.length > 0) {
+      const { data: { users } } = await adminSupabase.auth.admin.listUsers({ perPage: 1000 })
+      const emailToId = Object.fromEntries((users || []).map(u => [u.email, u.id]))
+      const ids = emails.map(e => emailToId[e]).filter(Boolean)
+      if (ids.length > 0) {
+        const { data: profiles } = await adminSupabase.from('customer_profiles').select('id, last_name, first_name').in('id', ids)
+        for (const p of profiles || []) {
+          const user = (users || []).find(u => u.id === p.id)
+          if (user) nameMap[user.email] = [p.last_name, p.first_name].filter(Boolean).join(' ')
+        }
+      }
+    }
+    return rawFeaturedPhotos.map(p => ({ ...p, display_name: nameMap[p.user_email] || null }))
+  })()
   const notices = noticesData || []
 
   const entriesByEvent = {}
@@ -248,6 +269,36 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* ─── FEATURED PHOTOS ─── */}
+      {featuredPhotos.length > 0 && (
+        <section style={{ background: '#f7fbfd', padding: '80px 0' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
+            <div style={{ textAlign: 'center', marginBottom: 40 }}>
+              <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 8, fontWeight: 600 }}>Gallery</p>
+              <h2 style={{ ...serif, fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>ご提供いただいた写真</h2>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
+              {featuredPhotos.map(p => (
+                <div key={p.id} style={{ borderRadius: 14, overflow: 'hidden', background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
+                  <div style={{ aspectRatio: '4/3', overflow: 'hidden' }}>
+                    <img src={p.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <span style={{ fontSize: 13, color: '#555', fontWeight: 500 }}>{p.display_name || 'カメラマン'}</span>
+                    {p.sns_url && (
+                      <a href={p.sns_url} target="_blank" rel="noopener noreferrer"
+                        style={{ flexShrink: 0, fontSize: 12, padding: '5px 14px', borderRadius: 20, background: '#e8f4f8', color: '#5bbfd6', textDecoration: 'none', fontWeight: 600, border: '1px solid #c3e4ef', whiteSpace: 'nowrap' }}>
+                        SNS →
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ─── NOTICES / BLOG ─── */}
       <section style={{ background: '#fdf7fb', padding: '80px 0 0' }}>

@@ -1,4 +1,5 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
+import { deleteFromR2 } from '@/lib/r2'
 
 async function checkAdmin() {
   const server = await createSupabaseServerClient()
@@ -40,13 +41,9 @@ export async function PATCH(req, { params }) {
   const { id } = await params
   const body = await req.json()
 
-  // 画像差し替え時に旧画像を削除
   if (body.image !== undefined) {
     const { data: old } = await admin.from('private_products').select('image').eq('id', id).single()
-    const base = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/`
-    if (old?.image && old.image !== body.image && old.image.startsWith(base)) {
-      await admin.storage.from('images').remove([old.image.replace(base, '')])
-    }
+    if (old?.image && old.image !== body.image) await deleteFromR2([old.image])
   }
 
   const { error, data } = await admin
@@ -81,10 +78,7 @@ export async function DELETE(_req, { params }) {
 
   const { id } = await params
   const { data: product } = await admin.from('private_products').select('image').eq('id', id).single()
-  const base = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/`
-  if (product?.image?.startsWith(base)) {
-    await admin.storage.from('images').remove([product.image.replace(base, '')])
-  }
+  if (product?.image) await deleteFromR2([product.image])
 
   const { error } = await admin.from('private_products').delete().eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 500 })

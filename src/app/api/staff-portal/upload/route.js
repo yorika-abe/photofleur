@@ -1,4 +1,5 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
+import { uploadToR2 } from '@/lib/r2'
 
 export async function POST(req) {
   const server = await createSupabaseServerClient()
@@ -15,12 +16,6 @@ export async function POST(req) {
   const path = formData.get('path') || `staff/${user.id}/${Date.now()}-${file.name}`
 
   const arrayBuffer = await file.arrayBuffer()
-  const { error } = await admin.storage.from('images').upload(path, arrayBuffer, {
-    contentType: file.type,
-    upsert: true,
-  })
-  if (error) return Response.json({ error: error.message }, { status: 500 })
-
-  const { data } = admin.storage.from('images').getPublicUrl(path)
-  return Response.json({ url: data.publicUrl })
+  const url = await uploadToR2(path, Buffer.from(arrayBuffer), file.type)
+  return Response.json({ url })
 }

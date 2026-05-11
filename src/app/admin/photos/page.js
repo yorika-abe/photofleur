@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 
 async function downloadPhoto(url) {
@@ -20,9 +20,26 @@ function formatDateTime(str) {
   return d.toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-function PhotoCard({ p, modelMap, onExpand }) {
+function PhotoCard({ p, modelMap, onExpand, onToggleStar, starring }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', overflow: 'hidden' }}>
+    <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', overflow: 'hidden', position: 'relative' }}>
+      <button
+        onClick={() => onToggleStar(p)}
+        disabled={starring === p.id}
+        style={{
+          position: 'absolute', top: 8, right: 8, zIndex: 2,
+          background: p.is_featured ? '#fff8e1' : 'rgba(255,255,255,0.9)',
+          border: `1px solid ${p.is_featured ? '#ffc107' : '#ddd'}`,
+          borderRadius: '50%', width: 34, height: 34,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', fontSize: 18, lineHeight: 1,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+          opacity: starring === p.id ? 0.5 : 1,
+        }}
+        title={p.is_featured ? 'お気に入り解除' : 'お気に入りに追加'}
+      >
+        {p.is_featured ? '⭐' : '☆'}
+      </button>
       <div style={{ aspectRatio: '4/3', background: '#f0f4fb', overflow: 'hidden', cursor: 'pointer' }}
         onClick={() => onExpand(p)}>
         <img src={p.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -52,29 +69,86 @@ function PhotoCard({ p, modelMap, onExpand }) {
   )
 }
 
+function FavoriteCard({ p, onExpand, onRemoveStar, onDragStart, onDragOver, onDrop, isDragging }) {
+  return (
+    <div
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={e => { e.preventDefault(); onDragOver() }}
+      onDrop={onDrop}
+      style={{
+        background: '#fff', borderRadius: 12, border: `2px solid ${isDragging ? '#ffc107' : '#ffe082'}`,
+        overflow: 'hidden', position: 'relative', cursor: 'grab', opacity: isDragging ? 0.5 : 1,
+        transition: 'border-color 0.15s',
+      }}
+    >
+      <div style={{ position: 'absolute', top: 8, left: 8, zIndex: 2, background: 'rgba(255,255,255,0.85)', borderRadius: 6, padding: '2px 7px', fontSize: 11, color: '#999', cursor: 'grab' }}>
+        ☰ ドラッグで並替
+      </div>
+      <button
+        onClick={() => onRemoveStar(p)}
+        style={{
+          position: 'absolute', top: 8, right: 8, zIndex: 2,
+          background: '#fff8e1', border: '1px solid #ffc107',
+          borderRadius: '50%', width: 34, height: 34,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', fontSize: 18, lineHeight: 1,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+        }}
+        title="お気に入り解除"
+      >⭐</button>
+      <div style={{ aspectRatio: '4/3', background: '#f0f4fb', overflow: 'hidden', cursor: 'pointer' }}
+        onClick={() => onExpand(p)}>
+        <img src={p.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      </div>
+      <div style={{ padding: '12px 14px' }}>
+        <div style={{ fontSize: 11, color: '#999', marginBottom: 6 }}>{formatDateTime(p.created_at)}</div>
+        <div style={{ fontSize: 12, color: '#555', marginBottom: 4 }}>
+          <span style={{ color: '#999' }}>カメラマン：</span>{p.user_name || p.user_email}
+        </div>
+        {p.sns_url && (
+          <div style={{ fontSize: 12, wordBreak: 'break-all' }}>
+            <span style={{ color: '#999' }}>SNS：</span>
+            <a href={p.sns_url} target="_blank" rel="noopener noreferrer" style={{ color: '#1a3560' }}>{p.sns_url}</a>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function AdminPhotosPage() {
+  const [tab, setTab] = useState('all') // 'all' | 'favorites'
   const [photos, setPhotos] = useState([])
+  const [favorites, setFavorites] = useState([])
   const [models, setModels] = useState([])
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(null)
   const [expanded, setExpanded] = useState(null)
   const [showAll, setShowAll] = useState(false)
   const [lastViewed, setLastViewed] = useState(null)
+  const [starring, setStarring] = useState(null)
+  const [savingOrder, setSavingOrder] = useState(false)
+  const dragItem = useRef(null)
+  const dragOver = useRef(null)
 
   useEffect(() => {
-    // 前回の閲覧時刻を先に読む
     const prev = document.cookie.split('; ').find(r => r.startsWith('photos_last_viewed='))?.split('=')[1]
     setLastViewed(prev || null)
-
-    // 閲覧時刻を更新
     document.cookie = `photos_last_viewed=${new Date().toISOString()};path=/;max-age=${60 * 60 * 24 * 365}`
 
     Promise.all([
       fetch('/api/customer/contributed-photos').then(r => r.json()),
       fetch('/api/admin/models').then(r => r.json()).then(d => d.models || []).catch(() => []),
-    ]).then(([p, m]) => {
+      fetch('/api/admin/contributed-photos').then(r => r.json()),
+    ]).then(([p, m, fav]) => {
       if (p?.error) { setFetchError(p.error); setLoading(false); return }
-      setPhotos(Array.isArray(p) ? p : [])
+      const allPhotos = Array.isArray(p) ? p : []
+      const favData = Array.isArray(fav) ? fav : []
+      const favIds = new Set(favData.map(f => f.id))
+      // is_featuredフラグをallPhotosにマージ
+      setPhotos(allPhotos.map(ph => ({ ...ph, is_featured: favIds.has(ph.id) })))
+      setFavorites(favData)
       setModels(Array.isArray(m) ? m : [])
       setLoading(false)
     })
@@ -82,56 +156,137 @@ export default function AdminPhotosPage() {
 
   const modelMap = Object.fromEntries(models.map(m => [m.id, m.name]))
 
+  async function toggleStar(p) {
+    setStarring(p.id)
+    const newVal = !p.is_featured
+    await fetch('/api/admin/contributed-photos', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: p.id, is_featured: newVal }),
+    })
+    // ローカル更新
+    setPhotos(prev => prev.map(ph => ph.id === p.id ? { ...ph, is_featured: newVal } : ph))
+    if (newVal) {
+      setFavorites(prev => [...prev, { ...p, is_featured: true }])
+    } else {
+      setFavorites(prev => prev.filter(f => f.id !== p.id))
+    }
+    setStarring(null)
+  }
+
+  // ドラッグ並び替え
+  function handleDragStart(idx) { dragItem.current = idx }
+  function handleDragOver(idx) { dragOver.current = idx }
+  async function handleDrop() {
+    if (dragItem.current === null || dragOver.current === null || dragItem.current === dragOver.current) return
+    const newFavs = [...favorites]
+    const [moved] = newFavs.splice(dragItem.current, 1)
+    newFavs.splice(dragOver.current, 0, moved)
+    dragItem.current = null
+    dragOver.current = null
+    setFavorites(newFavs)
+    setSavingOrder(true)
+    await fetch('/api/admin/contributed-photos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderedIds: newFavs.map(f => f.id) }),
+    })
+    setSavingOrder(false)
+  }
+
   if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#aaa' }}>読み込み中...</div>
   if (fetchError) return <div style={{ padding: 60, textAlign: 'center', color: '#e53935' }}>エラー: {fetchError}</div>
 
-  const newPhotos = lastViewed
-    ? photos.filter(p => new Date(p.created_at) > new Date(lastViewed))
-    : photos
-  const seenPhotos = lastViewed
-    ? photos.filter(p => new Date(p.created_at) <= new Date(lastViewed))
-    : []
-
+  const newPhotos = lastViewed ? photos.filter(p => new Date(p.created_at) > new Date(lastViewed)) : photos
+  const seenPhotos = lastViewed ? photos.filter(p => new Date(p.created_at) <= new Date(lastViewed)) : []
   const grid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px' }}>
       <Link href="/admin" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#2f2244', margin: '8px 0 24px' }}>📸 ご提供写真</h1>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, margin: '8px 0 4px', flexWrap: 'wrap' }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#2f2244', margin: 0 }}>ご提供写真</h1>
+      </div>
+      <p style={{ fontSize: 12, color: '#aaa', marginBottom: 20 }}>※ご提供から2ヶ月で自動消去されます</p>
 
-      {photos.length === 0 ? (
-        <p style={{ color: '#999' }}>まだ提供された写真はありません。</p>
-      ) : (
+      {/* タブ */}
+      <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid #eee' }}>
+        {[
+          { id: 'all', label: '📸 ご提供写真', count: photos.length },
+          { id: 'favorites', label: '⭐ お気に入り', count: favorites.length },
+        ].map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            padding: '10px 20px', border: 'none', background: 'none', cursor: 'pointer',
+            fontSize: 14, fontWeight: tab === t.id ? 700 : 500,
+            color: tab === t.id ? '#1a3560' : '#999',
+            borderBottom: tab === t.id ? '2px solid #1a3560' : '2px solid transparent',
+            marginBottom: -2,
+          }}>
+            {t.label}
+            <span style={{ marginLeft: 6, fontSize: 12, background: tab === t.id ? '#e8f0fe' : '#f5f5f5', color: tab === t.id ? '#1a3560' : '#999', borderRadius: 10, padding: '1px 7px' }}>{t.count}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* ご提供写真タブ */}
+      {tab === 'all' && (
         <>
-          {/* 新着 */}
-          {newPhotos.length > 0 && (
-            <div style={{ marginBottom: 32 }}>
-              <p style={{ fontSize: 12, fontWeight: 700, color: '#1a3560', letterSpacing: '0.08em', marginBottom: 12 }}>
-                新着 {newPhotos.length}件
-              </p>
-              <div style={grid}>
-                {newPhotos.map(p => <PhotoCard key={p.id} p={p} modelMap={modelMap} onExpand={setExpanded} />)}
-              </div>
-            </div>
-          )}
-
-          {newPhotos.length === 0 && (
-            <p style={{ fontSize: 13, color: '#aaa', marginBottom: 20 }}>新着はありません。</p>
-          )}
-
-          {/* 閲覧済み */}
-          {seenPhotos.length > 0 && (
-            <div>
-              <button onClick={() => setShowAll(v => !v)}
-                style={{ background: 'none', border: '1px solid #ddd', borderRadius: 8, padding: '8px 18px', fontSize: 13, color: '#555', cursor: 'pointer', fontWeight: 600, marginBottom: 16 }}>
-                {showAll ? '▲ 閉じる' : `▼ 全て見る（${seenPhotos.length}件）`}
-              </button>
-              {showAll && (
-                <div style={grid}>
-                  {seenPhotos.map(p => <PhotoCard key={p.id} p={p} modelMap={modelMap} onExpand={setExpanded} />)}
+          {photos.length === 0 ? (
+            <p style={{ color: '#999' }}>まだ提供された写真はありません。</p>
+          ) : (
+            <>
+              {newPhotos.length > 0 && (
+                <div style={{ marginBottom: 32 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#1a3560', letterSpacing: '0.08em', marginBottom: 12 }}>新着 {newPhotos.length}件</p>
+                  <div style={grid}>
+                    {newPhotos.map(p => <PhotoCard key={p.id} p={p} modelMap={modelMap} onExpand={setExpanded} onToggleStar={toggleStar} starring={starring} />)}
+                  </div>
                 </div>
               )}
-            </div>
+              {newPhotos.length === 0 && <p style={{ fontSize: 13, color: '#aaa', marginBottom: 20 }}>新着はありません。</p>}
+              {seenPhotos.length > 0 && (
+                <div>
+                  <button onClick={() => setShowAll(v => !v)} style={{ background: 'none', border: '1px solid #ddd', borderRadius: 8, padding: '8px 18px', fontSize: 13, color: '#555', cursor: 'pointer', fontWeight: 600, marginBottom: 16 }}>
+                    {showAll ? '▲ 閉じる' : `▼ 全て見る（${seenPhotos.length}件）`}
+                  </button>
+                  {showAll && (
+                    <div style={grid}>
+                      {seenPhotos.map(p => <PhotoCard key={p.id} p={p} modelMap={modelMap} onExpand={setExpanded} onToggleStar={toggleStar} starring={starring} />)}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {/* お気に入りタブ */}
+      {tab === 'favorites' && (
+        <>
+          {favorites.length === 0 ? (
+            <p style={{ color: '#999' }}>⭐ をつけた写真がHOMEに表示されます。</p>
+          ) : (
+            <>
+              <p style={{ fontSize: 12, color: '#999', marginBottom: 16 }}>
+                ドラッグで表示順を変更できます。{savingOrder && <span style={{ color: '#f4a0be' }}>保存中...</span>}
+              </p>
+              <div style={grid}>
+                {favorites.map((p, idx) => (
+                  <FavoriteCard
+                    key={p.id}
+                    p={p}
+                    modelMap={modelMap}
+                    onExpand={setExpanded}
+                    onRemoveStar={() => toggleStar(p)}
+                    onDragStart={() => handleDragStart(idx)}
+                    onDragOver={() => handleDragOver(idx)}
+                    onDrop={handleDrop}
+                    isDragging={dragItem.current === idx}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </>
       )}

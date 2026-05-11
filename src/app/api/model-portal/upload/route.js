@@ -1,4 +1,5 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
+import { uploadToR2, deleteFromR2, R2_BASE } from '@/lib/r2'
 
 export async function POST(req) {
   const server = await createSupabaseServerClient()
@@ -15,14 +16,8 @@ export async function POST(req) {
   const path = formData.get('path') || `blog/${user.id}/${Date.now()}-${file.name}`
 
   const arrayBuffer = await file.arrayBuffer()
-  const { error } = await admin.storage.from('images').upload(path, arrayBuffer, {
-    contentType: file.type,
-    upsert: true,
-  })
-  if (error) return Response.json({ error: error.message }, { status: 500 })
-
-  const { data } = admin.storage.from('images').getPublicUrl(path)
-  return Response.json({ url: data.publicUrl })
+  const url = await uploadToR2(path, Buffer.from(arrayBuffer), file.type)
+  return Response.json({ url })
 }
 
 export async function DELETE(req) {
@@ -30,10 +25,8 @@ export async function DELETE(req) {
   const { data: { user } } = await server.auth.getUser()
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const admin = await createSupabaseAdminClient()
-  const { path } = await req.json()
-  if (!path) return Response.json({ error: 'path required' }, { status: 400 })
-
-  await admin.storage.from('images').remove([path])
+  const { url } = await req.json()
+  if (!url || !url.startsWith(R2_BASE())) return Response.json({ ok: true })
+  await deleteFromR2([url])
   return Response.json({ ok: true })
 }

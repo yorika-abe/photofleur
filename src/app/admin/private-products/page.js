@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { createBrowserClient } from '@supabase/ssr'
 import Cropper from 'react-easy-crop'
 import CancelModal from '@/components/CancelModal'
 
@@ -35,10 +34,6 @@ export default function PrivateProductsPage() {
   const fileRef = useRef()
   const formRef = useRef()
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  )
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
 
   useEffect(() => { load() }, [])
@@ -77,10 +72,13 @@ export default function PrivateProductsPage() {
       const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.85))
       URL.revokeObjectURL(src)
       const path = `private-products/${Date.now()}.jpg`
-      const { error } = await supabase.storage.from('images').upload(path, new File([blob], 'image.jpg', { type: 'image/jpeg' }))
+      const fd = new FormData()
+      fd.append('file', new File([blob], 'image.jpg', { type: 'image/jpeg' }))
+      fd.append('path', path)
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      const { url, error } = await res.json()
       if (error) { alert('アップロード失敗'); return }
-      const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(path)
-      setForm(f => ({ ...f, image: publicUrl }))
+      setForm(f => ({ ...f, image: url }))
     } catch (e) {
       URL.revokeObjectURL(src)
       alert('アップロードエラー: ' + e)

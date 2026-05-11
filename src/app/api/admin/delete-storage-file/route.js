@@ -1,4 +1,14 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
+import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3'
+
+const r2 = new S3Client({
+  region: 'auto',
+  endpoint: process.env.R2_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  },
+})
 
 export async function POST(req) {
   const server = await createSupabaseServerClient()
@@ -11,16 +21,13 @@ export async function POST(req) {
   if (!roles.includes('admin')) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
   const { url } = await req.json()
-  if (!url) return Response.json({ error: 'No URL' }, { status: 400 })
+  if (!url) return Response.json({ ok: true })
 
-  // Extract storage path from public URL
-  // e.g. https://.../storage/v1/object/public/images/site/ogp_home-123.jpg → site/ogp_home-123.jpg
-  const match = url.match(/\/storage\/v1\/object\/public\/images\/(.+)/)
-  if (!match) return Response.json({ ok: true }) // not a storage URL, skip
+  const base = `${process.env.R2_PUBLIC_URL}/`
+  if (!url.startsWith(base)) return Response.json({ ok: true })
 
-  const path = match[1]
-  const { error } = await admin.storage.from('images').remove([path])
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  const key = url.replace(base, '')
+  await r2.send(new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: key }))
 
   return Response.json({ ok: true })
 }

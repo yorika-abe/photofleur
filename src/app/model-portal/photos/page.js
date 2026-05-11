@@ -93,7 +93,8 @@ export default function ModelPhotosPage() {
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 16px' }}>
       <Link href="/model-portal" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← モデルポータル</Link>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: '12px 0 24px' }}>📸 ご提供いただいた写真</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: '12px 0 8px' }}>📸 ご提供いただいた写真</h1>
+      <p style={{ fontSize: 12, color: '#aaa', marginBottom: 24 }}>※ご提供から2ヶ月で自動消去されます</p>
 
       {photos.length === 0 ? (
         <p style={{ color: '#999' }}>あなたが写っている提供写真はまだありません。</p>

@@ -1,4 +1,14 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+
+const r2 = new S3Client({
+  region: 'auto',
+  endpoint: process.env.R2_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  },
+})
 
 export async function GET() {
   const admin = await createSupabaseAdminClient()
@@ -44,10 +54,13 @@ export async function POST(req) {
     const ext = file.name.split('.').pop().toLowerCase() || 'jpg'
     const path = `contributed/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
     const arrayBuffer = await file.arrayBuffer()
-    const { error } = await admin.storage.from('images').upload(path, arrayBuffer, { contentType: file.type, upsert: true })
-    if (error) return Response.json({ error: error.message }, { status: 500 })
-    const { data } = admin.storage.from('images').getPublicUrl(path)
-    urls.push(data.publicUrl)
+    await r2.send(new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME,
+      Key: path,
+      Body: Buffer.from(arrayBuffer),
+      ContentType: file.type,
+    }))
+    urls.push(`${process.env.R2_PUBLIC_URL}/${path}`)
   }
 
   const rows = urls.map(url => ({

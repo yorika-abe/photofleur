@@ -1,4 +1,5 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
+import { deleteFromR2 } from '@/lib/r2'
 
 async function getStaffUser() {
   const server = await createSupabaseServerClient()
@@ -28,7 +29,14 @@ export async function POST(req) {
   // guide page saves only profile_photo / display_name — do a targeted update
   if ('profile_photo' in body || 'display_name' in body) {
     const fields = { updated_at: new Date().toISOString() }
-    if ('profile_photo' in body) fields.profile_photo = body.profile_photo || null
+    if ('profile_photo' in body) {
+      // 古い写真をR2から削除
+      const { data: current } = await admin.from('staff_private_info').select('profile_photo').eq('user_id', user.id).maybeSingle()
+      if (current?.profile_photo && current.profile_photo !== body.profile_photo) {
+        await deleteFromR2([current.profile_photo])
+      }
+      fields.profile_photo = body.profile_photo || null
+    }
     if ('display_name' in body) fields.display_name = body.display_name || null
     const { error } = await admin.from('staff_private_info').update(fields).eq('user_id', user.id)
     if (error) return Response.json({ error: error.message }, { status: 500 })

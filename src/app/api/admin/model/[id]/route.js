@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
+import { deleteFromR2 } from '@/lib/r2'
 
 export async function GET(req, { params }) {
   const { id } = await params
@@ -14,29 +15,16 @@ export async function PUT(req, { params }) {
   const body = await req.json()
   const supabase = await createSupabaseAdminClient()
 
-  // 現在の画像URLを取得して、更新・削除されたものをストレージから消す
   const { data: current } = await supabase.from('models').select('image, portfolio_images').eq('id', id).single()
   if (current) {
-    const base = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/`
     const toDelete = []
-
-    // プロフィール画像が変わった場合
-    if (current.image && current.image !== body.image && current.image.startsWith(base)) {
-      toDelete.push(current.image.replace(base, ''))
-    }
-
-    // ポートフォリオから削除された画像
+    if (current.image && current.image !== body.image) toDelete.push(current.image)
     const oldPf = current.portfolio_images || []
     const newPf = body.portfolio_images || []
     for (const url of oldPf) {
-      if (!newPf.includes(url) && url.startsWith(base)) {
-        toDelete.push(url.replace(base, ''))
-      }
+      if (!newPf.includes(url)) toDelete.push(url)
     }
-
-    if (toDelete.length > 0) {
-      await supabase.storage.from('images').remove(toDelete)
-    }
+    if (toDelete.length > 0) await deleteFromR2(toDelete)
   }
 
   const { error } = await supabase.from('models').update(body).eq('id', id)
@@ -54,18 +42,16 @@ export async function POST(req, { params }) {
     const updates = { status: 'active', pending_data: null }
     if (model?.pending_data) Object.assign(updates, model.pending_data)
 
-    // 使われなくなった画像をStorageから削除
     if (model?.pending_data) {
-      const base = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/`
       const toDelete = []
-      if (model.image && model.pending_data.image && model.image !== model.pending_data.image && model.image.startsWith(base))
-        toDelete.push(model.image.replace(base, ''))
+      if (model.image && model.pending_data.image && model.image !== model.pending_data.image)
+        toDelete.push(model.image)
       const oldPf = model.portfolio_images || []
       const newPf = model.pending_data.portfolio_images || []
       for (const url of oldPf) {
-        if (!newPf.includes(url) && url?.startsWith(base)) toDelete.push(url.replace(base, ''))
+        if (!newPf.includes(url)) toDelete.push(url)
       }
-      if (toDelete.length > 0) await supabase.storage.from('images').remove(toDelete)
+      if (toDelete.length > 0) await deleteFromR2(toDelete)
     }
 
     await supabase.from('models').update(updates).eq('id', id)
@@ -98,16 +84,15 @@ export async function POST(req, { params }) {
 export async function DELETE(_req, { params }) {
   const { id } = await params
   const supabase = await createSupabaseAdminClient()
-  const base = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/`
 
   const { data: model } = await supabase.from('models').select('image, portfolio_images').eq('id', id).single()
   if (model) {
     const toDelete = []
-    if (model.image?.startsWith(base)) toDelete.push(model.image.replace(base, ''))
+    if (model.image) toDelete.push(model.image)
     for (const url of model.portfolio_images || []) {
-      if (url?.startsWith(base)) toDelete.push(url.replace(base, ''))
+      if (url) toDelete.push(url)
     }
-    if (toDelete.length > 0) await supabase.storage.from('images').remove(toDelete)
+    if (toDelete.length > 0) await deleteFromR2(toDelete)
   }
 
   await supabase.from('models').delete().eq('id', id)

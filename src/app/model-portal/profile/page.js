@@ -99,12 +99,16 @@ export default function ModelProfilePage() {
     const res = await fetch('/api/model-portal/upload-url', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path }),
+      body: JSON.stringify({ path, contentType: file.type }),
     })
-    const { token, publicUrl, error } = await res.json()
+    const { signedUrl, publicUrl, error } = await res.json()
     if (error) throw new Error(error)
-    const uploadRes = await supabase.storage.from('images').uploadToSignedUrl(path, token, file)
-    if (uploadRes.error) throw new Error(uploadRes.error.message)
+    const putRes = await fetch(signedUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type },
+      body: file,
+    })
+    if (!putRes.ok) throw new Error('アップロード失敗: ' + putRes.status)
     return publicUrl
   }
 

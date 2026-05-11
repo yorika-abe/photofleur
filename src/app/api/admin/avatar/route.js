@@ -1,4 +1,14 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+
+const r2 = new S3Client({
+  region: 'auto',
+  endpoint: process.env.R2_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  },
+})
 
 export async function GET() {
   const admin = await createSupabaseAdminClient()
@@ -13,15 +23,17 @@ export async function POST(req) {
 
   const admin = await createSupabaseAdminClient()
 
-  // Only owner can change the shared avatar
   const { data: profile } = await admin.from('user_profiles').select('role').eq('id', user.id).single()
   if (profile?.role !== 'owner') return Response.json({ error: 'Forbidden' }, { status: 403 })
 
-  // Delete old avatar
+  // Delete old avatar from R2
   const { data: existing } = await admin.from('site_settings').select('value').eq('key', 'admin_avatar_url').maybeSingle()
   if (existing?.value) {
-    const match = existing.value.match(/\/storage\/v1\/object\/public\/images\/(.+)/)
-    if (match) await admin.storage.from('images').remove([match[1]])
+    const base = `${process.env.R2_PUBLIC_URL}/`
+    if (existing.value.startsWith(base)) {
+      const key = existing.value.replace(base, '')
+      await r2.send(new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: key }))
+    }
   }
 
   const formData = await req.formData()
@@ -30,13 +42,14 @@ export async function POST(req) {
 
   const path = `admin-avatar/avatar-${Date.now()}.jpg`
   const arrayBuffer = await file.arrayBuffer()
-  const { error: uploadError } = await admin.storage.from('images').upload(path, arrayBuffer, {
-    contentType: 'image/jpeg',
-    upsert: true,
-  })
-  if (uploadError) return Response.json({ error: uploadError.message }, { status: 500 })
+  await r2.send(new PutObjectCommand({
+    Bucket: process.env.R2_BUCKET_NAME,
+    Key: path,
+    Body: Buffer.from(arrayBuffer),
+    ContentType: 'image/jpeg',
+  }))
 
-  const { data: { publicUrl } } = admin.storage.from('images').getPublicUrl(path)
+  const publicUrl = `${process.env.R2_PUBLIC_URL}/${path}`
   await admin.from('site_settings').upsert({ key: 'admin_avatar_url', value: publicUrl }, { onConflict: 'key' })
 
   return Response.json({ url: publicUrl })

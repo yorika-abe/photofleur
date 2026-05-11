@@ -118,9 +118,9 @@ export default function AdminMediaPage() {
       const res = await fetch('/api/admin/upload-signed-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path }),
+        body: JSON.stringify({ path, contentType: 'image/jpeg' }),
       })
-      const { signedUrl, error } = await res.json()
+      const { signedUrl, publicUrl, error } = await res.json()
       if (error) throw error
       await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest()
@@ -136,7 +136,7 @@ export default function AdminMediaPage() {
         xhr.setRequestHeader('Content-Type', 'image/jpeg')
         xhr.send(compressed)
       })
-      onSuccess(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${path}`)
+      onSuccess(publicUrl)
       if (oldUrl) deleteFile(oldUrl)
     } catch (e) { alert('アップロードエラー: ' + e) }
     setUploading(null)
@@ -151,9 +151,9 @@ export default function AdminMediaPage() {
       const res = await fetch('/api/admin/upload-signed-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path }),
+        body: JSON.stringify({ path, contentType: file.type }),
       })
-      const { signedUrl, error } = await res.json()
+      const { signedUrl, publicUrl, error } = await res.json()
       if (error) throw error
       await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest()
@@ -169,14 +169,14 @@ export default function AdminMediaPage() {
         xhr.setRequestHeader('Content-Type', file.type)
         xhr.send(file)
       })
-      setter(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${path}`)
+      setter(publicUrl)
     } catch (e) { alert('アップロードエラー: ' + e) }
     setUploading(null)
     setUploadProgress(0)
   }
 
   async function deleteFile(url) {
-    if (!url || !url.includes('/storage/v1/object/public/images/')) return
+    if (!url) return
     await fetch('/api/admin/delete-storage-file', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -238,9 +238,9 @@ export default function AdminMediaPage() {
       const res = await fetch('/api/admin/upload-signed-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path }),
+        body: JSON.stringify({ path, contentType: 'application/pdf' }),
       })
-      const { signedUrl, error } = await res.json()
+      const { signedUrl, publicUrl, error } = await res.json()
       if (error) throw error
       await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest()
@@ -256,7 +256,7 @@ export default function AdminMediaPage() {
         xhr.setRequestHeader('Content-Type', 'application/pdf')
         xhr.send(file)
       })
-      setter(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${path}`)
+      setter(publicUrl)
     } catch (e) { alert('アップロードエラー: ' + e) }
     setUploading(null)
     setUploadProgress(0)

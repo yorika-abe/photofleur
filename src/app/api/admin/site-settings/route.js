@@ -1,4 +1,14 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
+import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3'
+
+const r2 = new S3Client({
+  region: 'auto',
+  endpoint: process.env.R2_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  },
+})
 
 async function checkAdmin() {
   const server = await createSupabaseServerClient()
@@ -27,7 +37,7 @@ export async function POST(req) {
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const base = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/`
+  const base = `${process.env.R2_PUBLIC_URL}/`
 
   // 現在の設定を取得して削除すべき画像を特定
   const { data: current } = await admin.from('site_settings').select('key, value')
@@ -50,7 +60,11 @@ export async function POST(req) {
     if (oldUrl && oldUrl !== newUrl && oldUrl.startsWith(base)) toDelete.push(oldUrl.replace(base, ''))
   }
 
-  if (toDelete.length > 0) await admin.storage.from('images').remove(toDelete)
+  if (toDelete.length > 0) {
+    await Promise.all(toDelete.map(key =>
+      r2.send(new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: key }))
+    ))
+  }
 
   const entries = Object.entries(body).map(([key, value]) => ({
     key, value, updated_at: new Date().toISOString(),

@@ -1,5 +1,5 @@
-import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { createSupabaseAdminClient } from '@/lib/supabase-server'
+import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
+import { deleteFromR2 } from '@/lib/r2'
 
 async function getAuthUser() {
   const server = await createSupabaseServerClient()
@@ -42,7 +42,17 @@ export async function PUT(req) {
   const { data: existing } = await admin.from('models').select('*').eq('user_id', user.id).single()
   if (!existing) return Response.json({ error: 'モデルレコードが見つかりません' }, { status: 404 })
 
+  // 前の pending_data で使っていた画像が今回の申請で変わる場合はR2から削除
   const basePending = existing.pending_data || {}
+  if (body.image !== undefined && basePending.image && basePending.image !== body.image && basePending.image !== existing.image) {
+    await deleteFromR2([basePending.image])
+  }
+  if (body.portfolio_images !== undefined && basePending.portfolio_images) {
+    const newSet = new Set(body.portfolio_images || [])
+    const toDelete = (basePending.portfolio_images || []).filter(u => !newSet.has(u) && u !== (existing.portfolio_images || []).find(x => x === u))
+    if (toDelete.length > 0) await deleteFromR2(toDelete)
+  }
+
   const mergedPending = { ...basePending, ...body }
   const updateData = { pending_data: mergedPending }
   if (existing.status !== 'active') updateData.status = 'pending'
