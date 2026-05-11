@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { genId } from '@/lib/product-layers'
 
-export default function LayerOptionBuilder({ layers = [], onChange, models = [], eventModels = [], allowSlots = false, slotLabels = [] }) {
+export default function LayerOptionBuilder({ layers = [], onChange, models = [], eventModels = [], allowSlots = false, slotLabels = [], defaultStock = -1 }) {
   // Track which choice rows have "詳細に管理する" open
   const [expanded, setExpanded] = useState(new Set())
   // Track which (choiceId:parentId) nested panels are open
@@ -402,6 +402,7 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
   }
 
   const inp = { padding: '6px 9px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }
+  const stockPlaceholder = defaultStock >= 0 ? 'デフォルトの在庫' : '∞'
 
   // Render per-choice pricing block (for leaf layer, no parent context)
   function renderBaseChoicePricing(layerIdx, choiceKey, choice) {
@@ -513,7 +514,7 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
                   {linked && (
                     <>
                       <span style={{ fontSize: 11, color: '#888' }}>在庫</span>
-                      <input type="number" value={ns < 0 ? '' : ns} placeholder="∞"
+                      <input type="number" value={ns < 0 ? '' : ns} placeholder={stockPlaceholder}
                         onChange={e => updateStockFn(layerIdx, choiceId, parentId, gpc.id, e.target.value)}
                         style={{ ...inp, width: 52, textAlign: 'center' }} />
                       {isLeaf && perPricingOn && (
@@ -561,7 +562,7 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
                     {linked && (
                       <>
                         <span style={{ fontSize: 11, color: '#888' }}>在庫</span>
-                        <input type="number" value={ps < 0 ? '' : ps} placeholder="∞"
+                        <input type="number" value={ps < 0 ? '' : ps} placeholder={stockPlaceholder}
                           onChange={e => isManual ? updateParentStock(layerIdx, choiceId, pc.id, e.target.value) : updateModelParentStock(layerIdx, choiceId, pc.id, e.target.value)}
                           style={{ ...inp, width: 52, textAlign: 'center' }} />
                         {isLeaf && perPricingOn && (
@@ -649,7 +650,7 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
                           {layerIdx === 0 && (
                             <>
                               <span style={{ fontSize: 11, color: '#888', whiteSpace: 'nowrap' }}>在庫</span>
-                              <input type="number" value={choice.stock < 0 ? '' : choice.stock} placeholder="∞"
+                              <input type="number" value={choice.stock < 0 ? '' : choice.stock} placeholder={stockPlaceholder}
                                 onChange={e => updateManualChoice(layerIdx, choice.id, 'stock', e.target.value === '' ? -1 : Number(e.target.value))}
                                 style={{ ...inp, width: 52, textAlign: 'center' }} />
                             </>
@@ -726,7 +727,7 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
                             <>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <span style={{ fontSize: 11, color: '#888' }}>在庫</span>
-                                <input type="number" value={mc.stock < 0 ? '' : mc.stock} placeholder="∞"
+                                <input type="number" value={mc.stock < 0 ? '' : mc.stock} placeholder={stockPlaceholder}
                                   onChange={e => updateModelChoice(layerIdx, mc.id, 'stock', e.target.value === '' ? -1 : Number(e.target.value))}
                                   style={{ ...inp, width: 58, textAlign: 'center' }} />
                               </div>
@@ -764,7 +765,7 @@ export default function LayerOptionBuilder({ layers = [], onChange, models = [],
                             {layerIdx === 0 && (
                               <>
                                 <span style={{ fontSize: 11, color: '#888', whiteSpace: 'nowrap' }}>在庫</span>
-                                <input type="number" value={choice.stock < 0 ? '' : choice.stock} placeholder="∞"
+                                <input type="number" value={choice.stock < 0 ? '' : choice.stock} placeholder={stockPlaceholder}
                                   onChange={e => updateManualChoice(layerIdx, choice.id, 'stock', e.target.value === '' ? -1 : Number(e.target.value))}
                                   style={{ ...inp, width: 52, textAlign: 'center' }} />
                               </>

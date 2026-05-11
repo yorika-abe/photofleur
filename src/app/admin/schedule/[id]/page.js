@@ -80,7 +80,7 @@ export default function EventEditPage() {
   const [uploadCount, setUploadCount] = useState({ current: 0, total: 0 })
   const [products, setProducts] = useState([])
   const [modelsSubTab, setModelsSubTab] = useState('models')
-  const [newProduct, setNewProduct] = useState({ name: '', image: '', description: '', price: 0, stock: 1, layers: [], is_delivery: false, notify_model: true })
+  const [newProduct, setNewProduct] = useState({ name: '', image: '', description: '', price: 0, stock: -1, layers: [], is_delivery: false, notify_model: true })
   const [editingProductId, setEditingProductId] = useState(null)
   const productFormRef = useRef(null)
 
@@ -436,7 +436,7 @@ export default function EventEditPage() {
     }
     if (validLayers.some(l => l.type === 'models')) optionsObj.notify_model = newProduct.notify_model
     const options = Object.keys(optionsObj).length > 0 ? optionsObj : null
-    const RESET_PRODUCT = { name: '', image: '', description: '', price: 0, stock: 1, layers: [], is_delivery: false, notify_model: true }
+    const RESET_PRODUCT = { name: '', image: '', description: '', price: 0, stock: -1, layers: [], is_delivery: false, notify_model: true }
     if (editingProductId) {
       await fetch(`/api/admin/events/${id}/products`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -486,7 +486,7 @@ export default function EventEditPage() {
         }
       })
     }
-    setNewProduct({ name: p.name, image: p.image || '', description: p.description || '', price: p.price || 0, stock: p.stock || 1, layers, is_delivery: p.options?.is_delivery || false, notify_model: p.options?.notify_model !== false })
+    setNewProduct({ name: p.name, image: p.image || '', description: p.description || '', price: p.price || 0, stock: p.stock ?? -1, layers, is_delivery: p.options?.is_delivery || false, notify_model: p.options?.notify_model !== false })
     setEditingProductId(p.id)
     setModelsSubTab('products')
     setTimeout(() => productFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
@@ -996,16 +996,22 @@ export default function EventEditPage() {
                       )}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
                         <div>
                           <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>商品名 *</label>
                           <input value={newProduct.name} onChange={e => setNewProduct(p => ({ ...p, name: e.target.value }))}
                             style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }} placeholder="フォトブック" />
                         </div>
                         <div>
-                          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>料金 ¥</label>
+                          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>デフォルトの料金 ¥</label>
                           <input type="number" value={newProduct.price} onChange={e => setNewProduct(p => ({ ...p, price: e.target.value }))}
                             style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }} placeholder="3000" />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>デフォルトの在庫</label>
+                          <input type="number" min="0" value={newProduct.stock < 0 ? '' : newProduct.stock}
+                            onChange={e => setNewProduct(p => ({ ...p, stock: e.target.value === '' ? -1 : Number(e.target.value) }))}
+                            style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }} placeholder="∞" />
                         </div>
                       </div>
                       <div>
@@ -1027,13 +1033,6 @@ export default function EventEditPage() {
                       </div>
                       <div>
                         <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 6 }}>選択肢グループ</label>
-                        {newProduct.layers.length === 0 && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                            <span style={{ fontSize: 12, color: '#888' }}>在庫数（選択肢なし）</span>
-                            <input type="number" min="1" value={newProduct.stock} onChange={e => setNewProduct(p => ({ ...p, stock: e.target.value }))}
-                              style={{ width: 72, padding: '6px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }} />
-                          </div>
-                        )}
                         <LayerOptionBuilder
                           layers={newProduct.layers}
                           onChange={newLayers => setNewProduct(p => ({ ...p, layers: newLayers }))}
@@ -1041,14 +1040,8 @@ export default function EventEditPage() {
                           eventModels={entries.map(e => models.find(m => m.id === e.model_id)).filter(Boolean)}
                           allowSlots={true}
                           slotLabels={currentSlots.map(s => s.label)}
+                          defaultStock={newProduct.stock}
                         />
-                        {newProduct.layers.length > 0 && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                            <span style={{ fontSize: 12, color: '#888' }}>在庫数</span>
-                            <input type="number" min="1" value={newProduct.stock} onChange={e => setNewProduct(p => ({ ...p, stock: e.target.value }))}
-                              style={{ width: 72, padding: '6px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box' }} />
-                          </div>
-                        )}
                       </div>
                       <div>
                         <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>詳細説明</label>
