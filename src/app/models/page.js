@@ -66,7 +66,7 @@ export default async function ModelsPage() {
         .model-card:hover .model-overlay { opacity: 1 !important; }
         .model-card:hover .model-name-overlay { opacity: 1 !important; }
         .model-card:hover .model-info { opacity: 0 !important; }
-        @media (max-width: 640px) { .model-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; } }
+        @media (max-width: 640px) { .model-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 8px !important; } }
       `}</style>
     </div>
   )
