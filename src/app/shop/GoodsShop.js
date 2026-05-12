@@ -48,6 +48,7 @@ export default function GoodsShop() {
   }, [])
 
   function openOrder(g) {
+    if (isLoggedIn === null) return
     if (isLoggedIn === false) { setShowLoginPrompt(true); return }
     setOrderTarget(g)
   }
@@ -136,7 +137,7 @@ export default function GoodsShop() {
       )}
 
       {cartCount > 0 && (
-        <button onClick={() => isLoggedIn !== false ? setShowCart(true) : setShowLoginPrompt(true)}
+        <button onClick={() => isLoggedIn === true ? setShowCart(true) : isLoggedIn === false ? setShowLoginPrompt(true) : null}
           style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 900, background: '#1a3560', color: '#fff', border: 'none', borderRadius: 24, padding: '12px 22px', fontWeight: 700, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 20px rgba(26,53,96,0.35)' }}>
           🛒 カート ({cartCount})
         </button>
