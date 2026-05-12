@@ -41,8 +41,11 @@ export default function GoodsShop() {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 20px' }}>
-      <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1a3560', marginBottom: 8 }}>グッズショップ</h1>
-      <p style={{ color: '#888', fontSize: 14, marginBottom: 32 }}>PhotoFleurオリジナルグッズを販売しています。</p>
+      <div style={{ textAlign: 'center', padding: '0 20px 32px' }}>
+        <p style={{ fontFamily: 'var(--font-cormorant), Georgia, serif', fontSize: 11, letterSpacing: '0.3em', color: '#999', textTransform: 'uppercase', marginBottom: 8, fontStyle: 'italic' }}>Our</p>
+        <h1 style={{ fontFamily: 'var(--font-cormorant), Georgia, serif', fontSize: 'clamp(52px, 10vw, 96px)', fontWeight: 400, color: '#0d1f3a', letterSpacing: '0.18em', margin: 0, lineHeight: 1 }}>SHOP</h1>
+        <div style={{ width: '100%', maxWidth: 600, height: 1, background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.15), transparent)', margin: '20px auto 0' }} />
+      </div>
 
       {loading ? (
         <p style={{ color: '#aaa' }}>読み込み中...</p>

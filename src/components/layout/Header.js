@@ -57,7 +57,7 @@ export default function Header() {
     { href: '/blog', label: 'ブログ' },
     { href: '/request', label: 'リクエスト撮影' },
     { href: '/model-recruit', label: 'モデル募集' },
-    { href: '/shop', label: 'グッズ' },
+    { href: '/shop', label: 'ショップ' },
     { href: '/faq', label: 'FAQ' },
   ]
 
