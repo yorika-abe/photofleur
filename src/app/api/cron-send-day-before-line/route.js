@@ -110,6 +110,19 @@ export async function GET(req) {
     return Response.json({ ok: true, sent: 0, reason: 'no events tomorrow' })
   }
 
+  // イベントごとの確定スタッフを一括取得
+  const eventIds = events.map(e => e.id)
+  const { data: staffRecs } = await supabase.from('staff_recruitments').select('id, event_id').eq('type', 'event').in('event_id', eventIds).eq('status', 'closed')
+  const eventStaffMap = {}
+  if (staffRecs?.length) {
+    const { data: staffApps } = await supabase.from('staff_recruitment_applications').select('recruitment_id, staff_name').in('recruitment_id', staffRecs.map(r => r.id)).eq('status', 'confirmed')
+    const recEventMap = Object.fromEntries(staffRecs.map(r => [r.id, r.event_id]))
+    for (const app of staffApps || []) {
+      const eid = recEventMap[app.recruitment_id]
+      if (eid) { if (!eventStaffMap[eid]) eventStaffMap[eid] = []; eventStaffMap[eid].push(app.staff_name) }
+    }
+  }
+
   let sentCount = 0
 
   for (const event of events) {
@@ -142,7 +155,9 @@ export async function GET(req) {
       const vars = buildVars(event, entry)
       if (!vars) continue
 
-      let message = applyVars(template, vars).trim()
+      const staffNames = eventStaffMap[event.id] || []
+      const staff_info = staffNames.length ? `【受付スタッフ】\n${staffNames.join('・')}\n\n` : ''
+      let message = applyVars(template, { ...vars, staff_info }).trim()
 
       // 商品予約セクションを追加
       for (const product of modelNotifyProducts) {
@@ -225,17 +240,35 @@ export async function GET(req) {
     .is('cancelled_at', null)
     .eq('event_date_input', tomorrowStr)
 
+  // 非公開予約の確定スタッフを一括取得
+  const privateIds = (privateBookings || []).map(pb => pb.id)
+  const privateStaffMap = {}
+  if (privateIds.length) {
+    const { data: pRecs } = await supabase.from('staff_recruitments').select('id, private_booking_id').eq('type', 'request').in('private_booking_id', privateIds).eq('status', 'closed')
+    if (pRecs?.length) {
+      const { data: pApps } = await supabase.from('staff_recruitment_applications').select('recruitment_id, staff_name').in('recruitment_id', pRecs.map(r => r.id)).eq('status', 'confirmed')
+      const recMap = Object.fromEntries(pRecs.map(r => [r.id, r.private_booking_id]))
+      for (const app of pApps || []) {
+        const bid = recMap[app.recruitment_id]
+        if (bid) { if (!privateStaffMap[bid]) privateStaffMap[bid] = []; privateStaffMap[bid].push(app.staff_name) }
+      }
+    }
+  }
+
   for (const pb of privateBookings || []) {
     const model = pb.private_products?.models
     if (!model?.line_id) continue
 
     const d = new Date(pb.event_date_input + 'T00:00:00')
     const dateStr = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}（${days[d.getDay()]}）`
+    const staffNames = privateStaffMap[pb.id] || []
+    const staff_info = staffNames.length ? `受付スタッフ：${staffNames.join('・')}\n` : ''
 
     const message = applyVars(privateTemplate, {
       event_date: dateStr,
       meeting_place: pb.meeting_place || '',
       shooting_time: pb.shooting_time || '',
+      staff_info,
       nickname: pb.nickname || '',
       sns_url: pb.sns_url || '',
     }).trim()

@@ -36,8 +36,23 @@ function buildItemCard(item) {
   if (item.slotLabel) rows.push(`<p style="margin:0 0 8px; font-size:15px; line-height:1.8;"><strong>時間枠：</strong>${item.slotLabel}</p>`)
   else if (item.timeLabel) rows.push(`<p style="margin:0 0 8px; font-size:15px; line-height:1.8;"><strong>時間枠：</strong>${item.timeLabel}</p>`)
   if (item.meetingPlace) rows.push(`<p style="margin:0 0 8px; font-size:15px; line-height:1.8;"><strong>集合・解散場所：</strong>${item.meetingPlace}</p>`)
+  if (item.staffName) rows.push(`<p style="margin:0 0 8px; font-size:15px; line-height:1.8;"><strong>受付スタッフ：</strong>${item.staffName}</p>`)
   rows.push(`<p style="margin:0; font-size:15px; line-height:1.8;"><strong>料金：</strong>¥${Number(price).toLocaleString()}${item.isOutdoor ? '（屋外撮影・割引適用済み）' : ''}</p>`)
   return `<div style="border:1px solid #e5e5e5; border-radius:14px; padding:18px; margin-bottom:16px; background:#fafafa;">${rows.join('')}</div>`
+}
+
+async function fetchStaffMap(supabase, type, idField, ids) {
+  if (!ids.length) return {}
+  const { data: recs } = await supabase.from('staff_recruitments').select(`id, ${idField}`).eq('type', type).in(idField, ids).eq('status', 'closed')
+  if (!recs?.length) return {}
+  const { data: apps } = await supabase.from('staff_recruitment_applications').select('recruitment_id, staff_name').in('recruitment_id', recs.map(r => r.id)).eq('status', 'confirmed')
+  const recIdMap = Object.fromEntries(recs.map(r => [r.id, r[idField]]))
+  const map = {}
+  for (const app of apps || []) {
+    const id = recIdMap[app.recruitment_id]
+    if (id) { if (!map[id]) map[id] = []; map[id].push(app.staff_name) }
+  }
+  return map
 }
 
 function buildQrBlock(verifyUrl) {
@@ -86,6 +101,7 @@ export async function GET(req) {
     if (events?.length > 0) {
       const eventIds = events.map(e => e.id)
       const eventMap = Object.fromEntries(events.map(e => [e.id, e]))
+      const eventStaffMap = await fetchStaffMap(supabase, 'event', 'event_id', eventIds)
 
       const { data: entries } = await supabase
         .from('event_entries').select('id, model_id, event_id').in('event_id', eventIds)
@@ -126,6 +142,7 @@ export async function GET(req) {
               slotLabel: slot?.slot_label || '',
               price: booking.final_price ?? slot?.price ?? 0,
               isOutdoor: booking.is_outdoor || false,
+              staffName: eventStaffMap[entry?.event_id]?.join('・') || null,
               locationInfo: event ? {
                 event_type: event.event_type,
                 location_name: event.location_name,
@@ -146,9 +163,12 @@ export async function GET(req) {
       .is('cancelled_at', null)
       .not('private_products', 'is', null)
 
-    for (const b of (privateBookings || []).filter(b =>
+    const targetPrivate = (privateBookings || []).filter(b =>
       b.private_products?.event_date === tomorrowDate || b.event_date_input === tomorrowDate
-    )) {
+    )
+    const privateStaffMap = await fetchStaffMap(supabase, 'request', 'private_booking_id', targetPrivate.map(b => b.id))
+
+    for (const b of targetPrivate) {
       const customerName = `${b.last_name}${b.first_name ? ` ${b.first_name}` : ''}`
       const product = b.private_products
       const groupKey = `solo_${b.qr_token}`
@@ -159,6 +179,7 @@ export async function GET(req) {
         price: product.price,
         modelName: product.models?.name || null,
         meetingPlace: b.meeting_place || null,
+        staffName: privateStaffMap[b.id]?.join('・') || null,
       })
     }
 
@@ -169,6 +190,9 @@ export async function GET(req) {
       .is('cancelled_at', null)
       .not('customer_email', 'is', null)
 
+    const epEventIds = [...new Set((epBookings || []).filter(b => b.events?.event_date === tomorrowDate).map(b => b.event_id).filter(Boolean))]
+    const epStaffMap = epEventIds.length ? await fetchStaffMap(supabase, 'event', 'event_id', epEventIds) : {}
+
     for (const b of (epBookings || []).filter(b => b.events?.event_date === tomorrowDate)) {
       const groupKey = b.cart_token ? `cart_${b.cart_token}` : `solo_${b.qr_token}`
       const verifyUrl = b.cart_token
@@ -178,6 +202,7 @@ export async function GET(req) {
         productTitle: b.event_products?.name || '',
         timeLabel: b.selections?.slot || null,
         price: b.event_products?.price || 0,
+        staffName: epStaffMap[b.event_id]?.join('・') || null,
       })
     }
 
@@ -266,12 +291,15 @@ export async function GET(req) {
         results.push({ email, groupCount: Object.keys(groups).length, ok: !error })
 
         // LINE通知（連携済みカメラマンへ）
+        const allItems = Object.values(groups).flatMap(g => g.items)
+        const staffNames = [...new Set(allItems.map(i => i.staffName).filter(Boolean))]
         await sendPhotographerDayBeforeLine(supabase, email, {
           customer_name: customerName,
           event_date: formattedDate,
-          slot_label: Object.values(groups).flatMap(g => g.items).map(i => i.slotLabel || i.productTitle || '').filter(Boolean).join(' / '),
-          model_name: Object.values(groups).flatMap(g => g.items).map(i => i.modelName || '').filter(Boolean).join(' / '),
-          location: Object.values(groups).flatMap(g => g.items).map(i => i.locationInfo?.location_name || i.locationInfo?.meeting_place || '').filter(Boolean).join(' '),
+          slot_label: allItems.map(i => i.slotLabel || i.productTitle || '').filter(Boolean).join(' / '),
+          model_name: allItems.map(i => i.modelName || '').filter(Boolean).join(' / '),
+          location: allItems.map(i => i.locationInfo?.location_name || i.locationInfo?.meeting_place || i.meetingPlace || '').filter(Boolean).join(' '),
+          staff_info: staffNames.length ? `受付スタッフ：${staffNames.join('・')}\n` : '',
         }, 'photographer_day_before', 'photographer_day_before')
       } catch (e) {
         results.push({ email, ok: false, error: String(e) })
