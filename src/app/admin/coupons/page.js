@@ -76,13 +76,19 @@ export default function AdminCouponsPage() {
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 16px' }}>
       <Link href="/admin" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0 24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0 8px' }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: '#2f2244', margin: 0 }}>クーポン管理</h1>
         <button onClick={() => setShowForm(!showForm)}
           style={{ background: '#2f2244', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
           {showForm ? 'キャンセル' : '+ 新規作成'}
         </button>
       </div>
+      <p className="coupon-auto-note" style={{ fontSize: 11, color: '#bbb', margin: '0 0 20px', whiteSpace: 'nowrap' }}>
+        毎月1日の深夜2時に、期限から4ヶ月以上経過したクーポンを自動削除します。
+      </p>
+      <style>{`
+        @media (max-width: 640px) { .coupon-auto-note { font-size: clamp(8px, 2vw, 10px) !important; } }
+      `}</style>
 
       {showForm && (
         <form onSubmit={create} style={{ background: '#fff', borderRadius: 16, padding: '24px', border: '2px solid #2f2244', marginBottom: 24 }}>
