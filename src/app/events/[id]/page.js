@@ -93,6 +93,7 @@ export default async function EventDetailPage({ params }) {
       : Promise.resolve({ data: [] }),
   ])
 
+  const now = new Date()
   const slotsByEntry = {}
   for (const slot of allSlots || []) {
     if (slot.end_time && new Date(slot.end_time) <= now) continue
@@ -117,7 +118,6 @@ export default async function EventDetailPage({ params }) {
     }
   }
 
-  const now = new Date()
   const bookingOpen = event.booking_open_at ? new Date(event.booking_open_at) <= now : true
 
   const mapAddr = event.address || event.location_name
