@@ -11,6 +11,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
   const [cartAdded, setCartAdded] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(null)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  const [loginRedirect, setLoginRedirect] = useState('/')
   const { addItem } = useCart()
   const router = useRouter()
 
@@ -20,8 +21,9 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
     }).catch(() => setIsLoggedIn(false))
   }, [])
 
-  function requireLogin(action) {
+  function requireLogin(action, redirectUrl) {
     if (isLoggedIn === true) { action(); return }
+    setLoginRedirect(redirectUrl || window.location.pathname)
     setShowLoginPrompt(true)
   }
 
@@ -87,7 +89,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
             <div style={{ fontWeight: 700, fontSize: 18, color: '#1a3560', marginBottom: 8 }}>ログインが必要です</div>
             <p style={{ fontSize: 14, color: '#666', marginBottom: 24 }}>予約するにはログインしてください。</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <a href="/login" style={{ display: 'block', padding: '12px', borderRadius: 10, background: '#1a3560', color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>ログインする</a>
+              <a href={`/login?redirect=${encodeURIComponent(loginRedirect)}`} style={{ display: 'block', padding: '12px', borderRadius: 10, background: '#1a3560', color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>ログインする</a>
               <button onClick={() => setShowLoginPrompt(false)} style={{ padding: '10px', borderRadius: 10, border: '1px solid #ddd', background: '#fff', color: '#888', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>キャンセル</button>
             </div>
           </div>
@@ -192,25 +194,24 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
 
                   {selectedSlotId ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <button onClick={() => requireLogin(() => router.push(`/confirm?slot_id=${selectedSlotId}`))}
+                      <button onClick={() => {
+                        const confirmUrl = `/confirm?slot_id=${selectedSlotId}`
+                        requireLogin(() => router.push(confirmUrl), confirmUrl)
+                      }}
                         style={{ display: 'block', width: '100%', textAlign: 'center', background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '13px 0', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                         今すぐ予約する
                       </button>
-                      <button onClick={() => requireLogin(() => {
+                      <button onClick={() => {
                         const slot = availableSlots.find(s => s.id === selectedSlotId)
-                        addItem({
-                          type: 'slot',
-                          slotId: selectedSlotId,
-                          name: modal.models.name,
-                          image: modal.models.image,
-                          slotLabel: slot?.slot_label || '',
-                          eventDate,
-                          eventLocation,
-                          price: slot?.price || 0,
-                        })
-                        setCartAdded(true)
-                        setTimeout(() => setCartAdded(false), 2500)
-                      })}
+                        const item = { type: 'slot', slotId: selectedSlotId, name: modal.models.name, image: modal.models.image, slotLabel: slot?.slot_label || '', eventDate, eventLocation, price: slot?.price || 0 }
+                        if (isLoggedIn === true) {
+                          addItem(item); setCartAdded(true); setTimeout(() => setCartAdded(false), 2500)
+                        } else {
+                          addItem(item)
+                          setLoginRedirect('/cart-checkout')
+                          setShowLoginPrompt(true)
+                        }
+                      }}
                         style={{ width: '100%', padding: '12px', borderRadius: 10, border: '2px solid #1a3560', background: cartAdded ? '#e8f5e9' : '#fff', color: cartAdded ? '#2e7d32' : '#1a3560', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
                         {cartAdded ? '✓ カートに追加しました' : '🛒 カートに追加'}
                       </button>

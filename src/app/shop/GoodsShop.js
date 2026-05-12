@@ -35,6 +35,7 @@ export default function GoodsShop() {
   const [showCart, setShowCart] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(null)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  const [loginRedirect, setLoginRedirect] = useState('/')
 
   useEffect(() => {
     setCart(loadCart())
@@ -47,8 +48,9 @@ export default function GoodsShop() {
     }).catch(() => setIsLoggedIn(false))
   }, [])
 
-  function requireLogin(action) {
+  function requireLogin(action, redirectUrl) {
     if (isLoggedIn === true) { action(); return }
+    setLoginRedirect(redirectUrl || '/shop')
     setShowLoginPrompt(true)
   }
 
@@ -123,7 +125,7 @@ export default function GoodsShop() {
             <div style={{ fontWeight: 700, fontSize: 18, color: '#1a3560', marginBottom: 8 }}>ログインが必要です</div>
             <p style={{ fontSize: 14, color: '#666', marginBottom: 24 }}>グッズを購入するにはログインしてください。</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <a href="/login" style={{ display: 'block', padding: '12px', borderRadius: 10, background: '#1a3560', color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>ログインする</a>
+              <a href={`/login?redirect=${encodeURIComponent(loginRedirect)}`} style={{ display: 'block', padding: '12px', borderRadius: 10, background: '#1a3560', color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>ログインする</a>
               <button onClick={() => setShowLoginPrompt(false)} style={{ padding: '10px', borderRadius: 10, border: '1px solid #ddd', background: '#fff', color: '#888', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>キャンセル</button>
             </div>
           </div>
@@ -135,8 +137,8 @@ export default function GoodsShop() {
           goods={orderTarget}
           onClose={() => setOrderTarget(null)}
           onComplete={() => setOrderTarget(null)}
-          onAddToCart={(item) => requireLogin(() => { addToCart(item); setOrderTarget(null) })}
-          onLoginRequired={() => { setOrderTarget(null); setShowLoginPrompt(true) }}
+          onAddToCart={(item) => { addToCart(item); requireLogin(() => { setOrderTarget(null) }, '/cart-checkout') }}
+          onLoginRequired={() => { setOrderTarget(null); setLoginRedirect('/shop'); setShowLoginPrompt(true) }}
           isLoggedIn={isLoggedIn}
         />
       )}
