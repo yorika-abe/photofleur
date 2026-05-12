@@ -204,7 +204,7 @@ export default function FAQPage() {
           <p style={{ fontSize: 11, letterSpacing: '0.4em', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginBottom: 16, fontStyle: 'italic' }}>FAQ</p>
           <h1 style={{ ...serif, fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 400, margin: 0 }}>よくある質問</h1>
           <div style={{ width: 40, height: 1, background: 'rgba(168,226,244,0.4)', margin: '24px auto 20px' }} />
-          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', margin: 0 }}>
+          <p className="faq-hero-sub" style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', margin: 0 }}>
             ご不明な点がある場合はLINEにてお気軽にお問い合わせください。
           </p>
         </div>
@@ -241,6 +241,11 @@ export default function FAQPage() {
         </div>
       </section>
 
+      <style>{`
+        @media (max-width: 640px) {
+          .faq-hero-sub { font-size: clamp(9px, 2.3vw, 13px) !important; white-space: nowrap; }
+        }
+      `}</style>
     </div>
   )
 }
