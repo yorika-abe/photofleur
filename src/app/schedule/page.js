@@ -105,7 +105,7 @@ export default async function SchedulePage() {
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: featuredEvent ? 28 : 40 }}>
-          <h1 style={{ ...serif, fontSize: 'clamp(40px, 8vw, 80px)', fontWeight: 700, color: '#1a3560', margin: '0 0 20px' }}>開催予定のイベント</h1>
+          <h1 style={{ ...serif, fontSize: 'clamp(20px, 8vw, 80px)', fontWeight: 700, color: '#1a3560', margin: '0 0 20px', whiteSpace: 'nowrap' }}>開催予定のイベント</h1>
 
           {/* お気に入りイベント：大フィーチャー表示 */}
           {featuredEvent && (
