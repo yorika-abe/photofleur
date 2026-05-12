@@ -20,6 +20,8 @@ export default function GoodsShop() {
   const [orderTarget, setOrderTarget] = useState(null)
   const [cart, setCart] = useState([])
   const [showCart, setShowCart] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(null)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
 
   useEffect(() => {
     setCart(loadCart())
@@ -27,7 +29,15 @@ export default function GoodsShop() {
       setGoods(d.goods || [])
       setLoading(false)
     })
+    fetch('/api/customer/profile').then(r => r.json()).then(({ email }) => {
+      setIsLoggedIn(!!email)
+    }).catch(() => setIsLoggedIn(false))
   }, [])
+
+  function openOrder(g) {
+    if (!isLoggedIn) { setShowLoginPrompt(true); return }
+    setOrderTarget(g)
+  }
 
   function updateCart(newCart) {
     setCart(newCart)
@@ -60,7 +70,7 @@ export default function GoodsShop() {
             const soldOut = g.stock === 0
             return (
               <div key={g.id}
-                onClick={() => !soldOut && setOrderTarget(g)}
+                onClick={() => !soldOut && openOrder(g)}
                 style={{ background: '#fff', borderRadius: 16, border: '1px solid #eee', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', opacity: soldOut ? 0.75 : 1, cursor: soldOut ? 'default' : 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}
                 onMouseEnter={e => { if (!soldOut) { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(26,53,96,0.15)' } }}
                 onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)' }}>
@@ -89,6 +99,20 @@ export default function GoodsShop() {
         </div>
       )}
 
+      {showLoginPrompt && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '32px 28px', maxWidth: 360, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>🔒</div>
+            <div style={{ fontWeight: 700, fontSize: 18, color: '#1a3560', marginBottom: 8 }}>ログインが必要です</div>
+            <p style={{ fontSize: 14, color: '#666', marginBottom: 24 }}>グッズを購入するにはログインしてください。</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <a href="/login" style={{ display: 'block', padding: '12px', borderRadius: 10, background: '#1a3560', color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>ログインする</a>
+              <button onClick={() => setShowLoginPrompt(false)} style={{ padding: '10px', borderRadius: 10, border: '1px solid #ddd', background: '#fff', color: '#888', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>キャンセル</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {orderTarget && (
         <OrderModal
           goods={orderTarget}
@@ -99,7 +123,7 @@ export default function GoodsShop() {
       )}
 
       {cartCount > 0 && (
-        <button onClick={() => setShowCart(true)}
+        <button onClick={() => isLoggedIn ? setShowCart(true) : setShowLoginPrompt(true)}
           style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 900, background: '#1a3560', color: '#fff', border: 'none', borderRadius: 24, padding: '12px 22px', fontWeight: 700, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 20px rgba(26,53,96,0.35)' }}>
           🛒 カート ({cartCount})
         </button>
