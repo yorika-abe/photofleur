@@ -141,18 +141,20 @@ export async function GET(req) {
     // --- 非公開商品予約（個別qr_tokenのみ） ---
     const { data: privateBookings } = await supabase
       .from('private_bookings')
-      .select('id, email, last_name, first_name, qr_token, private_products(title, price, event_date, time_label, models(name))')
+      .select('id, email, last_name, first_name, qr_token, event_date_input, shooting_time, private_products(title, price, event_date, time_label, models(name))')
       .is('cancelled_at', null)
       .not('private_products', 'is', null)
 
-    for (const b of (privateBookings || []).filter(b => b.private_products?.event_date === tomorrowDate)) {
+    for (const b of (privateBookings || []).filter(b =>
+      b.private_products?.event_date === tomorrowDate || b.event_date_input === tomorrowDate
+    )) {
       const customerName = `${b.last_name}${b.first_name ? ` ${b.first_name}` : ''}`
       const product = b.private_products
       const groupKey = `solo_${b.qr_token}`
       const verifyUrl = `${baseUrl}/booking-verify?token=${b.qr_token}`
       addToGroup(b.email, customerName, groupKey, verifyUrl, {
         productTitle: product.title,
-        timeLabel: product.time_label,
+        timeLabel: product.time_label || b.shooting_time || null,
         price: product.price,
         modelName: product.models?.name || null,
       })
