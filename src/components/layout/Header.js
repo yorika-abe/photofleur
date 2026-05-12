@@ -4,12 +4,14 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
+import { useCart } from '@/context/CartContext'
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [user, setUser] = useState(null)
   const [roles, setRoles] = useState([])
   const pathname = usePathname()
+  const { items, ready, openCart } = useCart()
 
   useEffect(() => {
     const supabase = createBrowserClient(
@@ -94,6 +96,11 @@ export default function Header() {
               {link.label}
             </Link>
           ))}
+          {ready && items.length > 0 && (
+            <button onClick={openCart} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#1a3560', color: '#fff', border: 'none', borderRadius: 20, padding: '5px 12px', cursor: 'pointer', fontWeight: 700, fontSize: 13, flexShrink: 0, marginLeft: 4 }}>
+              🛒 {items.length}
+            </button>
+          )}
           {user ? (
             <div style={{ display: 'flex', gap: 3, alignItems: 'center', marginLeft: 6, flexShrink: 0, flexWrap: 'nowrap' }}>
               {roles.includes('admin') && (
@@ -157,6 +164,11 @@ export default function Header() {
               {isActive(link.href) ? '▶ ' : ''}{link.label}
             </Link>
           ))}
+          {ready && items.length > 0 && (
+            <button onClick={() => { setMenuOpen(false); openCart() }} style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 12px', fontWeight: 700, fontSize: 15, cursor: 'pointer', textAlign: 'left' }}>
+              🛒 カート ({items.length}件)
+            </button>
+          )}
           {user ? (
             <>
               {roles.includes('admin') && <Link href="/admin" onClick={() => setMenuOpen(false)} style={{ color: '#a07000', textDecoration: 'none', fontSize: 15, padding: '10px 12px' }}>管理画面</Link>}

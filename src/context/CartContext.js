@@ -6,6 +6,7 @@ const Ctx = createContext(null)
 export function CartProvider({ children }) {
   const [items, setItems] = useState([])
   const [ready, setReady] = useState(false)
+  const [isCartOpen, setIsCartOpen] = useState(false)
 
   useEffect(() => {
     try { setItems(JSON.parse(localStorage.getItem('pf-cart') || '[]')) } catch {}
@@ -21,6 +22,9 @@ export function CartProvider({ children }) {
     <Ctx.Provider value={{
       items,
       ready,
+      isCartOpen,
+      openCart: () => setIsCartOpen(true),
+      closeCart: () => setIsCartOpen(false),
       addItem: item => persist([...items, { ...item, cartId: Date.now() + '-' + Math.random().toString(36).slice(2) }]),
       removeItem: id => persist(items.filter(i => i.cartId !== id)),
       clearCart: () => persist([]),

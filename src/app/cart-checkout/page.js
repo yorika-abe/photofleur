@@ -8,14 +8,31 @@ import Link from 'next/link'
 const SQUARE_APP_ID = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID
 const SQUARE_LOCATION_ID = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || ''
 
+async function fetchAddressByZip(zip, setForm) {
+  const cleaned = zip.replace(/[^0-9]/g, '')
+  if (cleaned.length !== 7) return
+  try {
+    const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${cleaned}`)
+    const data = await res.json()
+    const r = data?.results?.[0]
+    if (r) setForm(f => ({ ...f, prefecture: r.address1, city: r.address2 + r.address3 }))
+  } catch {}
+}
+
 export default function CartCheckoutPage() {
   const { items, ready, clearCart } = useCart()
   const router = useRouter()
+
+  const hasSlots = items.some(i => i.type === 'slot')
+  const hasDelivery = items.some(i => i.type === 'goods' && i.is_delivery)
+  const goodsItems = items.filter(i => i.type === 'goods')
+  const bookingItems = items.filter(i => i.type !== 'goods')
 
   const [form, setForm] = useState({
     last_name: '', first_name: '',
     last_name_kana: '', first_name_kana: '',
     email: '', phone: '', sns_url: '', nickname: '',
+    postal_code: '', prefecture: '', city: '', street_address: '', building: '',
     marketing_consent: true,
   })
   const [couponCode, setCouponCode] = useState('')
@@ -31,7 +48,7 @@ export default function CartCheckoutPage() {
   const cardRef = useRef(null)
   const paymentsRef = useRef(null)
 
-  const baseTotal = items.reduce((s, i) => s + (i.price || 0), 0)
+  const baseTotal = items.reduce((s, i) => s + (i.price || 0) * (i.quantity || 1), 0)
   const discountAmount = coupon
     ? (coupon.discount_type === 'fixed' ? coupon.discount_value : Math.round(baseTotal * coupon.discount_value / 100))
     : 0
@@ -39,23 +56,28 @@ export default function CartCheckoutPage() {
 
   useEffect(() => {
     if (!ready) return
-    if (items.length === 0) { router.push('/schedule'); return }
+    if (items.length === 0) { router.push('/'); return }
     fetch('/api/customer/profile').then(r => r.json()).then(({ profile, email }) => {
       if (!email) {
         window.location.href = `/login?redirect=${encodeURIComponent('/cart-checkout')}`
         return
       }
-      if (profile) setForm(f => ({
+      setForm(f => ({
         ...f,
-        last_name: profile.last_name || f.last_name,
-        first_name: profile.first_name || f.first_name,
-        last_name_kana: profile.last_name_kana || f.last_name_kana,
-        first_name_kana: profile.first_name_kana || f.first_name_kana,
-        phone: profile.phone || f.phone,
-        sns_url: profile.sns_url || f.sns_url,
-        nickname: profile.nickname || f.nickname,
+        last_name: profile?.last_name || f.last_name,
+        first_name: profile?.first_name || f.first_name,
+        last_name_kana: profile?.last_name_kana || f.last_name_kana,
+        first_name_kana: profile?.first_name_kana || f.first_name_kana,
+        phone: profile?.phone || f.phone,
+        sns_url: profile?.sns_url || f.sns_url,
+        nickname: profile?.nickname || f.nickname,
+        postal_code: profile?.postal_code || f.postal_code,
+        prefecture: profile?.prefecture || f.prefecture,
+        city: profile?.city || f.city,
+        street_address: profile?.street_address || f.street_address,
+        building: profile?.building || f.building,
+        email: f.email || email,
       }))
-      if (email) setForm(f => ({ ...f, email: f.email || email }))
     }).catch(() => {})
   }, [ready])
 
@@ -107,8 +129,14 @@ export default function CartCheckoutPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     const { last_name, first_name, last_name_kana, first_name_kana, email, phone, sns_url, nickname } = form
-    if (!last_name || !first_name || !last_name_kana || !first_name_kana || !email || !phone || !sns_url || !nickname) {
+    if (!last_name || !first_name || !email || !phone || !sns_url || !nickname) {
       setError('必須項目を全て入力してください'); return
+    }
+    if (hasSlots && (!last_name_kana || !first_name_kana)) {
+      setError('ふりがなを入力してください'); return
+    }
+    if (hasDelivery && (!form.postal_code.trim() || !form.prefecture.trim() || !form.city.trim() || !form.street_address.trim())) {
+      setError('配送先住所を入力してください（郵便番号・都道府県・市区町村・番地は必須です）'); return
     }
     if (!termsAgreed) { setError('利用規約への同意が必要です'); return }
     if (!idAgreed) { setError('当日の身分証提示への同意が必要です'); return }
@@ -139,32 +167,79 @@ export default function CartCheckoutPage() {
         squarePaymentId = chargeData.payment_id
       }
 
-      const res = await fetch('/api/cart-checkout', {
-        method: 'POST',
+      // グッズ注文
+      if (goodsItems.length > 0) {
+        const deliveryAddress = hasDelivery
+          ? [form.postal_code ? `〒${form.postal_code}` : '', form.prefecture, form.city, form.street_address, form.building].filter(Boolean).join(' ')
+          : null
+
+        const goodsResults = await Promise.all(goodsItems.map(item =>
+          fetch('/api/orders/goods', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              goods_id: item.goodsId,
+              last_name: form.last_name,
+              first_name: form.first_name,
+              email: form.email,
+              phone: form.phone,
+              sns_url: form.sns_url,
+              payment_method: paymentMethod,
+              quantity: item.quantity || 1,
+              layers_path: item.layers_path || null,
+              options_selected: item.options_selected || null,
+              square_payment_id: squarePaymentId,
+              delivery_address: item.is_delivery ? deliveryAddress : null,
+            }),
+          }).then(r => r.ok)
+        ))
+
+        if (!goodsResults.every(Boolean)) {
+          setError('グッズの注文処理に失敗しました。もう一度お試しください。')
+          setSaving(false); return
+        }
+      }
+
+      // 予約・予約商品
+      let qrTokens = {}
+      if (bookingItems.length > 0) {
+        const res = await fetch('/api/cart-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: bookingItems,
+            customer: { ...form, name: `${form.last_name} ${form.first_name}` },
+            paymentMethod,
+            squarePaymentId,
+            couponId: coupon?.id || null,
+            finalTotal: bookingItems.reduce((s, i) => s + (i.price || 0), 0),
+          }),
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          setError(data.error || 'エラーが発生しました')
+          setSaving(false); return
+        }
+        qrTokens = data.qrTokens || {}
+      }
+
+      // プロフィール保存
+      fetch('/api/customer/profile', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items,
-          customer: { ...form, name: `${last_name} ${first_name}` },
-          paymentMethod,
-          squarePaymentId,
-          couponId: coupon?.id || null,
-          finalTotal,
+          last_name: form.last_name, first_name: form.first_name,
+          last_name_kana: form.last_name_kana, first_name_kana: form.first_name_kana,
+          phone: form.phone, sns_url: form.sns_url, nickname: form.nickname,
+          ...(hasDelivery ? { postal_code: form.postal_code, prefecture: form.prefecture, city: form.city, street_address: form.street_address, building: form.building } : {}),
         }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error || 'エラーが発生しました')
-        setSaving(false); return
-      }
+      }).catch(() => {})
 
       clearCart()
 
-      // スロット予約がある場合は最初のスロットの完了ページへ
-      const firstSlot = items.find(i => i.type === 'slot')
-      if (firstSlot && data.qrTokens?.[firstSlot.cartId]) {
-        window.location.href = `/complete?slot_id=${firstSlot.slotId}&email=${encodeURIComponent(form.email)}&qr=${data.qrTokens[firstSlot.cartId]}`
+      const firstSlot = bookingItems.find(i => i.type === 'slot')
+      if (firstSlot && qrTokens[firstSlot.cartId]) {
+        window.location.href = `/complete?slot_id=${firstSlot.slotId}&email=${encodeURIComponent(form.email)}&qr=${qrTokens[firstSlot.cartId]}`
       } else {
         window.location.href = `/complete-cart?email=${encodeURIComponent(form.email)}`
       }
@@ -182,7 +257,7 @@ export default function CartCheckoutPage() {
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', padding: '32px 16px' }}>
-      <Link href="/schedule" style={{ color: '#1a3560', textDecoration: 'none', fontSize: 14 }}>← スケジュールに戻る</Link>
+      <Link href="/" style={{ color: '#1a3560', textDecoration: 'none', fontSize: 14 }}>← トップに戻る</Link>
       <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a3560', margin: '16px 0 24px' }}>チェックアウト</h1>
 
       {/* カート内容 */}
@@ -191,18 +266,20 @@ export default function CartCheckoutPage() {
         {items.map(item => (
           <div key={item.cartId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid #e8f0fb' }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, color: item.type === 'slot' ? '#1a3560' : '#5bbfd6', fontWeight: 700, marginBottom: 2 }}>
-                {item.type === 'slot' ? '通常予約' : '予約商品'}
+              <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 2, color: item.type === 'slot' ? '#1a3560' : item.type === 'goods' ? '#2e7d32' : '#5bbfd6' }}>
+                {item.type === 'slot' ? '通常予約' : item.type === 'goods' ? 'グッズ' : '予約商品'}
               </div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>{item.name}</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>{item.name || item.title}</div>
+              {item._label && <div style={{ fontSize: 12, color: '#666' }}>{item._label}</div>}
               {item.slotLabel && <div style={{ fontSize: 12, color: '#666' }}>🕐 {item.slotLabel}</div>}
               {item.eventDate && <div style={{ fontSize: 12, color: '#666' }}>📅 {item.eventDate}</div>}
               {item.eventLocation && <div style={{ fontSize: 12, color: '#666' }}>📍 {item.eventLocation}</div>}
               {item.selectionSummary && <div style={{ fontSize: 12, color: '#666' }}>{item.selectionSummary}</div>}
-              {item.isDelivery && item.deliveryAddress && <div style={{ fontSize: 12, color: '#666' }}>📦 {item.deliveryAddress}</div>}
+              {(item.quantity || 1) > 1 && <div style={{ fontSize: 12, color: '#666' }}>数量: {item.quantity}</div>}
+              {item.is_delivery && <div style={{ fontSize: 12, color: '#888' }}>📦 配送あり</div>}
             </div>
             <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560', marginLeft: 12, flexShrink: 0 }}>
-              ¥{(item.price || 0).toLocaleString()}
+              ¥{((item.price || 0) * (item.quantity || 1)).toLocaleString()}
             </div>
           </div>
         ))}
@@ -232,16 +309,18 @@ export default function CartCheckoutPage() {
               <input style={inp} value={form.first_name} onChange={e => setForm(f => ({ ...f, first_name: e.target.value }))} placeholder="太郎" required />
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-            <div>
-              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>姓（ふりがな） <span style={{ color: 'red' }}>*</span></label>
-              <input style={inp} value={form.last_name_kana} onChange={e => setForm(f => ({ ...f, last_name_kana: e.target.value }))} placeholder="やまだ" required />
+          {hasSlots && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <div>
+                <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>姓（ふりがな） <span style={{ color: 'red' }}>*</span></label>
+                <input style={inp} value={form.last_name_kana} onChange={e => setForm(f => ({ ...f, last_name_kana: e.target.value }))} placeholder="やまだ" required />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>名（ふりがな） <span style={{ color: 'red' }}>*</span></label>
+                <input style={inp} value={form.first_name_kana} onChange={e => setForm(f => ({ ...f, first_name_kana: e.target.value }))} placeholder="たろう" required />
+              </div>
             </div>
-            <div>
-              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>名（ふりがな） <span style={{ color: 'red' }}>*</span></label>
-              <input style={inp} value={form.first_name_kana} onChange={e => setForm(f => ({ ...f, first_name_kana: e.target.value }))} placeholder="たろう" required />
-            </div>
-          </div>
+          )}
           <div style={{ marginBottom: 12 }}>
             <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>メールアドレス <span style={{ color: 'red' }}>*</span></label>
             <input type="email" style={inp} value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="example@email.com" required />
@@ -255,11 +334,38 @@ export default function CartCheckoutPage() {
             <input style={inp} value={form.sns_url} onChange={e => setForm(f => ({ ...f, sns_url: e.target.value }))} placeholder="https://twitter.com/..." required />
           </div>
           <div>
-            <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>ニックネーム（アカウント名など） <span style={{ color: 'red' }}>*</span></label>
+            <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>ニックネーム <span style={{ color: 'red' }}>*</span></label>
             <p style={{ fontSize: 12, color: '#888', margin: '0 0 6px' }}>モデルに呼ばれている名前などがある場合はそのニックネームをご記入ください</p>
             <input style={inp} value={form.nickname} onChange={e => setForm(f => ({ ...f, nickname: e.target.value }))} placeholder="例：たろちゃん、yamada_photo" required />
           </div>
         </div>
+
+        {/* 配送先住所（配送グッズがある場合のみ） */}
+        {hasDelivery && (
+          <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #e5e5e5', marginBottom: 16 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginBottom: 18, marginTop: 0 }}>配送先住所</h2>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>郵便番号 <span style={{ color: 'red' }}>*</span></label>
+              <input style={{ ...inp, maxWidth: 160 }} value={form.postal_code} onChange={e => setForm(f => ({ ...f, postal_code: e.target.value }))} onBlur={e => fetchAddressByZip(e.target.value, setForm)} placeholder="000-0000" />
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>都道府県 <span style={{ color: 'red' }}>*</span></label>
+              <input style={{ ...inp, maxWidth: 180 }} value={form.prefecture} onChange={e => setForm(f => ({ ...f, prefecture: e.target.value }))} placeholder="東京都" />
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>市区町村 <span style={{ color: 'red' }}>*</span></label>
+              <input style={inp} value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} placeholder="渋谷区〇〇" />
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>番地 <span style={{ color: 'red' }}>*</span></label>
+              <input style={inp} value={form.street_address} onChange={e => setForm(f => ({ ...f, street_address: e.target.value }))} placeholder="1-2-3" />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 5 }}>建物名・部屋番号（任意）</label>
+              <input style={inp} value={form.building} onChange={e => setForm(f => ({ ...f, building: e.target.value }))} placeholder="〇〇マンション 101号室" />
+            </div>
+          </div>
+        )}
 
         {/* クーポン */}
         <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #e5e5e5', marginBottom: 16 }}>
@@ -323,7 +429,7 @@ export default function CartCheckoutPage() {
 
         <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 10, padding: '14px 16px', marginBottom: 20 }}>
           <p style={{ fontSize: 13, color: '#1565c0', margin: '0 0 10px', lineHeight: 1.7 }}>
-            ご予約前に<Link href="/terms" target="_blank" style={{ color: '#1a3560', fontWeight: 700 }}>利用規約</Link>を必ずご確認ください。予約することで利用規約に同意したこととします。
+            ご予約前に<Link href="/terms" target="_blank" style={{ color: '#1a3560', fontWeight: 700 }}>利用規約</Link>を必ずご確認ください。
           </p>
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#555' }}>
             <input type="checkbox" checked={termsAgreed} onChange={e => setTermsAgreed(e.target.checked)} style={{ width: 18, height: 18, flexShrink: 0 }} />
@@ -339,7 +445,7 @@ export default function CartCheckoutPage() {
 
         <button type="submit" disabled={saving}
           style={{ width: '100%', background: saving ? '#ccc' : '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '16px', fontSize: 16, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer' }}>
-          {saving ? '処理中...' : `予約を確定する（¥${finalTotal.toLocaleString()}）`}
+          {saving ? '処理中...' : `注文を確定する（¥${finalTotal.toLocaleString()}）`}
         </button>
       </form>
     </div>
