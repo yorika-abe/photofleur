@@ -28,20 +28,28 @@ function CompleteContent() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const bookingId = params.get('booking_id')
+    const slotId = params.get('slot_id')
     const qr = params.get('qr')
 
     if (qr) {
       QRCode.toDataURL(qr, { width: 200, margin: 1 }).then(setQrDataUrl).catch(() => {})
     }
 
-    if (!bookingId) { setLoading(false); return }
+    if (!bookingId && !slotId) { setLoading(false); return }
 
     async function load() {
-      const { data: bookingData } = await supabase
-        .from('bookings')
-        .select('*')
-        .eq('id', bookingId)
-        .single()
+      let bookingData = null
+      if (bookingId) {
+        const { data } = await supabase.from('bookings').select('*').eq('id', bookingId).single()
+        bookingData = data
+      } else if (slotId && qr) {
+        const { data } = await supabase.from('bookings').select('*').eq('slot_id', slotId).eq('qr_token', qr).single()
+        bookingData = data
+      } else if (slotId) {
+        const { data } = await supabase.from('bookings').select('*').eq('slot_id', slotId).order('created_at', { ascending: false }).limit(1).single()
+        bookingData = data
+      }
+      if (!bookingData) { setLoading(false); return }
       setBooking(bookingData)
 
       if (!bookingData?.slot_id) { setLoading(false); return }
