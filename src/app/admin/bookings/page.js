@@ -38,10 +38,10 @@ export default function AdminBookingsPage() {
   function cancelBooking(b) {
     const price = b.final_price || b.slot?.price || 0
     const hasCard = b.payment_method === 'card' && b.square_payment_id
-    setRefundModal({ booking: b, refundType: hasCard ? 'full' : 'none', customAmount: String(price), cancelReason: '' })
+    setRefundModal({ booking: b, refundType: hasCard ? 'full' : 'none', customAmount: String(price), cancelReason: '', internalReason: '' })
   }
 
-  async function executeCancel(b, refundAmount, cancelReason) {
+  async function executeCancel(b, refundAmount, cancelReason, internalReason) {
     setRefundModal(null)
     setCancelling(b.id)
 
@@ -56,7 +56,7 @@ export default function AdminBookingsPage() {
     const res = await fetch('/api/admin/cancel-booking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...baseBody, refund_amount: refundAmount, cancel_reason: cancelReason || '' }),
+      body: JSON.stringify({ ...baseBody, refund_amount: refundAmount, cancel_reason: cancelReason || '', internal_reason: internalReason || undefined }),
     })
     setCancelling(null)
     if (!res.ok) {
@@ -124,7 +124,7 @@ export default function AdminBookingsPage() {
               <div style={{ fontSize: 17, fontWeight: 700, color: '#2f2244', marginBottom: 6 }}>予約キャンセル</div>
               <div style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>{b.name || `${b.last_name} ${b.first_name}`} 様　決済額：¥{price.toLocaleString()}</div>
 
-              <div style={{ marginBottom: 20 }}>
+              <div style={{ marginBottom: 16 }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#2f2244', marginBottom: 6 }}>キャンセル理由（メールに記載されます）</label>
                 <textarea
                   value={refundModal.cancelReason}
@@ -134,6 +134,18 @@ export default function AdminBookingsPage() {
                   style={{ width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: 10, fontSize: 14, resize: 'vertical', boxSizing: 'border-box' }}
                 />
               </div>
+              {b._type !== 'goods' && (
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#c2185b', marginBottom: 6 }}>キャンセル理由（モデル・スタッフに知らされます）</label>
+                  <textarea
+                    value={refundModal.internalReason}
+                    onChange={e => setRefundModal({ ...refundModal, internalReason: e.target.value })}
+                    rows={3}
+                    placeholder="モデル・スタッフへの通知内容（入力した場合のみLINE送信）"
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #f48fb1', borderRadius: 10, fontSize: 14, resize: 'vertical', boxSizing: 'border-box' }}
+                  />
+                </div>
+              )}
 
               {hasCard && (
                 <>
@@ -175,7 +187,7 @@ export default function AdminBookingsPage() {
                   戻る
                 </button>
                 <button
-                  onClick={() => executeCancel(b, refundAmount, refundModal.cancelReason)}
+                  onClick={() => executeCancel(b, refundAmount, refundModal.cancelReason, refundModal.internalReason)}
                   disabled={cancelling === b.id}
                   style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: 10, background: '#c62828', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
                   キャンセル実行

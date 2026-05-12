@@ -5,6 +5,7 @@ import { useState } from 'react'
 // item: booking/order object with .id, .payment_method, .square_payment_id, .final_price (or .price)
 export default function CancelModal({ item, type, customerName, price, onClose, onDone }) {
   const [cancelReason, setCancelReason] = useState('')
+  const [internalReason, setInternalReason] = useState('')
   const [executing, setExecuting] = useState(false)
   const hasCard = item.payment_method === 'card' && item.square_payment_id
   const [refundType, setRefundType] = useState(hasCard ? 'full' : 'none')
@@ -24,7 +25,7 @@ export default function CancelModal({ item, type, customerName, price, onClose, 
     const res = await fetch('/api/admin/cancel-booking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ [bodyKey]: item.id, refund_amount: refundAmount, cancel_reason: cancelReason }),
+      body: JSON.stringify({ [bodyKey]: item.id, refund_amount: refundAmount, cancel_reason: cancelReason, internal_reason: internalReason || undefined }),
     })
     const data = await res.json()
     setExecuting(false)
@@ -56,12 +57,20 @@ export default function CancelModal({ item, type, customerName, price, onClose, 
           </>
         ) : (
           <>
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#2f2244', marginBottom: 6 }}>キャンセル理由（メールに記載されます）</label>
               <textarea value={cancelReason} onChange={e => setCancelReason(e.target.value)} rows={3}
                 placeholder="例：イベント中止のため、定員超過のため、など"
                 style={{ width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: 10, fontSize: 14, resize: 'vertical', boxSizing: 'border-box' }} />
             </div>
+            {type !== 'goods' && (
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#c2185b', marginBottom: 6 }}>キャンセル理由（モデル・スタッフに知らされます）</label>
+                <textarea value={internalReason} onChange={e => setInternalReason(e.target.value)} rows={3}
+                  placeholder="モデル・スタッフへの通知内容（入力した場合のみLINE送信）"
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #f48fb1', borderRadius: 10, fontSize: 14, resize: 'vertical', boxSizing: 'border-box' }} />
+              </div>
+            )}
 
             {hasCard && (
               <>

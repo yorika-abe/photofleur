@@ -1,6 +1,46 @@
 import { Resend } from 'resend'
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
 import { renderEmailTemplate } from '@/lib/email-render'
+import { sendLineMessage } from '@/lib/line'
+import { DEFAULTS } from '@/app/api/admin/line-templates/route'
+
+function applyVars(template, vars) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '')
+}
+
+async function getTemplate(admin, key) {
+  const { data } = await admin.from('line_templates').select('body').eq('key', key).maybeSingle()
+  return data?.body ?? DEFAULTS[key] ?? ''
+}
+
+async function sendCancelLineToModelAndStaff(admin, { modelLineId, eventId, privateBookingId, bookingDetails, internal_reason }) {
+  const modelTmpl = await getTemplate(admin, 'cancel_notify_model')
+  const staffTmpl = await getTemplate(admin, 'cancel_notify_staff')
+  const modelMsg = applyVars(modelTmpl, { booking_details: bookingDetails, cancel_reason: internal_reason })
+  const staffMsg = applyVars(staffTmpl, { booking_details: bookingDetails, cancel_reason: internal_reason })
+
+  if (modelLineId) {
+    await sendLineMessage(modelLineId, modelMsg).catch(() => {})
+  }
+
+  const recQuery = eventId
+    ? await admin.from('staff_recruitments').select('id').eq('type', 'event').eq('event_id', eventId).eq('status', 'closed')
+    : privateBookingId
+    ? await admin.from('staff_recruitments').select('id').eq('type', 'request').eq('private_booking_id', privateBookingId).eq('status', 'closed')
+    : { data: [] }
+  const recs = recQuery.data || []
+  if (recs.length === 0) return
+
+  const recIds = recs.map(r => r.id)
+  const { data: apps } = await admin.from('staff_recruitment_applications').select('staff_name').in('recruitment_id', recIds).eq('status', 'confirmed')
+  const { data: lineIdsRow } = await admin.from('site_settings').select('value').eq('key', 'line_staff_ids').maybeSingle()
+  let staffLineIds = {}
+  try { staffLineIds = JSON.parse(lineIdsRow?.value || '{}') } catch {}
+  for (const app of apps || []) {
+    const lineId = staffLineIds[app.staff_name]
+    if (lineId) await sendLineMessage(lineId, staffMsg).catch(() => {})
+  }
+}
 
 async function squareRefund(paymentId, amount) {
   try {
@@ -113,7 +153,7 @@ export async function POST(req) {
   const admin = await createSupabaseAdminClient()
   if (!(await checkAdmin(admin))) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { booking_id, private_booking_id, event_product_booking_id, goods_order_id, refund_amount, cancel_reason } = await req.json()
+  const { booking_id, private_booking_id, event_product_booking_id, goods_order_id, refund_amount, cancel_reason, internal_reason } = await req.json()
   const resend = new Resend(process.env.RESEND_API_KEY)
 
   // 特別予約商品のキャンセル
@@ -195,7 +235,7 @@ export async function POST(req) {
   if (private_booking_id) {
     const { data: pb } = await admin
       .from('private_bookings')
-      .select('id, email, last_name, first_name, product_id, square_payment_id, private_products(title, price, stock)')
+      .select('id, email, last_name, first_name, product_id, square_payment_id, event_date_input, private_products(title, price, stock, model_id, models(name, line_id))')
       .eq('id', private_booking_id)
       .single()
 
@@ -221,6 +261,23 @@ export async function POST(req) {
       subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
       html: templateResult?.html ?? buildCancelHtml({ customerName, cancelReason: cancel_reason }),
     }).catch(e => ({ error: e }))
+
+    // モデル・スタッフへのLINE通知
+    if (internal_reason) {
+      const pp = pb.private_products
+      const bookingDetails = [
+        `お客様：${customerName}`,
+        pb.event_date_input ? `撮影日：${pb.event_date_input}` : null,
+        pp?.title ? `商品：${pp.title}` : null,
+        pp?.models?.name ? `担当モデル：${pp.models.name}` : null,
+      ].filter(Boolean).join('\n')
+      await sendCancelLineToModelAndStaff(admin, {
+        modelLineId: pp?.models?.line_id || null,
+        privateBookingId: private_booking_id,
+        bookingDetails,
+        internal_reason,
+      }).catch(() => {})
+    }
 
     return Response.json({ ok: true, refund_ok, refund_error, mail_ok: !mail_err, mail_error: mail_err ? String(mail_err) : null })
   }
@@ -256,6 +313,31 @@ export async function POST(req) {
     subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
     html: templateResult?.html ?? buildCancelHtml({ customerName, cancelReason: cancel_reason }),
   }).catch(e => ({ error: e }))
+
+  // モデル・スタッフへのLINE通知
+  if (internal_reason && booking.slot_id) {
+    try {
+      const { data: slotData } = await admin.from('booking_slots').select('slot_label, event_entry_id').eq('id', booking.slot_id).single()
+      if (slotData?.event_entry_id) {
+        const { data: entry } = await admin.from('event_entries').select('event_id, model_id').eq('id', slotData.event_entry_id).single()
+        const { data: eventData } = entry?.event_id ? await admin.from('events').select('event_date, title').eq('id', entry.event_id).single() : { data: null }
+        const { data: modelData } = entry?.model_id ? await admin.from('models').select('name, line_id').eq('id', entry.model_id).single() : { data: null }
+        const bookingDetails = [
+          `お客様：${customerName}`,
+          eventData?.event_date ? `撮影日：${eventData.event_date}` : null,
+          eventData?.title ? `イベント：${eventData.title}` : null,
+          slotData?.slot_label ? `時間枠：${slotData.slot_label}` : null,
+          modelData?.name ? `担当モデル：${modelData.name}` : null,
+        ].filter(Boolean).join('\n')
+        await sendCancelLineToModelAndStaff(admin, {
+          modelLineId: modelData?.line_id || null,
+          eventId: entry?.event_id || null,
+          bookingDetails,
+          internal_reason,
+        }).catch(() => {})
+      }
+    } catch {}
+  }
 
   return Response.json({ ok: true, refund_ok, refund_error, mail_ok: !mail_err, mail_error: mail_err ? String(mail_err) : null })
   } catch (err) {

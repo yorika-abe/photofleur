@@ -36,6 +36,8 @@ export const DEFAULTS = {
   staff_model_cancel_notice: `【🔴受付スタッフがキャンセルされました】\n\n{{details}}\n\n対応スタッフ：{{staff_name}}`,
   staff_re_recruit_notice: `【🔴スタッフ再募集のお知らせ】\n\n{{details}}\n\nスタッフ募集日から確認してください！\n※スタッフ決定は先着順です。\n※場所未定のリクエスト撮影に関してはスタッフ応募がない場合流れる可能性が高いです。\n※確定ラインにてスタッフ確定となります。\n※応募後はキャンセルできません。代役を立ててください。`,
   staff_event_cancel_notice: `🔴スタッフ参加予定のイベントの開催見送りが決まりました。\n\n{{details}}`,
+  cancel_notify_model: `❌📸撮影枠キャンセルのお知らせ\n\n{{booking_details}}\n\n【理由】\n{{cancel_reason}}`,
+  cancel_notify_staff: `❌📸スタッフが確定していた撮影枠キャンセルのお知らせ\n\n{{booking_details}}\n\n【理由】\n{{cancel_reason}}`,
 }
 
 export async function GET() {
