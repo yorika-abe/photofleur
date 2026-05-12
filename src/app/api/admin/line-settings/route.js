@@ -23,6 +23,7 @@ export async function GET() {
       'line_group_id_zatsudan',
       'line_group_id_staff',
       'line_staff_ids',
+      'line_model_ids',
       'line_group_id_last_joined_modeful',
       'line_group_id_last_joined_official',
     ])
@@ -31,7 +32,7 @@ export async function GET() {
 
   const { data: models } = await admin
     .from('models')
-    .select('id, name, image, line_id')
+    .select('id, name, image')
     .eq('status', 'active')
     .order('display_order', { ascending: true })
     .order('name', { ascending: true })
@@ -44,6 +45,8 @@ export async function GET() {
 
   let staffLineIds = {}
   try { staffLineIds = JSON.parse(settings.line_staff_ids || '{}') } catch {}
+  let modelLineIds = {}
+  try { modelLineIds = JSON.parse(settings.line_model_ids || '{}') } catch {}
 
   return Response.json({
     group_all: settings.line_group_id_all || '',
@@ -51,7 +54,7 @@ export async function GET() {
     group_staff: settings.line_group_id_staff || '',
     last_joined_modeful: settings.line_group_id_last_joined_modeful || '',
     last_joined_official: settings.line_group_id_last_joined_official || '',
-    models: models || [],
+    models: (models || []).map(m => ({ ...m, line_id: modelLineIds[m.id] || '' })),
     staff: (staffProfiles || []).map(u => ({ ...u, line_id: staffLineIds[u.id] || '' })),
   })
 }
@@ -68,10 +71,15 @@ export async function PUT(req) {
   if (group_staff !== undefined) upserts.push({ key: 'line_group_id_staff', value: group_staff })
   if (staff_line_ids !== undefined) upserts.push({ key: 'line_staff_ids', value: JSON.stringify(staff_line_ids) })
 
+  if (model_line_ids && typeof model_line_ids === 'object') {
+    upserts.push({ key: 'line_model_ids', value: JSON.stringify(model_line_ids) })
+  }
+
   if (upserts.length > 0) {
     await admin.from('site_settings').upsert(upserts, { onConflict: 'key' })
   }
 
+  // models.line_id にも同期（通知API互換性のため）
   if (model_line_ids && typeof model_line_ids === 'object') {
     for (const [modelId, lineId] of Object.entries(model_line_ids)) {
       await admin.from('models').update({ line_id: lineId || null }).eq('id', modelId)
