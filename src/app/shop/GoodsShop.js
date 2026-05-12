@@ -6,6 +6,19 @@ import { buildSelectionsLabel, getLeafChoicePrice } from '@/lib/product-layers'
 const SQUARE_APP_ID = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID
 const SQUARE_LOCATION_ID = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || ''
 
+async function fetchAddressByZip(zip, setForm) {
+  const cleaned = zip.replace(/[^0-9]/g, '')
+  if (cleaned.length !== 7) return
+  try {
+    const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${cleaned}`)
+    const data = await res.json()
+    const r = data?.results?.[0]
+    if (r) {
+      setForm(f => ({ ...f, prefecture: r.address1, city: r.address2 + r.address3 }))
+    }
+  } catch {}
+}
+
 function loadCart() {
   try { return JSON.parse(localStorage.getItem('pf_cart') || '[]') } catch { return [] }
 }
@@ -439,7 +452,7 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart }) {
               <>
                 <div style={{ marginBottom: 10 }}>
                   <label style={lbl}>郵便番号 *</label>
-                  <input value={form.postal_code} onChange={e => setForm(f => ({ ...f, postal_code: e.target.value }))} placeholder="000-0000" style={{ ...inp, maxWidth: 140 }} />
+                  <input value={form.postal_code} onChange={e => setForm(f => ({ ...f, postal_code: e.target.value }))} onBlur={e => fetchAddressByZip(e.target.value, setForm)} placeholder="000-0000" style={{ ...inp, maxWidth: 140 }} />
                 </div>
                 <div style={{ marginBottom: 10 }}>
                   <label style={lbl}>都道府県 *</label>
@@ -760,7 +773,7 @@ function CartCheckout({ cart, onClose, onCancel, onOrderComplete }) {
               <>
                 <div style={{ marginBottom: 10 }}>
                   <label style={lbl}>郵便番号 *</label>
-                  <input value={form.postal_code} onChange={e => setForm(f => ({ ...f, postal_code: e.target.value }))} placeholder="000-0000" style={{ ...inp, maxWidth: 140 }} />
+                  <input value={form.postal_code} onChange={e => setForm(f => ({ ...f, postal_code: e.target.value }))} onBlur={e => fetchAddressByZip(e.target.value, setForm)} placeholder="000-0000" style={{ ...inp, maxWidth: 140 }} />
                 </div>
                 <div style={{ marginBottom: 10 }}>
                   <label style={lbl}>都道府県 *</label>
