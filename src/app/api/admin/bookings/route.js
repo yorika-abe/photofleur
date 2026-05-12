@@ -42,10 +42,16 @@ export async function GET() {
   const epEventMap = Object.fromEntries((epEvents || []).map(e => [e.id, e]))
 
   // グッズ注文
-  const { data: goodsRaw } = await admin
+  let { data: goodsRaw, error: goodsError } = await admin
     .from('goods_orders')
-    .select('id, last_name, first_name, email, phone, payment_method, qr_token, cancelled_at, created_at, goods_id, quantity, notes, options_selected, delivery_address, goods(id, title, price)')
+    .select('id, last_name, first_name, email, phone, payment_method, cancelled_at, created_at, goods_id, quantity, notes, options_selected, delivery_address, goods(id, title, price)')
     .order('created_at', { ascending: false })
+  if (goodsError?.code === '42703') {
+    const r = await admin.from('goods_orders')
+      .select('id, last_name, first_name, email, phone, payment_method, cancelled_at, created_at, goods_id, quantity, notes, options_selected, goods(id, title, price)')
+      .order('created_at', { ascending: false })
+    goodsRaw = r.data
+  }
 
   // 通常予約のslot/entry/event/model解決
   const slotIds = [...new Set((regularRaw || []).map(b => b.slot_id).filter(Boolean))]

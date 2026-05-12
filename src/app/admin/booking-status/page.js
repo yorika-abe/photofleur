@@ -416,24 +416,18 @@ export default function AdminBookingStatusPage() {
     <div style={{ maxWidth: '100%', margin: '0 auto', padding: '24px 16px' }}>
       <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
       <div style={{ display: 'flex', gap: 0, margin: '14px 0 20px', borderBottom: '2px solid #e5e5e5', flexWrap: 'wrap' }}>
-        {[
-          { label: '予約状況', active: !showHistory && !showNonEvent, onClick: () => { setShowHistory(false); setShowNonEvent(false) } },
-        ].map(t => (
-          <button key={t.label} onClick={t.onClick}
-            style={{ padding: '10px 20px', fontWeight: t.active ? 700 : 600, fontSize: 15, color: t.active ? '#1a3560' : '#999', background: 'none', border: 'none', borderBottom: t.active ? '2px solid #1a3560' : '2px solid transparent', marginBottom: -2, cursor: 'pointer' }}>
-            {t.label}
-          </button>
-        ))}
-        <Link href="/admin/bookings" style={{ padding: '10px 20px', fontWeight: 600, fontSize: 15, color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>予約一覧</Link>
-        <Link href="/admin/sales" style={{ padding: '10px 20px', fontWeight: 600, fontSize: 15, color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>売上管理</Link>
-        <button
-          onClick={() => { setShowHistory(false); setShowNonEvent(true) }}
-          style={{ padding: '10px 20px', fontWeight: showNonEvent ? 700 : 600, fontSize: 15, color: showNonEvent ? '#c2185b' : '#999', background: 'none', border: 'none', borderBottom: showNonEvent ? '2px solid #c2185b' : '2px solid transparent', marginBottom: -2, cursor: 'pointer' }}>
+        <button onClick={() => { setShowHistory(false); setShowNonEvent(false) }}
+          style={{ padding: '10px 24px', fontWeight: !showHistory && !showNonEvent ? 700 : 600, fontSize: 15, color: !showHistory && !showNonEvent ? '#2f2244' : '#999', background: 'none', border: 'none', borderBottom: !showHistory && !showNonEvent ? '2px solid #2f2244' : '2px solid transparent', marginBottom: -2, cursor: 'pointer' }}>
+          予約状況
+        </button>
+        <Link href="/admin/bookings" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>予約・販売一覧</Link>
+        <Link href="/admin/sales" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>売上管理</Link>
+        <button onClick={() => { setShowHistory(false); setShowNonEvent(true) }}
+          style={{ padding: '10px 24px', fontWeight: showNonEvent ? 700 : 600, fontSize: 15, color: showNonEvent ? '#2f2244' : '#999', background: 'none', border: 'none', borderBottom: showNonEvent ? '2px solid #2f2244' : '2px solid transparent', marginBottom: -2, cursor: 'pointer' }}>
           イベント外収益
         </button>
-        <button
-          onClick={() => { setShowNonEvent(false); setShowHistory(true) }}
-          style={{ padding: '10px 20px', fontWeight: showHistory ? 700 : 600, fontSize: 15, color: showHistory ? '#1a3560' : '#999', background: 'none', border: 'none', borderBottom: showHistory ? '2px solid #1a3560' : '2px solid transparent', marginBottom: -2, cursor: 'pointer' }}>
+        <button onClick={() => { setShowNonEvent(false); setShowHistory(true) }}
+          style={{ padding: '10px 24px', fontWeight: showHistory ? 700 : 600, fontSize: 15, color: showHistory ? '#2f2244' : '#999', background: 'none', border: 'none', borderBottom: showHistory ? '2px solid #2f2244' : '2px solid transparent', marginBottom: -2, cursor: 'pointer' }}>
           履歴 {savedIds.size > 0 && <span style={{ fontSize: 11, background: '#e3f2fd', color: '#1565c0', borderRadius: 10, padding: '1px 7px', marginLeft: 4, fontWeight: 700 }}>{savedIds.size}</span>}
         </button>
       </div>
@@ -671,7 +665,7 @@ export default function AdminBookingStatusPage() {
                                         {o.payment_method === 'card' ? 'カード' : '現金'}
                                       </span>
                                     </td>
-                                    <td style={{ padding: '9px 14px', fontWeight: 700, color: '#1565c0' }}>¥{((o.goods?.price || 0) * (o.quantity || 1)).toLocaleString()}</td>
+                                    <td style={{ padding: '9px 14px', fontWeight: 700, color: '#1565c0' }}>¥{(o.final_price ?? (o.goods?.price || 0) * (o.quantity || 1)).toLocaleString()}</td>
                                     <td style={{ padding: '9px 14px' }}>
                                       <button onClick={() => toggleNeCostExpand('g_' + o.id)}
                                         style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, border: '1px solid #ddd', background: isCostExp ? '#e3f2fd' : '#fff', color: '#555', cursor: 'pointer', whiteSpace: 'nowrap' }}>
