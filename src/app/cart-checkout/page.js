@@ -33,6 +33,7 @@ export default function CartCheckoutPage() {
     last_name_kana: '', first_name_kana: '',
     email: '', phone: '', sns_url: '', nickname: '',
     postal_code: '', prefecture: '', city: '', street_address: '', building: '',
+    notes: '',
     marketing_consent: true,
   })
   const [couponCode, setCouponCode] = useState('')
@@ -189,6 +190,7 @@ export default function CartCheckoutPage() {
               layers_path: item.layers_path || null,
               options_selected: item.options_selected || null,
               square_payment_id: squarePaymentId,
+              notes: form.notes || null,
               delivery_address: item.is_delivery ? deliveryAddress : null,
             }),
           }).then(r => r.ok)
@@ -366,6 +368,12 @@ export default function CartCheckoutPage() {
             </div>
           </div>
         )}
+
+        {/* 備考 */}
+        <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #e5e5e5', marginBottom: 16 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginBottom: 14, marginTop: 0 }}>備考・ご要望（任意）</h2>
+          <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={3} placeholder="ご質問・ご要望などあればご記入ください" style={{ ...inp, resize: 'vertical' }} />
+        </div>
 
         {/* クーポン */}
         <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #e5e5e5', marginBottom: 16 }}>
