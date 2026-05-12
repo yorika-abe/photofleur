@@ -204,16 +204,19 @@ export default async function RequestPage() {
         <div style={{ maxWidth: 640, margin: '0 auto' }}>
           <div style={{ width: 40, height: 1, background: 'rgba(168,226,244,0.4)', margin: '0 auto 24px' }} />
           <p style={{ fontSize: 14, lineHeight: 2, color: 'rgba(255,255,255,0.85)', margin: 0 }}>
-            📷 ご希望のロケーションで、あなたの理想を形にする特別撮影。<br />
-            モデル・スタッフ一同、心を込めてサポートいたします✨
+            <span className="req-closing-pc">📷 ご希望のロケーションで、あなたの理想を形にする特別撮影。<br />モデル・スタッフ一同、心を込めてサポートいたします✨</span>
+            <span className="req-closing-mobile">📷 ご希望のロケーションで、<br />あなたの理想を形にする特別撮影。<br />モデル・スタッフ一同、心を込めてサポートいたします✨</span>
           </p>
           <div style={{ width: 40, height: 1, background: 'rgba(168,226,244,0.4)', margin: '24px auto 0' }} />
         </div>
       </section>
 
       <style>{`
+        .req-closing-mobile { display: none; }
         .req-mobile-only { display: none; }
         @media (max-width: 640px) {
+          .req-closing-pc { display: none; }
+          .req-closing-mobile { display: inline; }
           .req-pc-only { display: none; }
           .req-mobile-only { display: block; }
           .req-cond-box { padding: 14px 12px !important; border-radius: 10px !important; }
