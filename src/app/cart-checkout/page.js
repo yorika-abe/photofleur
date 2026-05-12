@@ -23,10 +23,19 @@ export default function CartCheckoutPage() {
   const { items, ready, clearCart } = useCart()
   const router = useRouter()
 
-  const hasSlots = items.some(i => i.type === 'slot')
-  const hasDelivery = items.some(i => i.type === 'goods' && i.is_delivery)
+  // アイテム分類
   const goodsItems = items.filter(i => i.type === 'goods')
   const bookingItems = items.filter(i => i.type !== 'goods')
+  const hasSlots = items.some(i => i.type === 'slot')
+  const hasDelivery = goodsItems.some(i => i.is_delivery)
+
+  // グッズの支払い方法分類
+  const forceCashGoods = goodsItems.filter(i => i.payment_method === 'cash')
+  const forceCardGoods = goodsItems.filter(i => i.payment_method === 'card')
+  const flexGoodsItems = goodsItems.filter(i => !i.payment_method || i.payment_method === 'both')
+
+  const forceCashTotal = forceCashGoods.reduce((s, i) => s + (i.price || 0) * (i.quantity || 1), 0)
+  const forceCardTotal = forceCardGoods.reduce((s, i) => s + (i.price || 0) * (i.quantity || 1), 0)
 
   const [form, setForm] = useState({
     last_name: '', first_name: '',
@@ -49,11 +58,22 @@ export default function CartCheckoutPage() {
   const cardRef = useRef(null)
   const paymentsRef = useRef(null)
 
+  // 金額計算
   const baseTotal = items.reduce((s, i) => s + (i.price || 0) * (i.quantity || 1), 0)
+  const flexTotal = [...flexGoodsItems, ...bookingItems].reduce((s, i) => s + (i.price || 0) * (i.quantity || 1), 0)
   const discountAmount = coupon
     ? (coupon.discount_type === 'fixed' ? coupon.discount_value : Math.round(baseTotal * coupon.discount_value / 100))
     : 0
   const finalTotal = Math.max(0, baseTotal - discountAmount)
+
+  // カード決済が必要かどうか
+  const needsCardInput = paymentMethod === 'card' || forceCardTotal > 0
+  // カードで請求する合計
+  const cardChargeTotal = Math.max(0,
+    forceCardTotal +
+    (paymentMethod === 'card' ? flexTotal : 0) -
+    discountAmount
+  )
 
   useEffect(() => {
     if (!ready) return
@@ -83,8 +103,8 @@ export default function CartCheckoutPage() {
   }, [ready])
 
   useEffect(() => {
-    if (paymentMethod === 'card' && !squareReady) loadSquareSDK()
-  }, [paymentMethod])
+    if (needsCardInput && !squareReady) loadSquareSDK()
+  }, [needsCardInput])
 
   async function loadSquareSDK() {
     if (window.Square) { await initCard(); return }
@@ -146,9 +166,9 @@ export default function CartCheckoutPage() {
     setError('')
 
     try {
+      // カード決済
       let squarePaymentId = null
-
-      if (paymentMethod === 'card' && finalTotal > 0) {
+      if (cardChargeTotal > 0) {
         if (!cardRef.current) { setError('カード情報を入力してください'); setSaving(false); return }
         const result = await cardRef.current.tokenize()
         if (result.status !== 'OK') {
@@ -158,7 +178,7 @@ export default function CartCheckoutPage() {
         const chargeRes = await fetch('/api/square/charge', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sourceId: result.token, amount: finalTotal, email: form.email }),
+          body: JSON.stringify({ sourceId: result.token, amount: cardChargeTotal, email: form.email }),
         })
         const chargeData = await chargeRes.json()
         if (!chargeRes.ok) {
@@ -168,13 +188,19 @@ export default function CartCheckoutPage() {
         squarePaymentId = chargeData.payment_id
       }
 
-      // グッズ注文
+      // グッズ注文（支払い方法を確定して送信）
       if (goodsItems.length > 0) {
         const deliveryAddress = hasDelivery
           ? [form.postal_code ? `〒${form.postal_code}` : '', form.prefecture, form.city, form.street_address, form.building].filter(Boolean).join(' ')
           : null
 
-        const goodsResults = await Promise.all(goodsItems.map(item =>
+        const goodsWithPayment = [
+          ...forceCashGoods.map(i => ({ item: i, resolvedMethod: 'cash', sqId: null })),
+          ...forceCardGoods.map(i => ({ item: i, resolvedMethod: 'card', sqId: squarePaymentId })),
+          ...flexGoodsItems.map(i => ({ item: i, resolvedMethod: paymentMethod, sqId: paymentMethod === 'card' ? squarePaymentId : null })),
+        ]
+
+        const goodsResults = await Promise.all(goodsWithPayment.map(({ item, resolvedMethod, sqId }) =>
           fetch('/api/orders/goods', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -185,12 +211,12 @@ export default function CartCheckoutPage() {
               email: form.email,
               phone: form.phone,
               sns_url: form.sns_url,
-              payment_method: paymentMethod,
+              payment_method: resolvedMethod,
               quantity: item.quantity || 1,
+              notes: form.notes || null,
               layers_path: item.layers_path || null,
               options_selected: item.options_selected || null,
-              square_payment_id: squarePaymentId,
-              notes: form.notes || null,
+              square_payment_id: sqId,
               delivery_address: item.is_delivery ? deliveryAddress : null,
             }),
           }).then(r => r.ok)
@@ -205,6 +231,7 @@ export default function CartCheckoutPage() {
       // 予約・予約商品
       let qrTokens = {}
       if (bookingItems.length > 0) {
+        const bookingTotal = bookingItems.reduce((s, i) => s + (i.price || 0), 0)
         const res = await fetch('/api/cart-checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -212,9 +239,9 @@ export default function CartCheckoutPage() {
             items: bookingItems,
             customer: { ...form, name: `${form.last_name} ${form.first_name}` },
             paymentMethod,
-            squarePaymentId,
+            squarePaymentId: paymentMethod === 'card' ? squarePaymentId : null,
             couponId: coupon?.id || null,
-            finalTotal: bookingItems.reduce((s, i) => s + (i.price || 0), 0),
+            finalTotal: Math.max(0, bookingTotal - discountAmount),
           }),
         })
         const data = await res.json()
@@ -270,6 +297,8 @@ export default function CartCheckoutPage() {
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 2, color: item.type === 'slot' ? '#1a3560' : item.type === 'goods' ? '#2e7d32' : '#5bbfd6' }}>
                 {item.type === 'slot' ? '通常予約' : item.type === 'goods' ? 'グッズ' : '予約商品'}
+                {item.type === 'goods' && item.payment_method === 'cash' && <span style={{ marginLeft: 6, fontSize: 10, background: '#fff3e0', color: '#e65100', borderRadius: 4, padding: '1px 5px' }}>現金払い</span>}
+                {item.type === 'goods' && item.payment_method === 'card' && <span style={{ marginLeft: 6, fontSize: 10, background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '1px 5px' }}>カード払い</span>}
               </div>
               <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>{item.name || item.title}</div>
               {item._label && <div style={{ fontSize: 12, color: '#666' }}>{item._label}</div>}
@@ -342,7 +371,7 @@ export default function CartCheckoutPage() {
           </div>
         </div>
 
-        {/* 配送先住所（配送グッズがある場合のみ） */}
+        {/* 配送先住所 */}
         {hasDelivery && (
           <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #e5e5e5', marginBottom: 16 }}>
             <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginBottom: 18, marginTop: 0 }}>配送先住所</h2>
@@ -396,7 +425,9 @@ export default function CartCheckoutPage() {
         {/* お支払い方法 */}
         <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #e5e5e5', marginBottom: 16 }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', marginBottom: 14, marginTop: 0 }}>お支払い方法</h2>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+
+          {/* 支払い方法選択（flex itemsに適用） */}
+          <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
             {[['cash', '当日現金'], ['card', 'クレジットカード']].map(([val, label]) => (
               <button key={val} type="button" onClick={() => setPaymentMethod(val)}
                 style={{ flex: 1, padding: '12px', borderRadius: 8, border: `2px solid ${paymentMethod === val ? '#1a3560' : '#ddd'}`, background: paymentMethod === val ? '#1a3560' : '#fff', color: paymentMethod === val ? '#fff' : '#555', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
@@ -404,15 +435,46 @@ export default function CartCheckoutPage() {
               </button>
             ))}
           </div>
-          {paymentMethod === 'cash' && (
-            <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 8, padding: '12px', fontSize: 13, color: '#1565c0' }}>
-              💴 当日受付にてお支払いください。予約確定メールが届いた時点で予約完了です。
+
+          {/* 現金指定グッズへの注意（ユーザーがカードを選んでいる場合） */}
+          {forceCashGoods.length > 0 && paymentMethod === 'card' && (
+            <div style={{ background: '#fff3e0', border: '1px solid #ffcc80', borderRadius: 8, padding: '12px 14px', marginBottom: 12, fontSize: 13 }}>
+              <div style={{ fontWeight: 700, color: '#e65100', marginBottom: 6 }}>💴 以下の商品は現金でのお支払いになります</div>
+              {forceCashGoods.map(i => (
+                <div key={i.cartId} style={{ color: '#555' }}>・{i.name || i.title}（¥{((i.price || 0) * (i.quantity || 1)).toLocaleString()}）</div>
+              ))}
+              <div style={{ fontSize: 12, color: '#888', marginTop: 6 }}>※当日受付にてお支払いください。カード請求額は¥{(finalTotal - forceCashTotal).toLocaleString()}となります。</div>
             </div>
           )}
-          {paymentMethod === 'card' && (
-            <div>
+
+          {/* カード指定グッズへの注意（ユーザーが現金を選んでいる場合） */}
+          {forceCardGoods.length > 0 && paymentMethod === 'cash' && (
+            <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 8, padding: '12px 14px', marginBottom: 12, fontSize: 13 }}>
+              <div style={{ fontWeight: 700, color: '#1565c0', marginBottom: 6 }}>💳 以下の商品はカード決済が必要です</div>
+              {forceCardGoods.map(i => (
+                <div key={i.cartId} style={{ color: '#555' }}>・{i.name || i.title}（¥{((i.price || 0) * (i.quantity || 1)).toLocaleString()}）</div>
+              ))}
+              <div style={{ fontSize: 12, color: '#888', marginTop: 6 }}>※上記商品のみカードで決済されます。残り¥{(finalTotal - forceCardTotal).toLocaleString()}は当日現金でお支払いください。</div>
+            </div>
+          )}
+
+          {/* カード入力欄 */}
+          {needsCardInput && (
+            <div style={{ marginBottom: 8 }}>
+              {paymentMethod === 'cash' && forceCardGoods.length > 0 && (
+                <div style={{ fontSize: 13, color: '#1565c0', fontWeight: 600, marginBottom: 8 }}>
+                  カード決済商品（¥{forceCardTotal.toLocaleString()}）のカード情報
+                </div>
+              )}
               <div id="card-container-cart" style={{ minHeight: 90 }}></div>
               {!squareReady && <p style={{ color: '#999', fontSize: 13, marginTop: 8 }}>カード入力フォームを読み込み中...</p>}
+            </div>
+          )}
+
+          {/* 現金のみの場合のメッセージ */}
+          {!needsCardInput && paymentMethod === 'cash' && (
+            <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 8, padding: '12px', fontSize: 13, color: '#1565c0' }}>
+              💴 当日受付にてお支払いください。予約確定メールが届いた時点で予約完了です。
             </div>
           )}
         </div>
