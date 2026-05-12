@@ -35,6 +35,7 @@ function buildItemCard(item) {
   if (item.productTitle) rows.push(`<p style="margin:0 0 8px; font-size:15px; line-height:1.8;"><strong>商品名：</strong>${item.productTitle}</p>`)
   if (item.slotLabel) rows.push(`<p style="margin:0 0 8px; font-size:15px; line-height:1.8;"><strong>時間枠：</strong>${item.slotLabel}</p>`)
   else if (item.timeLabel) rows.push(`<p style="margin:0 0 8px; font-size:15px; line-height:1.8;"><strong>時間枠：</strong>${item.timeLabel}</p>`)
+  if (item.meetingPlace) rows.push(`<p style="margin:0 0 8px; font-size:15px; line-height:1.8;"><strong>集合・解散場所：</strong>${item.meetingPlace}</p>`)
   rows.push(`<p style="margin:0; font-size:15px; line-height:1.8;"><strong>料金：</strong>¥${Number(price).toLocaleString()}${item.isOutdoor ? '（屋外撮影・割引適用済み）' : ''}</p>`)
   return `<div style="border:1px solid #e5e5e5; border-radius:14px; padding:18px; margin-bottom:16px; background:#fafafa;">${rows.join('')}</div>`
 }
@@ -141,7 +142,7 @@ export async function GET(req) {
     // --- 非公開商品予約（個別qr_tokenのみ） ---
     const { data: privateBookings } = await supabase
       .from('private_bookings')
-      .select('id, email, last_name, first_name, qr_token, event_date_input, shooting_time, private_products(title, price, event_date, time_label, models(name))')
+      .select('id, email, last_name, first_name, qr_token, event_date_input, shooting_time, meeting_place, private_products(title, price, event_date, time_label, models(name))')
       .is('cancelled_at', null)
       .not('private_products', 'is', null)
 
@@ -157,6 +158,7 @@ export async function GET(req) {
         timeLabel: product.time_label || b.shooting_time || null,
         price: product.price,
         modelName: product.models?.name || null,
+        meetingPlace: b.meeting_place || null,
       })
     }
 
