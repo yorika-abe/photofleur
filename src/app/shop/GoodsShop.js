@@ -124,7 +124,7 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart }) {
   const [form, setForm] = useState({
     last_name: '', first_name: '', email: '', phone: '', sns_url: '',
     payment_method: goods.payment_method === 'both' ? 'card' : goods.payment_method,
-    quantity: 1, notes: '', delivery_address: '',
+    quantity: 1, notes: '', postal_code: '', prefecture: '', city: '', street_address: '', building: '',
   })
   const [layerPath, setLayerPath] = useState([])
   const [optionsSelected, setOptionsSelected] = useState({})
@@ -228,7 +228,7 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart }) {
     e.preventDefault()
     if (!form.last_name || !form.email) { setError('氏名・メールアドレスは必須です'); return }
     if (hasOptions && !isSelectionsComplete) { setError('全ての選択肢を選んでください'); return }
-    if (isDelivery && !form.delivery_address.trim()) { setError('お届け先住所を入力してください'); return }
+    if (isDelivery && (!form.postal_code.trim() || !form.prefecture.trim() || !form.city.trim() || !form.street_address.trim())) { setError('お届け先住所を入力してください（郵便番号・都道府県・市区町村・番地は必須です）'); return }
     setSubmitting(true); setError('')
 
     let squarePaymentId = null
@@ -254,14 +254,13 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart }) {
         square_payment_id: squarePaymentId,
         options_selected: Object.keys(optionsSelected).length > 0 ? optionsSelected : null,
         layers_path: isLayers && layerPath.length > 0 ? layerPath : null,
-        delivery_address: form.delivery_address || null,
+        delivery_address: isDelivery ? [form.postal_code ? `〒${form.postal_code}` : '', form.prefecture, form.city, form.street_address, form.building].filter(Boolean).join(' ') : null,
         sns_url: form.sns_url || null,
       }),
     })
     setSubmitting(false)
     if (res.ok) {
       setDone(true)
-      onComplete()
       if (form.email) {
         fetch('/api/customer/profile', {
           method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -288,9 +287,9 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart }) {
         {done ? (
           <div style={{ padding: '32px 24px', textAlign: 'center' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
-            <div style={{ fontWeight: 700, fontSize: 18, color: '#2e7d32', marginBottom: 8 }}>ご注文ありがとうございます</div>
-            <p style={{ fontSize: 14, color: '#555', marginBottom: 24 }}>確認メールをお送りしました。担当よりご連絡いたします。</p>
-            <button onClick={onClose} style={{ padding: '10px 28px', borderRadius: 10, border: 'none', background: '#1a3560', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>閉じる</button>
+            <div style={{ fontWeight: 700, fontSize: 18, color: '#2e7d32', marginBottom: 8 }}>ご購入ありがとうございます</div>
+            <p style={{ fontSize: 14, color: '#555', marginBottom: 24 }}>完了メールを送信いたしますのでご確認ください。</p>
+            <button onClick={onComplete} style={{ padding: '10px 28px', borderRadius: 10, border: 'none', background: '#1a3560', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>閉じる</button>
           </div>
         ) : (
           <form onSubmit={submit} style={{ padding: '20px 24px 24px' }}>
@@ -410,10 +409,28 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart }) {
               <input type="url" value={form.sns_url} onChange={e => setForm(f => ({ ...f, sns_url: e.target.value }))} placeholder="https://instagram.com/..." style={inp} />
             </div>
             {isDelivery && (
-              <div style={{ marginBottom: 14 }}>
-                <label style={lbl}>お届け先住所 *</label>
-                <textarea value={form.delivery_address} onChange={e => setForm(f => ({ ...f, delivery_address: e.target.value }))} rows={3} placeholder="〒000-0000&#10;東京都〇〇区〇〇 1-2-3&#10;マンション名 部屋番号" style={{ ...inp, resize: 'vertical' }} />
-              </div>
+              <>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={lbl}>郵便番号 *</label>
+                  <input value={form.postal_code} onChange={e => setForm(f => ({ ...f, postal_code: e.target.value }))} placeholder="000-0000" style={{ ...inp, maxWidth: 140 }} />
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={lbl}>都道府県 *</label>
+                  <input value={form.prefecture} onChange={e => setForm(f => ({ ...f, prefecture: e.target.value }))} placeholder="東京都" style={{ ...inp, maxWidth: 160 }} />
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={lbl}>市区町村 *</label>
+                  <input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} placeholder="渋谷区〇〇" style={inp} />
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={lbl}>番地 *</label>
+                  <input value={form.street_address} onChange={e => setForm(f => ({ ...f, street_address: e.target.value }))} placeholder="1-2-3" style={inp} />
+                </div>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={lbl}>建物名・部屋番号（任意）</label>
+                  <input value={form.building} onChange={e => setForm(f => ({ ...f, building: e.target.value }))} placeholder="〇〇マンション 101号室" style={inp} />
+                </div>
+              </>
             )}
 
             <div style={{ marginBottom: 14 }}>
@@ -559,7 +576,7 @@ function CartCheckout({ cart, onClose, onCancel, onOrderComplete }) {
   const [form, setForm] = useState({
     last_name: '', first_name: '', email: '', phone: '', sns_url: '',
     payment_method: paymentOptions === 'both' ? 'card' : paymentOptions,
-    notes: '', delivery_address: '',
+    notes: '', postal_code: '', prefecture: '', city: '', street_address: '', building: '',
   })
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
@@ -613,7 +630,7 @@ function CartCheckout({ cart, onClose, onCancel, onOrderComplete }) {
   async function submit(e) {
     e.preventDefault()
     if (!form.last_name || !form.email) { setError('氏名・メールアドレスは必須です'); return }
-    if (hasDelivery && !form.delivery_address.trim()) { setError('お届け先住所を入力してください'); return }
+    if (hasDelivery && (!form.postal_code.trim() || !form.prefecture.trim() || !form.city.trim() || !form.street_address.trim())) { setError('お届け先住所を入力してください（郵便番号・都道府県・市区町村・番地は必須です）'); return }
     setSubmitting(true); setError('')
 
     let squarePaymentId = null
@@ -645,7 +662,7 @@ function CartCheckout({ cart, onClose, onCancel, onOrderComplete }) {
           square_payment_id: squarePaymentId,
           options_selected: item.options_selected || null,
           layers_path: item.layers_path || null,
-          delivery_address: item.is_delivery ? (form.delivery_address || null) : null,
+          delivery_address: item.is_delivery ? [form.postal_code ? `〒${form.postal_code}` : '', form.prefecture, form.city, form.street_address, form.building].filter(Boolean).join(' ') : null,
         }),
       }).then(r => r.ok)
     ))
@@ -675,8 +692,8 @@ function CartCheckout({ cart, onClose, onCancel, onOrderComplete }) {
         {done ? (
           <div style={{ padding: '32px 24px', textAlign: 'center' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
-            <div style={{ fontWeight: 700, fontSize: 18, color: '#2e7d32', marginBottom: 8 }}>ご注文ありがとうございます</div>
-            <p style={{ fontSize: 14, color: '#555', marginBottom: 24 }}>確認メールをお送りしました。担当よりご連絡いたします。</p>
+            <div style={{ fontWeight: 700, fontSize: 18, color: '#2e7d32', marginBottom: 8 }}>ご購入ありがとうございます</div>
+            <p style={{ fontSize: 14, color: '#555', marginBottom: 24 }}>完了メールを送信いたしますのでご確認ください。</p>
             <button onClick={onOrderComplete} style={{ padding: '10px 28px', borderRadius: 10, border: 'none', background: '#1a3560', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>閉じる</button>
           </div>
         ) : (
@@ -713,10 +730,28 @@ function CartCheckout({ cart, onClose, onCancel, onOrderComplete }) {
               <input type="url" value={form.sns_url} onChange={e => setForm(f => ({ ...f, sns_url: e.target.value }))} placeholder="https://instagram.com/..." style={inp} />
             </div>
             {hasDelivery && (
-              <div style={{ marginBottom: 14 }}>
-                <label style={lbl}>お届け先住所 *</label>
-                <textarea value={form.delivery_address} onChange={e => setForm(f => ({ ...f, delivery_address: e.target.value }))} rows={3} placeholder="〒000-0000&#10;東京都〇〇区〇〇 1-2-3&#10;マンション名 部屋番号" style={{ ...inp, resize: 'vertical' }} />
-              </div>
+              <>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={lbl}>郵便番号 *</label>
+                  <input value={form.postal_code} onChange={e => setForm(f => ({ ...f, postal_code: e.target.value }))} placeholder="000-0000" style={{ ...inp, maxWidth: 140 }} />
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={lbl}>都道府県 *</label>
+                  <input value={form.prefecture} onChange={e => setForm(f => ({ ...f, prefecture: e.target.value }))} placeholder="東京都" style={{ ...inp, maxWidth: 160 }} />
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={lbl}>市区町村 *</label>
+                  <input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} placeholder="渋谷区〇〇" style={inp} />
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={lbl}>番地 *</label>
+                  <input value={form.street_address} onChange={e => setForm(f => ({ ...f, street_address: e.target.value }))} placeholder="1-2-3" style={inp} />
+                </div>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={lbl}>建物名・部屋番号（任意）</label>
+                  <input value={form.building} onChange={e => setForm(f => ({ ...f, building: e.target.value }))} placeholder="〇〇マンション 101号室" style={inp} />
+                </div>
+              </>
             )}
 
             {paymentOptions === 'both' && (

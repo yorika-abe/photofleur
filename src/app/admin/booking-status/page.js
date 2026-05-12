@@ -308,7 +308,7 @@ export default function AdminBookingStatusPage() {
     const priv = (d?.privateBookings || []).filter(b => (b.product?.event_date || b.created_at)?.slice(0, 7) === month)
     const gds = (d?.goodsOrders || []).filter(o => o.created_at?.slice(0, 7) === month)
     const privateRevenue = priv.reduce((s, b) => s + (b.product?.price || 0), 0)
-    const goodsRevenue = gds.reduce((s, o) => s + (o.goods?.price || 0) * (o.quantity || 1), 0)
+    const goodsRevenue = gds.reduce((s, o) => s + (o.final_price ?? (o.goods?.price || 0) * (o.quantity || 1)), 0)
     const totalRevenue = privateRevenue + goodsRevenue
     const c = costs[month] || {}
 
