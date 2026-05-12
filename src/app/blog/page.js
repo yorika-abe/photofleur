@@ -115,7 +115,7 @@ function BlogContent() {
       ) : !filtered || filtered.length === 0 ? (
         <p style={{ color: '#999' }}>記事がありません。</p>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20, paddingBottom: 24 }}>
+        <div className="blog-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20, paddingBottom: 24 }}>
           {filtered.map(post => (
             <Link key={post.id} href={`/blog/${post.slug}`} style={{ textDecoration: 'none' }}>
               <article style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid #d6ecf5', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -158,6 +158,11 @@ function BlogContent() {
           ))}
         </div>
       )}
+      <style>{`
+        @media (max-width: 640px) {
+          .blog-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+        }
+      `}</style>
     </div>
   )
 }

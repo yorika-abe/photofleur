@@ -34,7 +34,7 @@ export default async function RequestPage() {
         <FadingHeroBg images={heroImages} opacity={0.35} />
         <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <p style={{ ...serif, fontSize: 11, letterSpacing: '0.4em', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginBottom: 20, fontStyle: 'italic' }}>Request Shooting</p>
-          <h1 style={{ ...serif, fontSize: 'clamp(32px, 5.5vw, 64px)', fontWeight: 400, lineHeight: 1.2, margin: '0 0 24px', whiteSpace: 'nowrap' }}>
+          <h1 style={{ ...serif, fontSize: 'clamp(17px, 5vw, 64px)', fontWeight: 400, lineHeight: 1.2, margin: '0 0 24px', whiteSpace: 'nowrap' }}>
             📸 リクエスト撮影について
           </h1>
           <div style={{ width: 48, height: 1, background: 'rgba(168,226,244,0.5)', margin: '0 auto 20px' }} />
@@ -42,7 +42,7 @@ export default async function RequestPage() {
             ご希望の<strong style={{ color: '#a8e2f4' }}>モデル・ロケーション・衣装・日時</strong>をもとに、完全オーダーメイドの撮影を承ります。<br />
             ご希望のシチュエーションで、より自由度の高い撮影をお楽しみいただけます✨
           </p>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 14, marginBottom: 0 }}>
+          <p style={{ fontSize: 'clamp(9px, 2.5vw, 12px)', color: 'rgba(255,255,255,0.45)', marginTop: 14, marginBottom: 0, whiteSpace: 'nowrap' }}>
             ※撮影会開催日は、リクエスト撮影の受付は行っておりません。
           </p>
         </div>
@@ -57,22 +57,22 @@ export default async function RequestPage() {
               💡 ご利用条件
             </h2>
           </div>
-          <p style={{ fontSize: 13, color: '#556070', textAlign: 'center', marginBottom: 24, lineHeight: 1.8 }}>
+          <p style={{ fontSize: 'clamp(10px, 2.5vw, 13px)', color: '#556070', textAlign: 'center', marginBottom: 24, lineHeight: 1.8, whiteSpace: 'nowrap' }}>
             下記2点の条件を満たしている方のみお申し込み可能です。
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-            <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #d6ecf5' }}>
-              <div style={{ ...serif, fontSize: 28, fontWeight: 700, color: '#5bbfd6', marginBottom: 10 }}>①</div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#5bbfd6', letterSpacing: '0.1em', marginBottom: 8 }}>安全管理のための条件</div>
-              <p style={{ fontSize: 13, lineHeight: 1.9, color: '#3a3050', margin: 0, textWrap: 'balance' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+            <div className="req-cond-box" style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #d6ecf5' }}>
+              <div style={{ ...serif, fontSize: 28, fontWeight: 700, color: '#5bbfd6', marginBottom: 10 }} className="req-cond-num">①</div>
+              <div className="req-cond-label" style={{ fontSize: 12, fontWeight: 600, color: '#5bbfd6', letterSpacing: '0.1em', marginBottom: 8 }}>安全管理のための条件</div>
+              <p className="req-cond-text" style={{ fontSize: 13, lineHeight: 1.9, color: '#3a3050', margin: 0, textWrap: 'balance' }}>
                 Photo Fleurの撮影会を<strong>過去に10回以上ご利用</strong>いただいた方。
                 <span style={{ fontSize: 12, color: '#aaa', display: 'block', marginTop: 6 }}>※規定回数未満の方はリクエスト撮影をご利用いただけません。</span>
               </p>
             </div>
-            <div style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #d6ecf5' }}>
-              <div style={{ ...serif, fontSize: 28, fontWeight: 700, color: '#5bbfd6', marginBottom: 10 }}>②</div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#5bbfd6', letterSpacing: '0.1em', marginBottom: 8 }}>モデル指名のための条件</div>
-              <p style={{ fontSize: 13, lineHeight: 1.9, color: '#3a3050', margin: 0, textWrap: 'balance' }}>
+            <div className="req-cond-box" style={{ background: '#fff', borderRadius: 12, padding: '24px', border: '1px solid #d6ecf5' }}>
+              <div style={{ ...serif, fontSize: 28, fontWeight: 700, color: '#5bbfd6', marginBottom: 10 }} className="req-cond-num">②</div>
+              <div className="req-cond-label" style={{ fontSize: 12, fontWeight: 600, color: '#5bbfd6', letterSpacing: '0.1em', marginBottom: 8 }}>モデル指名のための条件</div>
+              <p className="req-cond-text" style={{ fontSize: 13, lineHeight: 1.9, color: '#3a3050', margin: 0, textWrap: 'balance' }}>
                 お申し込み月に<strong>2枠以上の撮影に参加</strong>しており、かつ<strong>希望モデルを過去に1回以上撮影</strong>したことがある方。
               </p>
             </div>
@@ -90,8 +90,15 @@ export default async function RequestPage() {
             </h2>
           </div>
           <div style={{ background: '#f8fbff', borderRadius: 12, padding: '24px 28px', border: '1px solid #d6ecf5' }}>
-            <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: '0 0 16px' }}>
-              モデルスタジオ料金×撮影時間（リクエスト撮影は２時間から受付しております）＋スタッフ同伴料1,000円×撮影時間＋モデル・スタッフの交通費
+            <p className="req-pc-only" style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: '0 0 16px' }}>
+              モデルスタジオ料金×撮影時間（リクエスト撮影は２時間から受付しております）<br />
+              ＋スタッフ同伴料1,000円×撮影時間＋モデル・スタッフの交通費
+            </p>
+            <p className="req-mobile-only" style={{ fontSize: 13, lineHeight: 2, color: '#3a3050', margin: '0 0 16px' }}>
+              モデルスタジオ料金×撮影時間<br />
+              <span style={{ fontSize: 11, color: '#778' }}>（リクエスト撮影は２時間から受付しております）</span><br />
+              ＋スタッフ同伴料1,000円<br />
+              ×撮影時間＋モデル・スタッフの交通費
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: '#556070', lineHeight: 1.9 }}>
               <p style={{ margin: 0 }}>※モデルページのスタジオ料金をご参照ください。</p>
@@ -204,6 +211,17 @@ export default async function RequestPage() {
         </div>
       </section>
 
+      <style>{`
+        .req-mobile-only { display: none; }
+        @media (max-width: 640px) {
+          .req-pc-only { display: none; }
+          .req-mobile-only { display: block; }
+          .req-cond-box { padding: 14px 12px !important; border-radius: 10px !important; }
+          .req-cond-num { font-size: 20px !important; margin-bottom: 6px !important; }
+          .req-cond-label { font-size: 10px !important; margin-bottom: 6px !important; }
+          .req-cond-text { font-size: 11px !important; line-height: 1.7 !important; }
+        }
+      `}</style>
     </div>
   )
 }

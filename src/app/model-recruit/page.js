@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import FadingHeroBg from '@/components/FadingHeroBg'
+import RecruitPageGallery from '@/components/RecruitPageGallery'
 import { getOgpImage, buildMetadata } from '@/lib/ogp'
 
 export async function generateMetadata() {
@@ -11,10 +12,18 @@ const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
 export default async function ModelRecruitPage() {
   const supabase = await createSupabaseAdminClient()
-  const { data } = await supabase.from('site_settings').select('value').eq('key', 'recruit_hero_image').single()
-  const raw = data?.value || ''
+  const { data: settings } = await supabase.from('site_settings').select('key, value').in('key', ['recruit_hero_image', 'recruit_page_gallery_images', 'training_bg_video_pc', 'training_bg_video_mobile'])
+  const settingsMap = Object.fromEntries((settings || []).map(r => [r.key, r.value]))
+
+  const raw = settingsMap.recruit_hero_image || ''
   let heroImages = []
   try { const p = JSON.parse(raw); heroImages = Array.isArray(p) ? p : (raw ? [raw] : []) } catch { heroImages = raw ? [raw] : [] }
+
+  let galleryImages = []
+  try { galleryImages = JSON.parse(settingsMap.recruit_page_gallery_images || '[]') } catch { galleryImages = [] }
+
+  const trainingVideoPC = settingsMap.training_bg_video_pc || ''
+  const trainingVideoMobile = settingsMap.training_bg_video_mobile || ''
 
   return (
     <div style={{ background: '#fff', color: '#1a1a2e' }}>
@@ -53,6 +62,9 @@ export default async function ModelRecruitPage() {
           </div>
         </div>
       </section>
+
+      {/* ─── GALLERY ─── */}
+      <RecruitPageGallery items={galleryImages} />
 
       {/* ─── WHAT WE VALUE ─── */}
       <section style={{ background: '#f0fbfc', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
@@ -106,15 +118,31 @@ export default async function ModelRecruitPage() {
       </section>
 
       {/* ─── TRAINING ─── */}
-      <section style={{ background: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+      <section style={{ position: 'relative', background: '#fff', padding: 'clamp(60px, 8vw, 100px) 20px', overflow: 'hidden' }}>
+        {(trainingVideoPC || trainingVideoMobile) && (
+          <>
+            {trainingVideoPC && (
+              <video key={trainingVideoPC} autoPlay muted loop playsInline className="training-bg-pc"
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.18, zIndex: 0 }}>
+                <source src={trainingVideoPC} />
+              </video>
+            )}
+            {trainingVideoMobile && (
+              <video key={trainingVideoMobile} autoPlay muted loop playsInline className="training-bg-mobile"
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.18, zIndex: 0 }}>
+                <source src={trainingVideoMobile} />
+              </video>
+            )}
+          </>
+        )}
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div style={{ textAlign: 'center', marginBottom: 48, position: 'relative', zIndex: 1 }}>
             <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#00acc1', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Training</p>
             <h2 style={{ ...serif, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
               充実した研修内容
             </h2>
           </div>
-          <div style={{ background: 'linear-gradient(135deg, #f0fbfc 0%, #fff0f6 100%)', borderRadius: 12, padding: '36px', border: '1px solid #b2ebf2' }}>
+          <div style={{ background: 'linear-gradient(135deg, #f0fbfc 0%, #fff0f6 100%)', borderRadius: 12, padding: '36px', border: '1px solid #b2ebf2', position: 'relative', zIndex: 1 }}>
             <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', marginTop: 0, marginBottom: 20 }}>
               不定期で開催の<strong>完全女性スタッフのみの撮影研修</strong>では
             </p>
@@ -248,6 +276,13 @@ export default async function ModelRecruitPage() {
         </div>
       </section>
 
+      <style>{`
+        .training-bg-mobile { display: none; }
+        @media (max-width: 640px) {
+          .training-bg-pc { display: none; }
+          .training-bg-mobile { display: block; }
+        }
+      `}</style>
     </div>
   )
 }

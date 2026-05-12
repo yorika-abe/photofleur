@@ -51,6 +51,9 @@ export default function AdminMediaPage() {
   const [recruitImages, setRecruitImages] = useState([])
   const [requestHeroImages, setRequestHeroImages] = useState([])
   const [recruitHeroImages, setRecruitHeroImages] = useState([])
+  const [recruitPageGallery, setRecruitPageGallery] = useState([])
+  const [trainingBgVideoPC, setTrainingBgVideoPC] = useState('')
+  const [trainingBgVideoMobile, setTrainingBgVideoMobile] = useState('')
   const [ogpImages, setOgpImages] = useState({})
   const [ogpCrop, setOgpCrop] = useState(null) // { src, key, oldUrl }
   const [crop, setCrop] = useState({ x: 0, y: 0 })
@@ -79,6 +82,9 @@ export default function AdminMediaPage() {
       try { const p = JSON.parse(rhi); setRequestHeroImages(Array.isArray(p) ? p : (rhi ? [rhi] : [])) } catch { setRequestHeroImages(rhi ? [rhi] : []) }
       const mhi = data.recruit_hero_image || ''
       try { const p = JSON.parse(mhi); setRecruitHeroImages(Array.isArray(p) ? p : (mhi ? [mhi] : [])) } catch { setRecruitHeroImages(mhi ? [mhi] : []) }
+      setRecruitPageGallery(JSON.parse(data.recruit_page_gallery_images || '[]'))
+      setTrainingBgVideoPC(data.training_bg_video_pc || '')
+      setTrainingBgVideoMobile(data.training_bg_video_mobile || '')
       const ogp = {}
       for (const { key } of OGP_PAGES) ogp[key] = data[key] || ''
       setOgpImages(ogp)
@@ -276,6 +282,9 @@ export default function AdminMediaPage() {
         recruit_bg_images: JSON.stringify(recruitImages),
         request_hero_image: JSON.stringify(requestHeroImages),
         recruit_hero_image: JSON.stringify(recruitHeroImages),
+        recruit_page_gallery_images: JSON.stringify(recruitPageGallery),
+        training_bg_video_pc: trainingBgVideoPC,
+        training_bg_video_mobile: trainingBgVideoMobile,
         ...ogpImages,
         onboarding_pdf_about: onboardingPdfAbout,
         onboarding_pdf_regist: onboardingPdfRegist,
@@ -589,10 +598,36 @@ export default function AdminMediaPage() {
 
         {/* ── モデル募集 ── */}
         {tab === 'recruit_page' && (
-          <Section title="ヒーロー背景画像" desc="複数枚登録するとフェードで自動切り替えされます">
-            <ImageGrid images={recruitHeroImages} onRemove={i => setRecruitHeroImages(imgs => imgs.filter((_, idx) => idx !== i))}
-              uploadKey="recruit_hero" onAdd={f => uploadWithSignedUrl(f, 'recruit_hero', url => setRecruitHeroImages(imgs => [...imgs, url]))} label="画像を追加（複数可）" aspect="16/9" />
-          </Section>
+          <>
+            <Section title="ヒーロー背景画像" desc="複数枚登録するとフェードで自動切り替えされます">
+              <ImageGrid images={recruitHeroImages} onRemove={i => setRecruitHeroImages(imgs => imgs.filter((_, idx) => idx !== i))}
+                uploadKey="recruit_hero" onAdd={f => uploadWithSignedUrl(f, 'recruit_hero', url => setRecruitHeroImages(imgs => [...imgs, url]))} label="画像を追加（複数可）" aspect="16/9" />
+            </Section>
+
+            <Section title="充実した研修内容 背景動画（PC）" desc="研修内容セクションの背景動画。PCで表示されます">
+              <VideoSection value={trainingBgVideoPC} onChange={setTrainingBgVideoPC} uploadKey="training_bg_video_pc" label="動画をアップロード" />
+            </Section>
+
+            <Section title="充実した研修内容 背景動画（モバイル）" desc="研修内容セクションの背景動画。モバイルで表示されます（未設定の場合はPC用を使用）">
+              <VideoSection value={trainingBgVideoMobile} onChange={setTrainingBgVideoMobile} uploadKey="training_bg_video_mobile" label="動画をアップロード" />
+            </Section>
+
+            <Section title="ギャラリー（写真・動画）" desc="大切にしていることセクションの上に表示されるマーキーギャラリー。上下2行でスクロール表示">
+              <MediaGrid
+                items={recruitPageGallery}
+                onRemove={i => setRecruitPageGallery(imgs => imgs.filter((_, idx) => idx !== i))}
+                uploadKey="recruit_page_gallery"
+                onAddImage={f => {
+                  setUploading('recruit_page_gallery'); setUploadProgress(0)
+                  compressImage(f, 1600, 1600, 0.85)
+                    .then(c => uploadWithProgress(c, `site/recruit-gallery-${Date.now()}.jpg`))
+                    .then(url => { setRecruitPageGallery(imgs => [...imgs, url]); setUploading(null); setUploadProgress(0) })
+                    .catch(e => { alert(e); setUploading(null) })
+                }}
+                onAddVideo={f => uploadVideoWithSignedUrl(f, 'recruit_page_gallery', url => setRecruitPageGallery(imgs => [...imgs, url]))}
+              />
+            </Section>
+          </>
         )}
 
         {/* ── 登録手続きPDF ── */}
