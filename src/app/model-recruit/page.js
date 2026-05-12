@@ -265,12 +265,13 @@ export default async function ModelRecruitPage() {
           <h2 style={{ ...serif, fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 400, lineHeight: 1.5, margin: '0 0 24px', color: '#0d1f3a' }}>
             最後に
           </h2>
-          <p style={{ fontSize: 15, lineHeight: 2.2, color: '#3a3050', margin: '0 0 16px' }}>
+          <p className="recruit-closing-p" style={{ fontSize: 15, lineHeight: 2.2, color: '#3a3050', margin: '0 0 16px' }}>
             Photo Fleur は、<strong style={{ color: '#00acc1' }}>「モデルの一歩目を応援する撮影会」</strong>です。
           </p>
-          <p style={{ fontSize: 15, lineHeight: 2.2, color: '#556070', margin: 0 }}>
+          <p className="recruit-closing-p" style={{ fontSize: 15, lineHeight: 2.2, color: '#556070', margin: 0 }}>
             まだ知られていない魅力を咲かせて、<br />
-            花のように見る人を魅了する作品を一緒に作れたら嬉しいです。
+            花のように見る人を魅了する作品を<br />
+            一緒に作れたら嬉しいです。
           </p>
           <div style={{ width: 40, height: 2, background: 'linear-gradient(90deg, #f4a0be, #5bbfd6)', margin: '32px auto 0', borderRadius: 2 }} />
         </div>
@@ -281,6 +282,7 @@ export default async function ModelRecruitPage() {
         @media (max-width: 640px) {
           .training-bg-pc { display: none; }
           .training-bg-mobile { display: block; }
+          .recruit-closing-p { font-size: clamp(9px, 2.3vw, 13px) !important; white-space: nowrap; line-height: 2 !important; }
         }
       `}</style>
     </div>
