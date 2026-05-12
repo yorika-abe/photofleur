@@ -10,9 +10,8 @@ function isVideo(url) {
 
 // Fixed height, auto width — no cropping regardless of portrait/landscape
 function MediaItem({ url }) {
-  const ROW_HEIGHT = 110
   return (
-    <div style={{ height: ROW_HEIGHT, flexShrink: 0, borderRadius: 10, overflow: 'hidden', background: '#f0f0f0' }}>
+    <div className="recruit-media-item" style={{ flexShrink: 0, borderRadius: 10, overflow: 'hidden', background: '#f0f0f0' }}>
       {isVideo(url) ? (
         <video src={url} autoPlay muted loop playsInline
           style={{ height: '100%', width: 'auto', display: 'block' }} />
@@ -85,6 +84,8 @@ export default function RecruitMarquee({ items }) {
       {hasItems && <MarqueeRow items={actualBottom} direction="right" />}
 
       <style>{`
+        .recruit-media-item { height: 220px; }
+        @media (max-width: 640px) { .recruit-media-item { height: 110px; } }
         @keyframes recruit-marquee-left {
           from { transform: translateX(0); }
           to { transform: translateX(-50%); }
