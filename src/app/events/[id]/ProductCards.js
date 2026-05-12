@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/context/CartContext'
 import LayerOptionPicker from '@/components/LayerOptionPicker'
@@ -19,10 +19,24 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
   const [layerPath, setLayerPath] = useState([])
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [cartAdded, setCartAdded] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(null)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const { addItem } = useCart()
   const router = useRouter()
 
+  useEffect(() => {
+    fetch('/api/customer/profile').then(r => r.json()).then(({ email }) => {
+      setIsLoggedIn(!!email)
+    }).catch(() => setIsLoggedIn(false))
+  }, [])
+
   if (!products || products.length === 0) return null
+
+  function requireLogin(action) {
+    if (isLoggedIn === false) { setShowLoginPrompt(true); return }
+    if (isLoggedIn === null) return
+    action()
+  }
 
   function openModal(p) {
     setSelected(p)
@@ -127,19 +141,23 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
   }
 
   function handleAddToCart() {
-    const item = buildCartItem()
-    if (!item) return
-    addItem(item)
-    setCartAdded(true)
-    setTimeout(() => setCartAdded(false), 2500)
+    requireLogin(() => {
+      const item = buildCartItem()
+      if (!item) return
+      addItem(item)
+      setCartAdded(true)
+      setTimeout(() => setCartAdded(false), 2500)
+    })
   }
 
   function handleBuyNow() {
-    const item = buildCartItem()
-    if (!item) return
-    addItem(item)
-    closeModal()
-    router.push('/cart-checkout')
+    requireLogin(() => {
+      const item = buildCartItem()
+      if (!item) return
+      addItem(item)
+      closeModal()
+      router.push('/cart-checkout')
+    })
   }
 
   const selectedGroups = selected ? getOptionGroups(selected) : []
@@ -171,6 +189,19 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
 
   return (
     <>
+      {showLoginPrompt && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '32px 28px', maxWidth: 360, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>🔒</div>
+            <div style={{ fontWeight: 700, fontSize: 18, color: '#1a3560', marginBottom: 8 }}>ログインが必要です</div>
+            <p style={{ fontSize: 14, color: '#666', marginBottom: 24 }}>予約するにはログインしてください。</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <a href="/login" style={{ display: 'block', padding: '12px', borderRadius: 10, background: '#1a3560', color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>ログインする</a>
+              <button onClick={() => setShowLoginPrompt(false)} style={{ padding: '10px', borderRadius: 10, border: '1px solid #ddd', background: '#fff', color: '#888', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>キャンセル</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ marginBottom: 40 }}>
         <h2 style={{ fontSize: 17, fontWeight: 700, color: '#333', marginBottom: 16 }}>予約商品</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>

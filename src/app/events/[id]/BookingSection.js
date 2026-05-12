@@ -1,14 +1,30 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useCart } from '@/context/CartContext'
 
 export default function BookingSection({ entries, slotsByEntry, indoorCountBySlot, indoorCountByLabel, studioCapacity, eventType, bookingCounts, bookingOpen, bookingOpenAt, eventDate = '', eventLocation = '' }) {
   const [modal, setModal] = useState(null) // entry
   const [selectedSlotId, setSelectedSlotId] = useState('')
   const [cartAdded, setCartAdded] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(null)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const { addItem } = useCart()
+  const router = useRouter()
+
+  useEffect(() => {
+    fetch('/api/customer/profile').then(r => r.json()).then(({ email }) => {
+      setIsLoggedIn(!!email)
+    }).catch(() => setIsLoggedIn(false))
+  }, [])
+
+  function requireLogin(action) {
+    if (isLoggedIn === false) { setShowLoginPrompt(true); return }
+    if (isLoggedIn === null) return
+    action()
+  }
 
   function openModal(entry) {
     setModal(entry)
@@ -65,6 +81,19 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
 
   return (
     <>
+      {showLoginPrompt && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '32px 28px', maxWidth: 360, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>🔒</div>
+            <div style={{ fontWeight: 700, fontSize: 18, color: '#1a3560', marginBottom: 8 }}>ログインが必要です</div>
+            <p style={{ fontSize: 14, color: '#666', marginBottom: 24 }}>予約するにはログインしてください。</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <a href="/login" style={{ display: 'block', padding: '12px', borderRadius: 10, background: '#1a3560', color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>ログインする</a>
+              <button onClick={() => setShowLoginPrompt(false)} style={{ padding: '10px', borderRadius: 10, border: '1px solid #ddd', background: '#fff', color: '#888', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>キャンセル</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* モデルグリッド */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10, marginBottom: 40 }}>
         {validEntries.map(entry => {
@@ -164,11 +193,11 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
 
                   {selectedSlotId ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <Link href={`/confirm?slot_id=${selectedSlotId}`}
-                        style={{ display: 'block', textAlign: 'center', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '13px 0', fontSize: 15, fontWeight: 700 }}>
+                      <button onClick={() => requireLogin(() => router.push(`/confirm?slot_id=${selectedSlotId}`))}
+                        style={{ display: 'block', width: '100%', textAlign: 'center', background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '13px 0', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                         今すぐ予約する
-                      </Link>
-                      <button onClick={() => {
+                      </button>
+                      <button onClick={() => requireLogin(() => {
                         const slot = availableSlots.find(s => s.id === selectedSlotId)
                         addItem({
                           type: 'slot',
@@ -182,7 +211,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
                         })
                         setCartAdded(true)
                         setTimeout(() => setCartAdded(false), 2500)
-                      }}
+                      })}
                         style={{ width: '100%', padding: '12px', borderRadius: 10, border: '2px solid #1a3560', background: cartAdded ? '#e8f5e9' : '#fff', color: cartAdded ? '#2e7d32' : '#1a3560', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
                         {cartAdded ? '✓ カートに追加しました' : '🛒 カートに追加'}
                       </button>
