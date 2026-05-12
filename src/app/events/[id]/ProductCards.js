@@ -22,7 +22,7 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
   const [isLoggedIn, setIsLoggedIn] = useState(null)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const [loginRedirect, setLoginRedirect] = useState('/')
-  const { addItem } = useCart()
+  const { addItem, items } = useCart()
   const router = useRouter()
 
   useEffect(() => {
@@ -144,6 +144,11 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
   function handleAddToCart() {
     const item = buildCartItem()
     if (!item) return
+    const cartCount = items.filter(i => i.productId === selected.id && i.selectionSummary === item.selectionSummary).length
+    const maxStock = selected.stock >= 0 ? selected.stock : 1
+    if (cartCount >= maxStock) {
+      setCartAdded('dup'); setTimeout(() => setCartAdded(false), 2500); return
+    }
     addItem(item); setCartAdded(true); setTimeout(() => setCartAdded(false), 2500)
   }
 
@@ -454,7 +459,11 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
                         ⚠ 全ての選択肢を選んでください
                       </div>
                     )}
-                    {cartAdded ? (
+                    {cartAdded === 'dup' ? (
+                      <div style={{ background: '#fff3e0', borderRadius: 10, padding: '12px', textAlign: 'center', color: '#e65100', fontWeight: 700 }}>
+                        ⚠ すでにカートに入っています
+                      </div>
+                    ) : cartAdded ? (
                       <div style={{ background: '#e8f5e9', borderRadius: 10, padding: '12px', textAlign: 'center', color: '#2e7d32', fontWeight: 700 }}>
                         ✓ カートに追加しました
                       </div>

@@ -12,7 +12,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
   const [isLoggedIn, setIsLoggedIn] = useState(null)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const [loginRedirect, setLoginRedirect] = useState('/')
-  const { addItem } = useCart()
+  const { addItem, items } = useCart()
   const router = useRouter()
 
   useEffect(() => {
@@ -203,11 +203,15 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
                       </button>
                       <button onClick={() => {
                         const slot = availableSlots.find(s => s.id === selectedSlotId)
+                        const dbCount = (bookingCounts || []).filter(b => b.slot_id === selectedSlotId).length
+                        const cartCount = items.filter(i => i.slotId === selectedSlotId).length
+                        const remaining = (slot?.max_reservations || 1) - dbCount - cartCount
+                        if (remaining <= 0) { setCartAdded('dup'); setTimeout(() => setCartAdded(false), 2500); return }
                         const item = { type: 'slot', slotId: selectedSlotId, name: modal.models.name, image: modal.models.image, slotLabel: slot?.slot_label || '', eventDate, eventLocation, price: slot?.price || 0 }
                         addItem(item); setCartAdded(true); setTimeout(() => setCartAdded(false), 2500)
                       }}
                         style={{ width: '100%', padding: '12px', borderRadius: 10, border: '2px solid #1a3560', background: cartAdded ? '#e8f5e9' : '#fff', color: cartAdded ? '#2e7d32' : '#1a3560', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-                        {cartAdded ? '✓ カートに追加しました' : '🛒 カートに追加'}
+                        {cartAdded === 'dup' ? '⚠ すでにカートに入っています' : cartAdded ? '✓ カートに追加しました' : '🛒 カートに追加'}
                       </button>
                     </div>
                   ) : (

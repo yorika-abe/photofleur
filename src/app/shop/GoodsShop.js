@@ -87,6 +87,9 @@ function OrderModal({ goods, onClose, onAddToCart, onBuyNow }) {
   const optionGroups = !isLayers && goods.options?.type === 'groups' ? goods.options.groups : []
   const layers = isLayers ? (goods.options?.layers || []) : []
 
+  const { items } = useCart()
+  const alreadyInCart = items.filter(i => i.type === 'goods' && i.goodsId === goods.id).reduce((s, i) => s + (i.quantity || 1), 0)
+
   const [quantity, setQuantity] = useState(1)
   const [layerPath, setLayerPath] = useState([])
   const [optionsSelected, setOptionsSelected] = useState({})
@@ -110,7 +113,7 @@ function OrderModal({ goods, onClose, onAddToCart, onBuyNow }) {
     : null
   const unitPrice = choicePrice ?? goods.price
   const totalPrice = unitPrice * quantity
-  const maxQty = goods.stock >= 0 ? goods.stock : 99
+  const maxQty = goods.stock >= 0 ? Math.max(0, goods.stock - alreadyInCart) : 99
 
   function buildCartItem() {
     const label = isLayers && layerPath.length > 0
@@ -241,25 +244,30 @@ function OrderModal({ goods, onClose, onAddToCart, onBuyNow }) {
               ⚠ 全ての選択肢を選んでください
             </div>
           )}
+          {maxQty === 0 && (
+            <div style={{ background: '#fff3e0', color: '#e65100', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 14 }}>
+              ⚠ この商品はすでにカートに追加済みです（在庫上限）
+            </div>
+          )}
 
           <div style={{ background: '#f5f5f7', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 14, color: '#555' }}>合計</span>
             <span style={{ fontSize: 18, fontWeight: 700, color: '#1a3560' }}>¥{totalPrice.toLocaleString()}</span>
           </div>
 
-          <button type="button" disabled={hasOptions && !isSelectionsComplete}
-            onClick={() => { if (hasOptions && !isSelectionsComplete) return; onBuyNow(buildCartItem()) }}
-            style={{ width: '100%', padding: 14, borderRadius: 10, border: 'none', background: (hasOptions && !isSelectionsComplete) ? '#ccc' : '#1a3560', color: '#fff', fontWeight: 700, fontSize: 16, cursor: (hasOptions && !isSelectionsComplete) ? 'not-allowed' : 'pointer', marginBottom: 10 }}>
+          <button type="button" disabled={maxQty === 0 || (hasOptions && !isSelectionsComplete)}
+            onClick={() => { if (maxQty === 0 || (hasOptions && !isSelectionsComplete)) return; onBuyNow(buildCartItem()) }}
+            style={{ width: '100%', padding: 14, borderRadius: 10, border: 'none', background: (maxQty === 0 || (hasOptions && !isSelectionsComplete)) ? '#ccc' : '#1a3560', color: '#fff', fontWeight: 700, fontSize: 16, cursor: (maxQty === 0 || (hasOptions && !isSelectionsComplete)) ? 'not-allowed' : 'pointer', marginBottom: 10 }}>
             今すぐ購入
           </button>
-          <button type="button" disabled={hasOptions && !isSelectionsComplete}
+          <button type="button" disabled={maxQty === 0 || (hasOptions && !isSelectionsComplete)}
             onClick={() => {
-              if (hasOptions && !isSelectionsComplete) return
+              if (maxQty === 0 || (hasOptions && !isSelectionsComplete)) return
               onAddToCart(buildCartItem())
               setCartAdded(true)
               setTimeout(() => setCartAdded(false), 2000)
             }}
-            style={{ width: '100%', padding: 12, borderRadius: 10, border: `2px solid ${(hasOptions && !isSelectionsComplete) ? '#ddd' : '#1a3560'}`, background: cartAdded ? '#e8f5e9' : '#fff', color: cartAdded ? '#2e7d32' : (hasOptions && !isSelectionsComplete) ? '#bbb' : '#1a3560', fontWeight: 700, fontSize: 15, cursor: (hasOptions && !isSelectionsComplete) ? 'not-allowed' : 'pointer' }}>
+            style={{ width: '100%', padding: 12, borderRadius: 10, border: `2px solid ${(maxQty === 0 || (hasOptions && !isSelectionsComplete)) ? '#ddd' : '#1a3560'}`, background: cartAdded ? '#e8f5e9' : '#fff', color: cartAdded ? '#2e7d32' : (maxQty === 0 || (hasOptions && !isSelectionsComplete)) ? '#bbb' : '#1a3560', fontWeight: 700, fontSize: 15, cursor: (maxQty === 0 || (hasOptions && !isSelectionsComplete)) ? 'not-allowed' : 'pointer' }}>
             {cartAdded ? '✓ カートに追加しました' : '🛒 カートに入れる'}
           </button>
         </div>
