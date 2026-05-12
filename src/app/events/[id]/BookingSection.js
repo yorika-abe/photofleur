@@ -21,9 +21,8 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
   }, [])
 
   function requireLogin(action) {
-    if (isLoggedIn === false) { setShowLoginPrompt(true); return }
-    if (isLoggedIn === null) return
-    action()
+    if (isLoggedIn === true) { action(); return }
+    setShowLoginPrompt(true)
   }
 
   function openModal(entry) {

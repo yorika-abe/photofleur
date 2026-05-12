@@ -48,9 +48,8 @@ export default function GoodsShop() {
   }, [])
 
   function requireLogin(action) {
-    if (isLoggedIn === false) { setShowLoginPrompt(true); return }
-    if (isLoggedIn === null) return
-    action()
+    if (isLoggedIn === true) { action(); return }
+    setShowLoginPrompt(true)
   }
 
   function openOrder(g) {
@@ -273,8 +272,7 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart, onLoginRequired, 
 
   async function submit(e) {
     e.preventDefault()
-    if (isLoggedIn === false) { onLoginRequired?.(); return }
-    if (isLoggedIn === null) return
+    if (isLoggedIn !== true) { onLoginRequired?.(); return }
     if (!form.last_name || !form.email) { setError('氏名・メールアドレスは必須です'); return }
     if (hasOptions && !isSelectionsComplete) { setError('全ての選択肢を選んでください'); return }
     if (isDelivery && (!form.postal_code.trim() || !form.prefecture.trim() || !form.city.trim() || !form.street_address.trim())) { setError('お届け先住所を入力してください（郵便番号・都道府県・市区町村・番地は必須です）'); return }
@@ -541,7 +539,7 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart, onLoginRequired, 
 
             <button type="button"
               disabled={hasOptions && !isSelectionsComplete}
-              onClick={() => { if (hasOptions && !isSelectionsComplete) return; if (isLoggedIn === false) { onLoginRequired?.(); return } if (isLoggedIn === null) return; onAddToCart(buildCartItem()) }}
+              onClick={() => { if (hasOptions && !isSelectionsComplete) return; if (isLoggedIn !== true) { onLoginRequired?.(); return } onAddToCart(buildCartItem()) }}
               style={{ width: '100%', padding: 12, borderRadius: 10, border: `2px solid ${(hasOptions && !isSelectionsComplete) ? '#ddd' : '#1a3560'}`, background: '#fff', color: (hasOptions && !isSelectionsComplete) ? '#bbb' : '#1a3560', fontWeight: 700, fontSize: 15, cursor: (hasOptions && !isSelectionsComplete) ? 'not-allowed' : 'pointer' }}>
               🛒 カートに入れる
             </button>

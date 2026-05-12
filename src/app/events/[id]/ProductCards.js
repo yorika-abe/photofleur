@@ -33,9 +33,8 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
   if (!products || products.length === 0) return null
 
   function requireLogin(action) {
-    if (isLoggedIn === false) { setShowLoginPrompt(true); return }
-    if (isLoggedIn === null) return
-    action()
+    if (isLoggedIn === true) { action(); return }
+    setShowLoginPrompt(true)
   }
 
   function openModal(p) {
