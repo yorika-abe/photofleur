@@ -115,10 +115,9 @@ function BlogContent() {
       ) : !filtered || filtered.length === 0 ? (
         <p style={{ color: '#999' }}>記事がありません。</p>
       ) : (
-        <div style={{ display: 'flex', gap: 20, overflowX: 'auto', padding: '8px 0 24px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <style>{`.blog-scroll::-webkit-scrollbar{display:none}`}</style>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20, paddingBottom: 24 }}>
           {filtered.map(post => (
-            <Link key={post.id} href={`/blog/${post.slug}`} style={{ textDecoration: 'none', flexShrink: 0, width: 260 }}>
+            <Link key={post.id} href={`/blog/${post.slug}`} style={{ textDecoration: 'none' }}>
               <article style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid #d6ecf5', height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ height: 180, background: '#e0d8f0', overflow: 'hidden', flexShrink: 0 }}>
                   {post.cover_image
