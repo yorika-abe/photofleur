@@ -144,13 +144,7 @@ export default function ProductCards({ products, eventId, slotLabels = [], event
   function handleAddToCart() {
     const item = buildCartItem()
     if (!item) return
-    if (isLoggedIn === true) {
-      addItem(item); setCartAdded(true); setTimeout(() => setCartAdded(false), 2500)
-    } else {
-      addItem(item)
-      setLoginRedirect('/cart-checkout')
-      setShowLoginPrompt(true)
-    }
+    addItem(item); setCartAdded(true); setTimeout(() => setCartAdded(false), 2500)
   }
 
   function handleBuyNow() {

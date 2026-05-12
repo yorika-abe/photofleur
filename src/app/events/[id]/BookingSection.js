@@ -204,13 +204,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
                       <button onClick={() => {
                         const slot = availableSlots.find(s => s.id === selectedSlotId)
                         const item = { type: 'slot', slotId: selectedSlotId, name: modal.models.name, image: modal.models.image, slotLabel: slot?.slot_label || '', eventDate, eventLocation, price: slot?.price || 0 }
-                        if (isLoggedIn === true) {
-                          addItem(item); setCartAdded(true); setTimeout(() => setCartAdded(false), 2500)
-                        } else {
-                          addItem(item)
-                          setLoginRedirect('/cart-checkout')
-                          setShowLoginPrompt(true)
-                        }
+                        addItem(item); setCartAdded(true); setTimeout(() => setCartAdded(false), 2500)
                       }}
                         style={{ width: '100%', padding: '12px', borderRadius: 10, border: '2px solid #1a3560', background: cartAdded ? '#e8f5e9' : '#fff', color: cartAdded ? '#2e7d32' : '#1a3560', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
                         {cartAdded ? '✓ カートに追加しました' : '🛒 カートに追加'}
