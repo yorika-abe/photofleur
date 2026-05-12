@@ -195,6 +195,11 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart, onLoginRequired, 
         email: email || f.email,
         phone: profile?.phone || f.phone,
         sns_url: profile?.sns_url || f.sns_url,
+        postal_code: profile?.postal_code || f.postal_code,
+        prefecture: profile?.prefecture || f.prefecture,
+        city: profile?.city || f.city,
+        street_address: profile?.street_address || f.street_address,
+        building: profile?.building || f.building,
       }))
     }).catch(() => {})
   }, [])
@@ -313,7 +318,7 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart, onLoginRequired, 
       if (form.email) {
         fetch('/api/customer/profile', {
           method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ last_name: form.last_name, first_name: form.first_name, phone: form.phone, email: form.email, sns_url: form.sns_url }),
+          body: JSON.stringify({ last_name: form.last_name, first_name: form.first_name, phone: form.phone, email: form.email, sns_url: form.sns_url, postal_code: form.postal_code, prefecture: form.prefecture, city: form.city, street_address: form.street_address, building: form.building }),
         }).catch(() => {})
       }
     } else {

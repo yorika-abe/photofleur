@@ -66,6 +66,11 @@ export async function PUT(req) {
     sns_url: body.sns_url || null,
     nickname: body.nickname || null,
     ...(body.email ? { email: body.email } : {}),
+    ...(body.postal_code !== undefined ? { postal_code: body.postal_code || null } : {}),
+    ...(body.prefecture !== undefined ? { prefecture: body.prefecture || null } : {}),
+    ...(body.city !== undefined ? { city: body.city || null } : {}),
+    ...(body.street_address !== undefined ? { street_address: body.street_address || null } : {}),
+    ...(body.building !== undefined ? { building: body.building || null } : {}),
     updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id' })
 
