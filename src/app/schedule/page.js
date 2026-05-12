@@ -27,6 +27,14 @@ export default async function SchedulePage() {
   const today = new Date().toISOString().split('T')[0]
   const supabase = await createSupabaseAdminClient()
 
+  const { data: featuredEvent } = await supabase
+    .from('events')
+    .select('id, title, subtitle, event_date, main_image')
+    .eq('is_featured', true)
+    .eq('status', 'active')
+    .gte('event_date', today)
+    .maybeSingle()
+
   const { data: events } = await supabase
     .from('events')
     .select('*')
@@ -96,8 +104,28 @@ export default async function SchedulePage() {
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: 'clamp(40px, 6vw, 64px) 20px' }}>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <div style={{ textAlign: 'center', marginBottom: featuredEvent ? 28 : 40 }}>
           <h1 style={{ ...serif, fontSize: 'clamp(40px, 8vw, 80px)', fontWeight: 700, color: '#1a3560', margin: '0 0 20px' }}>開催予定のイベント</h1>
+
+          {/* お気に入りイベント：大フィーチャー表示 */}
+          {featuredEvent && (
+            <Link href={`/events/${featuredEvent.id}`} style={{ display: 'block', textDecoration: 'none', maxWidth: 900, margin: '0 auto 28px' }}>
+              <div style={{ position: 'relative', aspectRatio: '16/9', borderRadius: 16, overflow: 'hidden', background: 'linear-gradient(160deg,#1a3560,#2d5a8e)', boxShadow: '0 8px 32px rgba(26,53,96,0.18)' }}>
+                {featuredEvent.main_image && (
+                  <img src={featuredEvent.main_image} alt={featuredEvent.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                )}
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%)' }} />
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 'clamp(20px, 4vw, 36px)', textAlign: 'left', color: '#fff' }}>
+                  <div style={{ fontSize: 'clamp(12px, 1.5vw, 15px)', fontWeight: 600, marginBottom: 6, opacity: 0.9, letterSpacing: '0.05em' }}>
+                    {String(new Date(featuredEvent.event_date + 'T00:00:00').getMonth() + 1).padStart(2, '0')}/{String(new Date(featuredEvent.event_date + 'T00:00:00').getDate()).padStart(2, '0')}（{['日','月','火','水','木','金','土'][new Date(featuredEvent.event_date + 'T00:00:00').getDay()]}）
+                  </div>
+                  <h2 style={{ ...serif, fontSize: 'clamp(22px, 4vw, 44px)', fontWeight: 700, margin: '0 0 6px', color: '#fff', lineHeight: 1.2 }}>{featuredEvent.title}</h2>
+                  {featuredEvent.subtitle && <p style={{ fontSize: 'clamp(12px, 1.5vw, 16px)', opacity: 0.85, margin: 0 }}>{featuredEvent.subtitle}</p>}
+                </div>
+              </div>
+            </Link>
+          )}
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
             <p style={{ fontSize: 12, color: '#666', margin: 0 }}>
               📌 予約受付は撮影日の<strong>2週間前月曜日 21:00〜</strong>開始いたします。

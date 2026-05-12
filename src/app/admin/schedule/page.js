@@ -28,6 +28,7 @@ export default function AdminSchedulePage() {
   const [xNotify, setXNotify] = useState(null)
   const [xNotifySending, setXNotifySending] = useState(false)
   const [xNotifySent, setXNotifySent] = useState(false)
+  const [featuringSaving, setFeaturingSaving] = useState(false)
 
   useEffect(() => { load() }, [])
 
@@ -165,6 +166,18 @@ export default function AdminSchedulePage() {
     })
     setCameraNotifySending(false)
     setCameraNotifySent(true)
+  }
+
+  async function toggleFeatured(ev) {
+    setFeaturingSaving(true)
+    const isFeatured = ev.is_featured
+    await fetch('/api/admin/events/feature', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_id: isFeatured ? null : ev.id }),
+    })
+    setEvents(prev => prev.map(e => ({ ...e, is_featured: !isFeatured && e.id === ev.id })))
+    setFeaturingSaving(false)
   }
 
   async function deleteEvent(id) {
@@ -394,6 +407,13 @@ export default function AdminSchedulePage() {
                         <span style={{ width: 10, height: 10, borderRadius: '50%', background: isActive ? '#388e3c' : '#ccc', display: 'inline-block' }} />
                         {isActive ? '表示中' : '非表示'}
                       </button>
+                      {isActive && (
+                        <button onClick={() => toggleFeatured(ev)}
+                          title={ev.is_featured ? 'お気に入り解除' : 'お気に入りに設定（1件まで）'}
+                          style={{ background: 'none', border: '1.5px solid', borderColor: ev.is_featured ? '#f59e0b' : '#e5e5e5', borderRadius: 20, padding: '5px 10px', cursor: 'pointer', fontSize: 15, lineHeight: 1 }}>
+                          {ev.is_featured ? '⭐️' : '☆'}
+                        </button>
+                      )}
                       <Link href={`/admin/schedule/${ev.id}`}
                         style={{ background: '#2f2244', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 600 }}>
                         編集
