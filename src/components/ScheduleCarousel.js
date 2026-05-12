@@ -30,13 +30,16 @@ export default function ScheduleCarousel({ events }) {
     const cards = Array.from(track.querySelectorAll('.s-card'))
     if (!cards.length) return
 
-    const cardW = cards[0].offsetWidth
-    const gap = Math.round(cardW * 0.14) + 20
-    track.style.gap = `${gap}px`
-    const wrapW = wrap.clientWidth
-
-    let idx = n // start at center of middle set
+    let idx = n
     let isJumping = false
+    let cardW = 0, gap = 0, wrapW = 0
+
+    function measure() {
+      cardW = cards[0].offsetWidth
+      gap = Math.round(cardW * 0.14) + 20
+      track.style.gap = `${gap}px`
+      wrapW = wrap.clientWidth
+    }
 
     function offset(i) {
       return -(i * (cardW + gap) + cardW / 2 - wrapW / 2)
@@ -65,15 +68,21 @@ export default function ScheduleCarousel({ events }) {
       applyStyles(i)
     }
 
-    // Set initial position immediately (no animation)
+    function handleResize() {
+      measure()
+      goTo(idx, false)
+    }
+
+    measure()
     goTo(idx, false)
+
+    window.addEventListener('resize', handleResize)
 
     const interval = setInterval(() => {
       if (isJumping) return
       idx++
       goTo(idx, true)
 
-      // Seamless loop: after transition, silently jump back one set if needed
       if (idx >= n * 2) {
         isJumping = true
         setTimeout(() => {
@@ -86,6 +95,7 @@ export default function ScheduleCarousel({ events }) {
 
     return () => {
       clearInterval(interval)
+      window.removeEventListener('resize', handleResize)
     }
   }, [n])
 

@@ -18,16 +18,16 @@ export default function RepMessage({ photo, role, name, message, modelId }) {
           <SectionTitle text="MESSAGE" />
         </div>
 
-        <div style={{ display: 'flex', gap: 'clamp(24px, 4vw, 48px)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 'clamp(14px, 4vw, 48px)', alignItems: 'flex-start' }}>
 
           {/* 写真 + ボタン */}
           {photo && (
-            <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+            <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
               <img src={photo} alt={name || ''}
-                style={{ width: 'clamp(100px, 18vw, 160px)', aspectRatio: '3/4', objectFit: 'cover', borderRadius: 12, display: 'block' }} />
+                style={{ width: 'clamp(80px, 22vw, 160px)', aspectRatio: '3/4', objectFit: 'cover', borderRadius: 10, display: 'block' }} />
               {modelId && (
                 <Link href={`/models/${modelId}`}
-                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#1a3560', textDecoration: 'none', border: '1px solid #1a3560', borderRadius: 6, padding: '8px 20px', fontWeight: 600, letterSpacing: '0.05em', width: '100%', boxSizing: 'border-box' }}>
+                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(10px, 2.5vw, 13px)', color: '#1a3560', textDecoration: 'none', border: '1px solid #1a3560', borderRadius: 6, padding: 'clamp(5px, 1.5vw, 8px) clamp(8px, 2.5vw, 20px)', fontWeight: 600, letterSpacing: '0.03em', width: '100%', boxSizing: 'border-box' }}>
                   モデルページを見る
                 </Link>
               )}
@@ -35,12 +35,12 @@ export default function RepMessage({ photo, role, name, message, modelId }) {
           )}
 
           {/* テキスト */}
-          <div style={{ flex: 1, minWidth: 220 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             {role && (
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.15em', color: '#5bbfd6', textTransform: 'uppercase', margin: '0 0 6px' }}>{role}</p>
             )}
             {name && (
-              <h2 style={{ ...serif, fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 400, color: '#0d1f3a', margin: '0 0 20px', lineHeight: 1.2 }}>{name}</h2>
+              <h2 style={{ ...serif, fontSize: 'clamp(18px, 4vw, 32px)', fontWeight: 400, color: '#0d1f3a', margin: '0 0 clamp(10px, 2vw, 20px)', lineHeight: 1.2 }}>{name}</h2>
             )}
 
             {message && (

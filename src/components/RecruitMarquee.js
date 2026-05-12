@@ -10,7 +10,7 @@ function isVideo(url) {
 
 // Fixed height, auto width — no cropping regardless of portrait/landscape
 function MediaItem({ url }) {
-  const ROW_HEIGHT = 220
+  const ROW_HEIGHT = 110
   return (
     <div style={{ height: ROW_HEIGHT, flexShrink: 0, borderRadius: 10, overflow: 'hidden', background: '#f0f0f0' }}>
       {isVideo(url) ? (

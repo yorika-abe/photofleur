@@ -157,7 +157,7 @@ export default async function Home() {
             <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48, borderBottom: '1px solid #c8e8f5', paddingBottom: 24 }}>
               <div>
                 <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 10, fontWeight: 600 }}>Schedule</p>
-                <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>
+                <h2 className="schedule-title" style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a', whiteSpace: 'nowrap' }}>
                   開催予定のイベント
                 </h2>
               </div>
@@ -172,9 +172,9 @@ export default async function Home() {
 
       {/* ─── MODELS ─── */}
       {models && models.length > 0 && (
-        <section style={{ background: '#fff', padding: '48px 0' }}>
+        <section style={{ background: '#fff', padding: 'clamp(20px, 3vw, 48px) 0' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 clamp(20px, 5vw, 64px)' }}>
-            <div className="reveal" style={{ textAlign: 'center', marginBottom: 56, borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: 32, overflow: 'hidden', paddingTop: 16 }}>
+            <div className="reveal" style={{ textAlign: 'center', marginBottom: 'clamp(20px, 4vw, 56px)', borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: 'clamp(16px, 3vw, 32px)', overflow: 'hidden', paddingTop: 16 }}>
               <SectionTitle text="MODELS" />
             </div>
 
@@ -234,7 +234,7 @@ export default async function Home() {
             <p style={{ fontSize: 11, letterSpacing: '0.3em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 8, fontWeight: 600 }}>After the shoot</p>
             <h2 style={{ ...serif, fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, margin: 0, color: '#0d1f3a' }}>ご参加後</h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 1, background: '#e8f4f8' }}>
+          <div className="how-grid" style={{ display: 'grid', gap: 1, background: '#e8f4f8' }}>
             {[
               { num: '01', en: 'Feedback', ja: 'ご意見をお送りください', desc: 'PhotoFleurでは日々改善・改良を重ねています。ご予約のメール宛にご意見箱を送信させていただきます。開催ご提案や感想・改善点などお送りください。' },
               { num: '02', en: 'Photos', ja: '写真のご提供', desc: 'ご予約のメール宛に撮っていただいた写真をアップロードしていただくフォームを送信させていただきます。対象のモデルを選択いただきますと運営とモデルに送信されます。' },
@@ -308,7 +308,7 @@ export default async function Home() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px 28px', justifyContent: 'center' }}>
               {staffMembers.map((s, i) => (
                 <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 120, height: 120, borderRadius: '50%', overflow: 'hidden', background: '#f0f4f8', border: '3px solid #e5e5e5', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div className="staff-photo" style={{ width: 120, height: 120, borderRadius: '50%', overflow: 'hidden', background: '#f0f4f8', border: '3px solid #e5e5e5', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {s.photo
                       ? <img src={s.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       : <span style={{ fontSize: 48 }}>🐈‍⬛</span>}
@@ -334,6 +334,8 @@ export default async function Home() {
         @media (max-width: 640px) { .how-item { padding: 20px 14px !important; } }
         @media (max-width: 640px) { .how-desc { font-size: 11px !important; } }
         @media (max-width: 600px) { .how-title { font-size: 13px !important; } }
+        @media (max-width: 640px) { .schedule-title { font-size: 22px !important; } }
+        @media (max-width: 640px) { .staff-photo { width: 80px !important; height: 80px !important; } }
       `}</style>
     </div>
   )
