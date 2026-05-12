@@ -81,7 +81,7 @@ export async function POST(req) {
           .select('*', { count: 'exact', head: true })
           .eq('slot_id', item.slotId).eq('is_outdoor', false)
         if ((newCount || 0) >= maxIndoor) {
-          await admin.from('booking_slots').update({ is_reserved: true }).eq('id', item.slotId).catch(() => {})
+          try { await admin.from('booking_slots').update({ is_reserved: true }).eq('id', item.slotId) } catch {}
         }
 
         // LINE通知
@@ -202,7 +202,7 @@ export async function POST(req) {
 
   // クーポン使用数更新
   if (couponId) {
-    await admin.rpc('increment_coupon_used', { coupon_id_arg: couponId }).catch(() => {})
+    try { await admin.rpc('increment_coupon_used', { coupon_id_arg: couponId }) } catch {}
   }
 
   // プロフィール更新

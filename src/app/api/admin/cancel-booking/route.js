@@ -175,7 +175,7 @@ export async function POST(req) {
     // DB更新を先に実行（メール失敗に関係なく）
     await admin.from('event_product_bookings').update({ cancelled_at: new Date().toISOString() }).eq('id', event_product_booking_id)
     const currentStock = epb.event_products?.stock ?? 0
-    await admin.from('event_products').update({ stock: currentStock + 1 }).eq('id', epb.product_id).catch(() => {})
+    try { await admin.from('event_products').update({ stock: currentStock + 1 }).eq('id', epb.product_id) } catch {}
 
     // メール送信（失敗してもキャンセル自体は完了）
     let mail_ok = false, mail_error = null
@@ -212,7 +212,7 @@ export async function POST(req) {
 
     await admin.from('goods_orders').update({ cancelled_at: new Date().toISOString() }).eq('id', goods_order_id)
     if (go.goods_id && go.goods?.stock !== undefined) {
-      await admin.from('goods').update({ stock: (go.goods.stock ?? 0) + (go.quantity || 1) }).eq('id', go.goods_id).catch(() => {})
+      try { await admin.from('goods').update({ stock: (go.goods.stock ?? 0) + (go.quantity || 1) }).eq('id', go.goods_id) } catch {}
     }
 
     const customerName = `${go.last_name || ''}${go.first_name ? ` ${go.first_name}` : ''}`.trim() || '様'
@@ -250,7 +250,7 @@ export async function POST(req) {
     // DB更新を先に実行（メール失敗に関係なく）
     await admin.from('private_bookings').update({ cancelled_at: new Date().toISOString() }).eq('id', private_booking_id)
     const currentStock = pb.private_products?.stock ?? 0
-    await admin.from('private_products').update({ stock: currentStock + 1 }).eq('id', pb.product_id).catch(() => {})
+    try { await admin.from('private_products').update({ stock: currentStock + 1 }).eq('id', pb.product_id) } catch {}
 
     // メール送信（失敗してもキャンセル自体は完了）
     const customerName = `${pb.last_name || ''}${pb.first_name ? ` ${pb.first_name}` : ''}`.trim() || '様'
