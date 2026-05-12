@@ -50,7 +50,7 @@ export default function AdminBookingStatusPage() {
   const [selectedEventId, setSelectedEventId] = useState(null)
   const [fees, setFees] = useState(DEFAULT_FEES)
   const [editFees, setEditFees] = useState(false)
-  const [costs, setCosts] = useState({ lunchCount: 0, lunchRate: 1000, studioCost: 0 })
+  const [costs, setCosts] = useState({ lunchCount: 0, lunchRate: 1000, studioCost: 0, studioPaymentMethod: 'cash' })
   const [savedIds, setSavedIds] = useState(new Set())
   const [selectedBooking, setSelectedBooking] = useState(null)
   const [eventProducts, setEventProducts] = useState([])
@@ -147,8 +147,9 @@ export default function AdminBookingStatusPage() {
         studioCost: studioBudget,
         hanselling: savedCosts.hanselling ?? 0,
         hansellingMode: savedCosts.hansellingMode || 'flat',
+        studioPaymentMethod: savedCosts.studioPaymentMethod ?? 'cash',
       })
-    } catch { setCosts({ lunchCount: 0, lunchRate: 1000, studioCost: 0, hanselling: 0, hansellingMode: 'flat' }) }
+    } catch { setCosts({ lunchCount: 0, lunchRate: 1000, studioCost: 0, hanselling: 0, hansellingMode: 'flat', studioPaymentMethod: 'cash' }) }
     try {
       const savedPH = localStorage.getItem(`pf_product_hanselling_${selectedEventId}`)
       setProductHansellingMap(savedPH ? JSON.parse(savedPH) : {})
@@ -208,7 +209,8 @@ export default function AdminBookingStatusPage() {
   }
 
   function updateCost(key, value) {
-    const next = { ...costs, [key]: key.endsWith('Mode') ? value : (Number(value) || 0) }
+    const isString = key.endsWith('Mode') || key === 'studioPaymentMethod'
+    const next = { ...costs, [key]: isString ? value : (Number(value) || 0) }
     setCosts(next)
     if (selectedEventId) {
       localStorage.setItem(`pf_costs_${selectedEventId}`, JSON.stringify(next))
@@ -224,6 +226,17 @@ export default function AdminBookingStatusPage() {
 
   function doSave(currentItem, revenue, productRevenue, labor, lunchTotal, grossProfit, slotHanselling, productHanselling) {
     const eventId = currentItem.event.id
+
+    // レジ金計算
+    let cashSlotRevenue = 0
+    for (const row of currentItem.rows) {
+      for (const cell of Object.values(row.cells)) {
+        if (cell?.booking?.payment_method === 'cash') cashSlotRevenue += cell.price || 0
+      }
+    }
+    const cashProductRevenue = epBookings.filter(b => !b.cancelled_at && b.payment_method === 'cash')
+      .reduce((s, b) => s + (b.final_price || 0), 0)
+
     const record = {
       eventId,
       eventDate: currentItem.event.event_date,
@@ -238,6 +251,9 @@ export default function AdminBookingStatusPage() {
       lunchCount: costs.lunchCount || 0,
       lunchRate: costs.lunchRate || 0,
       studioCost: costs.studioCost || 0,
+      studioPaymentMethod: costs.studioPaymentMethod || 'cash',
+      cashSlotRevenue,
+      cashProductRevenue,
       slotHanselling,
       productHanselling,
       hanselling: slotHanselling + productHanselling,
@@ -917,18 +933,20 @@ export default function AdminBookingStatusPage() {
               ) : (() => {
                 let prevTier = null
 
-                let revenue = 0, labor = 0, bookingCount = 0
+                let revenue = 0, labor = 0, bookingCount = 0, cashSlotRevenue = 0
                 for (const row of currentItem.rows) {
                   for (const [label, cell] of Object.entries(row.cells)) {
                     if (!cell?.booking) continue
                     revenue += cell.price || 0
                     bookingCount++
+                    if (cell.booking.payment_method === 'cash') cashSlotRevenue += cell.price || 0
                     if (row.model.price_tier !== 'staff') {
                       labor += fees[row.model.price_tier]?.[durationKey(label)] || 0
                     }
                   }
                 }
                 const productRevenue = epBookings.filter(b => !b.cancelled_at).reduce((s, b) => s + (b.final_price || 0), 0)
+                const cashProductRevenue = epBookings.filter(b => !b.cancelled_at && b.payment_method === 'cash').reduce((s, b) => s + (b.final_price || 0), 0)
                 const totalRevenue = revenue + productRevenue
                 const lunchTotal = (costs.lunchCount || 0) * (costs.lunchRate || 0)
                 const slotHanselling = costs.hansellingMode === 'per_booking'
@@ -1247,7 +1265,18 @@ export default function AdminBookingStatusPage() {
                           </div>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0f0f0', flexWrap: 'wrap', gap: 8 }}>
-                          <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>スタジオ代・衣装代</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>スタジオ代・衣装代</span>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                              {[['cash', '現金'], ['card', 'カード']].map(([v, lbl]) => (
+                                <button key={v} type="button"
+                                  onClick={() => updateCost('studioPaymentMethod', v)}
+                                  style={{ fontSize: 11, padding: '2px 7px', borderRadius: 4, border: `1px solid ${costs.studioPaymentMethod === v ? '#1a3560' : '#ddd'}`, background: costs.studioPaymentMethod === v ? '#1a3560' : '#fff', color: costs.studioPaymentMethod === v ? '#fff' : '#888', cursor: 'pointer', fontWeight: 600 }}>
+                                  {lbl}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                             <input type="number" min="0" value={costs.studioCost}
                               onChange={e => updateCost('studioCost', e.target.value)}
@@ -1297,6 +1326,57 @@ export default function AdminBookingStatusPage() {
                         </div>
                       </div>
                     </div>
+
+                    {/* レジ金管理 */}
+                    {(() => {
+                      const cashIn = cashSlotRevenue + cashProductRevenue
+                      const cashOut = labor + lunchTotal + (costs.studioPaymentMethod === 'cash' ? (costs.studioCost || 0) : 0)
+                      const registerBalance = cashIn - cashOut
+                      return (
+                        <div style={{ marginTop: 12, background: '#f8fbff', border: '1px solid #d6ecf5', borderRadius: 12, padding: '14px 18px' }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 10 }}>
+                            レジ金管理
+                            <span style={{ fontSize: 11, color: '#aaa', fontWeight: 400, marginLeft: 8 }}>このイベント分</span>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <span style={{ color: '#555' }}>現金予約受け取り</span>
+                              <span style={{ fontWeight: 700, color: '#388e3c' }}>+¥{cashSlotRevenue.toLocaleString()}</span>
+                            </div>
+                            {cashProductRevenue > 0 && (
+                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#555' }}>現金特別予約受け取り</span>
+                                <span style={{ fontWeight: 700, color: '#388e3c' }}>+¥{cashProductRevenue.toLocaleString()}</span>
+                              </div>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <span style={{ color: '#555' }}>人件費</span>
+                              <span style={{ fontWeight: 700, color: '#c62828' }}>-¥{labor.toLocaleString()}</span>
+                            </div>
+                            {lunchTotal > 0 && (
+                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#555' }}>お昼代</span>
+                                <span style={{ fontWeight: 700, color: '#c62828' }}>-¥{lunchTotal.toLocaleString()}</span>
+                              </div>
+                            )}
+                            {(costs.studioCost || 0) > 0 && (
+                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#555' }}>スタジオ代・衣装代{costs.studioPaymentMethod === 'card' ? <span style={{ fontSize: 10, color: '#1565c0', marginLeft: 4 }}>（事前カード）</span> : ''}</span>
+                                <span style={{ fontWeight: 700, color: costs.studioPaymentMethod === 'cash' ? '#c62828' : '#aaa' }}>
+                                  {costs.studioPaymentMethod === 'cash' ? `-¥${(costs.studioCost || 0).toLocaleString()}` : '−（カード決済済）'}
+                                </span>
+                              </div>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid #d6ecf5', fontWeight: 700 }}>
+                              <span style={{ color: '#1a3560' }}>レジ金増減</span>
+                              <span style={{ fontSize: 16, color: registerBalance >= 0 ? '#388e3c' : '#c62828' }}>
+                                {registerBalance >= 0 ? '+' : ''}¥{registerBalance.toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })()}
 
                     {/* ボタン（過去イベントのみ） */}
                     {isPastEvent && (

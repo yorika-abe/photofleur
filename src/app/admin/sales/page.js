@@ -179,10 +179,20 @@ export default function AdminSalesPage() {
     const grossProfit = recordsInMonth.reduce((s, r) => s + (r.grossProfit || 0), 0) + nonEventGrossProfit
     const misc = miscExpenses[month] || 0
     const netProfit = grossProfit - Math.round(slotRevenue * 0.036) - misc
+
+    // レジ金計算（保存済みイベント記録から）
+    const registerCashIn = recordsInMonth.reduce((s, r) => s + (r.cashSlotRevenue || 0) + (r.cashProductRevenue || 0), 0)
+    const registerCashOut = recordsInMonth.reduce((s, r) => {
+      const studio = r.studioPaymentMethod === 'cash' ? (r.studioCost || 0) : 0
+      return s + (r.labor || 0) + (r.lunchTotal || 0) + studio
+    }, 0)
+    const registerBalance = registerCashIn - registerCashOut
+
     return {
       bookings: bookingsInMonth, revenue, slotRevenue, productRevenue,
       privateRevenue, goodsRevenue, neRecord,
       records: recordsInMonth, grossProfit, misc, netProfit,
+      registerCashIn, registerCashOut, registerBalance,
     }
   }
 
@@ -305,27 +315,30 @@ export default function AdminSalesPage() {
         {[
           { label: '売上', value: yen(activeData.revenue), color: '#388e3c', note: [activeData.productRevenue > 0 && `イベント商品 ${yen(activeData.productRevenue)}`, activeData.privateRevenue > 0 && `非公開 ${yen(activeData.privateRevenue)}`, activeData.goodsRevenue > 0 && `グッズ ${yen(activeData.goodsRevenue)}`].filter(Boolean).join(' / ') || null },
           { label: '粗利益', value: yen(activeData.grossProfit), color: '#1a3560', note: '保存済み記録' },
-          { label: '諸々経費', value: yen(activeData.misc), color: '#1565c0', editable: true },
-          { label: '純利益', value: yen(activeData.netProfit), color: activeData.netProfit >= 0 ? '#00695c' : '#c62828', note: `粗利−手数料(${yen(Math.round(activeData.slotRevenue * 0.036))})−経費` },
+          { label: '純利益', value: yen(activeData.netProfit), color: activeData.netProfit >= 0 ? '#00695c' : '#c62828', note: `粗利−手数料(${yen(Math.round(activeData.slotRevenue * 0.036))})` },
         ].map(s => (
           <div key={s.label} style={{ background: '#fff', borderRadius: 10, padding: '14px', border: '1px solid #e5e5e5', textAlign: 'center' }}>
             <div style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>{s.label}</div>
-            {s.editable ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                <span style={{ fontSize: 13, color: '#aaa' }}>¥</span>
-                <input
-                  type="number" min="0"
-                  value={miscExpenses[activeMonth] || 0}
-                  onChange={e => updateMiscExpense(activeMonth, e.target.value)}
-                  style={{ width: 80, border: '1px solid #ddd', borderRadius: 4, padding: '4px 6px', fontSize: 14, fontWeight: 700, color: s.color, textAlign: 'right' }}
-                />
-              </div>
-            ) : (
-              <div style={{ fontSize: 18, fontWeight: 700, color: s.color }}>{s.value}</div>
-            )}
+            <div style={{ fontSize: 18, fontWeight: 700, color: s.color }}>{s.value}</div>
             {s.note && <div style={{ fontSize: 10, color: '#bbb', marginTop: 3 }}>{s.note}</div>}
           </div>
         ))}
+        {/* レジ金管理カード */}
+        <div style={{ background: '#fff', borderRadius: 10, padding: '14px', border: '1px solid #d6ecf5', textAlign: 'center' }}>
+          <div style={{ fontSize: 11, color: '#aaa', marginBottom: 2 }}>レジ金管理</div>
+          <div style={{ fontSize: 10, color: '#bbb', marginBottom: 6 }}>イベント日 ※リク撮・グッズ別</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: activeData.registerBalance >= 0 ? '#1565c0' : '#c62828' }}>
+            {activeData.registerBalance >= 0 ? '+' : ''}{yen(activeData.registerBalance)}
+          </div>
+          {activeData.records.length > 0 && (
+            <div style={{ fontSize: 10, color: '#bbb', marginTop: 4 }}>
+              入+{yen(activeData.registerCashIn)} 出-{yen(activeData.registerCashOut)}
+            </div>
+          )}
+          {activeData.records.length === 0 && (
+            <div style={{ fontSize: 10, color: '#ccc', marginTop: 4 }}>保存済み記録から計算</div>
+          )}
+        </div>
       </div>
 
       {/* 予約状況記録 */}
