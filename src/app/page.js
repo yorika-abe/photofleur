@@ -241,11 +241,11 @@ export default async function Home() {
               { num: '03', en: 'Gallery', ja: 'ホームページへの掲載', desc: 'ご提供いただきました写真から選ばれたものが一定期間ホームページに使用されます。掲載報告のご連絡させていただきますのでご確認ください。' },
               { num: '04', en: 'Follow', ja: 'SNS・ブログをフォロー', desc: 'Xやインスタグラム・HPのブログやモデルページなど日々更新していきます。2025/09/16から開催されているまだ出来立ての撮影会の成長を見守っていただけたら嬉しいです。' },
             ].map(item => (
-              <div key={item.num} style={{ background: '#fff', padding: '20px 28px 28px' }}>
-                <div style={{ ...serif, fontSize: 'clamp(32px, 5vw, 64px)', fontWeight: 300, color: '#d6ecf5', lineHeight: 1, marginBottom: 16 }}>{item.num}</div>
-                <p style={{ fontSize: 10, letterSpacing: '0.15em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 6, fontWeight: 600 }}>{item.en}</p>
-                <h3 style={{ ...serif, fontSize: 'clamp(13px, 1.2vw, 16px)', fontWeight: 600, color: '#0d1f3a', marginBottom: 12, marginTop: 0 }}>{item.ja}</h3>
-                <p style={{ fontSize: 13, color: '#667', lineHeight: 1.8, margin: 0 }}>{item.desc}</p>
+              <div key={item.num} className="after-item" style={{ background: '#fff', padding: '20px 28px 28px' }}>
+                <div style={{ ...serif, fontSize: 'clamp(28px, 5vw, 64px)', fontWeight: 300, color: '#d6ecf5', lineHeight: 1, marginBottom: 10 }}>{item.num}</div>
+                <p style={{ fontSize: 10, letterSpacing: '0.15em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 4, fontWeight: 600 }}>{item.en}</p>
+                <h3 style={{ ...serif, fontSize: 'clamp(13px, 1.2vw, 16px)', fontWeight: 600, color: '#0d1f3a', marginBottom: 8, marginTop: 0 }}>{item.ja}</h3>
+                <p className="after-desc" style={{ fontSize: 13, color: '#667', lineHeight: 1.6, margin: 0 }}>{item.desc}</p>
               </div>
             ))}
           </div>
@@ -336,6 +336,8 @@ export default async function Home() {
         @media (max-width: 600px) { .how-title { font-size: 13px !important; } }
         @media (max-width: 640px) { .schedule-title { font-size: 22px !important; } }
         @media (max-width: 640px) { .staff-photo { width: 80px !important; height: 80px !important; } }
+        @media (max-width: 640px) { .after-item { padding: 14px 10px 18px !important; } }
+        @media (max-width: 640px) { .after-desc { font-size: 11px !important; line-height: 1.5 !important; } }
       `}</style>
     </div>
   )
