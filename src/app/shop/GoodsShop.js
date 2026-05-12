@@ -137,7 +137,7 @@ export default function GoodsShop() {
           goods={orderTarget}
           onClose={() => setOrderTarget(null)}
           onComplete={() => setOrderTarget(null)}
-          onAddToCart={(item) => { addToCart(item); requireLogin(() => { setOrderTarget(null) }, '/cart-checkout') }}
+          onAddToCart={(item) => { addToCart(item); setOrderTarget(null) }}
           onLoginRequired={() => { setOrderTarget(null); setLoginRedirect('/shop'); setShowLoginPrompt(true) }}
           isLoggedIn={isLoggedIn}
         />
@@ -176,6 +176,7 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart, onLoginRequired, 
   })
   const [layerPath, setLayerPath] = useState([])
   const [optionsSelected, setOptionsSelected] = useState({})
+  const [step, setStep] = useState('select')
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
@@ -345,23 +346,16 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart, onLoginRequired, 
             <p style={{ fontSize: 14, color: '#555', marginBottom: 24 }}>完了メールを送信いたしますのでご確認ください。</p>
             <button onClick={onComplete} style={{ padding: '10px 28px', borderRadius: 10, border: 'none', background: '#1a3560', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>閉じる</button>
           </div>
-        ) : (
-          <form onSubmit={submit} style={{ padding: '20px 24px 24px' }}>
 
-            {/* === 選択肢（最初に表示） === */}
+        ) : step === 'select' ? (
+          <div style={{ padding: '20px 24px 24px' }}>
+            {/* 選択肢 */}
             {isLayers && (
               <div style={{ marginBottom: 18 }}>
-                <LayerOptionPicker
-                  options={goods.options}
-                  value={layerPath}
-                  onChange={setLayerPath}
-                />
-                {hasOptions && !isLayersComplete && (
-                  <p style={{ fontSize: 12, color: '#c62828', marginTop: 6 }}>⚠ 全ての選択肢を選んでください</p>
-                )}
+                <LayerOptionPicker options={goods.options} value={layerPath} onChange={setLayerPath} />
+                {hasOptions && !isLayersComplete && <p style={{ fontSize: 12, color: '#c62828', marginTop: 6 }}>⚠ 全ての選択肢を選んでください</p>}
               </div>
             )}
-
             {!isLayers && optionGroups.map((group, i) => {
               if (group.type === 'models' && group.model_choices) {
                 const sel = optionsSelected[group.name]
@@ -410,9 +404,7 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart, onLoginRequired, 
                     {(group.choices || []).map(rawChoice => {
                       const choice = typeof rawChoice === 'string' ? { name: rawChoice, stock: -1 } : rawChoice
                       const soldOut = choice.stock === 0
-                      const selected = group.multiple
-                        ? (optionsSelected[group.name] || []).includes(choice.name)
-                        : optionsSelected[group.name] === choice.name
+                      const selected = group.multiple ? (optionsSelected[group.name] || []).includes(choice.name) : optionsSelected[group.name] === choice.name
                       return (
                         <button key={choice.name} type="button" disabled={soldOut}
                           onClick={() => {
@@ -434,65 +426,65 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart, onLoginRequired, 
               )
             })}
 
-            {/* 選択肢と購入者情報の区切り */}
-            {hasOptions && (
-              <div style={{ borderTop: '1px solid #f0f0f0', margin: '4px 0 18px' }} />
-            )}
-
-            {/* === 購入者情報 === */}
-            <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
-              <div style={{ flex: 1 }}>
-                <label style={lbl}>姓 *</label>
-                <input value={form.last_name} onChange={e => setForm(f => ({ ...f, last_name: e.target.value }))} placeholder="山田" required style={inp} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={lbl}>名</label>
-                <input value={form.first_name} onChange={e => setForm(f => ({ ...f, first_name: e.target.value }))} placeholder="太郎" style={inp} />
-              </div>
-            </div>
-            <div style={{ marginBottom: 14 }}>
-              <label style={lbl}>メールアドレス *</label>
-              <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="example@email.com" required style={inp} />
-            </div>
-            <div style={{ marginBottom: 14 }}>
-              <label style={lbl}>電話番号（任意）</label>
-              <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="090-0000-0000" style={inp} />
-            </div>
-            <div style={{ marginBottom: 14 }}>
-              <label style={lbl}>SNS URL（任意）</label>
-              <input type="url" value={form.sns_url} onChange={e => setForm(f => ({ ...f, sns_url: e.target.value }))} placeholder="https://instagram.com/..." style={inp} />
-            </div>
-            {isDelivery && (
-              <>
-                <div style={{ marginBottom: 10 }}>
-                  <label style={lbl}>郵便番号 *</label>
-                  <input value={form.postal_code} onChange={e => setForm(f => ({ ...f, postal_code: e.target.value }))} onBlur={e => fetchAddressByZip(e.target.value, setForm)} placeholder="000-0000" style={{ ...inp, maxWidth: 140 }} />
-                </div>
-                <div style={{ marginBottom: 10 }}>
-                  <label style={lbl}>都道府県 *</label>
-                  <input value={form.prefecture} onChange={e => setForm(f => ({ ...f, prefecture: e.target.value }))} placeholder="東京都" style={{ ...inp, maxWidth: 160 }} />
-                </div>
-                <div style={{ marginBottom: 10 }}>
-                  <label style={lbl}>市区町村 *</label>
-                  <input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} placeholder="渋谷区〇〇" style={inp} />
-                </div>
-                <div style={{ marginBottom: 10 }}>
-                  <label style={lbl}>番地 *</label>
-                  <input value={form.street_address} onChange={e => setForm(f => ({ ...f, street_address: e.target.value }))} placeholder="1-2-3" style={inp} />
-                </div>
-                <div style={{ marginBottom: 14 }}>
-                  <label style={lbl}>建物名・部屋番号（任意）</label>
-                  <input value={form.building} onChange={e => setForm(f => ({ ...f, building: e.target.value }))} placeholder="〇〇マンション 101号室" style={inp} />
-                </div>
-              </>
-            )}
-
+            {/* 数量 */}
             <div style={{ marginBottom: 14 }}>
               <label style={lbl}>数量</label>
               <input type="number" min="1" max={maxQty} value={form.quantity}
                 onChange={e => setForm(f => ({ ...f, quantity: Math.max(1, Math.min(maxQty, Number(e.target.value))) }))}
                 style={{ ...inp, width: 100 }} />
             </div>
+
+            <div style={{ background: '#f5f5f7', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 14, color: '#555' }}>合計</span>
+              <span style={{ fontSize: 18, fontWeight: 700, color: '#1a3560' }}>¥{totalPrice.toLocaleString()}</span>
+            </div>
+
+            {hasOptions && !isSelectionsComplete && (
+              <div style={{ background: '#ffebee', color: '#c62828', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 14 }}>
+                ⚠ 全ての選択肢を選んでください
+              </div>
+            )}
+
+            <button type="button" disabled={hasOptions && !isSelectionsComplete}
+              onClick={() => {
+                if (hasOptions && !isSelectionsComplete) return
+                if (isLoggedIn !== true) { onLoginRequired?.(); return }
+                setStep('form')
+              }}
+              style={{ width: '100%', padding: 14, borderRadius: 10, border: 'none', background: (hasOptions && !isSelectionsComplete) ? '#ccc' : '#1a3560', color: '#fff', fontWeight: 700, fontSize: 16, cursor: (hasOptions && !isSelectionsComplete) ? 'not-allowed' : 'pointer', marginBottom: 10 }}>
+              注文する
+            </button>
+            <button type="button" disabled={hasOptions && !isSelectionsComplete}
+              onClick={() => { if (hasOptions && !isSelectionsComplete) return; onAddToCart(buildCartItem()) }}
+              style={{ width: '100%', padding: 12, borderRadius: 10, border: `2px solid ${(hasOptions && !isSelectionsComplete) ? '#ddd' : '#1a3560'}`, background: '#fff', color: (hasOptions && !isSelectionsComplete) ? '#bbb' : '#1a3560', fontWeight: 700, fontSize: 15, cursor: (hasOptions && !isSelectionsComplete) ? 'not-allowed' : 'pointer' }}>
+              🛒 カートに入れる
+            </button>
+          </div>
+
+        ) : (
+          <form onSubmit={submit} style={{ padding: '20px 24px 24px' }}>
+            <button type="button" onClick={() => setStep('select')}
+              style={{ background: 'none', border: 'none', color: '#1a3560', fontSize: 13, cursor: 'pointer', padding: '0 0 16px', display: 'flex', alignItems: 'center', gap: 4 }}>
+              ← 選択に戻る
+            </button>
+
+            <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
+              <div style={{ flex: 1 }}><label style={lbl}>姓 *</label><input value={form.last_name} onChange={e => setForm(f => ({ ...f, last_name: e.target.value }))} placeholder="山田" required style={inp} /></div>
+              <div style={{ flex: 1 }}><label style={lbl}>名</label><input value={form.first_name} onChange={e => setForm(f => ({ ...f, first_name: e.target.value }))} placeholder="太郎" style={inp} /></div>
+            </div>
+            <div style={{ marginBottom: 14 }}><label style={lbl}>メールアドレス *</label><input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="example@email.com" required style={inp} /></div>
+            <div style={{ marginBottom: 14 }}><label style={lbl}>電話番号（任意）</label><input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="090-0000-0000" style={inp} /></div>
+            <div style={{ marginBottom: 14 }}><label style={lbl}>SNS URL（任意）</label><input type="url" value={form.sns_url} onChange={e => setForm(f => ({ ...f, sns_url: e.target.value }))} placeholder="https://instagram.com/..." style={inp} /></div>
+
+            {isDelivery && (
+              <>
+                <div style={{ marginBottom: 10 }}><label style={lbl}>郵便番号 *</label><input value={form.postal_code} onChange={e => setForm(f => ({ ...f, postal_code: e.target.value }))} onBlur={e => fetchAddressByZip(e.target.value, setForm)} placeholder="000-0000" style={{ ...inp, maxWidth: 140 }} /></div>
+                <div style={{ marginBottom: 10 }}><label style={lbl}>都道府県 *</label><input value={form.prefecture} onChange={e => setForm(f => ({ ...f, prefecture: e.target.value }))} placeholder="東京都" style={{ ...inp, maxWidth: 160 }} /></div>
+                <div style={{ marginBottom: 10 }}><label style={lbl}>市区町村 *</label><input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} placeholder="渋谷区〇〇" style={inp} /></div>
+                <div style={{ marginBottom: 10 }}><label style={lbl}>番地 *</label><input value={form.street_address} onChange={e => setForm(f => ({ ...f, street_address: e.target.value }))} placeholder="1-2-3" style={inp} /></div>
+                <div style={{ marginBottom: 14 }}><label style={lbl}>建物名・部屋番号（任意）</label><input value={form.building} onChange={e => setForm(f => ({ ...f, building: e.target.value }))} placeholder="〇〇マンション 101号室" style={inp} /></div>
+              </>
+            )}
 
             {goods.payment_method === 'both' && (
               <div style={{ marginBottom: 14 }}>
@@ -507,12 +499,7 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart, onLoginRequired, 
                 </div>
               </div>
             )}
-
-            {selectedPayment === 'cash' && (
-              <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 8, padding: 12, fontSize: 13, color: '#1565c0', marginBottom: 14 }}>
-                💴 受け取り時にお支払いください。
-              </div>
-            )}
+            {selectedPayment === 'cash' && <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 8, padding: 12, fontSize: 13, color: '#1565c0', marginBottom: 14 }}>💴 受け取り時にお支払いください。</div>}
             {selectedPayment === 'card' && (
               <div style={{ marginBottom: 14 }}>
                 <div id="card-container-shop" style={{ minHeight: 90 }}></div>
@@ -520,35 +507,18 @@ function OrderModal({ goods, onClose, onComplete, onAddToCart, onLoginRequired, 
               </div>
             )}
 
-            <div style={{ marginBottom: 18 }}>
-              <label style={lbl}>備考・ご要望（任意）</label>
-              <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="ご質問・ご要望などあればご記入ください" style={{ ...inp, resize: 'vertical' }} />
-            </div>
+            <div style={{ marginBottom: 18 }}><label style={lbl}>備考・ご要望（任意）</label><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="ご質問・ご要望などあればご記入ください" style={{ ...inp, resize: 'vertical' }} /></div>
 
             <div style={{ background: '#f5f5f7', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 14, color: '#555' }}>合計</span>
               <span style={{ fontSize: 18, fontWeight: 700, color: '#1a3560' }}>¥{totalPrice.toLocaleString()}</span>
             </div>
 
-            {error && (
-              <div style={{ background: '#ffebee', color: '#c62828', borderRadius: 8, padding: '10px 14px', fontSize: 14, marginBottom: 14 }}>{error}</div>
-            )}
-            {hasOptions && !isSelectionsComplete && (
-              <div style={{ background: '#ffebee', color: '#c62828', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 14 }}>
-                ⚠ 上の選択肢を全て選んでから注文できます
-              </div>
-            )}
+            {error && <div style={{ background: '#ffebee', color: '#c62828', borderRadius: 8, padding: '10px 14px', fontSize: 14, marginBottom: 14 }}>{error}</div>}
 
-            <button type="submit" disabled={submitting || (hasOptions && !isSelectionsComplete)}
-              style={{ width: '100%', padding: 14, borderRadius: 10, border: 'none', background: (submitting || (hasOptions && !isSelectionsComplete)) ? '#ccc' : '#1a3560', color: '#fff', fontWeight: 700, fontSize: 16, cursor: (submitting || (hasOptions && !isSelectionsComplete)) ? 'not-allowed' : 'pointer', marginBottom: 10 }}>
+            <button type="submit" disabled={submitting}
+              style={{ width: '100%', padding: 14, borderRadius: 10, border: 'none', background: submitting ? '#ccc' : '#1a3560', color: '#fff', fontWeight: 700, fontSize: 16, cursor: submitting ? 'not-allowed' : 'pointer' }}>
               {submitting ? '送信中...' : selectedPayment === 'card' ? '決済して注文する' : '注文する'}
-            </button>
-
-            <button type="button"
-              disabled={hasOptions && !isSelectionsComplete}
-              onClick={() => { if (hasOptions && !isSelectionsComplete) return; if (isLoggedIn !== true) { onLoginRequired?.(); return } onAddToCart(buildCartItem()) }}
-              style={{ width: '100%', padding: 12, borderRadius: 10, border: `2px solid ${(hasOptions && !isSelectionsComplete) ? '#ddd' : '#1a3560'}`, background: '#fff', color: (hasOptions && !isSelectionsComplete) ? '#bbb' : '#1a3560', fontWeight: 700, fontSize: 15, cursor: (hasOptions && !isSelectionsComplete) ? 'not-allowed' : 'pointer' }}>
-              🛒 カートに入れる
             </button>
           </form>
         )}
