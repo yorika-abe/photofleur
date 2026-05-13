@@ -219,8 +219,8 @@ export default function AdminBookingsPage() {
           .bk-card-main { padding:10px 12px; gap:6px; }
           .bk-name-col { min-width:0; flex:1; }
           .bk-date-col { min-width:0; font-size:12px; }
-          .bk-model-col { display:none; }
-          .bk-slot-col { display:none; }
+          .bk-model-col { min-width:0; font-size:11px; }
+          .bk-slot-col { min-width:0; font-size:11px; }
           .bk-price-col { min-width:0; font-size:13px; }
         }
       `}</style>
