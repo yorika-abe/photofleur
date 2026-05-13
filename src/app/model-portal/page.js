@@ -359,7 +359,8 @@ export default function ModelPortalHome() {
         )}
 
         {/* メニュー */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 32 }}>
+        <style>{`@media (max-width: 640px) { .mp-menu-grid { grid-template-columns: repeat(2, 1fr) !important; } }`}</style>
+        <div className="mp-menu-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 32 }}>
           {(isAdminView ? [
             { href: `/admin/models/${adminModelId}`, icon: '✏️', label: 'プロフィール編集', desc: '管理者用モデル編集' },
             { href: `/model-portal/bookings?model_id=${adminModelId}`, icon: '📋', label: '予約状況', desc: 'このモデルの予約一覧' },
