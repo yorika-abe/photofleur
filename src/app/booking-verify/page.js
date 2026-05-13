@@ -218,6 +218,65 @@ async function SingleTokenView({ token, supabase }) {
     )
   }
 
+  // event_product_bookings（特別予約）を確認
+  const { data: epb } = await supabase
+    .from('event_product_bookings')
+    .select('id, customer_name, customer_email, customer_phone, final_price, payment_method, selections, product_id, event_id')
+    .eq('qr_token', token)
+    .single()
+
+  if (epb) {
+    const [{ data: product }, { data: event }] = await Promise.all([
+      supabase.from('event_products').select('name, price').eq('id', epb.product_id).single().catch(() => ({ data: null })),
+      supabase.from('events').select('event_date, location_name').eq('id', epb.event_id).single().catch(() => ({ data: null })),
+    ])
+    const isCard = epb.payment_method === 'card'
+    return (
+      <div style={{ maxWidth: 480, margin: '0 auto', padding: '32px 16px', fontFamily: 'sans-serif' }}>
+        <div style={{ background: '#e8f5e9', border: '2px solid #4caf50', borderRadius: 16, padding: '20px', marginBottom: 24, textAlign: 'center' }}>
+          <div style={{ fontSize: 32, marginBottom: 6 }}>✓</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#2e7d32' }}>予約確認済み</div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+          <div style={{ background: '#0d1f3a', borderRadius: 14, padding: '18px 16px', gridColumn: '1 / -1' }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', marginBottom: 6 }}>お名前</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>{epb.customer_name}</div>
+          </div>
+          <div style={{ background: '#1a3560', borderRadius: 14, padding: '18px 16px' }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', marginBottom: 6 }}>料金</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>¥{Number(epb.final_price || 0).toLocaleString()}</div>
+          </div>
+          <div style={{ background: isCard ? '#1b5e20' : '#b71c1c', borderRadius: 14, padding: '18px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ fontSize: 30 }}>{isCard ? '💳' : '💴'}</div>
+            <div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>支払い</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>{isCard ? 'クレジット済み' : '現金払い'}</div>
+            </div>
+          </div>
+        </div>
+        <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 14, padding: '20px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+            <tbody>
+              {[
+                ['商品名', product?.name || '—'],
+                ['開催日', event?.event_date ? formatDate(event.event_date) : '—'],
+                ['場所', event?.location_name || '—'],
+                ['電話番号', epb.customer_phone || '—'],
+                ['メール', epb.customer_email || '—'],
+              ].map(([label, value]) => (
+                <tr key={label} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                  <td style={{ padding: '10px 0', color: '#888', width: '35%', fontSize: 13 }}>{label}</td>
+                  <td style={{ padding: '10px 0', fontWeight: 600, color: '#333', wordBreak: 'break-all', fontSize: 13 }}>{value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p style={{ textAlign: 'center', fontSize: 11, color: '#ccc', marginTop: 20 }}>予約ID: {epb.id}</p>
+      </div>
+    )
+  }
+
   // private_bookings を確認
   const { data: pb } = await supabase
     .from('private_bookings')
