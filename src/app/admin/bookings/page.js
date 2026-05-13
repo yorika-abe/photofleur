@@ -430,7 +430,7 @@ export default function AdminBookingsPage() {
                       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                         {b.qr_token ? (
                           <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(b.qr_token)}`}
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(`${process.env.NEXT_PUBLIC_BASE_URL}/booking-verify?token=${b.qr_token}`)}`}
                             alt="QR"
                             style={{ width: 100, height: 100, borderRadius: 6, border: '1px solid #e5e5e5', flexShrink: 0 }}
                           />
