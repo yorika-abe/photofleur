@@ -92,6 +92,7 @@ export default function ModelPhotosPage() {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 16px' }}>
+      <style>{`@media (max-width: 640px) { .mp-photos-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; } }`}</style>
       <Link href="/model-portal" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← モデルポータル</Link>
       <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: '12px 0 8px' }}>📸 ご提供いただいた写真</h1>
       <p style={{ fontSize: 12, color: '#aaa', marginBottom: 24 }}>※ご提供から2ヶ月で自動消去されます</p>
@@ -105,7 +106,7 @@ export default function ModelPhotosPage() {
               <p style={{ fontSize: 12, fontWeight: 700, color: '#1a3560', letterSpacing: '0.08em', marginBottom: 12 }}>
                 新着 {newPhotos.length}件
               </p>
-              <div style={grid}>
+              <div className="mp-photos-grid" style={grid}>
                 {newPhotos.map(p => <PhotoCard key={p.id} p={p} onExpand={setExpanded} />)}
               </div>
             </div>
@@ -120,7 +121,7 @@ export default function ModelPhotosPage() {
                 {showAll ? '▲ 閉じる' : `▼ 全て見る（${seenPhotos.length}件）`}
               </button>
               {showAll && (
-                <div style={grid}>
+                <div className="mp-photos-grid" style={grid}>
                   {seenPhotos.map(p => <PhotoCard key={p.id} p={p} onExpand={setExpanded} />)}
                 </div>
               )}
