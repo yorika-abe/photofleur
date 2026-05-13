@@ -452,7 +452,29 @@ export default function AdminBookingStatusPage() {
         .adm-tab { padding:10px 20px; font-weight:600; font-size:15px; white-space:nowrap; }
         .ev-scroll-row { display:flex; gap:8px; overflow-x:auto; flex-wrap:nowrap; padding-bottom:4px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
         .ev-scroll-row::-webkit-scrollbar { display:none; }
-        @media(max-width:640px){ .adm-tab { padding:8px 14px; font-size:13px; } }
+        .adm-btable { border-collapse:collapse; width:100%; font-size:13px; }
+        .adm-btable .col-model { padding:8px 14px; white-space:nowrap; position:sticky; left:0; z-index:1; }
+        .adm-btable .col-tier { padding:6px; text-align:center; }
+        .adm-btable .col-slot { padding:10px 8px; text-align:center; white-space:nowrap; min-width:105px; font-weight:600; font-size:12px; }
+        .adm-btable .cell-slot { padding:8px; text-align:center; }
+        .adm-btable .cell-model { padding:8px 14px; font-weight:700; white-space:nowrap; position:sticky; left:0; z-index:1; }
+        .adm-ftable { border-collapse:collapse; font-size:13px; }
+        .adm-ftable th, .adm-ftable td { border:1px solid #eee; }
+        .adm-ftable .ft-label { padding:8px 14px; font-weight:700; white-space:nowrap; }
+        .adm-ftable .ft-val { padding:8px 20px; text-align:center; }
+        @media(max-width:640px){
+          .adm-tab { padding:8px 12px; font-size:12px; }
+          .adm-btable { font-size:11px; }
+          .adm-btable .col-model { padding:6px 8px; min-width:60px !important; }
+          .adm-btable .col-tier { min-width:28px !important; }
+          .adm-btable .col-slot { padding:6px 4px; min-width:68px !important; font-size:10px; }
+          .adm-btable .cell-slot { padding:5px 3px; }
+          .adm-btable .cell-slot span { font-size:10px !important; }
+          .adm-btable .cell-model { padding:5px 8px; font-size:11px; }
+          .adm-ftable { font-size:12px; width:100%; }
+          .adm-ftable .ft-label { padding:7px 10px; }
+          .adm-ftable .ft-val { padding:7px 12px; }
+        }
       `}</style>
       <div className="adm-tabs">
         <button onClick={() => { setShowHistory(false); setShowNonEvent(false) }}
@@ -1010,13 +1032,13 @@ export default function AdminBookingStatusPage() {
 
                     {/* 予約グリッド */}
                     <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid #ddd' }}>
-                      <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 13 }}>
+                      <table className="adm-btable">
                         <thead>
                           <tr style={{ background: '#1a3560', color: '#fff' }}>
-                            <th style={{ padding: '10px 14px', textAlign: 'left', whiteSpace: 'nowrap', minWidth: 110, position: 'sticky', left: 0, background: '#1a3560', zIndex: 1 }}>モデル</th>
-                            <th style={{ padding: '10px 8px', textAlign: 'center', whiteSpace: 'nowrap', fontSize: 11, fontWeight: 400, minWidth: 54 }}>区分</th>
+                            <th className="col-model" style={{ textAlign: 'left', minWidth: 110, background: '#1a3560' }}>モデル</th>
+                            <th className="col-tier" style={{ whiteSpace: 'nowrap', fontSize: 11, fontWeight: 400, minWidth: 54 }}>区分</th>
                             {currentItem.timeSlots.map(label => (
-                              <th key={label} style={{ padding: '10px 8px', textAlign: 'center', whiteSpace: 'nowrap', minWidth: 105, fontWeight: 600, fontSize: 12 }}>{label}</th>
+                              <th key={label} className="col-slot">{label}</th>
                             ))}
                           </tr>
                         </thead>
@@ -1025,34 +1047,35 @@ export default function AdminBookingStatusPage() {
                             const tier = TIER_META[row.model.price_tier]
                             const isNewGroup = row.model.price_tier !== prevTier
                             prevTier = row.model.price_tier
+                            const rowBg = rowIdx % 2 === 0 ? '#fff' : '#fafafa'
                             return (
                               <tr key={row.model.id}
-                                style={{ borderTop: isNewGroup && rowIdx > 0 ? '2px solid #aaa' : '1px solid #e5e5e5', background: rowIdx % 2 === 0 ? '#fff' : '#fafafa' }}>
-                                <td style={{ padding: '8px 14px', fontWeight: 700, color: '#1a3560', whiteSpace: 'nowrap', position: 'sticky', left: 0, background: rowIdx % 2 === 0 ? '#fff' : '#fafafa', zIndex: 1 }}>
+                                style={{ borderTop: isNewGroup && rowIdx > 0 ? '2px solid #aaa' : '1px solid #e5e5e5', background: rowBg }}>
+                                <td className="cell-model" style={{ color: '#1a3560', background: rowBg }}>
                                   {row.model.name}
                                 </td>
-                                <td style={{ padding: '6px', textAlign: 'center' }}>
+                                <td className="col-tier">
                                   {tier && <span style={{ fontSize: 10, background: tier.bg, color: tier.color, borderRadius: 3, padding: '2px 5px', fontWeight: 700 }}>{tier.label}</span>}
                                 </td>
                                 {currentItem.timeSlots.map(label => {
                                   const cell = row.cells[label]
-                                  if (!cell) return <td key={label} style={{ padding: '8px', textAlign: 'center', background: '#f0f0f0' }}>—</td>
+                                  if (!cell) return <td key={label} className="cell-slot" style={{ background: '#f0f0f0' }}>—</td>
                                   const booking = cell.booking
                                   if (!booking) {
                                     return (
-                                      <td key={label} style={{ padding: '8px', textAlign: 'center', background: '#e3f2fd' }}>
-                                        <span style={{ fontSize: 20 }}>🈳</span>
+                                      <td key={label} className="cell-slot" style={{ background: '#e3f2fd' }}>
+                                        <span style={{ fontSize: 18 }}>🈳</span>
                                       </td>
                                     )
                                   }
                                   const isCard = booking.payment_method === 'card'
                                   return (
-                                    <td key={label} style={{ padding: '6px 8px', textAlign: 'center', background: isCard ? '#e8f5e9' : '#fce4ec', cursor: 'pointer' }}
+                                    <td key={label} className="cell-slot" style={{ background: isCard ? '#e8f5e9' : '#fce4ec', cursor: 'pointer' }}
                                       onClick={() => setSelectedBooking({ ...booking, modelName: row.model.name, slotLabel: label })}>
-                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
-                                        <span style={{ fontSize: 13 }}>{isCard ? '🟢' : '❌'}</span>
-                                        <span style={{ fontSize: 12, fontWeight: 600, color: '#333' }}>{booking.nickname || booking.last_name}</span>
-                                        {booking.sns_url && <span style={{ fontSize: 11 }}>🔗</span>}
+                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                                        <span style={{ fontSize: 12 }}>{isCard ? '🟢' : '❌'}</span>
+                                        <span style={{ fontSize: 11, fontWeight: 600, color: '#333' }}>{booking.nickname || booking.last_name}</span>
+                                        {booking.sns_url && <span style={{ fontSize: 10 }}>🔗</span>}
                                       </div>
                                     </td>
                                   )
@@ -1114,21 +1137,21 @@ export default function AdminBookingStatusPage() {
                         </button>
                       </div>
                       <div style={{ overflowX: 'auto' }}>
-                        <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+                        <table className="adm-ftable">
                           <thead>
                             <tr>
-                              <th style={{ padding: '6px 14px', textAlign: 'left', fontWeight: 600, color: '#888', background: '#f8f8f8', borderRadius: '4px 0 0 4px', border: '1px solid #eee' }}></th>
+                              <th className="ft-label" style={{ textAlign: 'left', fontWeight: 600, color: '#888', background: '#f8f8f8', borderRadius: '4px 0 0 4px' }}></th>
                               {['45分', '60分', '90分'].map(d => (
-                                <th key={d} style={{ padding: '6px 20px', textAlign: 'center', fontWeight: 600, color: '#555', background: '#f8f8f8', border: '1px solid #eee' }}>{d}</th>
+                                <th key={d} className="ft-val" style={{ fontWeight: 600, color: '#555', background: '#f8f8f8' }}>{d}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody>
                             {[['12000', '#fce4ec', '#c2185b'], ['9900', '#e0f2f1', '#00695c'], ['8900', '#e3f2fd', '#1565c0']].map(([tier, bg, color]) => (
                               <tr key={tier}>
-                                <td style={{ padding: '8px 14px', fontWeight: 700, color, background: bg, border: '1px solid #eee', whiteSpace: 'nowrap' }}>{tier}モデル</td>
+                                <td className="ft-label" style={{ fontWeight: 700, color, background: bg }}>{tier}モデル</td>
                                 {['45', '60', '90'].map(dur => (
-                                  <td key={dur} style={{ padding: '8px 20px', textAlign: 'center', border: '1px solid #eee' }}>
+                                  <td key={dur} className="ft-val">
                                     {editFees ? (
                                       <input type="number" min="0" value={fees[tier]?.[dur] ?? 0}
                                         onChange={e => updateFee(tier, dur, e.target.value)}
