@@ -241,12 +241,13 @@ export default function AdminSalesPage() {
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
       <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-      <div style={{ display: 'flex', gap: 0, margin: '14px 0 28px', borderBottom: '2px solid #e5e5e5' }}>
-        <Link href="/admin/booking-status" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>予約状況</Link>
-        <Link href="/admin/bookings" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>予約・販売一覧</Link>
-        <div style={{ padding: '10px 24px', fontWeight: 700, fontSize: 15, color: '#1a3560', borderBottom: '2px solid #1a3560', marginBottom: -2, cursor: 'default' }}>売上管理</div>
-        <Link href="/admin/booking-status?tab=nonevent" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>イベント外収益</Link>
-        <Link href="/admin/booking-status?tab=history" style={{ padding: '10px 24px', fontWeight: 600, fontSize: 15, color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>履歴</Link>
+      <style>{`.adm-tabs { display:flex; gap:0; margin:14px 0 28px; border-bottom:2px solid #e5e5e5; overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; scrollbar-width:none; } .adm-tabs::-webkit-scrollbar{display:none} .adm-tab { padding:10px 20px; font-weight:600; font-size:15px; white-space:nowrap; flex-shrink:0; } @media(max-width:640px){ .adm-tab { padding:10px 12px; font-size:13px; } }`}</style>
+      <div className="adm-tabs">
+        <Link href="/admin/booking-status" className="adm-tab" style={{ color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>予約状況</Link>
+        <Link href="/admin/bookings" className="adm-tab" style={{ color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>予約・販売一覧</Link>
+        <div className="adm-tab" style={{ fontWeight: 700, color: '#1a3560', borderBottom: '2px solid #1a3560', marginBottom: -2, cursor: 'default' }}>売上管理</div>
+        <Link href="/admin/booking-status?tab=nonevent" className="adm-tab" style={{ color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>イベント外収益</Link>
+        <Link href="/admin/booking-status?tab=history" className="adm-tab" style={{ color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>履歴</Link>
       </div>
 
       {/* 年次売上 */}
