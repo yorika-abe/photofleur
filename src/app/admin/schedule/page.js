@@ -240,6 +240,14 @@ export default function AdminSchedulePage() {
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 16px' }}>
+      <style>{`
+        .sched-desktop { display: flex; }
+        .sched-mobile { display: none !important; }
+        @media (max-width: 640px) {
+          .sched-desktop { display: none !important; }
+          .sched-mobile { display: block !important; }
+        }
+      `}</style>
       <Link href="/admin" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0 20px' }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: '#2f2244', margin: 0 }}>スケジュール管理</h1>
@@ -351,8 +359,78 @@ export default function AdminSchedulePage() {
           const isPast = tab === 'past'
 
           return (
-            <div key={ev.id} style={{ background: '#fff', borderRadius: 12, padding: '16px 20px', border: '1px solid #e5e5e5', opacity: isPast ? 0.85 : 1 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+            <div key={ev.id} style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', opacity: isPast ? 0.85 : 1 }}>
+
+              {/* Mobile layout */}
+              <div className="sched-mobile" style={{ padding: '12px 14px' }}>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  {ev.main_image && (
+                    <img src={ev.main_image} alt="" style={{ width: 60, height: 60, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* Buttons row */}
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
+                      <span style={{ background: typeColor.bg, color: typeColor.color, borderRadius: 4, padding: '2px 7px', fontSize: 11, fontWeight: 600, flexShrink: 0 }}>{typeLabel}</span>
+                      {isPast ? (
+                        <>
+                          <button onClick={() => reuseEvent(ev)} disabled={reusing === ev.id}
+                            style={{ background: '#e8f0fe', color: '#1a3560', border: 'none', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
+                            {reusing === ev.id ? '作成中...' : '再使用'}
+                          </button>
+                          <Link href={`/admin/schedule/${ev.id}`}
+                            style={{ background: '#f5f5f5', color: '#555', textDecoration: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 11, fontWeight: 600 }}>
+                            編集
+                          </Link>
+                          <button onClick={() => deleteEvent(ev.id)}
+                            style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
+                            削除
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => toggleStatus(ev)}
+                            style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: '1.5px solid', borderColor: isActive ? '#388e3c' : '#ccc', borderRadius: 20, padding: '4px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 700, color: isActive ? '#388e3c' : '#aaa' }}>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: isActive ? '#388e3c' : '#ccc', display: 'inline-block' }} />
+                            {isActive ? '表示中' : '非表示'}
+                          </button>
+                          {isActive && (
+                            <button onClick={() => toggleFeatured(ev)}
+                              style={{ background: 'none', border: '1.5px solid', borderColor: ev.is_featured ? '#f59e0b' : '#e5e5e5', borderRadius: 20, padding: '4px 8px', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}>
+                              {ev.is_featured ? '⭐️' : '☆'}
+                            </button>
+                          )}
+                          <Link href={`/admin/schedule/${ev.id}`}
+                            style={{ background: '#2f2244', color: '#fff', textDecoration: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 11, fontWeight: 600 }}>
+                            編集
+                          </Link>
+                          <button onClick={() => deleteEvent(ev.id)}
+                            style={{ background: '#fce4ec', color: '#c62828', border: 'none', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
+                            削除
+                          </button>
+                        </>
+                      )}
+                    </div>
+                    {/* Date + title row */}
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, overflow: 'hidden' }}>
+                      <span style={{ fontWeight: 700, fontSize: 13, color: '#2f2244', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        {formatDate(ev.event_date)}{ev.event_end_date && ev.event_end_date !== ev.event_date ? `〜${formatDate(ev.event_end_date)}` : ''}
+                      </span>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: '#2f2244', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {ev.title || ev.location_name}
+                      </span>
+                    </div>
+                    {/* Subtitle */}
+                    {ev.location_name && (
+                      <div style={{ fontSize: 11, color: '#888', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {ev.location_name}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Desktop layout */}
+              <div className="sched-desktop" style={{ padding: '16px 20px', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', gap: 14, flex: 1, minWidth: 0 }}>
                   {ev.main_image && (
                     <div style={{ flexShrink: 0, width: 72, height: 72, borderRadius: 8, overflow: 'hidden', background: '#f0f4fb' }}>
