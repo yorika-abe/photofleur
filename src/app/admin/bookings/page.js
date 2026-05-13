@@ -211,6 +211,10 @@ export default function AdminBookingsPage() {
         .bk-model-col { font-size:13px; color:#555; min-width:80px; }
         .bk-slot-col { font-size:13px; color:#555; min-width:80px; }
         .bk-price-col { font-weight:700; font-size:14px; color:#2f2244; min-width:80px; text-align:right; }
+        .bk-detail { padding:16px 18px; border-top:1px solid #f0f0f0; background:#fafafa; display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; }
+        .bk-detail-rows { font-size:13px; color:#444; line-height:2.2; }
+        .bk-detail-row { display:flex; gap:6px; align-items:baseline; }
+        .bk-detail-label { color:#888; min-width:72px; flex-shrink:0; font-size:12px; }
         @media(max-width:640px){
           .adm-tab { padding:8px 10px; font-size:12px; }
           .bk-filters { gap:6px; }
@@ -222,6 +226,9 @@ export default function AdminBookingsPage() {
           .bk-model-col { min-width:0; font-size:11px; }
           .bk-slot-col { min-width:0; font-size:11px; }
           .bk-price-col { min-width:0; font-size:13px; }
+          .bk-detail { padding:12px 10px; gap:10px; grid-template-columns:1fr 1fr; }
+          .bk-detail-rows { line-height:1.7; font-size:12px; }
+          .bk-detail-label { min-width:52px; font-size:11px; }
         }
       `}</style>
       <div className="adm-tabs">
@@ -317,65 +324,61 @@ export default function AdminBookingsPage() {
 
                 {/* Expanded detail */}
                 {isExpanded && (
-                  <div style={{ padding: '16px 18px', borderTop: '1px solid #f0f0f0', background: '#fafafa', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+                  <div className="bk-detail">
                     <div>
-                      <div style={{ fontSize: 11, color: '#999', marginBottom: 8, fontWeight: 600 }}>お客様情報</div>
-                      <div style={{ fontSize: 13, color: '#444', lineHeight: 2.2 }}>
-                        <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>氏名</span>{isEP ? b.customer_name : `${b.last_name} ${b.first_name}`}</div>
-                        {!isEP && b.last_name_kana && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>ふりがな</span>{b.last_name_kana} {b.first_name_kana}</div>}
-                        <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>メール</span>{b.email}</div>
-                        {b.phone && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>電話</span>{b.phone}</div>}
-                        {b.sns_url && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>SNS</span><a href={b.sns_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2f2244' }}>{b.sns_url.replace('https://', '')}</a></div>}
-                        {isPrivate && b.notes && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>備考</span>{b.notes}</div>}
+                      <div style={{ fontSize: 11, color: '#999', marginBottom: 6, fontWeight: 600 }}>お客様情報</div>
+                      <div className="bk-detail-rows">
+                        <div className="bk-detail-row"><span className="bk-detail-label">氏名</span>{isEP ? b.customer_name : `${b.last_name} ${b.first_name}`}</div>
+                        {!isEP && b.last_name_kana && <div className="bk-detail-row"><span className="bk-detail-label">ふりがな</span>{b.last_name_kana} {b.first_name_kana}</div>}
+                        <div className="bk-detail-row"><span className="bk-detail-label">メール</span><span style={{ wordBreak: 'break-all' }}>{b.email}</span></div>
+                        {b.phone && <div className="bk-detail-row"><span className="bk-detail-label">電話</span>{b.phone}</div>}
+                        {b.sns_url && <div className="bk-detail-row"><span className="bk-detail-label">SNS</span><a href={b.sns_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2f2244', wordBreak: 'break-all' }}>{b.sns_url.replace('https://', '')}</a></div>}
+                        {isPrivate && b.notes && <div className="bk-detail-row"><span className="bk-detail-label">備考</span>{b.notes}</div>}
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: 11, color: '#999', marginBottom: 8, fontWeight: 600 }}>予約内容</div>
-                      <div style={{ fontSize: 13, color: '#444', lineHeight: 2.2 }}>
+                      <div style={{ fontSize: 11, color: '#999', marginBottom: 6, fontWeight: 600 }}>予約内容</div>
+                      <div className="bk-detail-rows">
                         {isPrivate ? (
                           <>
-                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>商品</span>{b.product?.title}</div>
-                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>モデル</span>{b.model?.name || '—'}</div>
-                            {b.event_date_input && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>開催日</span>{b.event_date_input}</div>}
-                            {b.meeting_place && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>集合場所</span>{b.meeting_place}</div>}
-                            {b.shooting_time && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>撮影時間</span>{b.shooting_time}</div>}
-                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>支払</span>{b.payment_method === 'card' ? 'カード決済' : '当日現金'}</div>
-                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>金額</span>¥{price.toLocaleString()}</div>
+                            <div className="bk-detail-row"><span className="bk-detail-label">商品</span>{b.product?.title}</div>
+                            <div className="bk-detail-row"><span className="bk-detail-label">モデル</span>{b.model?.name || '—'}</div>
+                            {b.event_date_input && <div className="bk-detail-row"><span className="bk-detail-label">開催日</span>{b.event_date_input}</div>}
+                            {b.meeting_place && <div className="bk-detail-row"><span className="bk-detail-label">集合場所</span>{b.meeting_place}</div>}
+                            {b.shooting_time && <div className="bk-detail-row"><span className="bk-detail-label">撮影時間</span>{b.shooting_time}</div>}
+                            <div className="bk-detail-row"><span className="bk-detail-label">支払</span>{b.payment_method === 'card' ? 'カード' : '当日現金'}</div>
+                            <div className="bk-detail-row"><span className="bk-detail-label">金額</span>¥{price.toLocaleString()}</div>
                           </>
                         ) : isGoods ? (
                           <>
-                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>商品</span>{b.product?.title || '—'}</div>
-                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>数量</span>{b.quantity || 1}個</div>
-                            {b.options_selected && (
-                              <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>選択肢</span>
-                                {b.options_selected._label || Object.entries(b.options_selected).filter(([k]) => k !== '_label').map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('/') : v}`).join(' / ')}
-                              </div>
-                            )}
-                            {b.delivery_address && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>配送先</span><span style={{ whiteSpace: 'pre-wrap' }}>{b.delivery_address}</span></div>}
-                            {b.sns_url && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>SNS</span><a href={b.sns_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2f2244' }}>{b.sns_url.replace('https://', '')}</a></div>}
-                            {b.notes && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>備考</span>{b.notes}</div>}
-                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>支払</span>{b.payment_method === 'card' ? 'カード決済' : '当日現金'}</div>
-                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>金額</span>¥{price.toLocaleString()}</div>
+                            <div className="bk-detail-row"><span className="bk-detail-label">商品</span>{b.product?.title || '—'}</div>
+                            <div className="bk-detail-row"><span className="bk-detail-label">数量</span>{b.quantity || 1}個</div>
+                            {b.options_selected && <div className="bk-detail-row"><span className="bk-detail-label">選択肢</span>{b.options_selected._label || Object.entries(b.options_selected).filter(([k]) => k !== '_label').map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join('/') : v}`).join(' / ')}</div>}
+                            {b.delivery_address && <div className="bk-detail-row"><span className="bk-detail-label">配送先</span><span style={{ whiteSpace: 'pre-wrap' }}>{b.delivery_address}</span></div>}
+                            {b.sns_url && <div className="bk-detail-row"><span className="bk-detail-label">SNS</span><a href={b.sns_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2f2244', wordBreak: 'break-all' }}>{b.sns_url.replace('https://', '')}</a></div>}
+                            {b.notes && <div className="bk-detail-row"><span className="bk-detail-label">備考</span>{b.notes}</div>}
+                            <div className="bk-detail-row"><span className="bk-detail-label">支払</span>{b.payment_method === 'card' ? 'カード' : '当日現金'}</div>
+                            <div className="bk-detail-row"><span className="bk-detail-label">金額</span>¥{price.toLocaleString()}</div>
                           </>
                         ) : isEP ? (
                           <>
-                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>商品</span>{b.product?.name || '—'}</div>
-                            {b.event?.event_date && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>開催日</span>{b.event.event_date}{b.event?.location_name ? ` ${b.event.location_name}` : ''}</div>}
+                            <div className="bk-detail-row"><span className="bk-detail-label">商品</span>{b.product?.name || '—'}</div>
+                            {b.event?.event_date && <div className="bk-detail-row"><span className="bk-detail-label">開催日</span>{b.event.event_date}{b.event?.location_name ? ` ${b.event.location_name}` : ''}</div>}
                             {Object.entries(b.selections || {}).filter(([k]) => k !== 'delivery_address' && k !== '_final_price').map(([k, v]) => (
-                              <div key={k}><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>{k}</span>{Array.isArray(v) ? v.join(', ') : v}</div>
+                              <div key={k} className="bk-detail-row"><span className="bk-detail-label">{k}</span>{Array.isArray(v) ? v.join(', ') : v}</div>
                             ))}
-                            {b.selections?.delivery_address && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>配送先</span><span style={{ whiteSpace: 'pre-wrap' }}>{b.selections.delivery_address}</span></div>}
-                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>支払</span>{b.payment_method === 'card' ? 'カード決済' : '当日現金'}</div>
-                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>金額</span>¥{price.toLocaleString()}</div>
+                            {b.selections?.delivery_address && <div className="bk-detail-row"><span className="bk-detail-label">配送先</span><span style={{ whiteSpace: 'pre-wrap' }}>{b.selections.delivery_address}</span></div>}
+                            <div className="bk-detail-row"><span className="bk-detail-label">支払</span>{b.payment_method === 'card' ? 'カード' : '当日現金'}</div>
+                            <div className="bk-detail-row"><span className="bk-detail-label">金額</span>¥{price.toLocaleString()}</div>
                           </>
                         ) : (
                           <>
-                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>イベント</span>{b.event?.event_date} {b.event?.location_name}</div>
-                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>モデル</span>{b.model?.name}</div>
-                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>時間枠</span>{b.slot?.slot_label}</div>
-                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>撮影場所</span>{b.is_outdoor ? '屋外' : '屋内'}</div>
-                            {b.payment_method && <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>支払</span>{b.payment_method === 'card' ? '💳 カード決済' : '💴 当日現金'}</div>}
-                            <div><span style={{ color: '#888', minWidth: 80, display: 'inline-block' }}>金額</span>¥{price.toLocaleString()}</div>
+                            <div className="bk-detail-row"><span className="bk-detail-label">イベント</span>{b.event?.event_date} {b.event?.location_name}</div>
+                            <div className="bk-detail-row"><span className="bk-detail-label">モデル</span>{b.model?.name}</div>
+                            <div className="bk-detail-row"><span className="bk-detail-label">時間枠</span>{b.slot?.slot_label}</div>
+                            <div className="bk-detail-row"><span className="bk-detail-label">撮影場所</span>{b.is_outdoor ? '屋外' : '屋内'}</div>
+                            {b.payment_method && <div className="bk-detail-row"><span className="bk-detail-label">支払</span>{b.payment_method === 'card' ? '💳カード' : '💴現金'}</div>}
+                            <div className="bk-detail-row"><span className="bk-detail-label">金額</span>¥{price.toLocaleString()}</div>
                           </>
                         )}
                       </div>
