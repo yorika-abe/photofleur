@@ -72,7 +72,7 @@ export default async function AdminPage() {
           .admin-wrap { padding: 16px 12px; }
           .admin-title { font-size: 20px !important; }
           .admin-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
-          .admin-btn-label { font-size: clamp(10px, 3vw, 12px) !important; }
+          .admin-btn-label { font-size: clamp(13px, 3.8vw, 15px) !important; }
         }
       `}</style>
       <div className="admin-grid">
