@@ -21,6 +21,7 @@ export default function AdminCouponsPage() {
     count: '5', discount_type: 'fixed', discount_value: '', max_uses: '1', valid_from: '', valid_until: '', description: '', is_active: true,
   })
   const [randomResult, setRandomResult] = useState(null) // created codes
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => { load() }, [])
 
@@ -297,10 +298,10 @@ export default function AdminCouponsPage() {
               <div style={{ background: '#f8f8f8', borderRadius: 8, padding: 16, marginBottom: 16, fontFamily: 'monospace', fontSize: 13, lineHeight: 2 }}>
                 {randomResult.map(code => <div key={code}>{code}</div>)}
               </div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => navigator.clipboard.writeText(randomResult.join('\n'))}
-                  style={{ background: '#f0f0f0', border: 'none', borderRadius: 8, padding: '9px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-                  📋 コピー
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <button onClick={async () => { await navigator.clipboard.writeText(randomResult.join('\n')); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
+                  style={{ background: copied ? '#e8f5e9' : '#f0f0f0', border: 'none', borderRadius: 8, padding: '9px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: copied ? '#388e3c' : '#333' }}>
+                  {copied ? '✅ コピー完了' : '📋 コピー'}
                 </button>
                 <button onClick={closeForm}
                   style={{ background: purple, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
