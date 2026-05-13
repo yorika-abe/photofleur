@@ -166,15 +166,23 @@ export default function AdminModelsPage() {
         </div>
       )}
 
+      <style>{`
+        @media (max-width: 640px) {
+          .mdl-header { flex-direction: column !important; align-items: stretch !important; gap: 8px; }
+          .mdl-new-btn { margin-left: 0 !important; }
+          .mdl-status-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+          .mdl-status-tabs button { white-space: nowrap; flex-shrink: 0; }
+        }
+      `}</style>
       <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0 0' }}>
+      <div className="mdl-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0 0' }}>
         <ModelStaffTabs />
-        <Link href="/admin/models/new"
+        <Link href="/admin/models/new" className="mdl-new-btn"
           style={{ background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '10px 18px', fontWeight: 600, fontSize: 14, marginLeft: 16, whiteSpace: 'nowrap' }}>
           + 新規登録
         </Link>
       </div>
-      <div style={{ marginBottom: 28 }} />
+      <div style={{ marginBottom: 12 }} />
 
       {pending.length > 0 && tab !== 'pending' && (
         <div style={{ background: '#ffebee', border: '1px solid #ef9a9a', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#c62828', cursor: 'pointer' }}
@@ -183,7 +191,7 @@ export default function AdminModelsPage() {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: tab === 'active' ? 12 : 32 }}>
+      <div className="mdl-status-tabs" style={{ display: 'flex', gap: 8, marginBottom: tab === 'active' ? 12 : 24, marginTop: 12 }}>
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             style={{ padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 14, background: tab === t.key ? '#1a3560' : '#f0f0f0', color: tab === t.key ? '#fff' : '#555' }}>

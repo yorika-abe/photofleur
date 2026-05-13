@@ -13,7 +13,7 @@ const TABS = [
 export default function ModelStaffTabs({ badges = {} }) {
   const pathname = usePathname()
   return (
-    <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e5e5e5', flex: 1, overflowX: 'auto' }}>
+    <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e5e5e5', flex: 1, overflowX: 'auto', overflowY: 'hidden', minWidth: 0 }}>
       {TABS.map(tab => {
         const isActive = pathname === tab.href || (tab.href !== '/admin/models' ? false : pathname.startsWith('/admin/models/'))
         const badge = badges[tab.href]
