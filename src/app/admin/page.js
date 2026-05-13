@@ -53,10 +53,10 @@ export default async function AdminPage() {
   ])
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 40 }}>
-        <div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1a3560', marginBottom: 8, marginTop: 0 }}>管理ダッシュボード</h1>
+    <div className="admin-wrap">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, gap: 8 }}>
+        <div style={{ minWidth: 0 }}>
+          <h1 className="admin-title">管理ダッシュボード</h1>
           <p style={{ color: '#666', margin: 0, fontSize: 14 }}>PhotoFleur 運営管理パネル</p>
         </div>
         <AdminAvatarButton initialUrl={adminAvatarUrl} initialName={currentName} isOwner={isOwner} />
@@ -64,11 +64,15 @@ export default async function AdminPage() {
 
       {/* Quick links */}
       <style>{`
+        .admin-wrap { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+        .admin-title { font-size: 28px; font-weight: 700; color: #1a3560; margin-bottom: 8px; margin-top: 0; }
         .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 48px; }
-        .admin-btn-label { font-weight: 600; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .admin-btn-label { font-weight: 600; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
         @media (max-width: 640px) {
-          .admin-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
-          .admin-btn-label { font-size: clamp(10px, 3vw, 13px) !important; }
+          .admin-wrap { padding: 16px 12px; }
+          .admin-title { font-size: 20px !important; }
+          .admin-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+          .admin-btn-label { font-size: clamp(10px, 3vw, 12px) !important; }
         }
       `}</style>
       <div className="admin-grid">
