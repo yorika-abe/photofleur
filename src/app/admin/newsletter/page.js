@@ -1005,6 +1005,7 @@ export default function NewsletterPage() {
   return (
     <div className="nl-outer" style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f5f7fb' }}>
       <style>{`
+        .nl-vars-mobile { display: none; }
         @media (max-width: 640px) {
           .nl-outer { height: auto !important; min-height: 100dvh; }
           .nl-topbar { flex-wrap: wrap !important; padding: 8px 12px !important; gap: 6px !important; }
@@ -1012,10 +1013,17 @@ export default function NewsletterPage() {
           .nl-subject { width: 100% !important; order: 10; }
           .nl-panels { flex-direction: column !important; overflow: visible !important; height: auto !important; }
           .nl-left { width: 100% !important; flex-direction: row !important; overflow-x: auto !important; overflow-y: hidden !important;
-                     border-right: none !important; border-bottom: 1px solid #e0e8f0; height: auto !important; padding: 8px !important; gap: 6px; flex-shrink: 0 !important; }
+                     border-right: none !important; border-bottom: 1px solid #e0e8f0; height: auto !important;
+                     padding: 6px 8px !important; gap: 4px; flex-shrink: 0 !important; align-items: flex-start !important; }
           .nl-left-label { display: none !important; }
+          .nl-left-btn { width: auto !important; min-width: 52px !important; flex-shrink: 0 !important; margin-bottom: 0 !important; }
+          .nl-left-section { display: flex !important; flex-direction: row !important; gap: 4px; border-top: none !important;
+                             border-left: 1px solid #ececec !important; margin-top: 0 !important; padding-top: 0 !important;
+                             padding-left: 8px !important; flex-shrink: 0 !important; align-items: flex-start; }
+          .nl-left-fav-label { display: none !important; }
           .nl-center { overflow-y: auto !important; max-height: 70vh; }
           .nl-right { width: 100% !important; border-left: none !important; border-top: 1px solid #e0e8f0; flex-shrink: 0 !important; }
+          .nl-vars-mobile { display: block !important; }
         }
       `}</style>
       {/* Top bar */}
@@ -1118,20 +1126,20 @@ export default function NewsletterPage() {
         <div className="nl-left" style={{ width: 130, background: '#fff', borderRight: '1px solid #e0e8f0', padding: '12px 8px', overflowY: 'auto', flexShrink: 0 }}>
           <div className="nl-left-label" style={{ fontSize: 10, fontWeight: 700, color: '#999', marginBottom: 8, letterSpacing: '0.05em' }}>テンプレート</div>
           {TEMPLATE_DEFS.map(tmpl => (
-            <button key={tmpl.id} onClick={() => switchTemplate(tmpl.id)}
+            <button key={tmpl.id} onClick={() => switchTemplate(tmpl.id)} className="nl-left-btn"
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '8px 4px', marginBottom: 4, border: `1px solid ${activeTemplateId === tmpl.id ? '#1a3560' : '#e0e8f0'}`, borderRadius: 8, background: activeTemplateId === tmpl.id ? '#e8f0ff' : '#f8fbff', cursor: 'pointer', fontSize: 9, color: activeTemplateId === tmpl.id ? '#1a3560' : '#666', fontWeight: activeTemplateId === tmpl.id ? 700 : 500, gap: 3, textAlign: 'center', lineHeight: 1.3 }}>
               <span style={{ fontSize: 16 }}>{tmpl.icon}</span>
               {tmpl.name}
             </button>
           ))}
           {isNewsletter && (
-            <div style={{ borderTop: '1px solid #f0f0f0', marginTop: 12, paddingTop: 12 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#f5a623', marginBottom: 8, letterSpacing: '0.05em' }}>⭐ お気に入り</div>
+            <div className="nl-left-section" style={{ borderTop: '1px solid #f0f0f0', marginTop: 12, paddingTop: 12 }}>
+              <div className="nl-left-fav-label" style={{ fontSize: 10, fontWeight: 700, color: '#f5a623', marginBottom: 8, letterSpacing: '0.05em' }}>⭐ お気に入り</div>
               {savedNewsletters.length === 0 && (
                 <div style={{ fontSize: 9, color: '#ccc', textAlign: 'center', padding: '8px 0' }}>保存済みなし</div>
               )}
               {savedNewsletters.map(t => (
-                <div key={t.id} style={{ marginBottom: 5, border: '1px solid #ffe0a0', borderRadius: 7, overflow: 'hidden', background: '#fffdf5' }}>
+                <div key={t.id} style={{ marginBottom: 5, border: '1px solid #ffe0a0', borderRadius: 7, overflow: 'hidden', background: '#fffdf5', flexShrink: 0 }}>
                   <button onClick={() => loadSavedTemplate(t.id)}
                     style={{ width: '100%', padding: '6px 8px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 9, color: '#1a3560', fontWeight: 600, textAlign: 'left', lineHeight: 1.4 }}>
                     📄 {t.name}
@@ -1144,10 +1152,10 @@ export default function NewsletterPage() {
               ))}
             </div>
           )}
-          <div style={{ borderTop: '1px solid #f0f0f0', marginTop: 12, paddingTop: 12 }}>
+          <div className="nl-left-section" style={{ borderTop: '1px solid #f0f0f0', marginTop: 12, paddingTop: 12 }}>
             <div className="nl-left-label" style={{ fontSize: 10, fontWeight: 700, color: '#999', marginBottom: 8, letterSpacing: '0.05em' }}>ブロック追加</div>
             {BLOCK_TYPES.map(bt => (
-              <button key={bt.type} onClick={() => addRow(bt.type)}
+              <button key={bt.type} onClick={() => addRow(bt.type)} className="nl-left-btn"
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '8px 6px', marginBottom: 5, border: '1px solid #e0e8f0', borderRadius: 10, background: '#f8fbff', cursor: 'pointer', fontSize: 10, color: '#1a3560', fontWeight: 600, gap: 3 }}>
                 <span style={{ fontSize: 16 }}>{bt.icon}</span>
                 {bt.label}
@@ -1155,6 +1163,22 @@ export default function NewsletterPage() {
             ))}
           </div>
         </div>
+
+        {/* Mobile-only vars panel */}
+        {activeTemplDef?.vars?.length > 0 && (
+          <div className="nl-vars-mobile" style={{ padding: '10px 14px', background: '#f8fbff', borderBottom: '1px solid #e0e8f0', flexShrink: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#1a3560', marginBottom: 6 }}>使用できる変数</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {activeTemplDef.vars.map(v => (
+                <div key={v.key} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10 }}>
+                  <code style={{ background: '#e0eeff', color: '#1a3560', padding: '2px 5px', borderRadius: 4, fontSize: 10, userSelect: 'all' }}>{`{{${v.key}}}`}</code>
+                  <span style={{ color: '#666' }}>{v.desc}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: 9, color: '#bbb', marginTop: 6 }}>テキストブロックに入力すると送信時に自動置換されます</div>
+          </div>
+        )}
 
         {/* Center: canvas */}
         <div className="nl-center" style={{ flex: 1, overflowY: 'auto', padding: '24px 16px', background: '#f0f4fb' }} onClick={() => setSelection(null)}>

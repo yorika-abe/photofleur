@@ -53,7 +53,7 @@ export async function GET() {
 export async function PUT(req) {
   const supabase = await createSupabaseAdminClient()
   const { key, body } = await req.json()
-  if (!DEFAULTS[key]) return Response.json({ error: 'invalid key' }, { status: 400 })
+  if (key !== '_camera_broadcast_paused' && !DEFAULTS[key]) return Response.json({ error: 'invalid key' }, { status: 400 })
   await supabase.from('line_templates').upsert({ key, body, updated_at: new Date().toISOString() }, { onConflict: 'key' })
   return Response.json({ ok: true })
 }
