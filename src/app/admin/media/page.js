@@ -55,7 +55,8 @@ export default function AdminMediaPage() {
   const [trainingBgVideoPC, setTrainingBgVideoPC] = useState('')
   const [trainingBgVideoMobile, setTrainingBgVideoMobile] = useState('')
   const [ogpImages, setOgpImages] = useState({})
-  const [ogpCrop, setOgpCrop] = useState(null) // { src, key, oldUrl }
+  const [pwaIcon, setPwaIcon] = useState('')
+  const [ogpCrop, setOgpCrop] = useState(null) // { src, key, oldUrl, aspect, outputW, outputH, setter }
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
@@ -88,6 +89,7 @@ export default function AdminMediaPage() {
       const ogp = {}
       for (const { key } of OGP_PAGES) ogp[key] = data[key] || ''
       setOgpImages(ogp)
+      setPwaIcon(data.pwa_icon || '')
       setOnboardingPdfAbout(data.onboarding_pdf_about || '')
       setOnboardingPdfRegist(data.onboarding_pdf_regist || '')
       setStaffOnboardingPdfAbout(data.staff_onboarding_pdf_about || '')
@@ -204,15 +206,15 @@ export default function AdminMediaPage() {
     setUploadProgress(0)
   }
 
-  async function startOgpCrop(file, key, oldUrl) {
+  async function startOgpCrop(file, key, oldUrl, { aspect = 1200 / 630, outputW = 1200, outputH = 630, setter = null } = {}) {
     setCrop({ x: 0, y: 0 })
     setZoom(1)
-    setOgpCrop({ src: URL.createObjectURL(file), key, oldUrl })
+    setOgpCrop({ src: URL.createObjectURL(file), key, oldUrl, aspect, outputW, outputH, setter })
   }
 
   async function confirmOgpCrop() {
     if (!ogpCrop || !croppedAreaPixels) return
-    const { src, key, oldUrl } = ogpCrop
+    const { src, key, oldUrl, outputW, outputH, setter } = ogpCrop
     setOgpCrop(null)
     setUploading(key)
     setUploadProgress(0)
@@ -222,14 +224,18 @@ export default function AdminMediaPage() {
       })
       const { x, y, width, height } = croppedAreaPixels
       const canvas = document.createElement('canvas')
-      canvas.width = 1200; canvas.height = 630
-      canvas.getContext('2d').drawImage(img, x, y, width, height, 0, 0, 1200, 630)
+      canvas.width = outputW; canvas.height = outputH
+      canvas.getContext('2d').drawImage(img, x, y, width, height, 0, 0, outputW, outputH)
       URL.revokeObjectURL(src)
       const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.92))
-      const file = new File([blob], 'ogp.jpg', { type: 'image/jpeg' })
+      const file = new File([blob], `${key}.jpg`, { type: 'image/jpeg' })
       const path = `site/${key}-${Date.now()}.jpg`
       const url = await uploadWithProgress(file, path)
-      setOgpImages(prev => ({ ...prev, [key]: url }))
+      if (setter) {
+        setter(url)
+      } else {
+        setOgpImages(prev => ({ ...prev, [key]: url }))
+      }
       if (oldUrl) deleteFile(oldUrl)
     } catch (e) { alert('アップロードエラー: ' + e) }
     setUploading(null)
@@ -286,6 +292,7 @@ export default function AdminMediaPage() {
         training_bg_video_pc: trainingBgVideoPC,
         training_bg_video_mobile: trainingBgVideoMobile,
         ...ogpImages,
+        pwa_icon: pwaIcon,
         onboarding_pdf_about: onboardingPdfAbout,
         onboarding_pdf_regist: onboardingPdfRegist,
         staff_onboarding_pdf_about: staffOnboardingPdfAbout,
@@ -485,11 +492,11 @@ export default function AdminMediaPage() {
       {ogpCrop && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column' }}>
           <div style={{ flex: 1, position: 'relative' }}>
-            <Cropper image={ogpCrop.src} crop={crop} zoom={zoom} aspect={1200 / 630}
+            <Cropper image={ogpCrop.src} crop={crop} zoom={zoom} aspect={ogpCrop.aspect ?? 1200 / 630}
               onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={onCropComplete} />
           </div>
           <div style={{ background: '#1a1a2e', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, textAlign: 'center' }}>OGP推奨サイズ 1200×630px にトリミングされます</div>
+            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, textAlign: 'center' }}>{ogpCrop.outputW}×{ogpCrop.outputH}px にトリミングされます</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, whiteSpace: 'nowrap' }}>ズーム</span>
               <input type="range" min={1} max={3} step={0.01} value={zoom}
@@ -579,6 +586,25 @@ export default function AdminMediaPage() {
         {/* ── 共有画像設定(OGP) ── */}
         {tab === 'ogp' && (
           <>
+            <Section title="🏠 ホーム画面アイコン（PWA）" desc="スマホでサイトをホーム画面に追加したときに表示されるアイコンです。512×512px の正方形に自動リサイズされます。">
+              {pwaIcon && (
+                <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <img src={pwaIcon} alt="" style={{ width: 80, height: 80, borderRadius: 16, border: '1px solid #e5e5e5', objectFit: 'cover' }} />
+                  <button onClick={() => { deleteFile(pwaIcon); setPwaIcon('') }}
+                    style={{ background: 'none', border: '1px solid #ddd', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, color: '#888' }}>削除</button>
+                </div>
+              )}
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                📷 アイコンをアップロード
+                <input type="file" accept="image/*" style={{ display: 'none' }} disabled={!!uploading}
+                  onChange={e => {
+                    if (!e.target.files?.[0]) return
+                    startOgpCrop(e.target.files[0], 'pwa_icon', pwaIcon, { aspect: 1, outputW: 512, outputH: 512, setter: setPwaIcon })
+                    e.target.value = ''
+                  }} />
+              </label>
+              {uploading === 'pwa_icon' && <ProgressBar progress={uploadProgress} />}
+            </Section>
             <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#1565c0', marginBottom: 4 }}>
               LINEやX（Twitter）でURLをシェアした時に表示される画像です。推奨サイズ：<strong>1200×630px</strong>
             </div>
