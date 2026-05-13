@@ -439,7 +439,7 @@ const checkRow = { display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, 
 function VarsPanel({ templateVars }) {
   if (!templateVars?.length) return null
   return (
-    <div style={{ borderTop: '1px solid #e8f0f8', marginTop: 12, paddingTop: 12 }}>
+    <div className="nl-vars-desktop" style={{ borderTop: '1px solid #e8f0f8', marginTop: 12, paddingTop: 12 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: '#1a3560', marginBottom: 10 }}>使用できる変数</div>
       {templateVars.map(v => (
         <div key={v.key} style={{ marginBottom: 8 }}>
@@ -1012,7 +1012,7 @@ export default function NewsletterPage() {
           .nl-topbar > div[style*="flex: 1"] { display: none; }
           .nl-subject { width: 100% !important; order: 10; }
           .nl-panels { flex-direction: column !important; overflow: visible !important; height: auto !important; }
-          .nl-left { width: 100% !important; flex-direction: row !important; overflow-x: auto !important; overflow-y: hidden !important;
+          .nl-left { width: 100% !important; display: flex !important; flex-direction: row !important; overflow-x: auto !important; overflow-y: hidden !important;
                      border-right: none !important; border-bottom: 1px solid #e0e8f0; height: auto !important;
                      padding: 6px 8px !important; gap: 4px; flex-shrink: 0 !important; align-items: flex-start !important; }
           .nl-left-label { display: none !important; }
@@ -1024,6 +1024,7 @@ export default function NewsletterPage() {
           .nl-center { overflow-y: auto !important; max-height: 70vh; }
           .nl-right { width: 100% !important; border-left: none !important; border-top: 1px solid #e0e8f0; flex-shrink: 0 !important; }
           .nl-vars-mobile { display: block !important; }
+          .nl-vars-desktop { display: none !important; }
         }
       `}</style>
       {/* Top bar */}
