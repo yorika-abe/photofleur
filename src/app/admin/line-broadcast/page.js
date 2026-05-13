@@ -5,12 +5,12 @@ import Link from 'next/link'
 const MAX_CHARS = 500
 
 const TABS = [
-  { id: 'all', label: 'モデル全体', icon: '👥', from: 'モデフル', desc: 'モデル全体グループLINEに送信' },
-  { id: 'individual', label: 'モデル個人', icon: '👤', from: 'モデフル', desc: '1人のモデルを選んで個別グループLINEに送信' },
-  { id: 'zatsudan', label: '雑談', icon: '💬', from: 'モデフル', desc: '雑談グループLINEに送信' },
-  { id: 'staff', label: '受付スタッフ', icon: '🐈‍⬛', from: 'モデフル', desc: 'スタッフグループ・個人LINEに送信' },
-  { id: 'camera', label: '公式LINE', icon: '📣', from: 'photofleur公式', desc: '公式LINEの全フォロワーに一斉ブロードキャスト' },
-  { id: 'photographer', label: 'カメラマン個人', icon: '📸', from: 'photofleur公式（個人push）', desc: 'LINE連携済みカメラマンへ予約・購入時に個別通知' },
+  { id: 'all', label: 'モデル全体', mobileLines: ['モデル', '全体'], icon: '👥', from: 'モデフル', desc: 'モデル全体グループLINEに送信' },
+  { id: 'individual', label: 'モデル個人', mobileLines: ['モデル', '個人'], icon: '👤', from: 'モデフル', desc: '1人のモデルを選んで個別グループLINEに送信' },
+  { id: 'zatsudan', label: '雑談', mobileLines: ['雑談'], icon: '💬', from: 'モデフル', desc: '雑談グループLINEに送信' },
+  { id: 'staff', label: '受付スタッフ', mobileLines: ['受付', 'スタッフ'], icon: '🐈‍⬛', from: 'モデフル', desc: 'スタッフグループ・個人LINEに送信' },
+  { id: 'camera', label: '公式LINE', mobileLines: ['公式LINE'], icon: '📣', from: 'photofleur公式', desc: '公式LINEの全フォロワーに一斉ブロードキャスト' },
+  { id: 'photographer', label: 'カメラマン個人', mobileLines: ['カメラマン', '個人'], icon: '📸', from: 'photofleur公式（個人push）', desc: 'LINE連携済みカメラマンへ予約・購入時に個別通知' },
 ]
 
 function LinePreview({ message, accountName }) {
@@ -233,6 +233,15 @@ const INDIVIDUAL_TEMPLATES = [
   },
 ]
 
+const ZATSUDAN_TEMPLATES = [
+  {
+    key: 'birthday_msg',
+    label: '🎂 誕生日お祝いメッセージ',
+    trigger: '誕生日一覧の「手動送信」ボタンを押した時に自動挿入',
+    vars: [{ key: '○○ または {{name}}', desc: 'モデル名に自動置換されます' }],
+  },
+]
+
 function AutoTemplateSection({ templateDefs }) {
   const [templates, setTemplates] = useState(null)
   const [editing, setEditing] = useState({})
@@ -331,7 +340,7 @@ function TabAll() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div className="line-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ background: '#e3f2fd', borderRadius: 12, border: '1px solid #90caf9', padding: '14px 18px', fontSize: 13 }}>
             <div style={{ fontWeight: 700, color: '#1565c0', marginBottom: 4 }}>👥 モデル全体グループLINE</div>
@@ -358,7 +367,7 @@ function TabAll() {
           <SendButtons canSend={canSend} recipientLabel="モデル全体グループ" sending={sending} confirmed={confirmed}
             onConfirm={() => setConfirmed(true)} onSend={handleSend} onBack={() => setConfirmed(false)} />
         </div>
-        <div>
+        <div className="line-preview-col">
           <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
             <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>プレビュー</div>
             <LinePreview message={message} accountName="モデフル" />
@@ -395,7 +404,7 @@ function TabIndividual({ models }) {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+    <div className="line-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ background: '#fce4ec', borderRadius: 12, border: '1px solid #f48fb1', padding: '14px 18px', fontSize: 13 }}>
           <div style={{ fontWeight: 700, color: '#c2185b', marginBottom: 4 }}>👤 モデル個別グループLINE</div>
@@ -434,7 +443,7 @@ function TabIndividual({ models }) {
         <SendButtons canSend={canSend} recipientLabel={selectedModel?.name || '選択中のモデル'} sending={sending} confirmed={confirmed}
           onConfirm={() => setConfirmed(true)} onSend={handleSend} onBack={() => setConfirmed(false)} />
       </div>
-      <div>
+      <div className="line-preview-col">
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
           <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>プレビュー</div>
           <LinePreview message={message} accountName="モデフル" />
@@ -626,31 +635,21 @@ function LineSettingsPanel({ activeTab }) {
   )
 }
 
-const DEFAULT_BIRTHDAY_MSG = `今日は○○ちゃんの誕生日！\nお誕生日おめでとうございます💖\n素敵な1日になりますように❣️\n\nPhotoFleur運営`
-
 // ---- タブ3: 雑談（手動送信 + 誕生日お祝い） ----
 function TabZatsudan() {
-  // 手動送信
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
   const [result, setResult] = useState(null)
-  // 誕生日
   const [bdModels, setBdModels] = useState([])
   const [bdLoading, setBdLoading] = useState(true)
   const [bdSending, setBdSending] = useState(null)
   const [bdResults, setBdResults] = useState({})
-  const [bdTemplate, setBdTemplate] = useState(DEFAULT_BIRTHDAY_MSG)
-  const [bdTemplateSaving, setBdTemplateSaving] = useState(false)
-  const [bdTemplateSaved, setBdTemplateSaved] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/line-broadcast?type=birthdays')
       .then(r => r.json())
       .then(d => { setBdModels(d.models || []); setBdLoading(false) })
-    fetch('/api/admin/line-templates')
-      .then(r => r.json())
-      .then(d => { if (d.templates?.birthday_msg) setBdTemplate(d.templates.birthday_msg) })
   }, [])
 
   function getBirthdayInfo(birthday) {
@@ -682,20 +681,11 @@ function TabZatsudan() {
     setResult(res.ok && json.ok ? { ok: true } : { error: json.error || '送信に失敗しました' })
   }
 
-  async function saveBdTemplate() {
-    setBdTemplateSaving(true)
-    await fetch('/api/admin/line-templates', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: 'birthday_msg', body: bdTemplate }),
-    })
-    setBdTemplateSaving(false); setBdTemplateSaved(true)
-    setTimeout(() => setBdTemplateSaved(false), 2000)
-  }
-
   async function sendBirthday(model) {
     setBdSending(model.id)
-    const msg = bdTemplate.replace(/○○/g, model.name).replace(/{{name}}/g, model.name)
+    const tmplData = await fetch('/api/admin/line-templates').then(r => r.json())
+    const template = tmplData.templates?.birthday_msg || `今日は○○ちゃんの誕生日！\nお誕生日おめでとうございます💖\n素敵な1日になりますように❣️\n\nPhotoFleur運営`
+    const msg = template.replace(/○○/g, model.name).replace(/{{name}}/g, model.name)
     const res = await fetch('/api/admin/line-broadcast', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -711,7 +701,7 @@ function TabZatsudan() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* 手動送信 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div className="line-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ background: '#e8f5e9', borderRadius: 12, border: '1px solid #a5d6a7', padding: '14px 18px', fontSize: 13 }}>
             <div style={{ fontWeight: 700, color: '#2e7d32', marginBottom: 4 }}>💬 雑談グループへ手動送信</div>
@@ -735,7 +725,7 @@ function TabZatsudan() {
           <SendButtons canSend={canSend} recipientLabel="雑談グループ" sending={sending} confirmed={confirmed}
             onConfirm={() => setConfirmed(true)} onSend={handleSend} onBack={() => setConfirmed(false)} />
         </div>
-        <div>
+        <div className="line-preview-col">
           <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
             <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>プレビュー</div>
             <LinePreview message={message} accountName="モデフル" />
@@ -744,69 +734,41 @@ function TabZatsudan() {
         </div>
       </div>
 
-      {/* 誕生日お祝い */}
-      <div style={{ borderTop: '2px solid #f0f0f0', paddingTop: 24 }}>
-        <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560', marginBottom: 16 }}>🎂 誕生日お祝い送信</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 6 }}>お祝いメッセージテンプレート</div>
-              <div style={{ fontSize: 11, color: '#aaa', marginBottom: 8 }}>○○ または {'{{name}}'} がモデル名に置き換わります</div>
-              <textarea
-                value={bdTemplate}
-                onChange={e => setBdTemplate(e.target.value)}
-                rows={6}
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.7, fontFamily: 'inherit' }}
-              />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
-                {bdTemplateSaved && <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 600 }}>✅ 保存しました</span>}
-                <button onClick={saveBdTemplate} disabled={bdTemplateSaving}
-                  style={{ padding: '6px 16px', borderRadius: 8, border: 'none', background: bdTemplateSaving ? '#ccc' : '#1a3560', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-                  {bdTemplateSaving ? '保存中...' : '保存'}
-                </button>
-              </div>
-            </div>
-            <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 12 }}>モデル誕生日一覧（近い順）</div>
-              {bdLoading ? <p style={{ color: '#aaa', fontSize: 13 }}>読み込み中...</p>
-                : sorted.length === 0 ? <p style={{ color: '#aaa', fontSize: 13 }}>誕生日登録済みモデルがいません</p>
-                : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {sorted.map(m => {
-                      const { month, day, diff } = m.bdInfo
-                      const isToday = diff === 0
-                      const isSoon = diff <= 7
-                      return (
-                        <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: isToday ? '#ffebee' : isSoon ? '#fce4ec' : '#f8fbff', border: `1px solid ${isToday ? '#ef9a9a' : isSoon ? '#f48fb1' : '#e5e5e5'}` }}>
-                          <div style={{ flex: 1 }}>
-                            <span style={{ fontWeight: 700, fontSize: 14 }}>{m.name}</span>
-                            <span style={{ fontSize: 13, color: '#888', marginLeft: 8 }}>{month}/{day}</span>
-                            {isToday && <span style={{ marginLeft: 8, fontSize: 12, color: '#c62828', fontWeight: 700 }}>🎂 今日！</span>}
-                            {!isToday && isSoon && <span style={{ marginLeft: 8, fontSize: 12, color: '#c2185b' }}>あと{diff}日</span>}
-                          </div>
-                          {bdResults[m.id] === 'ok' ? <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 700 }}>✅ 送信済</span>
-                            : bdResults[m.id] === 'fail' ? <span style={{ fontSize: 12, color: '#c62828', fontWeight: 700 }}>❌ 失敗</span>
-                            : (
-                              <button onClick={() => sendBirthday(m)} disabled={bdSending === m.id}
-                                style={{ padding: '5px 12px', borderRadius: 7, border: 'none', background: '#06c755', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: bdSending === m.id ? 0.6 : 1 }}>
-                                {bdSending === m.id ? '送信中...' : '手動送信'}
-                              </button>
-                            )}
-                        </div>
-                      )
-                    })}
+      {/* 自動送信メッセージ（誕生日テンプレート含む） */}
+      <AutoTemplateSection templateDefs={ZATSUDAN_TEMPLATES} />
+
+      {/* 誕生日一覧 */}
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 12 }}>🎂 モデル誕生日一覧（近い順）</div>
+        {bdLoading ? <p style={{ color: '#aaa', fontSize: 13 }}>読み込み中...</p>
+          : sorted.length === 0 ? <p style={{ color: '#aaa', fontSize: 13 }}>誕生日登録済みモデルがいません</p>
+          : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {sorted.map(m => {
+                const { month, day, diff } = m.bdInfo
+                const isToday = diff === 0
+                const isSoon = diff <= 7
+                return (
+                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: isToday ? '#ffebee' : isSoon ? '#fce4ec' : '#f8fbff', border: `1px solid ${isToday ? '#ef9a9a' : isSoon ? '#f48fb1' : '#e5e5e5'}` }}>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontWeight: 700, fontSize: 14 }}>{m.name}</span>
+                      <span style={{ fontSize: 13, color: '#888', marginLeft: 8 }}>{month}/{day}</span>
+                      {isToday && <span style={{ marginLeft: 8, fontSize: 12, color: '#c62828', fontWeight: 700 }}>🎂 今日！</span>}
+                      {!isToday && isSoon && <span style={{ marginLeft: 8, fontSize: 12, color: '#c2185b' }}>あと{diff}日</span>}
+                    </div>
+                    {bdResults[m.id] === 'ok' ? <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 700 }}>✅ 送信済</span>
+                      : bdResults[m.id] === 'fail' ? <span style={{ fontSize: 12, color: '#c62828', fontWeight: 700 }}>❌ 失敗</span>
+                      : (
+                        <button onClick={() => sendBirthday(m)} disabled={bdSending === m.id}
+                          style={{ padding: '5px 12px', borderRadius: 7, border: 'none', background: '#06c755', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: bdSending === m.id ? 0.6 : 1 }}>
+                          {bdSending === m.id ? '送信中...' : '手動送信'}
+                        </button>
+                      )}
                   </div>
-                )}
+                )
+              })}
             </div>
-          </div>
-          <div>
-            <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>プレビュー（テンプレート）</div>
-              <LinePreview message={bdTemplate.replace(/○○/g, 'モデル名')} accountName="モデフル" />
-              <p style={{ fontSize: 11, color: '#aaa', marginTop: 10 }}>※ LINEはプレーンテキストのみ送信されます</p>
-            </div>
-          </div>
-        </div>
+          )}
       </div>
     </div>
   )
@@ -834,7 +796,7 @@ function TabCamera() {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+    <div className="line-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ background: '#e3f2fd', borderRadius: 12, border: '1px solid #90caf9', padding: '14px 18px', fontSize: 13 }}>
           <div style={{ fontWeight: 700, color: '#1a3560', marginBottom: 6 }}>📣 全フォロワーへのブロードキャスト</div>
@@ -862,7 +824,7 @@ function TabCamera() {
         <SendButtons canSend={canSend} recipientLabel="全フォロワー" sending={sending} confirmed={confirmed}
           onConfirm={() => setConfirmed(true)} onSend={handleSend} onBack={() => setConfirmed(false)} />
       </div>
-      <div>
+      <div className="line-preview-col">
         <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
           <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>プレビュー</div>
           <LinePreview message={message} accountName="PhotoFleur公式（カメラマン向け）" />
@@ -1040,7 +1002,7 @@ function TabStaff({ staff }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       {/* ── グループ送信 ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div className="line-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ background: '#f3f3f3', borderRadius: 12, border: '1px solid #ddd', padding: '14px 18px', fontSize: 13 }}>
             <div style={{ fontWeight: 700, color: '#333', marginBottom: 4 }}>🐈‍⬛ スタッフグループLINE</div>
@@ -1067,7 +1029,7 @@ function TabStaff({ staff }) {
           <SendButtons canSend={groupMsg.trim().length > 0} recipientLabel="スタッフグループ" sending={groupSending} confirmed={groupConfirmed}
             onConfirm={() => setGroupConfirmed(true)} onSend={handleGroupSend} onBack={() => setGroupConfirmed(false)} />
         </div>
-        <div>
+        <div className="line-preview-col">
           <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
             <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>プレビュー</div>
             <LinePreview message={groupMsg} accountName="モデフル" />
@@ -1080,7 +1042,7 @@ function TabStaff({ staff }) {
       <div style={{ borderTop: '2px solid #f0f0f0', paddingTop: 8 }} />
 
       {/* ── 個人送信 ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div className="line-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ background: '#f3f3f3', borderRadius: 12, border: '1px solid #ddd', padding: '14px 18px', fontSize: 13 }}>
             <div style={{ fontWeight: 700, color: '#333', marginBottom: 4 }}>🐈‍⬛ スタッフ個別グループLINE</div>
@@ -1119,7 +1081,7 @@ function TabStaff({ staff }) {
           <SendButtons canSend={indivMsg.trim().length > 0 && !!selectedId} recipientLabel={selectedStaff?.name || selectedStaff?.email || '選択中のスタッフ'} sending={indivSending} confirmed={indivConfirmed}
             onConfirm={() => setIndivConfirmed(true)} onSend={handleIndivSend} onBack={() => setIndivConfirmed(false)} />
         </div>
-        <div>
+        <div className="line-preview-col">
           <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 18px' }}>
             <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 14 }}>プレビュー</div>
             <LinePreview message={indivMsg} accountName="モデフル" />
@@ -1228,17 +1190,34 @@ export default function LineBroadcastPage() {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px' }}>
+      <style>{`
+        .line-preview-col { }
+        .tab-full { }
+        .tab-compact { display: none; }
+        @media (max-width: 640px) {
+          .line-grid { grid-template-columns: 1fr !important; }
+          .line-preview-col { display: none !important; }
+          .line-tabs-bar { overflow-x: auto !important; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch; }
+          .line-tab-btn { flex-shrink: 0 !important; padding: 6px 10px !important; }
+          .tab-full { display: none !important; }
+          .tab-compact { display: block !important; text-align: center; }
+        }
+      `}</style>
       <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '12px 0 20px' }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: 0 }}>💬 LINE送信管理</h1>
       </div>
 
       {/* タブ */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '2px solid #e0e8f0', paddingBottom: 0 }}>
+      <div className="line-tabs-bar" style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '2px solid #e0e8f0', paddingBottom: 0 }}>
         {TABS.map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)}
-            style={{ padding: '8px 16px', border: 'none', borderBottom: activeTab === t.id ? '3px solid #06c755' : '3px solid transparent', background: 'none', cursor: 'pointer', fontSize: 13, fontWeight: activeTab === t.id ? 700 : 500, color: activeTab === t.id ? '#1a3560' : '#888', borderRadius: '4px 4px 0 0', gap: 6 }}>
-            {t.icon} {t.label}
+          <button key={t.id} onClick={() => setActiveTab(t.id)} className="line-tab-btn"
+            style={{ padding: '8px 16px', border: 'none', borderBottom: activeTab === t.id ? '3px solid #06c755' : '3px solid transparent', background: 'none', cursor: 'pointer', fontSize: 13, fontWeight: activeTab === t.id ? 700 : 500, color: activeTab === t.id ? '#1a3560' : '#888', borderRadius: '4px 4px 0 0' }}>
+            <span className="tab-full">{t.icon} {t.label}</span>
+            <span className="tab-compact">
+              <span style={{ fontSize: 18, display: 'block' }}>{t.icon}</span>
+              {t.mobileLines.map((line, i) => <span key={i} style={{ display: 'block', fontSize: 10, lineHeight: 1.3 }}>{line}</span>)}
+            </span>
           </button>
         ))}
       </div>
