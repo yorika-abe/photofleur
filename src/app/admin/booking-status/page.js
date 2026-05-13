@@ -73,8 +73,23 @@ export default function AdminBookingStatusPage() {
   const [neExpandedGoods, setNeExpandedGoods] = useState(false)
   const [neExpandedCosts, setNeExpandedCosts] = useState(new Set())
   const [productHansellingMap, setProductHansellingMap] = useState({})
+  const [isOwner, setIsOwner] = useState(false)
 
   const todayStr = new Date().toISOString().split('T')[0]
+
+  useEffect(() => {
+    import('@supabase/ssr').then(({ createBrowserClient }) => {
+      const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user) return
+        supabase.from('user_profiles').select('role, roles').eq('id', user.id).single()
+          .then(({ data }) => {
+            const roles = data?.roles?.length > 0 ? data.roles : (data?.role ? [data.role] : [])
+            setIsOwner(roles.includes('owner') || data?.role === 'owner')
+          })
+      })
+    })
+  }, [])
 
   useEffect(() => {
     const tab = new URLSearchParams(window.location.search).get('tab')
@@ -517,10 +532,12 @@ export default function AdminBookingStatusPage() {
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
                               <span style={{ fontSize: 11, color: '#bbb' }}>保存日: {rec.savedAt ? new Date(rec.savedAt).toLocaleDateString('ja-JP') : '—'}</span>
-                              <button onClick={() => deleteNeHistory(month)}
-                                style={{ fontSize: 12, color: '#999', background: 'none', border: '1px solid #ddd', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}>
-                                履歴を削除
-                              </button>
+                              {isOwner && (
+                                <button onClick={() => deleteNeHistory(month)}
+                                  style={{ fontSize: 12, color: '#999', background: 'none', border: '1px solid #ddd', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}>
+                                  履歴を削除
+                                </button>
+                              )}
                             </div>
                           </div>
                         )}
@@ -782,14 +799,16 @@ export default function AdminBookingStatusPage() {
                   </div>
                 </div>
 
-                {/* 保存ボタン */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 32, gap: 10, alignItems: 'center' }}>
-                  {isSaved && <span style={{ fontSize: 13, color: '#c2185b', fontWeight: 600 }}>✓ 保存済み（売上管理に反映中）</span>}
-                  <button onClick={() => handleNeSave(month, stats)}
-                    style={{ background: '#c2185b', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 28px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-                    {isSaved ? '上書き保存して反映' : '保存して売上管理に反映'}
-                  </button>
-                </div>
+                {/* 保存ボタン（オーナーのみ） */}
+                {isOwner && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 32, gap: 10, alignItems: 'center' }}>
+                    {isSaved && <span style={{ fontSize: 13, color: '#c2185b', fontWeight: 600 }}>✓ 保存済み（売上管理に反映中）</span>}
+                    <button onClick={() => handleNeSave(month, stats)}
+                      style={{ background: '#c2185b', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 28px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                      {isSaved ? '上書き保存して反映' : '保存して売上管理に反映'}
+                    </button>
+                  </div>
+                )}
               </div>
             )
           })()}
@@ -874,11 +893,13 @@ export default function AdminBookingStatusPage() {
                         )}
                         <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: 11, color: '#bbb' }}>保存日: {rec.savedAt ? new Date(rec.savedAt).toLocaleDateString('ja-JP') : '—'}</span>
-                          <button
-                            onClick={() => deleteHistory(rec.eventId)}
-                            style={{ fontSize: 12, color: '#999', background: 'none', border: '1px solid #ddd', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}>
-                            履歴を削除
-                          </button>
+                          {isOwner && (
+                            <button
+                              onClick={() => deleteHistory(rec.eventId)}
+                              style={{ fontSize: 12, color: '#999', background: 'none', border: '1px solid #ddd', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}>
+                              履歴を削除
+                            </button>
+                          )}
                         </div>
                       </div>
                     )}
@@ -933,7 +954,7 @@ export default function AdminBookingStatusPage() {
               ) : currentItem.rows.length === 0 ? (
                 <div>
                   <p style={{ color: '#999', marginBottom: 16 }}>出演モデルがいません。</p>
-                  {isPastEvent && (
+                  {isPastEvent && isOwner && (
                     <button
                       onClick={() => {
                         if (!window.confirm('このイベントを要対応から消去しますか？')) return
@@ -1396,8 +1417,8 @@ export default function AdminBookingStatusPage() {
                       )
                     })()}
 
-                    {/* ボタン（過去イベントのみ） */}
-                    {isPastEvent && (
+                    {/* ボタン（過去イベントのみ・オーナーのみ） */}
+                    {isPastEvent && isOwner && (
                       <div style={{ marginTop: 16, marginBottom: 32, display: 'flex', justifyContent: 'flex-end' }}>
                         <button
                           onClick={() => handleSave(currentItem, revenue, productRevenue, labor, lunchTotal, grossProfit, slotHanselling, productHanselling)}
