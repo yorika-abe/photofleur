@@ -63,7 +63,15 @@ export default async function AdminPage() {
       </div>
 
       {/* Quick links */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 48 }}>
+      <style>{`
+        .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 48px; }
+        .admin-btn-label { font-weight: 600; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        @media (max-width: 640px) {
+          .admin-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+          .admin-btn-label { font-size: clamp(10px, 3vw, 13px) !important; }
+        }
+      `}</style>
+      <div className="admin-grid">
         {[
           { href: '/admin/bookings', label: '予約・売上管理', icon: '📋', badge: newBookings ?? 0 },
           { href: '/admin/models', label: 'モデル・スタッフ管理', icon: '👤', badge: (pendingModels ?? 0) + (pendingPrivateInfo ?? 0) },
@@ -86,11 +94,11 @@ export default async function AdminPage() {
           { href: '/admin/staff-recruit', label: 'スタッフ募集', icon: '🐈‍⬛', badge: pendingStaffApps ?? 0 },
         ].map(link => (
           <Link key={link.href} href={link.href} style={{ textDecoration: 'none' }}>
-            <div style={{ background: '#1a3560', color: '#fff', borderRadius: 12, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
-              <span style={{ fontSize: 24 }}>{link.icon}</span>
-              <span style={{ fontWeight: 600, fontSize: 16 }}>{link.label}</span>
+            <div style={{ background: '#1a3560', color: '#fff', borderRadius: 12, padding: '16px 14px', display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>{link.icon}</span>
+              <span className="admin-btn-label">{link.label}</span>
               {link.badge > 0 && (
-                <span style={{ marginLeft: 'auto', background: '#e53935', color: '#fff', borderRadius: 12, padding: '2px 8px', fontSize: 13, fontWeight: 700, minWidth: 24, textAlign: 'center' }}>
+                <span style={{ marginLeft: 'auto', background: '#e53935', color: '#fff', borderRadius: 12, padding: '2px 6px', fontSize: 12, fontWeight: 700, minWidth: 20, textAlign: 'center', flexShrink: 0 }}>
                   {link.badge}
                 </span>
               )}
