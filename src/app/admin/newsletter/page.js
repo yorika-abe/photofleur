@@ -1003,9 +1003,23 @@ export default function NewsletterPage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f5f7fb' }}>
+    <div className="nl-outer" style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f5f7fb' }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .nl-outer { height: auto !important; min-height: 100dvh; }
+          .nl-topbar { flex-wrap: wrap !important; padding: 8px 12px !important; gap: 6px !important; }
+          .nl-topbar > div[style*="flex: 1"] { display: none; }
+          .nl-subject { width: 100% !important; order: 10; }
+          .nl-panels { flex-direction: column !important; overflow: visible !important; height: auto !important; }
+          .nl-left { width: 100% !important; flex-direction: row !important; overflow-x: auto !important; overflow-y: hidden !important;
+                     border-right: none !important; border-bottom: 1px solid #e0e8f0; height: auto !important; padding: 8px !important; gap: 6px; flex-shrink: 0 !important; }
+          .nl-left-label { display: none !important; }
+          .nl-center { overflow-y: auto !important; max-height: 70vh; }
+          .nl-right { width: 100% !important; border-left: none !important; border-top: 1px solid #e0e8f0; flex-shrink: 0 !important; }
+        }
+      `}</style>
       {/* Top bar */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #e0e8f0', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+      <div className="nl-topbar" style={{ background: '#fff', borderBottom: '1px solid #e0e8f0', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
         <span style={{ fontWeight: 700, color: '#1a3560', fontSize: 15 }}>
           {activeTemplDef?.icon} {activeTemplDef?.name}
@@ -1014,7 +1028,7 @@ export default function NewsletterPage() {
         <div style={{ flex: 1 }} />
         <input value={subject} onChange={e => setSubject(e.target.value)}
           placeholder={isNewsletter ? '件名を入力' : '件名'}
-          style={{ width: 280, padding: '7px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 13 }} />
+          className="nl-subject" style={{ width: 240, padding: '7px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 13 }} />
         {isNewsletter ? (
           !confirmed ? (
             <div style={{ display: 'flex', gap: 8 }}>
@@ -1099,10 +1113,10 @@ export default function NewsletterPage() {
         </div>
       )}
 
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div className="nl-panels" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* Left: template selector + block palette */}
-        <div style={{ width: 130, background: '#fff', borderRight: '1px solid #e0e8f0', padding: '12px 8px', overflowY: 'auto', flexShrink: 0 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#999', marginBottom: 8, letterSpacing: '0.05em' }}>テンプレート</div>
+        <div className="nl-left" style={{ width: 130, background: '#fff', borderRight: '1px solid #e0e8f0', padding: '12px 8px', overflowY: 'auto', flexShrink: 0 }}>
+          <div className="nl-left-label" style={{ fontSize: 10, fontWeight: 700, color: '#999', marginBottom: 8, letterSpacing: '0.05em' }}>テンプレート</div>
           {TEMPLATE_DEFS.map(tmpl => (
             <button key={tmpl.id} onClick={() => switchTemplate(tmpl.id)}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '8px 4px', marginBottom: 4, border: `1px solid ${activeTemplateId === tmpl.id ? '#1a3560' : '#e0e8f0'}`, borderRadius: 8, background: activeTemplateId === tmpl.id ? '#e8f0ff' : '#f8fbff', cursor: 'pointer', fontSize: 9, color: activeTemplateId === tmpl.id ? '#1a3560' : '#666', fontWeight: activeTemplateId === tmpl.id ? 700 : 500, gap: 3, textAlign: 'center', lineHeight: 1.3 }}>
@@ -1131,7 +1145,7 @@ export default function NewsletterPage() {
             </div>
           )}
           <div style={{ borderTop: '1px solid #f0f0f0', marginTop: 12, paddingTop: 12 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#999', marginBottom: 8, letterSpacing: '0.05em' }}>ブロック追加</div>
+            <div className="nl-left-label" style={{ fontSize: 10, fontWeight: 700, color: '#999', marginBottom: 8, letterSpacing: '0.05em' }}>ブロック追加</div>
             {BLOCK_TYPES.map(bt => (
               <button key={bt.type} onClick={() => addRow(bt.type)}
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '8px 6px', marginBottom: 5, border: '1px solid #e0e8f0', borderRadius: 10, background: '#f8fbff', cursor: 'pointer', fontSize: 10, color: '#1a3560', fontWeight: 600, gap: 3 }}>
@@ -1143,7 +1157,7 @@ export default function NewsletterPage() {
         </div>
 
         {/* Center: canvas */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 16px', background: '#f0f4fb' }} onClick={() => setSelection(null)}>
+        <div className="nl-center" style={{ flex: 1, overflowY: 'auto', padding: '24px 16px', background: '#f0f4fb' }} onClick={() => setSelection(null)}>
           {templateLoading ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#aaa', fontSize: 15 }}>読み込み中...</div>
           ) : (
@@ -1212,7 +1226,7 @@ export default function NewsletterPage() {
         </div>
 
         {/* Right: editor panel */}
-        <div style={{ width: 270, background: '#fff', borderLeft: '1px solid #e0e8f0', overflowY: 'auto', flexShrink: 0 }}>
+        <div className="nl-right" style={{ width: 270, background: '#fff', borderLeft: '1px solid #e0e8f0', overflowY: 'auto', flexShrink: 0 }}>
           <RightPanel
             selection={selection}
             block={selectedBlock}
