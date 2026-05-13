@@ -442,7 +442,7 @@ export default function AdminBookingsPage() {
                             <button
                               onClick={() => cancelBooking(b)}
                               disabled={cancelling === b.id}
-                              style={{ background: cancelling === b.id ? '#ccc' : '#c62828', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px', cursor: cancelling === b.id ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13 }}>
+                              style={{ background: cancelling === b.id ? '#ccc' : '#c62828', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 10px', cursor: cancelling === b.id ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 11, whiteSpace: 'nowrap' }}>
                               {cancelling === b.id ? '送信中...' : '予約キャンセル・メール送信'}
                             </button>
                           )}
