@@ -10,6 +10,7 @@ export async function GET(req) {
 
   const cookieStore = await cookies()
   const mode = cookieStore.get('line_oauth_mode')?.value || 'login'
+  const next = cookieStore.get('line_oauth_next')?.value || ''
   cookieStore.delete('line_oauth_state')
   cookieStore.delete('line_oauth_next')
   cookieStore.delete('line_oauth_mode')
@@ -153,5 +154,9 @@ export async function GET(req) {
     return Response.redirect(`${siteUrl}/login?error=line_signin_failed`)
   }
 
-  return Response.redirect(linkData.properties.action_link)
+  const res = Response.redirect(linkData.properties.action_link)
+  if (next && next !== '/') {
+    res.headers.append('Set-Cookie', `line_after_login=${encodeURIComponent(next)}; Path=/; Max-Age=600; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`)
+  }
+  return res
 }

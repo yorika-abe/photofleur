@@ -40,6 +40,13 @@ function LineCompleteContent() {
     }
 
     async function redirectByRole(supabase, userId) {
+      const afterLogin = document.cookie.split('; ').find(r => r.startsWith('line_after_login='))?.split('=')[1]
+      if (afterLogin) {
+        document.cookie = 'line_after_login=; Path=/; Max-Age=0'
+        router.push(decodeURIComponent(afterLogin))
+        router.refresh()
+        return
+      }
       const { data: profile } = await supabase.from('user_profiles').select('roles, role').eq('id', userId).single()
       const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
       if (roles.includes('admin')) {
