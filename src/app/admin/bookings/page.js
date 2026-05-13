@@ -211,6 +211,14 @@ export default function AdminBookingsPage() {
         .bk-model-col { font-size:13px; color:#555; min-width:80px; }
         .bk-slot-col { font-size:13px; color:#555; min-width:80px; }
         .bk-price-col { font-weight:700; font-size:14px; color:#2f2244; min-width:80px; text-align:right; }
+        .bk-card-mobile { display:none; }
+        .bk-m-col1 { flex-shrink:0; max-width:90px; min-width:0; }
+        .bk-m-name { font-weight:700; font-size:12px; color:#2f2244; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .bk-m-col2 { flex:1; min-width:0; color:#555; }
+        .bk-m-info { font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.5; }
+        .bk-m-col3 { flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; gap:3px; }
+        .bk-m-badges { display:flex; gap:3px; flex-wrap:wrap; justify-content:flex-end; }
+        .bk-m-price { display:flex; align-items:center; gap:3px; font-weight:700; font-size:12px; color:#2f2244; }
         .bk-detail { padding:16px 18px; border-top:1px solid #f0f0f0; background:#fafafa; display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; }
         .bk-detail-rows { font-size:13px; color:#444; line-height:2.2; }
         .bk-detail-row { display:flex; gap:6px; align-items:baseline; }
@@ -220,12 +228,8 @@ export default function AdminBookingsPage() {
           .bk-filters { gap:6px; }
           .bk-filter-select { min-width:0; width:100%; }
           .bk-filter-input { min-width:0; width:100%; flex:none; }
-          .bk-card-main { padding:10px 12px; gap:6px; }
-          .bk-name-col { min-width:0; flex:1; }
-          .bk-date-col { min-width:0; font-size:12px; }
-          .bk-model-col { min-width:0; font-size:11px; }
-          .bk-slot-col { min-width:0; font-size:11px; }
-          .bk-price-col { min-width:0; font-size:13px; }
+          .bk-card-main { display:none !important; }
+          .bk-card-mobile { display:flex; align-items:center; gap:6px; padding:9px 10px; cursor:pointer; }
           .bk-detail { padding:12px 10px; gap:10px; grid-template-columns:1fr 1fr; }
           .bk-detail-rows { line-height:1.7; font-size:12px; }
           .bk-detail-label { min-width:52px; font-size:11px; }
@@ -320,6 +324,44 @@ export default function AdminBookingsPage() {
                   </div>
                   <div className="bk-price-col">¥{price.toLocaleString()}</div>
                   <div style={{ color: '#bbb', fontSize: 12 }}>{isExpanded ? '▲' : '▼'}</div>
+                </div>
+
+                {/* Mobile card row */}
+                <div onClick={() => setExpanded(isExpanded ? null : b.id)} className="bk-card-mobile">
+                  {/* Col1: 名前 */}
+                  <div className="bk-m-col1">
+                    <div className="bk-m-name" style={{ color: isCancelled ? '#999' : '#2f2244' }}>
+                      {b.name || `${b.last_name} ${b.first_name}`}
+                    </div>
+                    <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap', marginTop: 2 }}>
+                      {isCancelled && <span style={{ background: '#ffcdd2', color: '#c62828', borderRadius: 3, padding: '1px 4px', fontSize: 9, fontWeight: 700 }}>取消</span>}
+                      {isPrivate && <span style={{ background: '#fce4ec', color: '#c2185b', borderRadius: 3, padding: '1px 4px', fontSize: 9, fontWeight: 700 }}>非公開</span>}
+                      {isEP && <span style={{ background: '#e3f2fd', color: '#1565c0', borderRadius: 3, padding: '1px 4px', fontSize: 9, fontWeight: 700 }}>特別</span>}
+                      {isGoods && <span style={{ background: '#fff3e0', color: '#e65100', borderRadius: 3, padding: '1px 4px', fontSize: 9, fontWeight: 700 }}>グッズ</span>}
+                    </div>
+                  </div>
+                  {/* Col2: 日付＋モデル＋スロット */}
+                  <div className="bk-m-col2">
+                    <div className="bk-m-info">
+                      {b.event?.event_date ? formatDate(b.event.event_date) : ''}
+                      {b.model?.name ? `　${b.model.name}` : ''}
+                      {(isPrivate || isEP || isGoods)
+                        ? (b.product?.name || b.product?.title ? `　${b.product?.name || b.product?.title}` : '')
+                        : (b.slot?.slot_label ? `　${b.slot.slot_label}` : '')}
+                    </div>
+                  </div>
+                  {/* Col3: バッジ＋金額＋▼ */}
+                  <div className="bk-m-col3">
+                    <div className="bk-m-badges">
+                      {!isPrivate && !isEP && !isGoods && b.is_outdoor && <span style={{ background: '#e3f2fd', color: '#1565c0', borderRadius: 3, padding: '1px 4px', fontSize: 9, fontWeight: 600 }}>屋外</span>}
+                      {!isPrivate && !isGoods && <span style={{ background: b.event?.event_type === 'street' ? '#e8f5e9' : '#e3f2fd', color: b.event?.event_type === 'street' ? '#388e3c' : '#1a3560', borderRadius: 3, padding: '1px 4px', fontSize: 9, fontWeight: 600 }}>{b.event?.event_type === 'street' ? 'スト' : 'スタ'}</span>}
+                      {b.payment_method && <span style={{ background: b.payment_method === 'card' ? '#e3f2fd' : '#f1f8e9', color: b.payment_method === 'card' ? '#1565c0' : '#33691e', borderRadius: 3, padding: '1px 4px', fontSize: 9, fontWeight: 600 }}>{b.payment_method === 'card' ? '💳カード' : '💴現金'}</span>}
+                    </div>
+                    <div className="bk-m-price">
+                      ¥{price.toLocaleString()}
+                      <span style={{ color: '#bbb', fontSize: 10 }}>{isExpanded ? '▲' : '▼'}</span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Expanded detail */}
