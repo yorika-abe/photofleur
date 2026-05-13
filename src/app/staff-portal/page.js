@@ -126,9 +126,11 @@ function RecruitCard({ r, onApply, applying }) {
 }
 
 function ConfirmedCard({ r }) {
+  const indicator = getTypeIndicator(r)
   return (
-    <div style={{ background: '#f0faf0', border: '1px solid #a5d6a7', borderLeft: '4px solid #388e3c', borderRadius: 10, padding: '10px 14px' }}>
+    <div style={{ background: '#f0faf0', border: '1px solid #a5d6a7', borderLeft: '4px solid #388e3c', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
       <RecruitLabel r={r} />
+      <span style={{ fontSize: 11, color: '#666', whiteSpace: 'nowrap', flexShrink: 0 }}>{indicator.emoji} {indicator.label}</span>
     </div>
   )
 }
