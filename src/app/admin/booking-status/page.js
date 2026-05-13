@@ -56,6 +56,7 @@ export default function AdminBookingStatusPage() {
   const [eventProducts, setEventProducts] = useState([])
   const [productSales, setProductSales] = useState({})
   const [epBookings, setEpBookings] = useState([])
+  const [epListOpen, setEpListOpen] = useState(false)
   const [cancelTarget, setCancelTarget] = useState(null)
   const [showHistory, setShowHistory] = useState(false)
   const [historyRecords, setHistoryRecords] = useState([])
@@ -1129,9 +1130,13 @@ export default function AdminBookingStatusPage() {
                       />
                     )}
                     {epBookings.length > 0 && (
-                      <div style={{ marginTop: 16, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, padding: '16px 20px' }}>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 12 }}>特別予約商品 購入者一覧（{epBookings.filter(b => !b.cancelled_at).length}件）</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ marginTop: 16, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 12, overflow: 'hidden' }}>
+                        <button onClick={() => setEpListOpen(o => !o)}
+                          style={{ width: '100%', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                          <span style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>特別予約商品 購入者一覧（{epBookings.filter(b => !b.cancelled_at).length}件）</span>
+                          <span style={{ fontSize: 13, color: '#888' }}>{epListOpen ? '▲ 閉じる' : '▼ 開く'}</span>
+                        </button>
+                        {epListOpen && <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
                           {epBookings.map(b => (
                             <div key={b.id} style={{ border: '1px solid #e8f0fb', borderRadius: 8, padding: '10px 14px', background: b.cancelled_at ? '#fafafa' : '#f8fbff', fontSize: 13, opacity: b.cancelled_at ? 0.6 : 1 }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 6 }}>
@@ -1172,7 +1177,7 @@ export default function AdminBookingStatusPage() {
                               </div>
                             </div>
                           ))}
-                        </div>
+                        </div>}
                       </div>
                     )}
 
