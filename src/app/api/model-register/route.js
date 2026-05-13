@@ -2,12 +2,12 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req) {
   try {
-    const { name, email, password, token } = await req.json()
+    const { email, password, token } = await req.json()
 
     if (token !== process.env.MODEL_INVITE_TOKEN) {
       return Response.json({ error: '無効な招待リンクです' }, { status: 403 })
     }
-    if (!name || !email || !password) {
+    if (!email || !password) {
       return Response.json({ error: '必須項目が不足しています' }, { status: 400 })
     }
     if (password.length < 8) {
@@ -24,7 +24,6 @@ export async function POST(req) {
       email,
       password,
       email_confirm: true,
-      user_metadata: { name },
     })
 
     if (createError) {
@@ -39,7 +38,6 @@ export async function POST(req) {
     // Set user_profiles: model role + registered_via_invite
     await supabase.from('user_profiles').upsert({
       id: userId,
-      name,
       email,
       roles: ['model'],
       role: 'model',
@@ -50,7 +48,6 @@ export async function POST(req) {
     // Create models entry
     await supabase.from('models').insert({
       user_id: userId,
-      name,
       status: 'pending',
     })
 

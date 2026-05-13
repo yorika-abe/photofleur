@@ -9,7 +9,6 @@ function ModelRegisterForm() {
   const token = searchParams.get('token') || ''
   const router = useRouter()
 
-  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -40,7 +39,7 @@ function ModelRegisterForm() {
     const res = await fetch('/api/model-register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, token }),
+      body: JSON.stringify({ email, password, token }),
     })
     const data = await res.json()
 
@@ -75,13 +74,6 @@ function ModelRegisterForm() {
             {error}
           </div>
         )}
-
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', fontWeight: 600, marginBottom: 8, fontSize: 14, color: '#333' }}>お名前</label>
-          <input type="text" value={name} onChange={e => setName(e.target.value)} required
-            style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 15, boxSizing: 'border-box' }}
-            placeholder="山田 花子" />
-        </div>
 
         <div style={{ marginBottom: 20 }}>
           <label style={{ display: 'block', fontWeight: 600, marginBottom: 8, fontSize: 14, color: '#333' }}>メールアドレス</label>
