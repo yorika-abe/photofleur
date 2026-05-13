@@ -94,9 +94,9 @@ export default async function AdminPage() {
           { href: '/admin/staff-recruit', label: 'スタッフ募集', icon: '🐈‍⬛', badge: pendingStaffApps ?? 0 },
         ].map(link => (
           <Link key={link.href} href={link.href} style={{ textDecoration: 'none' }}>
-            <div style={{ background: '#1a3560', color: '#fff', borderRadius: 12, padding: '16px 14px', display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+            <div style={{ background: '#1a3560', color: '#fff', borderRadius: 12, padding: '16px 14px', display: 'flex', alignItems: 'center', gap: 8, position: 'relative', overflow: 'hidden' }}>
               <span style={{ fontSize: 20, flexShrink: 0 }}>{link.icon}</span>
-              <span className="admin-btn-label">{link.label}</span>
+              <span className="admin-btn-label" style={{ minWidth: 0 }}>{link.label}</span>
               {link.badge > 0 && (
                 <span style={{ marginLeft: 'auto', background: '#e53935', color: '#fff', borderRadius: 12, padding: '2px 6px', fontSize: 12, fontWeight: 700, minWidth: 20, textAlign: 'center', flexShrink: 0 }}>
                   {link.badge}
