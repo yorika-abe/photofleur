@@ -29,6 +29,10 @@ export default function AdminSchedulePage() {
   const [xNotifySending, setXNotifySending] = useState(false)
   const [xNotifySent, setXNotifySent] = useState(false)
   const [featuringSaving, setFeaturingSaving] = useState(false)
+  const [pastSearch, setPastSearch] = useState('')
+  const [pastTypeFilter, setPastTypeFilter] = useState('all')
+  const [locationMemos, setLocationMemos] = useState({})
+  const [memoSaving, setMemoSaving] = useState({})
 
   useEffect(() => { load() }, [])
 
@@ -41,8 +45,21 @@ export default function AdminSchedulePage() {
       setEvents([])
     } else {
       setEvents(list)
+    const memos = {}
+    for (const ev of list) { if (ev.location_memo) memos[ev.id] = ev.location_memo }
+    setLocationMemos(memos)
     }
     setLoading(false)
+  }
+
+  async function saveMemo(evId) {
+    setMemoSaving(prev => ({ ...prev, [evId]: true }))
+    await fetch('/api/admin/events', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: evId, location_memo: locationMemos[evId] ?? '' }),
+    })
+    setMemoSaving(prev => ({ ...prev, [evId]: false }))
   }
 
   async function createNewEvent() {
@@ -234,7 +251,15 @@ export default function AdminSchedulePage() {
   const upcoming = events.filter(ev => ev.event_date >= TODAY || !ev.event_date)
   const past = events.filter(ev => ev.event_date && ev.event_date < TODAY)
 
-  const tabEvents = tab === 'upcoming' ? upcoming : past
+  const filteredPast = past.filter(ev => {
+    const q = pastSearch.trim().toLowerCase()
+    const matchSearch = !q || (ev.title || '').toLowerCase().includes(q) || (ev.location_name || '').toLowerCase().includes(q)
+    const matchType = pastTypeFilter === 'all' ||
+      (pastTypeFilter === 'irregular' ? (ev.event_type !== 'street' && ev.event_type !== 'studio') : ev.event_type === pastTypeFilter)
+    return matchSearch && matchType
+  })
+
+  const tabEvents = tab === 'upcoming' ? upcoming : filteredPast
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>読み込み中...</div>
 
@@ -348,6 +373,29 @@ export default function AdminSchedulePage() {
         ))}
       </div>
 
+      {tab === 'past' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+          <input
+            type="text"
+            value={pastSearch}
+            onChange={e => setPastSearch(e.target.value)}
+            placeholder="タイトルで検索..."
+            style={{ width: '100%', padding: '9px 14px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14, boxSizing: 'border-box', outline: 'none' }}
+          />
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {[['all', 'すべて'], ['studio', 'スタジオ'], ['irregular', '不定期'], ['street', 'ストリート']].map(([val, label]) => (
+              <button key={val} onClick={() => setPastTypeFilter(val)}
+                style={{ padding: '6px 14px', borderRadius: 20, border: '1.5px solid', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  borderColor: pastTypeFilter === val ? '#2f2244' : '#e0e0e0',
+                  background: pastTypeFilter === val ? '#2f2244' : '#fff',
+                  color: pastTypeFilter === val ? '#fff' : '#777' }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {tabEvents.length === 0 ? (
           <p style={{ color: '#999' }}>{tab === 'upcoming' ? '開催予定のイベントはありません。' : '開催終了したイベントはありません。'}</p>
@@ -425,6 +473,26 @@ export default function AdminSchedulePage() {
                         {ev.location_name}
                       </div>
                     )}
+                    {isPast && ev.studio_budget != null && ev.studio_budget !== '' && (
+                      <div style={{ fontSize: 11, color: '#b45309', marginTop: 3, fontWeight: 600 }}>
+                        スタジオ代・衣装代: ¥{Number(ev.studio_budget).toLocaleString()}
+                      </div>
+                    )}
+                    {isPast && (
+                      <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginTop: 8 }}>
+                        <input
+                          type="text"
+                          value={locationMemos[ev.id] ?? ''}
+                          onChange={e => setLocationMemos(prev => ({ ...prev, [ev.id]: e.target.value }))}
+                          placeholder="場所メモ（再利用時の参考用）"
+                          style={{ flex: 1, padding: '5px 8px', borderRadius: 6, border: '1px solid #ddd', fontSize: 11, outline: 'none' }}
+                        />
+                        <button onClick={() => saveMemo(ev.id)} disabled={memoSaving[ev.id]}
+                          style={{ padding: '5px 10px', borderRadius: 6, border: 'none', background: '#2f2244', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          {memoSaving[ev.id] ? '...' : '保存'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -449,6 +517,11 @@ export default function AdminSchedulePage() {
                     </div>
                     <div style={{ fontSize: 14, color: '#333', fontWeight: 600 }}>{ev.title || ev.location_name}</div>
                     <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{ev.location_name}</div>
+                    {isPast && ev.studio_budget != null && ev.studio_budget !== '' && (
+                      <div style={{ fontSize: 12, color: '#b45309', marginTop: 4, fontWeight: 600 }}>
+                        スタジオ代・衣装代: ¥{Number(ev.studio_budget).toLocaleString()}
+                      </div>
+                    )}
                     {models.length > 0 && (
                       <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
                         {models.map((m, i) => (
@@ -457,6 +530,21 @@ export default function AdminSchedulePage() {
                             <span style={{ fontSize: 12, color: '#2f2244', fontWeight: 600 }}>{m.name}</span>
                           </div>
                         ))}
+                      </div>
+                    )}
+                    {isPast && (
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 10 }}>
+                        <input
+                          type="text"
+                          value={locationMemos[ev.id] ?? ''}
+                          onChange={e => setLocationMemos(prev => ({ ...prev, [ev.id]: e.target.value }))}
+                          placeholder="開催場所メモ（再利用時の参考用）"
+                          style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid #ddd', fontSize: 12, outline: 'none' }}
+                        />
+                        <button onClick={() => saveMemo(ev.id)} disabled={memoSaving[ev.id]}
+                          style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#2f2244', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          {memoSaving[ev.id] ? '保存中...' : '保存'}
+                        </button>
                       </div>
                     )}
                   </div>
