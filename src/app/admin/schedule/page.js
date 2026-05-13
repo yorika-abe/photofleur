@@ -237,6 +237,7 @@ export default function AdminSchedulePage() {
         studio_rules: ev.studio_rules,
         slot_templates: ev.slot_templates,
         main_image: ev.main_image,
+        location_memo: ev.location_memo,
         status: 'draft',
         booking_open_at: null,
       }),

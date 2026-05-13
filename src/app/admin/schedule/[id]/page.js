@@ -1404,6 +1404,13 @@ export default function EventEditPage() {
             </div>
           </div>
 
+          <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e5e5e5' }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#2f2244', marginBottom: 4, marginTop: 0 }}>再利用メモ</h3>
+            <p style={{ fontSize: 12, color: '#999', marginBottom: 14 }}>開催場所や段取りなど、次回再利用するときに見返したいメモ。再使用時に引き継がれます。</p>
+            <textarea value={event.location_memo || ''} onChange={e => updateField('location_memo', e.target.value)} rows={4} style={{ ...inp, resize: 'vertical' }}
+              placeholder="例：スタジオA 3F、鍵の受け取りは受付カウンター、駐車場は建物裏" />
+          </div>
+
         </div>
       )}
 
