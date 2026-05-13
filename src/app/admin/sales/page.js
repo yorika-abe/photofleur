@@ -241,7 +241,24 @@ export default function AdminSalesPage() {
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
       <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-      <style>{`.adm-tabs { display:flex; gap:0; margin:14px 0 28px; border-bottom:2px solid #e5e5e5; flex-wrap:wrap; } .adm-tab { padding:10px 20px; font-weight:600; font-size:15px; white-space:nowrap; } @media(max-width:640px){ .adm-tab { padding:8px 14px; font-size:13px; } }`}</style>
+      <style>{`
+        .adm-tabs { display:flex; gap:0; margin:14px 0 28px; border-bottom:2px solid #e5e5e5; flex-wrap:wrap; }
+        .adm-tab { padding:10px 20px; font-weight:600; font-size:15px; white-space:nowrap; }
+        .sales-grid { display:grid; grid-template-columns:1.2fr 1fr; gap:20px; margin-bottom:24px; }
+        .sales-model-rev-desktop { }
+        .sales-model-mobile-row { display:none; }
+        .sales-model-count-desktop { }
+        .sales-type-flex { display:flex; gap:10px; }
+        @media(max-width:640px){
+          .adm-tab { padding:8px 14px; font-size:13px; }
+          .sales-grid { grid-template-columns:1fr !important; gap:12px !important; }
+          .sales-model-rev-desktop { display:none !important; }
+          .sales-model-mobile-row { display:flex !important; justify-content:flex-end; align-items:center; gap:10px; margin-left:24px; margin-bottom:4px; font-size:12px; color:#aaa; }
+          .sales-model-mobile-row span:last-child { font-weight:700; font-size:13px; color:#2f2244; }
+          .sales-model-count-desktop { display:none !important; }
+          .sales-type-flex { flex-direction:column !important; gap:8px !important; }
+        }
+      `}</style>
       <div className="adm-tabs">
         <Link href="/admin/booking-status" className="adm-tab" style={{ color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>予約状況</Link>
         <Link href="/admin/bookings" className="adm-tab" style={{ color: '#999', textDecoration: 'none', borderBottom: '2px solid transparent', marginBottom: -2 }}>予約・販売一覧</Link>
@@ -466,7 +483,7 @@ export default function AdminSalesPage() {
 
       {/* モデル別・種別 */}
       {activeData.bookings.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20, marginBottom: 24 }}>
+        <div className="sales-grid">
           <div style={{ background: '#fff', borderRadius: 14, padding: '18px 20px', border: '1px solid #e5e5e5' }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: '#2f2244', marginTop: 0, marginBottom: 14 }}>モデル別売上</h3>
             {modelEntries.map((m, i) => {
@@ -475,14 +492,18 @@ export default function AdminSalesPage() {
                 <div key={m.name} style={{ marginBottom: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <span style={{ fontSize: 11, color: '#aaa', minWidth: 16 }}>#{i + 1}</span>
-                    {m.image && <img src={m.image} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />}
-                    <span style={{ fontWeight: 600, fontSize: 13, color: '#333', flex: 1 }}>{m.name}</span>
-                    <span style={{ fontWeight: 700, fontSize: 13, color: '#2f2244' }}>{yen(m.revenue)}</span>
+                    {m.image && <img src={m.image} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />}
+                    <span style={{ fontWeight: 600, fontSize: 13, color: '#333', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</span>
+                    <span className="sales-model-rev-desktop" style={{ fontWeight: 700, fontSize: 13, color: '#2f2244' }}>{yen(m.revenue)}</span>
+                  </div>
+                  <div className="sales-model-mobile-row">
+                    <span>{m.count}件</span>
+                    <span>{yen(m.revenue)}</span>
                   </div>
                   <div style={{ height: 5, background: '#f0f0f0', borderRadius: 3, overflow: 'hidden', marginLeft: 24 }}>
                     <div style={{ width: `${pct}%`, height: '100%', background: i === 0 ? '#5bbfd6' : i === 1 ? '#b0bec5' : '#90a4ae', borderRadius: 3 }} />
                   </div>
-                  <div style={{ fontSize: 11, color: '#aaa', marginLeft: 24, marginTop: 2 }}>{m.count}件</div>
+                  <div className="sales-model-count-desktop" style={{ fontSize: 11, color: '#aaa', marginLeft: 24, marginTop: 2 }}>{m.count}件</div>
                 </div>
               )
             })}
@@ -490,7 +511,7 @@ export default function AdminSalesPage() {
 
           <div style={{ background: '#fff', borderRadius: 14, padding: '18px 20px', border: '1px solid #e5e5e5' }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: '#2f2244', marginTop: 0, marginBottom: 14 }}>撮影種別</h3>
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div className="sales-type-flex">
               {[
                 { key: 'street', label: 'ストリート', color: '#388e3c', bg: '#e8f5e9' },
                 { key: 'studio', label: 'スタジオ', color: '#1a3560', bg: '#e3f2fd' },
