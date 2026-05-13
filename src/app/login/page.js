@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
 import { useSearchParams, useRouter } from 'next/navigation'
@@ -18,6 +18,7 @@ function LoginForm() {
   const [email, setEmail] = useState(noticeEmail)
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [lineLoading, setLineLoading] = useState(false)
   const [error, setError] = useState('')
   const [errorType, setErrorType] = useState(null)
 
@@ -25,6 +26,27 @@ function LoginForm() {
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   )
+
+  async function redirectByRole(userId) {
+    if (redirect !== '/') { router.push(redirect); return }
+    const { data: profile } = await supabase.from('user_profiles').select('roles, role').eq('id', userId).single()
+    const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
+    if (roles.includes('admin')) router.push('/admin')
+    else if (roles.includes('model')) router.push('/model-portal')
+    else router.push('/my')
+    router.refresh()
+  }
+
+  useEffect(() => {
+    if (lineError || lineBlocked) return
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+        setLineLoading(true)
+        await redirectByRole(session.user.id)
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   async function handleLogin(e) {
     e.preventDefault()
@@ -71,6 +93,15 @@ function LoginForm() {
     }
   }
 
+  if (lineLoading) {
+    return (
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+        <div style={{ fontSize: 32 }}>🔐</div>
+        <div style={{ fontSize: 16, color: '#666' }}>LINEログイン中...</div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ maxWidth: 440, margin: '60px auto', padding: '0 20px' }}>
       <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1a3560', marginBottom: 8, textAlign: 'center' }}>ログイン</h1>
@@ -92,6 +123,7 @@ function LoginForm() {
       {/* LINE Login */}
       <a
         href={`/api/auth/line?next=${encodeURIComponent(redirect)}`}
+        onClick={() => setLineLoading(true)}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
           background: '#06C755', color: '#fff', textDecoration: 'none',
