@@ -1,6 +1,6 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 
-export async function GET(req, { params }) {
+export async function GET(_req, { params }) {
   const { id } = await params
   const supabase = await createSupabaseAdminClient()
 
@@ -21,9 +21,20 @@ export async function GET(req, { params }) {
     return { ...entry, booking_slots: slots || [] }
   }))
 
-  const { data: shifts } = event.event_date
-    ? await supabase.from('model_shifts').select('model_id, available_slots, status').eq('event_date', event.event_date)
-    : { data: [] }
+  const [shiftsResult, shiftRequestResult] = await Promise.all([
+    event.event_date
+      ? supabase.from('model_shifts').select('model_id, available_slots, available_from, available_until, status').eq('event_date', event.event_date)
+      : { data: [] },
+    event.event_date
+      ? supabase.from('shift_request_dates').select('deadline').eq('request_date', event.event_date).maybeSingle()
+      : { data: null },
+  ])
 
-  return Response.json({ event, models: models || [], entries: entriesWithSlots, shifts: shifts || [] })
+  return Response.json({
+    event,
+    models: models || [],
+    entries: entriesWithSlots,
+    shifts: shiftsResult.data || [],
+    shiftDeadline: shiftRequestResult.data?.deadline || null,
+  })
 }

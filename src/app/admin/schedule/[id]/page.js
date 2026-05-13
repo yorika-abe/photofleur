@@ -68,6 +68,7 @@ export default function EventEditPage() {
   const [models, setModels] = useState([])
   const [entries, setEntries] = useState([])
   const [shifts, setShifts] = useState([])
+  const [shiftDeadline, setShiftDeadline] = useState(null)
   const [slotTemplates, setSlotTemplates] = useState(null) // カスタム予約枠テンプレート
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -100,7 +101,7 @@ export default function EventEditPage() {
     try {
       const res = await fetch(`/api/admin/events/${id}`)
       if (!res.ok) { setLoading(false); return }
-      const { event: ev, models: mods, entries: entriesWithSlots, shifts: shiftData } = await res.json()
+      const { event: ev, models: mods, entries: entriesWithSlots, shifts: shiftData, shiftDeadline: dl } = await res.json()
       let galleryImages = []
       try { galleryImages = JSON.parse(ev?.gallery_images || '[]') } catch {}
       let bookingOpenAtJST = ''
@@ -113,6 +114,7 @@ export default function EventEditPage() {
       setModels(mods || [])
       setEntries(entriesWithSlots || [])
       setShifts(shiftData || [])
+      setShiftDeadline(dl || null)
       const productsRes = await fetch(`/api/admin/events/${id}/products`)
       setProducts(productsRes.ok ? await productsRes.json() : [])
       // 保存済みテンプレートがあれば使用、なければイベント種別のデフォルトを使用
@@ -136,6 +138,18 @@ export default function EventEditPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'auto_add', event, slotTemplates }),
+    })
+    setAutoAdding(false)
+    await load()
+  }
+
+  async function syncShiftedModels() {
+    if (!event.event_date) return
+    setAutoAdding(true)
+    await fetch(`/api/admin/events/${id}/entries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'sync_shifts', event, slotTemplates }),
     })
     setAutoAdding(false)
     await load()
@@ -924,34 +938,53 @@ export default function EventEditPage() {
             <p style={{ fontSize: 11, color: '#aaa', margin: '8px 0 0' }}>変更後は「保存する」ボタンで保存してください</p>
           </div>
 
-          {/* シフト提出済み一括追加 */}
-          {shifts.filter(s => !entryModelIds.includes(s.model_id)).length > 0 && (
-            <div style={{ background: '#e8f5e9', borderRadius: 12, padding: 16, border: '1px solid #a5d6a7' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <div>
-                  <span style={{ fontWeight: 700, fontSize: 14, color: '#2e7d32' }}>シフト提出済み（未追加）</span>
-                  <span style={{ fontSize: 12, color: '#388e3c', marginLeft: 8 }}>{shifts.filter(s => !entryModelIds.includes(s.model_id)).length}名</span>
+          {/* シフト提出済み：締め切り前は全同期、締め切り後は未追加のみ追加 */}
+          {(() => {
+            const today = new Date().toISOString().split('T')[0]
+            const isBeforeDeadline = shiftDeadline ? shiftDeadline >= today : false
+            const notAdded = shifts.filter(s => !entryModelIds.includes(s.model_id))
+            const showSection = isBeforeDeadline ? shifts.length > 0 : notAdded.length > 0
+            if (!showSection) return null
+            return (
+              <div style={{ background: '#e8f5e9', borderRadius: 12, padding: 16, border: '1px solid #a5d6a7' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <div>
+                    {isBeforeDeadline ? (
+                      <>
+                        <span style={{ fontWeight: 700, fontSize: 14, color: '#2e7d32' }}>シフト提出済み</span>
+                        <span style={{ fontSize: 12, color: '#388e3c', marginLeft: 8 }}>{shifts.length}名</span>
+                        <span style={{ fontSize: 11, color: '#81c784', marginLeft: 8 }}>締切前・自動反映中</span>
+                      </>
+                    ) : (
+                      <>
+                        <span style={{ fontWeight: 700, fontSize: 14, color: '#2e7d32' }}>シフト提出済み（未追加）</span>
+                        <span style={{ fontSize: 12, color: '#388e3c', marginLeft: 8 }}>{notAdded.length}名</span>
+                      </>
+                    )}
+                  </div>
+                  <button
+                    onClick={isBeforeDeadline ? syncShiftedModels : autoAddShiftedModels}
+                    disabled={autoAdding}
+                    style={{ background: '#2e7d32', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                    {autoAdding ? '処理中...' : isBeforeDeadline ? '提出されたシフトを反映' : '全員一括追加'}
+                  </button>
                 </div>
-                <button onClick={autoAddShiftedModels} disabled={autoAdding}
-                  style={{ background: '#2e7d32', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                  {autoAdding ? '追加中...' : '全員一括追加'}
-                </button>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {notAdded.map(s => {
+                    const m = models.find(m => m.id === s.model_id)
+                    if (!m) return null
+                    return (
+                      <button key={m.id} onClick={() => addModelToEvent(m.id)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff', border: '2px solid #a5d6a7', borderRadius: 20, padding: '4px 10px 4px 5px', cursor: 'pointer' }}>
+                        {m.image && <img src={m.image} style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />}
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#2e7d32' }}>+ {m.name}</span>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {shifts.filter(s => !entryModelIds.includes(s.model_id)).map(s => {
-                  const m = models.find(m => m.id === s.model_id)
-                  if (!m) return null
-                  return (
-                    <button key={m.id} onClick={() => addModelToEvent(m.id)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff', border: '2px solid #a5d6a7', borderRadius: 20, padding: '4px 10px 4px 5px', cursor: 'pointer' }}>
-                      {m.image && <img src={m.image} style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />}
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#2e7d32' }}>+ {m.name}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* 手動追加セクション（モデル・予約商品） */}
           <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', overflow: 'hidden' }}>

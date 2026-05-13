@@ -1,4 +1,5 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
+import { syncBookingSlots } from '@/lib/sync-booking-slots'
 
 async function getModelUser() {
   const server = await createSupabaseServerClient()
@@ -74,6 +75,12 @@ export async function POST(req) {
   }
 
   if (result.error) return Response.json({ error: result.error.message }, { status: 500 })
+
+  // 締め切り前の保存時のみ、イベント枠を自動同期
+  if (result.data?.status === 'submitted') {
+    await syncBookingSlots(admin, result.data)
+  }
+
   return Response.json(result.data)
 }
 

@@ -1,41 +1,8 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
+import { syncBookingSlots, get0buPrice, filterSlotsByShift, DEFAULT_SLOTS } from '@/lib/sync-booking-slots'
 
-const DEFAULT_STUDIO_SLOTS = [
-  { label: '0部 09:00〜09:45', start: '09:00', end: '09:45', order: 0 },
-  { label: '1部 10:00〜11:00', start: '10:00', end: '11:00', order: 1 },
-  { label: '2部 11:15〜12:15', start: '11:15', end: '12:15', order: 2 },
-  { label: '3部 13:00〜14:00', start: '13:00', end: '14:00', order: 3 },
-  { label: '4部 14:15〜15:15', start: '14:15', end: '15:15', order: 4 },
-  { label: '5部 15:30〜16:30', start: '15:30', end: '16:30', order: 5 },
-  { label: '6部 16:45〜17:45', start: '16:45', end: '17:45', order: 6 },
-]
-const DEFAULT_STREET_SLOTS = [
-  { label: '1部 9:30〜11:00', start: '09:30', end: '11:00', order: 1 },
-  { label: '2部 11:15〜12:45', start: '11:15', end: '12:45', order: 2 },
-  { label: '3部 14:15〜15:45', start: '14:15', end: '15:45', order: 3 },
-  { label: '4部 16:00〜17:30', start: '16:00', end: '17:30', order: 4 },
-  { label: '5部 17:45〜19:15', start: '17:45', end: '19:15', order: 5 },
-  { label: '6部 19:30〜20:45', start: '19:30', end: '20:45', order: 6 },
-  { label: '7部 21:00〜22:30', start: '21:00', end: '22:30', order: 7 },
-]
-
-function get0buPrice(studioPrice) {
-  if (studioPrice >= 12000) return 7500
-  if (studioPrice >= 9900) return 5900
-  return 4900
-}
-
-// モデルのシフト提出内容に基づきスロットをフィルタ
-function filterSlotsByShift(slots, shift) {
-  const avail = shift?.available_slots?.[0]
-  if (avail?.unavailable) return [] // 不参加
-  const from = shift?.available_from
-  const until = shift?.available_until
-  // 終日または未設定
-  if (!from || !until || (from === '00:00' && until === '00:00')) return slots
-  // 時間範囲: スロットの開始と終了が提出時間内のもののみ
-  return slots.filter(s => s.start >= from && s.end <= until)
-}
+const DEFAULT_STUDIO_SLOTS = DEFAULT_SLOTS.studio
+const DEFAULT_STREET_SLOTS = DEFAULT_SLOTS.street
 
 export async function POST(req, { params }) {
   const { id } = await params
@@ -83,6 +50,55 @@ export async function POST(req, { params }) {
         max_reservations: 1, is_reserved: false,
       }))
       await supabase.from('booking_slots').insert(slotsToInsert)
+    }
+    return Response.json({ ok: true })
+  }
+
+  // 締め切り前専用: 既存モデルの枠を同期 + 未追加モデルを追加
+  if (body.action === 'sync_shifts') {
+    const { event, slotTemplates } = body
+    const { data: shiftData } = await supabase
+      .from('model_shifts')
+      .select('model_id, available_slots, available_from, available_until')
+      .eq('event_date', event.event_date)
+    const { data: existing } = await supabase.from('event_entries').select('model_id').eq('event_id', id)
+    const existingIds = new Set((existing || []).map(e => e.model_id))
+    const { data: allModels } = await supabase.from('models').select('id, studio_price, street_price')
+
+    const defaultSlots = event.event_type === 'studio' ? DEFAULT_STUDIO_SLOTS : DEFAULT_STREET_SLOTS
+    const templateSlots = (slotTemplates && slotTemplates.length > 0) ? slotTemplates : defaultSlots
+
+    for (const shift of shiftData || []) {
+      if (existingIds.has(shift.model_id)) {
+        // 既存モデル: シフトに合わせて枠を同期
+        await syncBookingSlots(supabase, { ...shift, event_date: event.event_date })
+      } else {
+        // 未追加モデル: 不参加でなければ追加
+        const avail = shift.available_slots?.[0]
+        if (avail?.unavailable) continue
+        const model = allModels?.find(m => m.id === shift.model_id)
+        if (!model) continue
+        const { data: entry } = await supabase
+          .from('event_entries')
+          .insert({ event_id: id, model_id: shift.model_id })
+          .select('id')
+          .single()
+        if (!entry) continue
+        const isStudioType = event.event_type === 'studio' || event.event_type === 'irregular'
+        const studioFee = parseInt(event.studio_fee) || 2000
+        const basePrice = isStudioType
+          ? (parseInt(model.studio_price || 0) + studioFee)
+          : parseInt(model.street_price || 0)
+        const targetSlots = filterSlotsByShift(templateSlots, shift)
+        if (targetSlots.length === 0) continue
+        await supabase.from('booking_slots').insert(targetSlots.map(slot => ({
+          event_entry_id: entry.id, slot_label: slot.label, slot_order: slot.order,
+          start_time: new Date(`${event.event_date}T${slot.start}:00+09:00`).toISOString(),
+          end_time: new Date(`${event.event_date}T${slot.end}:00+09:00`).toISOString(),
+          price: (isStudioType && slot.order === 0) ? (get0buPrice(parseInt(model.studio_price || 0)) + studioFee) : basePrice,
+          max_reservations: 1, is_reserved: false,
+        })))
+      }
     }
     return Response.json({ ok: true })
   }
