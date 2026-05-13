@@ -96,7 +96,7 @@ function RecruitCard({ r, onApply, applying }) {
           ) : (
             <button onClick={() => setExpanded(v => !v)}
               style={{ background: '#06c755', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-              スタッフとして応募する
+              応募する
             </button>
           )}
         </div>
