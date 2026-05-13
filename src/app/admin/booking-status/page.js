@@ -431,7 +431,7 @@ export default function AdminBookingStatusPage() {
   return (
     <div style={{ maxWidth: '100%', margin: '0 auto', padding: '24px 16px' }}>
       <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-      <style>{`.adm-tabs { display:flex; gap:0; margin:14px 0 20px; border-bottom:2px solid #e5e5e5; overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; scrollbar-width:none; } .adm-tabs::-webkit-scrollbar{display:none} .adm-tab { padding:10px 20px; font-weight:600; font-size:15px; white-space:nowrap; flex-shrink:0; } @media(max-width:640px){ .adm-tab { padding:10px 12px; font-size:13px; } }`}</style>
+      <style>{`.adm-tabs { display:flex; gap:0; margin:14px 0 20px; border-bottom:2px solid #e5e5e5; flex-wrap:wrap; } .adm-tab { padding:10px 20px; font-weight:600; font-size:15px; white-space:nowrap; } @media(max-width:640px){ .adm-tab { padding:8px 14px; font-size:13px; } }`}</style>
       <div className="adm-tabs">
         <button onClick={() => { setShowHistory(false); setShowNonEvent(false) }}
           className="adm-tab"
