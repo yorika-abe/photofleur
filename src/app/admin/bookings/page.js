@@ -427,25 +427,29 @@ export default function AdminBookingsPage() {
                     </div>
                     <div>
                       <div style={{ fontSize: 11, color: '#999', marginBottom: 8, fontWeight: 600 }}>QR / その他</div>
-                      {b.qr_token ? (
-                        <img
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(b.qr_token)}`}
-                          alt="QR"
-                          style={{ width: 100, height: 100, borderRadius: 6, border: '1px solid #e5e5e5', display: 'block', marginBottom: 8 }}
-                        />
-                      ) : <div style={{ fontSize: 12, color: '#ccc' }}>QRなし</div>}
-                      <div style={{ fontSize: 11, color: '#aaa', marginTop: 8 }}>予約日：{new Date(b.created_at).toLocaleDateString('ja-JP')}</div>
-                      {!isPrivate && !isEP && b.marketing_consent && <div style={{ fontSize: 11, color: '#388e3c', marginTop: 4 }}>✓ メルマガ同意</div>}
-                      {isCancelled ? (
-                        <div style={{ marginTop: 16, fontSize: 13, color: '#c62828', fontWeight: 600 }}>✓ キャンセル済み（{new Date(b.cancelled_at).toLocaleDateString('ja-JP')}）</div>
-                      ) : (
-                        <button
-                          onClick={() => cancelBooking(b)}
-                          disabled={cancelling === b.id}
-                          style={{ marginTop: 16, background: cancelling === b.id ? '#ccc' : '#c62828', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', cursor: cancelling === b.id ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13 }}>
-                          {cancelling === b.id ? '送信中...' : '予約キャンセル・メール送信'}
-                        </button>
-                      )}
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                        {b.qr_token ? (
+                          <img
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(b.qr_token)}`}
+                            alt="QR"
+                            style={{ width: 100, height: 100, borderRadius: 6, border: '1px solid #e5e5e5', flexShrink: 0 }}
+                          />
+                        ) : <div style={{ fontSize: 12, color: '#ccc' }}>QRなし</div>}
+                        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
+                          {isCancelled ? (
+                            <div style={{ fontSize: 13, color: '#c62828', fontWeight: 600 }}>✓ キャンセル済み（{new Date(b.cancelled_at).toLocaleDateString('ja-JP')}）</div>
+                          ) : (
+                            <button
+                              onClick={() => cancelBooking(b)}
+                              disabled={cancelling === b.id}
+                              style={{ background: cancelling === b.id ? '#ccc' : '#c62828', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px', cursor: cancelling === b.id ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13 }}>
+                              {cancelling === b.id ? '送信中...' : '予約キャンセル・メール送信'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 11, color: '#aaa', marginTop: 6 }}>予約日：{new Date(b.created_at).toLocaleDateString('ja-JP')}</div>
+                      {!isPrivate && !isEP && b.marketing_consent && <div style={{ fontSize: 11, color: '#388e3c', marginTop: 2 }}>✓ メルマガ同意</div>}
                     </div>
                   </div>
                 )}
