@@ -58,12 +58,19 @@ function RecruitLabel({ r }) {
   return null
 }
 
+function getTypeIndicator(r) {
+  if (r.type === 'event') return { emoji: '💚', label: '開催決定の通常撮影' }
+  if (r.type === 'request') return { emoji: '🩷', label: '開催決定のリク撮' }
+  return { emoji: '🩵', label: '開催未定の撮影' }
+}
+
 function RecruitCard({ r, onApply, applying }) {
   const [expanded, setExpanded] = useState(false)
   const myApp = r.my_application
   const isClosed = r.status === 'closed'
   const hasApplied = !!myApp && myApp.status !== 'cancelled'
   const isConfirmed = myApp?.status === 'confirmed'
+  const indicator = getTypeIndicator(r)
 
   return (
     <div style={{
@@ -78,7 +85,8 @@ function RecruitCard({ r, onApply, applying }) {
             応募{r.counts?.total || 0}名 / 定員{r.capacity}名
           </div>
         </div>
-        <div style={{ flexShrink: 0 }}>
+        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+          <span style={{ fontSize: 11, color: '#666', whiteSpace: 'nowrap' }}>{indicator.emoji} {indicator.label}</span>
           {isConfirmed ? (
             <span style={{ background: '#388e3c', color: '#fff', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700 }}>✅ スタッフ確定</span>
           ) : hasApplied ? (
