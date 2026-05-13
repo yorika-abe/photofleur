@@ -430,9 +430,15 @@ export default function AdminBookingStatusPage() {
   const isPastEvent = currentItem ? currentItem.event.event_date < todayStr : false
 
   return (
-    <div style={{ maxWidth: '100%', margin: '0 auto', padding: '24px 16px' }}>
+    <div style={{ maxWidth: '100%', margin: '0 auto', padding: '24px 8px' }}>
       <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-      <style>{`.adm-tabs { display:flex; gap:0; margin:14px 0 20px; border-bottom:2px solid #e5e5e5; flex-wrap:wrap; } .adm-tab { padding:10px 20px; font-weight:600; font-size:15px; white-space:nowrap; } @media(max-width:640px){ .adm-tab { padding:8px 14px; font-size:13px; } }`}</style>
+      <style>{`
+        .adm-tabs { display:flex; gap:0; margin:14px 0 20px; border-bottom:2px solid #e5e5e5; flex-wrap:wrap; }
+        .adm-tab { padding:10px 20px; font-weight:600; font-size:15px; white-space:nowrap; }
+        .ev-scroll-row { display:flex; gap:8px; overflow-x:auto; flex-wrap:nowrap; padding-bottom:4px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+        .ev-scroll-row::-webkit-scrollbar { display:none; }
+        @media(max-width:640px){ .adm-tab { padding:8px 14px; font-size:13px; } }
+      `}</style>
       <div className="adm-tabs">
         <button onClick={() => { setShowHistory(false); setShowNonEvent(false) }}
           className="adm-tab"
@@ -889,33 +895,36 @@ export default function AdminBookingStatusPage() {
           ) : (
             <>
               {/* Event tabs */}
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20, alignItems: 'center' }}>
-                {futureItems.map(item => {
-                  const isStreet = item.event.event_type === 'street'
-                  const active = selectedEventId === item.event.id
-                  return (
-                    <button key={item.event.id} onClick={() => setSelectedEventId(item.event.id)}
-                      style={{ padding: '8px 16px', borderRadius: 20, border: `2px solid ${active ? (isStreet ? '#388e3c' : '#1a3560') : '#e5e5e5'}`, cursor: 'pointer', fontWeight: 600, fontSize: 13, background: active ? (isStreet ? '#e8f5e9' : '#e3f2fd') : '#fff', color: active ? (isStreet ? '#388e3c' : '#1a3560') : '#666' }}>
-                      {formatDate(item.event.event_date)}
-                      {item.event.title && <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 400 }}>{item.event.title}</span>}
-                    </button>
-                  )
-                })}
+              <div style={{ marginBottom: 20 }}>
+                {futureItems.length > 0 && (
+                  <div className="ev-scroll-row" style={{ marginBottom: pastItems.length > 0 ? 8 : 0 }}>
+                    {futureItems.map(item => {
+                      const isStreet = item.event.event_type === 'street'
+                      const active = selectedEventId === item.event.id
+                      return (
+                        <button key={item.event.id} onClick={() => setSelectedEventId(item.event.id)}
+                          style={{ padding: '8px 16px', borderRadius: 20, border: `2px solid ${active ? (isStreet ? '#388e3c' : '#1a3560') : '#e5e5e5'}`, cursor: 'pointer', fontWeight: 600, fontSize: 13, background: active ? (isStreet ? '#e8f5e9' : '#e3f2fd') : '#fff', color: active ? (isStreet ? '#388e3c' : '#1a3560') : '#666', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                          {formatDate(item.event.event_date)}
+                          {item.event.title && <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 400 }}>{item.event.title}</span>}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
                 {pastItems.length > 0 && (
-                  <>
-                    {futureItems.length > 0 && <span style={{ color: '#ccc', fontSize: 18, margin: '0 4px' }}>|</span>}
+                  <div className="ev-scroll-row">
                     {pastItems.map(item => {
                       const active = selectedEventId === item.event.id
                       return (
                         <button key={item.event.id} onClick={() => setSelectedEventId(item.event.id)}
-                          style={{ padding: '8px 16px', borderRadius: 20, border: `2px solid ${active ? '#e53935' : '#ffcdd2'}`, cursor: 'pointer', fontWeight: 600, fontSize: 13, background: active ? '#ffebee' : '#fff5f5', color: active ? '#c62828' : '#e53935', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          style={{ padding: '8px 16px', borderRadius: 20, border: `2px solid ${active ? '#e53935' : '#ffcdd2'}`, cursor: 'pointer', fontWeight: 600, fontSize: 13, background: active ? '#ffebee' : '#fff5f5', color: active ? '#c62828' : '#e53935', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', flexShrink: 0 }}>
                           <span style={{ fontSize: 11 }}>⚠️</span>
                           {formatDate(item.event.event_date)}
                           <span style={{ fontSize: 10, background: '#e53935', color: '#fff', borderRadius: 3, padding: '1px 5px', marginLeft: 2 }}>要対応</span>
                         </button>
                       )
                     })}
-                  </>
+                  </div>
                 )}
               </div>
 
