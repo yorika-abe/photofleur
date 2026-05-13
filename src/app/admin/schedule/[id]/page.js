@@ -230,6 +230,7 @@ export default function EventEditPage() {
         reminder_extra_note: event.reminder_extra_note,
         planning_note: event.planning_note || null,
         planning_note_model: event.planning_note_model || null,
+        location_memo: event.location_memo || null,
       }),
     })
     setSaving(false)

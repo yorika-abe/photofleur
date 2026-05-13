@@ -33,6 +33,7 @@ export default function AdminSchedulePage() {
   const [pastTypeFilter, setPastTypeFilter] = useState('all')
   const [locationMemos, setLocationMemos] = useState({})
   const [memoSaving, setMemoSaving] = useState({})
+  const [memoSaved, setMemoSaved] = useState({})
 
   useEffect(() => { load() }, [])
 
@@ -60,6 +61,8 @@ export default function AdminSchedulePage() {
       body: JSON.stringify({ id: evId, location_memo: locationMemos[evId] ?? '' }),
     })
     setMemoSaving(prev => ({ ...prev, [evId]: false }))
+    setMemoSaved(prev => ({ ...prev, [evId]: true }))
+    setTimeout(() => setMemoSaved(prev => ({ ...prev, [evId]: false })), 2000)
   }
 
   async function createNewEvent() {
@@ -488,9 +491,9 @@ export default function AdminSchedulePage() {
                           placeholder="場所メモ（再利用時の参考用）"
                           style={{ flex: 1, padding: '5px 8px', borderRadius: 6, border: '1px solid #ddd', fontSize: 11, outline: 'none' }}
                         />
-                        <button onClick={() => saveMemo(ev.id)} disabled={memoSaving[ev.id]}
-                          style={{ padding: '5px 10px', borderRadius: 6, border: 'none', background: '#2f2244', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                          {memoSaving[ev.id] ? '...' : '保存'}
+                        <button onClick={() => saveMemo(ev.id)} disabled={memoSaving[ev.id] || memoSaved[ev.id]}
+                          style={{ padding: '5px 10px', borderRadius: 6, border: 'none', background: memoSaved[ev.id] ? '#388e3c' : '#2f2244', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          {memoSaving[ev.id] ? '...' : memoSaved[ev.id] ? '✓ 保存済み' : '保存'}
                         </button>
                       </div>
                     )}
@@ -542,9 +545,9 @@ export default function AdminSchedulePage() {
                           placeholder="開催場所メモ（再利用時の参考用）"
                           style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid #ddd', fontSize: 12, outline: 'none' }}
                         />
-                        <button onClick={() => saveMemo(ev.id)} disabled={memoSaving[ev.id]}
-                          style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#2f2244', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                          {memoSaving[ev.id] ? '保存中...' : '保存'}
+                        <button onClick={() => saveMemo(ev.id)} disabled={memoSaving[ev.id] || memoSaved[ev.id]}
+                          style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: memoSaved[ev.id] ? '#388e3c' : '#2f2244', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          {memoSaving[ev.id] ? '保存中...' : memoSaved[ev.id] ? '✓ 保存済み' : '保存'}
                         </button>
                       </div>
                     )}
