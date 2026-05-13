@@ -265,6 +265,7 @@ export default function ModelProfilePage() {
         </div>
       )}
 
+      <a href="/model-portal" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none', display: 'block', marginBottom: 12 }}>← モデルポータル</a>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: 0 }}>マイプロフィール</h1>
         <span style={{ background: statusLabel.bg, color: statusLabel.color, borderRadius: 6, padding: '4px 14px', fontSize: 13, fontWeight: 600 }}>

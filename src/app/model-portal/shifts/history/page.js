@@ -225,6 +225,7 @@ export default function ShiftHistoryPage() {
 
   return (
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 16px' }}>
+      <Link href="/model-portal" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none', display: 'block', marginBottom: 12 }}>← モデルポータル</Link>
       <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid #e5e5e5' }}>
         {[
           { key: 'submit', label: 'シフト提出', href: '/model-portal/shifts' },

@@ -68,7 +68,7 @@ export default function ModelBlogPage() {
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '40px 20px' }}>
-      <Link href="/model-portal/shifts" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← モデルポータル</Link>
+      <Link href="/model-portal" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← モデルポータル</Link>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0 28px' }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: '#2f2244', margin: 0 }}>ブログ記事</h1>
         <Link href="/model-portal/blog/new"
