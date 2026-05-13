@@ -18,44 +18,30 @@ function getRecruitDate(r) {
   return ''
 }
 
-function RecruitLabel({ r }) {
-  if (r.type === 'custom') {
-    const typeLabel = r.shoot_type === 'request' ? 'リクエスト撮影' : '通常撮影会'
-    return (
-      <div>
-        <span style={{ fontWeight: 700 }}>{fmtDate(r.recruit_date)}</span>
-        <span style={{ marginLeft: 6 }}>📍{r.location || '未定'}</span>
-        <span style={{ marginLeft: 6, color: '#555' }}>{r.shoot_time || '未定'}</span>
-        <span style={{ marginLeft: 8, fontSize: 12, background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '2px 7px' }}>{typeLabel}</span>
-      </div>
-    )
-  }
+function getRecruitInfo(r) {
   if (r.type === 'event') {
-    const e = r.event
-    if (!e) return <span style={{ color: '#aaa' }}>イベント情報なし</span>
-    return (
-      <div>
-        <span style={{ fontWeight: 700 }}>{fmtDate(e.event_date)}</span>
-        <span style={{ marginLeft: 6 }}>📍{e.title}</span>
-        {e.subtitle && <span style={{ marginLeft: 4, fontSize: 12, color: '#666' }}>{e.subtitle}</span>}
-      </div>
-    )
+    const e = r.event || {}
+    return { date: fmtDate(e.event_date), location: e.title || '', time: e.subtitle || '', typeBadge: null, typeBg: '', typeColor: '', modelName: '' }
   }
   if (r.type === 'request') {
-    const b = r.booking
-    if (!b) return <span style={{ color: '#aaa' }}>予約情報なし</span>
-    const modelName = b.private_products?.models?.name || ''
-    return (
-      <div>
-        <span style={{ fontWeight: 700 }}>{fmtDate(b.event_date_input) || '未定'}</span>
-        <span style={{ marginLeft: 6 }}>📍{b.meeting_place || '未定'}</span>
-        <span style={{ marginLeft: 6, color: '#555' }}>{b.shooting_time || ''}</span>
-        <span style={{ marginLeft: 8, fontSize: 12, background: '#fce4ec', color: '#c2185b', borderRadius: 4, padding: '2px 7px' }}>リクエスト撮影</span>
-        {modelName && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>モデル：{modelName}</div>}
-      </div>
-    )
+    const b = r.booking || {}
+    return { date: fmtDate(b.event_date_input) || '未定', location: b.meeting_place || '未定', time: b.shooting_time || '', typeBadge: 'リクエスト撮影', typeBg: '#fce4ec', typeColor: '#c2185b', modelName: b.private_products?.models?.name || '' }
   }
-  return null
+  const isReq = r.shoot_type === 'request'
+  return { date: fmtDate(r.recruit_date), location: r.location || '未定', time: r.shoot_time || '未定', typeBadge: isReq ? 'リクエスト撮影' : '通常撮影会', typeBg: isReq ? '#fce4ec' : '#e3f2fd', typeColor: isReq ? '#c2185b' : '#1565c0', modelName: '' }
+}
+
+function RecruitLabel({ r }) {
+  const info = getRecruitInfo(r)
+  return (
+    <div>
+      <span style={{ fontWeight: 700 }}>{info.date}</span>
+      {info.location && <span style={{ marginLeft: 6 }}>📍{info.location}</span>}
+      {info.time && <span style={{ marginLeft: 6, color: '#555' }}>{info.time}</span>}
+      {info.typeBadge && <span style={{ marginLeft: 8, fontSize: 12, background: info.typeBg, color: info.typeColor, borderRadius: 4, padding: '2px 7px' }}>{info.typeBadge}</span>}
+      {info.modelName && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>モデル：{info.modelName}</div>}
+    </div>
+  )
 }
 
 function getTypeIndicator(r) {
@@ -71,6 +57,24 @@ function RecruitCard({ r, onApply, applying }) {
   const hasApplied = !!myApp && myApp.status !== 'cancelled'
   const isConfirmed = myApp?.status === 'confirmed'
   const indicator = getTypeIndicator(r)
+  const info = getRecruitInfo(r)
+
+  const actionEl = isConfirmed ? (
+    <span style={{ background: '#388e3c', color: '#fff', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700 }}>✅ スタッフ確定</span>
+  ) : hasApplied ? (
+    <span style={{ background: '#1565c0', color: '#fff', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700 }}>応募済み</span>
+  ) : isClosed ? (
+    <span style={{ background: '#ccc', color: '#fff', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700 }}>募集締切</span>
+  ) : (
+    <button onClick={() => setExpanded(v => !v)}
+      style={{ background: '#06c755', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+      応募する
+    </button>
+  )
+
+  const typeBadgeEl = info.typeBadge ? (
+    <span style={{ fontSize: 12, background: info.typeBg, color: info.typeColor, borderRadius: 4, padding: '2px 7px' }}>{info.typeBadge}</span>
+  ) : null
 
   return (
     <div style={{
@@ -78,27 +82,32 @@ function RecruitCard({ r, onApply, applying }) {
       borderRadius: 10, padding: '10px 14px',
       borderLeft: `4px solid ${isConfirmed ? '#388e3c' : hasApplied ? '#1565c0' : '#ddd'}`,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+      {/* Desktop */}
+      <div className="sp-rc-desktop" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <RecruitLabel r={r} />
-          <div style={{ marginTop: 2, fontSize: 11, color: '#aaa' }}>
-            応募{r.counts?.total || 0}名 / 定員{r.capacity}名
-          </div>
+          <div style={{ marginTop: 2, fontSize: 11, color: '#aaa' }}>応募{r.counts?.total || 0}名 / 定員{r.capacity}名</div>
         </div>
         <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
           <span style={{ fontSize: 11, color: '#666', whiteSpace: 'nowrap' }}>{indicator.emoji} {indicator.label}</span>
-          {isConfirmed ? (
-            <span style={{ background: '#388e3c', color: '#fff', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700 }}>✅ スタッフ確定</span>
-          ) : hasApplied ? (
-            <span style={{ background: '#1565c0', color: '#fff', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700 }}>応募済み</span>
-          ) : isClosed ? (
-            <span style={{ background: '#ccc', color: '#fff', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700 }}>募集締切</span>
-          ) : (
-            <button onClick={() => setExpanded(v => !v)}
-              style={{ background: '#06c755', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-              応募する
-            </button>
-          )}
+          {actionEl}
+        </div>
+      </div>
+
+      {/* Mobile */}
+      <div className="sp-rc-mobile" style={{ display: 'none' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: 13 }}>{info.date}{info.time ? `　${info.time}` : ''}</div>
+            {info.location && <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>📍{info.location}</div>}
+            {info.modelName && <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>モデル：{info.modelName}</div>}
+            <div style={{ marginTop: 3, fontSize: 11, color: '#aaa' }}>応募{r.counts?.total || 0}名 / 定員{r.capacity}名</div>
+          </div>
+          <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+            <span style={{ fontSize: 11, color: '#666', whiteSpace: 'nowrap' }}>{indicator.emoji} {indicator.label}</span>
+            {actionEl}
+            {typeBadgeEl}
+          </div>
         </div>
       </div>
 
@@ -127,10 +136,31 @@ function RecruitCard({ r, onApply, applying }) {
 
 function ConfirmedCard({ r }) {
   const indicator = getTypeIndicator(r)
+  const info = getRecruitInfo(r)
+  const typeBadgeEl = info.typeBadge ? (
+    <span style={{ fontSize: 12, background: info.typeBg, color: info.typeColor, borderRadius: 4, padding: '2px 7px' }}>{info.typeBadge}</span>
+  ) : null
   return (
-    <div style={{ background: '#f0faf0', border: '1px solid #a5d6a7', borderLeft: '4px solid #388e3c', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-      <RecruitLabel r={r} />
-      <span style={{ fontSize: 11, color: '#666', whiteSpace: 'nowrap', flexShrink: 0 }}>{indicator.emoji} {indicator.label}</span>
+    <div style={{ background: '#f0faf0', border: '1px solid #a5d6a7', borderLeft: '4px solid #388e3c', borderRadius: 10, padding: '10px 14px' }}>
+      {/* Desktop */}
+      <div className="sp-rc-desktop" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <RecruitLabel r={r} />
+        <span style={{ fontSize: 11, color: '#666', whiteSpace: 'nowrap', flexShrink: 0 }}>{indicator.emoji} {indicator.label}</span>
+      </div>
+      {/* Mobile */}
+      <div className="sp-rc-mobile" style={{ display: 'none' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: 13 }}>{info.date}{info.time ? `　${info.time}` : ''}</div>
+            {info.location && <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>📍{info.location}</div>}
+            {info.modelName && <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>モデル：{info.modelName}</div>}
+          </div>
+          <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+            <span style={{ fontSize: 11, color: '#666', whiteSpace: 'nowrap' }}>{indicator.emoji} {indicator.label}</span>
+            {typeBadgeEl}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -194,6 +224,7 @@ export default function StaffPortalPage() {
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '20px 16px' }}>
+      <style>{`@media (max-width: 640px) { .sp-rc-desktop { display: none !important; } .sp-rc-mobile { display: block !important; } }`}</style>
       {/* ヘッダー */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: 0 }}>受付スタッフ画面</h1>
