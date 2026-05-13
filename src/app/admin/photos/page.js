@@ -287,7 +287,7 @@ export default function AdminPhotosPage() {
               <p style={{ fontSize: 12, color: '#999', marginBottom: 16 }}>
                 ドラッグで表示順を変更できます。{savingOrder && <span style={{ color: '#f4a0be' }}>保存中...</span>}
               </p>
-              <div style={grid}>
+              <div className="photos-grid" style={grid}>
                 {favorites.map((p, idx) => (
                   <FavoriteCard
                     key={p.id}
