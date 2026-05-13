@@ -103,7 +103,7 @@ export default function AdminBookingsPage() {
   })
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 12px' }}>
 
       {toast && (
         <div style={{ position: 'fixed', top: 24, left: '50%', transform: 'translateX(-50%)', background: '#1b5e20', color: '#fff', borderRadius: 10, padding: '14px 24px', fontWeight: 600, fontSize: 14, zIndex: 9999, boxShadow: '0 4px 20px rgba(0,0,0,0.2)', maxWidth: 480, textAlign: 'center', lineHeight: 1.6 }}>
@@ -199,7 +199,31 @@ export default function AdminBookingsPage() {
       })()}
 
       <Link href="/admin" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-      <style>{`.adm-tabs { display:flex; gap:0; margin:8px 0 24px; border-bottom:2px solid #e5e5e5; flex-wrap:wrap; } .adm-tab { padding:10px 20px; font-weight:600; font-size:15px; white-space:nowrap; } @media(max-width:640px){ .adm-tab { padding:8px 14px; font-size:13px; } }`}</style>
+      <style>{`
+        .adm-tabs { display:flex; gap:0; margin:8px 0 24px; border-bottom:2px solid #e5e5e5; flex-wrap:wrap; }
+        .adm-tab { padding:10px 20px; font-weight:600; font-size:15px; white-space:nowrap; }
+        .bk-filters { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; align-items:center; }
+        .bk-filter-select { padding:7px 10px; border:1px solid #ddd; border-radius:8px; font-size:13px; min-width:180px; }
+        .bk-filter-input { flex:1; min-width:200px; padding:7px 12px; border:1px solid #ddd; border-radius:8px; font-size:13px; }
+        .bk-card-main { padding:14px 18px; display:flex; align-items:center; gap:12px; cursor:pointer; flex-wrap:wrap; }
+        .bk-name-col { flex:1; min-width:140px; }
+        .bk-date-col { font-size:13px; color:#555; min-width:120px; }
+        .bk-model-col { font-size:13px; color:#555; min-width:80px; }
+        .bk-slot-col { font-size:13px; color:#555; min-width:80px; }
+        .bk-price-col { font-weight:700; font-size:14px; color:#2f2244; min-width:80px; text-align:right; }
+        @media(max-width:640px){
+          .adm-tab { padding:8px 10px; font-size:12px; }
+          .bk-filters { gap:6px; }
+          .bk-filter-select { min-width:0; width:100%; }
+          .bk-filter-input { min-width:0; width:100%; flex:none; }
+          .bk-card-main { padding:10px 12px; gap:6px; }
+          .bk-name-col { min-width:0; flex:1; }
+          .bk-date-col { min-width:0; font-size:12px; }
+          .bk-model-col { display:none; }
+          .bk-slot-col { display:none; }
+          .bk-price-col { min-width:0; font-size:13px; }
+        }
+      `}</style>
       <div className="adm-tabs">
         <Link href="/admin/booking-status" className="adm-tab" style={{ color: '#999', borderBottom: '2px solid transparent', marginBottom: -2, textDecoration: 'none' }}>予約状況</Link>
         <div className="adm-tab" style={{ fontWeight: 700, color: '#2f2244', borderBottom: '2px solid #2f2244', marginBottom: -2, cursor: 'default' }}>予約・販売一覧</div>
@@ -209,8 +233,8 @@ export default function AdminBookingsPage() {
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-        <div style={{ display: 'flex', gap: 6 }}>
+      <div className="bk-filters">
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {[['all', '全て'], ['upcoming', '今後'], ['past', '過去'], ['outdoor', '屋外']].map(([key, label]) => (
             <button key={key} onClick={() => setFilter(key)}
               style={{ padding: '6px 14px', borderRadius: 20, border: '2px solid', borderColor: filter === key ? '#2f2244' : '#ddd', background: filter === key ? '#2f2244' : '#fff', color: filter === key ? '#fff' : '#555', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
@@ -219,7 +243,8 @@ export default function AdminBookingsPage() {
           ))}
         </div>
         <select value={eventFilter} onChange={e => setEventFilter(e.target.value)}
-          style={{ padding: '7px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, color: eventFilter ? '#2f2244' : '#999', minWidth: 180 }}>
+          className="bk-filter-select"
+          style={{ color: eventFilter ? '#2f2244' : '#999' }}>
           <option value="">開催日・イベントで絞る</option>
           {uniqueEvents.map(ev => (
             <option key={ev.event_date} value={ev.event_date}>
@@ -230,7 +255,7 @@ export default function AdminBookingsPage() {
         <input
           value={search} onChange={e => setSearch(e.target.value)}
           placeholder="名前・メール・モデル名で検索"
-          style={{ flex: 1, minWidth: 200, padding: '7px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13 }}
+          className="bk-filter-input"
         />
       </div>
 
@@ -251,32 +276,28 @@ export default function AdminBookingsPage() {
             return (
               <div key={b.id} style={{ background: isCancelled ? '#fafafa' : '#fff', borderRadius: 12, border: borderColor, overflow: 'hidden', opacity: isCancelled ? 0.7 : 1 }}>
                 {/* Main row */}
-                <div
-                  onClick={() => setExpanded(isExpanded ? null : b.id)}
-                  style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: 140 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div onClick={() => setExpanded(isExpanded ? null : b.id)} className="bk-card-main">
+                  <div className="bk-name-col">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                       <span style={{ fontWeight: 700, fontSize: 14, color: isCancelled ? '#999' : '#2f2244' }}>{b.name || `${b.last_name} ${b.first_name}`}</span>
-                      {isCancelled && <span style={{ background: '#ffcdd2', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>キャンセル済</span>}
-                      {isPrivate && <span style={{ background: '#fce4ec', color: '#c2185b', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>非公開商品</span>}
-                      {isEP && <span style={{ background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>特別予約商品</span>}
-                      {isGoods && <span style={{ background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>グッズ注文</span>}
+                      {isCancelled && <span style={{ background: '#ffcdd2', color: '#c62828', borderRadius: 4, padding: '1px 6px', fontSize: 10, fontWeight: 700 }}>キャンセル</span>}
+                      {isPrivate && <span style={{ background: '#fce4ec', color: '#c2185b', borderRadius: 4, padding: '1px 6px', fontSize: 10, fontWeight: 700 }}>非公開</span>}
+                      {isEP && <span style={{ background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '1px 6px', fontSize: 10, fontWeight: 700 }}>特別予約</span>}
+                      {isGoods && <span style={{ background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '1px 6px', fontSize: 10, fontWeight: 700 }}>グッズ</span>}
                     </div>
                     <div style={{ fontSize: 12, color: '#888' }}>{b.email}</div>
                   </div>
-                  <div style={{ fontSize: 13, color: '#555', minWidth: 120 }}>
-                    {b.event?.event_date ? formatDate(b.event.event_date) : '—'}
-                  </div>
-                  <div style={{ fontSize: 13, color: '#555', minWidth: 80 }}>{b.model?.name || '—'}</div>
-                  <div style={{ fontSize: 13, color: '#555', minWidth: 80 }}>
+                  <div className="bk-date-col">{b.event?.event_date ? formatDate(b.event.event_date) : '—'}</div>
+                  <div className="bk-model-col">{b.model?.name || '—'}</div>
+                  <div className="bk-slot-col">
                     {(isPrivate || isEP || isGoods) ? (b.product?.name || b.product?.title || '—') : (b.slot?.slot_label || '—')}
                   </div>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
                     {!isPrivate && !isEP && !isGoods && b.is_outdoor && (
-                      <span style={{ background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '2px 7px', fontSize: 11, fontWeight: 600 }}>屋外</span>
+                      <span style={{ background: '#e3f2fd', color: '#1565c0', borderRadius: 4, padding: '2px 5px', fontSize: 10, fontWeight: 600 }}>屋外</span>
                     )}
                     {!isPrivate && !isGoods && (
-                      <span style={{ background: b.event?.event_type === 'street' ? '#e8f5e9' : '#e3f2fd', color: b.event?.event_type === 'street' ? '#388e3c' : '#1a3560', borderRadius: 4, padding: '2px 7px', fontSize: 11, fontWeight: 600 }}>
+                      <span style={{ background: b.event?.event_type === 'street' ? '#e8f5e9' : '#e3f2fd', color: b.event?.event_type === 'street' ? '#388e3c' : '#1a3560', borderRadius: 4, padding: '2px 5px', fontSize: 10, fontWeight: 600 }}>
                         {b.event?.event_type === 'street' ? 'スト' : 'スタ'}
                       </span>
                     )}
@@ -284,15 +305,13 @@ export default function AdminBookingsPage() {
                       const pm = b.payment_method
                       if (!pm) return null
                       return (
-                        <span style={{ background: pm === 'card' ? '#e3f2fd' : '#f1f8e9', color: pm === 'card' ? '#1565c0' : '#33691e', borderRadius: 4, padding: '2px 7px', fontSize: 11, fontWeight: 600 }}>
+                        <span style={{ background: pm === 'card' ? '#e3f2fd' : '#f1f8e9', color: pm === 'card' ? '#1565c0' : '#33691e', borderRadius: 4, padding: '2px 5px', fontSize: 10, fontWeight: 600 }}>
                           {pm === 'card' ? '💳カード' : '💴現金'}
                         </span>
                       )
                     })()}
                   </div>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: '#2f2244', minWidth: 80, textAlign: 'right' }}>
-                    ¥{price.toLocaleString()}
-                  </div>
+                  <div className="bk-price-col">¥{price.toLocaleString()}</div>
                   <div style={{ color: '#bbb', fontSize: 12 }}>{isExpanded ? '▲' : '▼'}</div>
                 </div>
 
