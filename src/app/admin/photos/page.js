@@ -218,6 +218,7 @@ export default function AdminPhotosPage() {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 16px' }}>
+      <style>{`@media(max-width:640px){ .photos-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; } }`}</style>
       <Link href="/admin" style={{ color: '#2f2244', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, margin: '8px 0 4px', flexWrap: 'wrap' }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: '#2f2244', margin: 0 }}>ご提供写真</h1>
@@ -253,7 +254,7 @@ export default function AdminPhotosPage() {
               {newPhotos.length > 0 && (
                 <div style={{ marginBottom: 32 }}>
                   <p style={{ fontSize: 12, fontWeight: 700, color: '#1a3560', letterSpacing: '0.08em', marginBottom: 12 }}>新着 {newPhotos.length}件</p>
-                  <div style={grid}>
+                  <div className="photos-grid" style={grid}>
                     {newPhotos.map(p => <PhotoCard key={p.id} p={p} modelMap={modelMap} onExpand={setExpanded} onToggleStar={toggleStar} starring={starring} />)}
                   </div>
                 </div>
@@ -265,7 +266,7 @@ export default function AdminPhotosPage() {
                     {showAll ? '▲ 閉じる' : `▼ 全て見る（${seenPhotos.length}件）`}
                   </button>
                   {showAll && (
-                    <div style={grid}>
+                    <div className="photos-grid" style={grid}>
                       {seenPhotos.map(p => <PhotoCard key={p.id} p={p} modelMap={modelMap} onExpand={setExpanded} onToggleStar={toggleStar} starring={starring} />)}
                     </div>
                   )}
