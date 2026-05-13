@@ -46,6 +46,56 @@ body {
   .hero-mobile { display: contents; }
 }
 
+/* ── グローバルクリック感 ── */
+
+/* モバイルのデフォルト青ハイライトを除去 */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* スマホの300msタップ遅延を除去 */
+button, a, label, select, input[type="submit"], input[type="button"] {
+  touch-action: manipulation;
+}
+
+/* ボタン全般 */
+button {
+  transition: transform 0.1s ease, opacity 0.1s ease, filter 0.1s ease;
+}
+button:active:not(:disabled) {
+  transform: scale(0.94);
+  opacity: 0.82;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* リンク */
+a {
+  transition: opacity 0.1s ease;
+}
+a:active {
+  opacity: 0.6;
+}
+
+/* ファイルアップロード・ラベルボタン */
+label {
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+label:has(input[type="file"]):active,
+label[style*="cursor: pointer"]:active {
+  transform: scale(0.96);
+  opacity: 0.82;
+}
+
+/* セレクト */
+select {
+  transition: opacity 0.1s ease;
+}
+select:active {
+  opacity: 0.85;
+}
+
 @keyframes heroMoveTL {
   from { transform: translate(0, 0); }
   to   { transform: translate(-50%, -50%); }
