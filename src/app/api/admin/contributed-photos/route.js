@@ -1,19 +1,8 @@
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
-
-async function checkAdmin() {
-  const server = await createSupabaseServerClient()
-  const { data: { user } } = await server.auth.getUser()
-  if (!user) return null
-  const admin = await createSupabaseAdminClient()
-  const { data: profile } = await admin.from('user_profiles').select('role, roles').eq('id', user.id).single()
-  const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
-  if (!roles.includes('admin')) return null
-  return admin
-}
+import { requireAdmin } from '@/lib/auth'
 
 // お気に入り写真一覧取得
 export async function GET() {
-  const admin = await checkAdmin()
+  const admin = await requireAdmin()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data, error } = await admin
@@ -45,7 +34,7 @@ export async function GET() {
 
 // お気に入りトグル
 export async function PATCH(req) {
-  const admin = await checkAdmin()
+  const admin = await requireAdmin()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id, is_featured } = await req.json()
@@ -79,7 +68,7 @@ export async function PATCH(req) {
 
 // 並び順更新（orderedIds: お気に入りのid配列を表示順で渡す）
 export async function POST(req) {
-  const admin = await checkAdmin()
+  const admin = await requireAdmin()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { orderedIds } = await req.json()

@@ -15,10 +15,10 @@ async function getAuthUser() {
 export async function GET(req) {
   const result = await getAuthUser()
   if (result.error) return Response.json({ error: result.error }, { status: result.status })
-  const { user, admin, role } = result
+  const { user, admin, roles } = result
 
   // Admin: if model_id param provided, return that model; else return all models
-  if (role === 'admin') {
+  if (roles?.includes('admin')) {
     const { searchParams } = new URL(req.url)
     const modelId = searchParams.get('model_id')
     if (modelId) {

@@ -127,15 +127,23 @@ export async function POST(req) {
   const emails = await getFilteredEmails(admin, filter || { type: 'all' })
   if (emails.length === 0) return Response.json({ error: '送信先がいません' }, { status: 400 })
 
-  const resend = new Resend(process.env.RESEND_API_KEY)
+  function chunks(arr, size) {
+    const result = []
+    for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size))
+    return result
+  }
+
   let sent = 0, failed = 0
-  for (const email of emails) {
-    let personalizedHtml = html
-    if (couponConfig) {
+
+  if (couponConfig) {
+    // クーポンあり: 1件ずつ個別コード生成が必要なため、メール配列を組み立ててからバッチ送信
+    const validUntil = couponConfig.valid_days
+      ? new Date(Date.now() + Number(couponConfig.valid_days) * 86400000).toISOString()
+      : null
+
+    const emailPayloads = []
+    for (const email of emails) {
       const code = generateCouponCode()
-      const validUntil = couponConfig.valid_days
-        ? new Date(Date.now() + Number(couponConfig.valid_days) * 86400000).toISOString()
-        : null
       await admin.from('coupons').insert({
         code,
         discount_type: couponConfig.discount_type || 'fixed',
@@ -145,15 +153,53 @@ export async function POST(req) {
         description: couponConfig.description || 'メルマガクーポン',
         is_active: true,
       })
-      personalizedHtml = personalizedHtml.replace(/\{\{unique_coupon\}\}/g, code)
+      emailPayloads.push({
+        from: 'PhotoFleur <noreply@photofleur.jp>',
+        to: email,
+        subject,
+        html: html.replace(/\{\{unique_coupon\}\}/g, code),
+      })
     }
-    const { error } = await resend.emails.send({
+
+    for (const chunk of chunks(emailPayloads, 100)) {
+      const res = await fetch('https://api.resend.com/emails/batch', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(chunk),
+      })
+      if (res.ok) {
+        sent += chunk.length
+      } else {
+        failed += chunk.length
+      }
+    }
+  } else {
+    // クーポンなし: メール配列を組み立ててバッチ送信
+    const emailPayloads = emails.map(email => ({
       from: 'PhotoFleur <noreply@photofleur.jp>',
       to: email,
       subject,
-      html: personalizedHtml,
-    })
-    if (error) failed++; else sent++
+      html,
+    }))
+
+    for (const chunk of chunks(emailPayloads, 100)) {
+      const res = await fetch('https://api.resend.com/emails/batch', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(chunk),
+      })
+      if (res.ok) {
+        sent += chunk.length
+      } else {
+        failed += chunk.length
+      }
+    }
   }
 
   return Response.json({ ok: true, sent, failed, total: emails.length })

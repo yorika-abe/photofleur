@@ -1,14 +1,4 @@
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
-
-async function checkAdmin() {
-  const server = await createSupabaseServerClient()
-  const { data: { user } } = await server.auth.getUser()
-  if (!user) return null
-  const admin = await createSupabaseAdminClient()
-  const { data: profile } = await admin.from('user_profiles').select('roles, role').eq('id', user.id).single()
-  const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
-  return roles.includes('admin') ? admin : null
-}
+import { requireAdmin } from '@/lib/auth'
 
 export async function GET() {
   const admin = await checkAdmin()

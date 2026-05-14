@@ -283,7 +283,7 @@ export async function GET(req) {
         }
 
         const { error } = await resend.emails.send({
-          from: 'Photo Fleur運営 <onboarding@resend.dev>',
+          from: 'Photo Fleur運営 <noreply@photofleur.jp>',
           to: email,
           subject: `【PhotoFleur】明日（${formattedDate}）のご案内`,
           html,

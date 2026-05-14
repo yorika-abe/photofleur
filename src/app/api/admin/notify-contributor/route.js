@@ -67,7 +67,7 @@ export async function POST(req) {
   try {
     const resend = new Resend(process.env.RESEND_API_KEY)
     const { error } = await resend.emails.send({
-      from: 'Photo Fleur運営 <onboarding@resend.dev>',
+      from: 'Photo Fleur運営 <noreply@photofleur.jp>',
       to: email,
       subject: EMAIL_SUBJECT,
       html: buildEmailHtml(lineMessage),

@@ -27,52 +27,30 @@ export async function middleware(request) {
 
   const path = request.nextUrl.pathname
 
-  // Admin routes require admin role
-  if (path.startsWith('/admin')) {
-    if (!user) {
-      return NextResponse.redirect(new URL('/login?redirect=/admin', request.url))
-    }
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('roles, role')
-      .eq('id', user.id)
-      .single()
-    const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
-    if (!roles.includes('admin')) {
-      return NextResponse.redirect(new URL('/', request.url))
-    }
+  const needsAuth = path.startsWith('/admin') || path.startsWith('/model-portal') || path.startsWith('/staff-portal')
+  if (!needsAuth) return supabaseResponse
+
+  const redirectPath = path.startsWith('/admin') ? '/admin' : path.startsWith('/model-portal') ? '/model-portal' : '/staff-portal'
+  if (!user) {
+    return NextResponse.redirect(new URL(`/login?redirect=${redirectPath}`, request.url))
   }
 
-  // Model portal requires model role
-  if (path.startsWith('/model-portal')) {
-    if (!user) {
-      return NextResponse.redirect(new URL('/login?redirect=/model-portal', request.url))
-    }
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('roles, role')
-      .eq('id', user.id)
-      .single()
-    const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
-    if (!roles.some(r => ['model', 'admin'].includes(r))) {
-      return NextResponse.redirect(new URL('/', request.url))
-    }
-  }
+  // DBクエリは1回だけ
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('roles, role')
+    .eq('id', user.id)
+    .single()
+  const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
 
-  // Staff portal requires staff or admin role
-  if (path.startsWith('/staff-portal')) {
-    if (!user) {
-      return NextResponse.redirect(new URL('/login?redirect=/staff-portal', request.url))
-    }
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('roles, role')
-      .eq('id', user.id)
-      .single()
-    const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
-    if (!roles.some(r => ['staff', 'admin'].includes(r))) {
-      return NextResponse.redirect(new URL('/', request.url))
-    }
+  if (path.startsWith('/admin') && !roles.includes('admin')) {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+  if (path.startsWith('/model-portal') && !roles.some(r => ['model', 'admin'].includes(r))) {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+  if (path.startsWith('/staff-portal') && !roles.some(r => ['staff', 'admin'].includes(r))) {
+    return NextResponse.redirect(new URL('/', request.url))
   }
 
   return supabaseResponse

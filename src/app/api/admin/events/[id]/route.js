@@ -13,13 +13,24 @@ export async function GET(_req, { params }) {
 
   if (!event) return Response.json({ error: 'Not found' }, { status: 404 })
 
-  const entriesWithSlots = await Promise.all((entries || []).map(async (entry) => {
-    const { data: slots } = await admin
-      .from('booking_slots')
-      .select('id, slot_label, slot_order, start_time, end_time, price, is_reserved, max_reservations')
-      .eq('event_entry_id', entry.id)
-      .order('slot_order')
-    return { ...entry, booking_slots: slots || [] }
+  const entryIds = (entries || []).map(e => e.id)
+  const { data: allSlots } = entryIds.length > 0
+    ? await admin
+        .from('booking_slots')
+        .select('id, slot_label, slot_order, start_time, end_time, price, is_reserved, max_reservations, event_entry_id')
+        .in('event_entry_id', entryIds)
+        .order('slot_order')
+    : { data: [] }
+
+  const slotsByEntryId = {}
+  for (const slot of (allSlots || [])) {
+    if (!slotsByEntryId[slot.event_entry_id]) slotsByEntryId[slot.event_entry_id] = []
+    slotsByEntryId[slot.event_entry_id].push(slot)
+  }
+
+  const entriesWithSlots = (entries || []).map(entry => ({
+    ...entry,
+    booking_slots: slotsByEntryId[entry.id] || [],
   }))
 
   const [shiftsResult, shiftRequestResult] = await Promise.all([

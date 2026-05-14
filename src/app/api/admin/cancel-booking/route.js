@@ -183,7 +183,7 @@ export async function POST(req) {
       const customerName = epb.customer_name || '様'
       const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName, cancel_reason: cancel_reason || '' }).catch(() => null)
       const { error: me } = await resend.emails.send({
-        from: 'Photo Fleur運営 <onboarding@resend.dev>',
+        from: 'Photo Fleur運営 <noreply@photofleur.jp>',
         to: epb.customer_email,
         subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
         html: templateResult?.html ?? buildCancelHtml({ customerName, cancelReason: cancel_reason }),
@@ -220,7 +220,7 @@ export async function POST(req) {
     if (go.email) {
       const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName, cancel_reason: cancel_reason || '' }).catch(() => null)
       const { error: me } = await resend.emails.send({
-        from: 'Photo Fleur運営 <onboarding@resend.dev>',
+        from: 'Photo Fleur運営 <noreply@photofleur.jp>',
         to: go.email,
         subject: templateResult?.subject || '【PhotoFleur】ご注文キャンセルのお知らせ',
         html: templateResult?.html ?? buildCancelHtml({ customerName, cancelReason: cancel_reason }),
@@ -256,7 +256,7 @@ export async function POST(req) {
     const customerName = `${pb.last_name || ''}${pb.first_name ? ` ${pb.first_name}` : ''}`.trim() || '様'
     const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName, cancel_reason: cancel_reason || '' }).catch(() => null)
     const { error: mail_err } = await resend.emails.send({
-      from: 'Photo Fleur運営 <onboarding@resend.dev>',
+      from: 'Photo Fleur運営 <noreply@photofleur.jp>',
       to: pb.email,
       subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
       html: templateResult?.html ?? buildCancelHtml({ customerName, cancelReason: cancel_reason }),
@@ -301,14 +301,23 @@ export async function POST(req) {
   // DB更新を先に実行（メール失敗に関係なく）
   await admin.from('bookings').update({ cancelled_at: new Date().toISOString() }).eq('id', booking_id)
   if (booking.slot_id) {
-    await admin.from('booking_slots').update({ is_reserved: false }).eq('id', booking.slot_id)
+    // 同スロットにキャンセルされていない予約が他にあるか確認し、なければ is_reserved を false に戻す
+    const { count: remainingCount } = await admin
+      .from('bookings')
+      .select('id', { count: 'exact', head: true })
+      .eq('slot_id', booking.slot_id)
+      .is('cancelled_at', null)
+      .neq('id', booking_id)
+    if (remainingCount === 0) {
+      await admin.from('booking_slots').update({ is_reserved: false }).eq('id', booking.slot_id)
+    }
   }
 
   // メール送信（失敗してもキャンセル自体は完了）
   const customerName = booking.name || `${booking.last_name || ''} ${booking.first_name || ''}`.trim() || '様'
   const templateResult = await renderEmailTemplate(admin, 'cancellation', { customer_name: customerName, cancel_reason: cancel_reason || '' }).catch(() => null)
   const { error: mail_err } = await resend.emails.send({
-    from: 'Photo Fleur運営 <onboarding@resend.dev>',
+    from: 'Photo Fleur運営 <noreply@photofleur.jp>',
     to: booking.email,
     subject: templateResult?.subject || '【PhotoFleur】ご予約キャンセルのお知らせ',
     html: templateResult?.html ?? buildCancelHtml({ customerName, cancelReason: cancel_reason }),

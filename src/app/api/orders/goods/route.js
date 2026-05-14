@@ -181,7 +181,7 @@ export async function POST(req) {
     `
 
     await resend.emails.send({
-      from: 'Photo Fleur運営 <onboarding@resend.dev>',
+      from: 'Photo Fleur運営 <noreply@photofleur.jp>',
       to: email,
       subject: templateResult?.subject || '【PhotoFleur】ご注文ありがとうございます',
       html,

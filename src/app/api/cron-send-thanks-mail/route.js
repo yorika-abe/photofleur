@@ -130,7 +130,7 @@ export async function GET(req) {
       ? substituteVars(tmpl.subject, vars)
       : 'この度はPhotoFleur撮影会にご来場いただきありがとうございました'
     const result = await resend.emails.send({
-      from: 'Photo Fleur運営 <onboarding@resend.dev>',
+      from: 'Photo Fleur運営 <noreply@photofleur.jp>',
       to: booking.email,
       subject,
       html,
