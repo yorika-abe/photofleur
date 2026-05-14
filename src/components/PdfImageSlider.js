@@ -1,8 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 
 export default function PdfImageSlider({ images }) {
   const [page, setPage] = useState(0)
+  const touchStartX = useRef(null)
+
   if (!images || images.length === 0) return null
 
   const btnStyle = (disabled) => ({
@@ -11,13 +13,30 @@ export default function PdfImageSlider({ images }) {
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0,
   })
 
+  function handleTouchStart(e) {
+    touchStartX.current = e.touches[0].clientX
+  }
+
+  function handleTouchEnd(e) {
+    if (touchStartX.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    touchStartX.current = null
+    if (Math.abs(dx) < 40) return
+    if (dx < 0) setPage(p => Math.min(images.length - 1, p + 1))
+    else setPage(p => Math.max(0, p - 1))
+  }
+
   return (
     <div style={{ borderRadius: 10, border: '1px solid #d6ecf5', overflow: 'hidden', background: '#fff' }}>
-      <div style={{ background: '#f0f0f0' }}>
+      <div
+        style={{ background: '#f0f0f0', touchAction: 'pan-y' }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         <img
           src={images[page]}
           alt={`ページ ${page + 1}`}
-          style={{ width: '100%', display: 'block', maxHeight: 560, objectFit: 'contain' }}
+          style={{ width: '100%', display: 'block', maxHeight: 560, objectFit: 'contain', userSelect: 'none', pointerEvents: 'none' }}
         />
       </div>
       <div style={{ padding: '8px 14px', background: '#f5f9ff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, color: '#555', gap: 8 }}>
