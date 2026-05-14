@@ -1,28 +1,26 @@
 import Link from 'next/link'
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import FadingHeroBg from '@/components/FadingHeroBg'
-import PdfViewer from '@/components/PdfViewer'
+import PdfImageSlider from '@/components/PdfImageSlider'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ModelOnboardingPage() {
   const supabase = await createSupabaseAdminClient()
-  const { data: rows } = await supabase.from('site_settings').select('key, value').in('key', ['hero_bg_images', 'onboarding_pdf_about', 'onboarding_pdf_regist'])
+  const { data: rows } = await supabase.from('site_settings').select('key, value').in('key', ['hero_bg_images', 'onboarding_images_about', 'onboarding_images_regist'])
   const settings = Object.fromEntries((rows || []).map(r => [r.key, r.value]))
   const heroImages = JSON.parse(settings.hero_bg_images || '[]')
-  const pdfAbout = settings.onboarding_pdf_about || ''
-  const pdfRegist = settings.onboarding_pdf_regist || ''
+  const imagesAbout = JSON.parse(settings.onboarding_images_about || '[]')
+  const imagesRegist = JSON.parse(settings.onboarding_images_regist || '[]')
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
       <style>{`body { overflow-x: hidden; }`}</style>
-      {/* Background slideshow */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0 }}>
         <FadingHeroBg images={heroImages} opacity={0.55} />
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }} />
       </div>
 
-      {/* Content */}
       <div style={{ position: 'relative', zIndex: 1, maxWidth: 1300, margin: '0 auto', padding: '40px 20px' }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a3560', margin: '0 0 16px' }}>Photo Fleurにようこそ</h1>
@@ -35,28 +33,25 @@ export default async function ModelOnboardingPage() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* PDFs side by side */}
           <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-            {/* PDF 1 */}
             <div style={{ flex: '1 1 400px', background: 'rgba(255,255,255,0.88)', border: '1px solid #d6ecf5', borderRadius: 14, padding: '24px', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 12 }}>ABOUT Photo Fleur</h2>
-              {pdfAbout ? (
-                <PdfViewer url={pdfAbout} title="ABOUT Photo Fleur" />
+              {imagesAbout.length > 0 ? (
+                <PdfImageSlider images={imagesAbout} />
               ) : (
                 <div style={{ background: '#f5f9ff', borderRadius: 10, padding: '32px', textAlign: 'center', color: '#aaa', fontSize: 14 }}>
-                  📄 PDF（後ほど追加されます）
+                  📄 資料（後ほど追加されます）
                 </div>
               )}
             </div>
 
-            {/* PDF 2 */}
             <div style={{ flex: '1 1 400px', background: 'rgba(255,255,255,0.88)', border: '1px solid #d6ecf5', borderRadius: 14, padding: '24px', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 12 }}>撮影会モデル登録説明</h2>
-              {pdfRegist ? (
-                <PdfViewer url={pdfRegist} title="撮影会モデル登録説明" />
+              {imagesRegist.length > 0 ? (
+                <PdfImageSlider images={imagesRegist} />
               ) : (
                 <div style={{ background: '#f5f9ff', borderRadius: 10, padding: '32px', textAlign: 'center', color: '#aaa', fontSize: 14 }}>
-                  📄 PDF（後ほど追加されます）
+                  📄 資料（後ほど追加されます）
                 </div>
               )}
             </div>

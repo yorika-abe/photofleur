@@ -1,17 +1,17 @@
 import Link from 'next/link'
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import FadingHeroBg from '@/components/FadingHeroBg'
-import PdfViewer from '@/components/PdfViewer'
+import PdfImageSlider from '@/components/PdfImageSlider'
 
 export const dynamic = 'force-dynamic'
 
 export default async function StaffOnboardingPage() {
   const supabase = await createSupabaseAdminClient()
-  const { data: rows } = await supabase.from('site_settings').select('key, value').in('key', ['hero_bg_images', 'staff_onboarding_pdf_about', 'staff_onboarding_pdf_regist'])
+  const { data: rows } = await supabase.from('site_settings').select('key, value').in('key', ['hero_bg_images', 'staff_onboarding_images_about', 'staff_onboarding_images_regist'])
   const settings = Object.fromEntries((rows || []).map(r => [r.key, r.value]))
   const heroImages = JSON.parse(settings.hero_bg_images || '[]')
-  const pdfAbout = settings.staff_onboarding_pdf_about || ''
-  const pdfRegist = settings.staff_onboarding_pdf_regist || ''
+  const imagesAbout = JSON.parse(settings.staff_onboarding_images_about || '[]')
+  const imagesRegist = JSON.parse(settings.staff_onboarding_images_regist || '[]')
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
@@ -36,22 +36,22 @@ export default async function StaffOnboardingPage() {
           <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
             <div style={{ flex: '1 1 400px', background: 'rgba(255,255,255,0.88)', border: '1px solid #d6ecf5', borderRadius: 14, padding: '24px', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 12 }}>ABOUT Photo Fleur</h2>
-              {pdfAbout ? (
-                <PdfViewer url={pdfAbout} title="ABOUT Photo Fleur" />
+              {imagesAbout.length > 0 ? (
+                <PdfImageSlider images={imagesAbout} />
               ) : (
                 <div style={{ background: '#f5f9ff', borderRadius: 10, padding: '32px', textAlign: 'center', color: '#aaa', fontSize: 14 }}>
-                  📄 PDF（後ほど追加されます）
+                  📄 資料（後ほど追加されます）
                 </div>
               )}
             </div>
 
             <div style={{ flex: '1 1 400px', background: 'rgba(255,255,255,0.88)', border: '1px solid #d6ecf5', borderRadius: 14, padding: '24px', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 12 }}>撮影会スタッフ登録説明</h2>
-              {pdfRegist ? (
-                <PdfViewer url={pdfRegist} title="撮影会スタッフ登録説明" />
+              {imagesRegist.length > 0 ? (
+                <PdfImageSlider images={imagesRegist} />
               ) : (
                 <div style={{ background: '#f5f9ff', borderRadius: 10, padding: '32px', textAlign: 'center', color: '#aaa', fontSize: 14 }}>
-                  📄 PDF（後ほど追加されます）
+                  📄 資料（後ほど追加されます）
                 </div>
               )}
             </div>

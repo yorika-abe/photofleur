@@ -66,10 +66,10 @@ export default function AdminMediaPage() {
   const [uploadCount, setUploadCount] = useState({ current: 0, total: 0 })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [onboardingPdfAbout, setOnboardingPdfAbout] = useState('')
-  const [onboardingPdfRegist, setOnboardingPdfRegist] = useState('')
-  const [staffOnboardingPdfAbout, setStaffOnboardingPdfAbout] = useState('')
-  const [staffOnboardingPdfRegist, setStaffOnboardingPdfRegist] = useState('')
+  const [onboardingImagesAbout, setOnboardingImagesAbout] = useState([])
+  const [onboardingImagesRegist, setOnboardingImagesRegist] = useState([])
+  const [staffOnboardingImagesAbout, setStaffOnboardingImagesAbout] = useState([])
+  const [staffOnboardingImagesRegist, setStaffOnboardingImagesRegist] = useState([])
 
   useEffect(() => {
     fetch('/api/admin/site-settings').then(r => r.json()).then(data => {
@@ -90,10 +90,10 @@ export default function AdminMediaPage() {
       for (const { key } of OGP_PAGES) ogp[key] = data[key] || ''
       setOgpImages(ogp)
       setPwaIcon(data.pwa_icon || '')
-      setOnboardingPdfAbout(data.onboarding_pdf_about || '')
-      setOnboardingPdfRegist(data.onboarding_pdf_regist || '')
-      setStaffOnboardingPdfAbout(data.staff_onboarding_pdf_about || '')
-      setStaffOnboardingPdfRegist(data.staff_onboarding_pdf_regist || '')
+      setOnboardingImagesAbout(JSON.parse(data.onboarding_images_about || '[]'))
+      setOnboardingImagesRegist(JSON.parse(data.onboarding_images_regist || '[]'))
+      setStaffOnboardingImagesAbout(JSON.parse(data.staff_onboarding_images_about || '[]'))
+      setStaffOnboardingImagesRegist(JSON.parse(data.staff_onboarding_images_regist || '[]'))
     })
   }, [])
 
@@ -242,34 +242,41 @@ export default function AdminMediaPage() {
     setUploadProgress(0)
   }
 
-  async function uploadPdf(file, key, setter) {
-    setUploading(key)
+  async function uploadPdfAsImages(file, baseKey, setImages) {
+    setUploading(baseKey)
     setUploadProgress(0)
-    const path = `site/${key}-${Date.now()}.pdf`
+    setUploadCount({ current: 0, total: 0 })
     try {
-      const res = await fetch('/api/admin/upload-signed-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path, contentType: 'application/pdf' }),
-      })
-      const { signedUrl, publicUrl, error } = await res.json()
-      if (error) throw error
-      await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest()
-        xhr.upload.addEventListener('progress', e => {
-          if (e.lengthComputable) setUploadProgress(Math.round(e.loaded / e.total * 100))
+      const pdfjsLib = await import('pdfjs-dist')
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
+      const arrayBuffer = await file.arrayBuffer()
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+      const totalPages = pdf.numPages
+      setUploadCount({ current: 0, total: totalPages })
+      const imageUrls = []
+      for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+        const page = await pdf.getPage(pageNum)
+        const viewport = page.getViewport({ scale: 1.5 })
+        const canvas = document.createElement('canvas')
+        canvas.width = viewport.width
+        canvas.height = viewport.height
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85))
+        const path = `site/${baseKey}-p${pageNum}-${Date.now()}.jpg`
+        const res = await fetch('/api/admin/upload-signed-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path, contentType: 'image/jpeg' }),
         })
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) resolve()
-          else reject('アップロード失敗: ' + xhr.status)
-        })
-        xhr.addEventListener('error', () => reject('通信エラー'))
-        xhr.open('PUT', signedUrl)
-        xhr.setRequestHeader('Content-Type', 'application/pdf')
-        xhr.send(file)
-      })
-      setter(publicUrl)
-    } catch (e) { alert('アップロードエラー: ' + e) }
+        const { signedUrl, publicUrl, error } = await res.json()
+        if (error) throw error
+        await fetch(signedUrl, { method: 'PUT', headers: { 'Content-Type': 'image/jpeg' }, body: blob })
+        imageUrls.push(publicUrl)
+        setUploadCount({ current: pageNum, total: totalPages })
+        setUploadProgress(Math.round(pageNum / totalPages * 100))
+      }
+      setImages(imageUrls)
+    } catch (e) { alert('変換エラー: ' + e) }
     setUploading(null)
     setUploadProgress(0)
   }
@@ -293,10 +300,10 @@ export default function AdminMediaPage() {
         training_bg_video_mobile: trainingBgVideoMobile,
         ...ogpImages,
         pwa_icon: pwaIcon,
-        onboarding_pdf_about: onboardingPdfAbout,
-        onboarding_pdf_regist: onboardingPdfRegist,
-        staff_onboarding_pdf_about: staffOnboardingPdfAbout,
-        staff_onboarding_pdf_regist: staffOnboardingPdfRegist,
+        onboarding_images_about: JSON.stringify(onboardingImagesAbout),
+        onboarding_images_regist: JSON.stringify(onboardingImagesRegist),
+        staff_onboarding_images_about: JSON.stringify(staffOnboardingImagesAbout),
+        staff_onboarding_images_regist: JSON.stringify(staffOnboardingImagesRegist),
       }),
     })
     setSaving(false)
@@ -461,28 +468,33 @@ export default function AdminMediaPage() {
     )
   }
 
-  function PdfSection({ title, desc, value, setter, uploadKey }) {
+  function PdfSection({ title, desc, images, setImages, uploadKey }) {
     return (
       <Section title={title} desc={desc}>
-        {value && (
+        {images.length > 0 && (
           <div style={{ marginBottom: 12 }}>
-            <div style={{ background: '#f5f9ff', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#1a3560', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span>📄</span>
-              <a href={value} target="_blank" rel="noreferrer" style={{ color: '#1a3560', wordBreak: 'break-all' }}>{value.split('/').pop()}</a>
+            <div style={{ fontSize: 12, color: '#388e3c', fontWeight: 600, marginBottom: 8 }}>✅ {images.length}ページ変換済み</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+              {images.slice(0, 4).map((url, i) => (
+                <img key={i} src={url} alt="" style={{ width: 72, height: 54, objectFit: 'cover', borderRadius: 4, border: '1px solid #ddd' }} />
+              ))}
+              {images.length > 4 && <div style={{ width: 72, height: 54, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', borderRadius: 4, fontSize: 11, color: '#888' }}>+{images.length - 4}枚</div>}
             </div>
-            <button onClick={() => setter('')}
+            <button onClick={() => setImages([])}
               style={{ background: 'none', border: '1px solid #ddd', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', fontSize: 11, color: '#888' }}>削除</button>
           </div>
         )}
         <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-          📄 PDFをアップロード
+          📄 PDFをアップロード（画像に変換）
           <input type="file" accept="application/pdf" style={{ display: 'none' }} disabled={!!uploading}
-            onChange={e => e.target.files?.[0] && uploadPdf(e.target.files[0], uploadKey, setter)} />
+            onChange={e => e.target.files?.[0] && uploadPdfAsImages(e.target.files[0], uploadKey, setImages)} />
         </label>
-        {uploading === uploadKey && <ProgressBar progress={uploadProgress} />}
-        <div style={{ marginTop: 10 }}>
-          <input style={inp} value={value} onChange={e => setter(e.target.value)} placeholder="またはPDF URLを直接入力" />
-        </div>
+        {uploading === uploadKey && (
+          <>
+            <ProgressBar progress={uploadProgress} />
+            <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>変換中... {uploadCount.current}/{uploadCount.total}ページ</div>
+          </>
+        )}
       </Section>
     )
   }
@@ -660,15 +672,15 @@ export default function AdminMediaPage() {
         {tab === 'registration' && (
           <>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', padding: '4px 0 8px', borderBottom: '1px solid #e8f4fb' }}>モデル登録手続き</div>
-            <PdfSection title="ABOUT Photo Fleur PDF" desc="モデル登録手引きページのABOUT PHOTO FLEURセクションに表示されるPDFです"
-              value={onboardingPdfAbout} setter={setOnboardingPdfAbout} uploadKey="onboarding_pdf_about" />
-            <PdfSection title="撮影会モデル登録説明 PDF" desc="モデル登録手引きページの撮影会モデル登録説明セクションに表示されるPDFです"
-              value={onboardingPdfRegist} setter={setOnboardingPdfRegist} uploadKey="onboarding_pdf_regist" />
+            <PdfSection title="ABOUT Photo Fleur" desc="モデル登録手引きページのABOUT PHOTO FLEURセクションに表示されます"
+              images={onboardingImagesAbout} setImages={setOnboardingImagesAbout} uploadKey="onboarding_images_about" />
+            <PdfSection title="撮影会モデル登録説明" desc="モデル登録手引きページの撮影会モデル登録説明セクションに表示されます"
+              images={onboardingImagesRegist} setImages={setOnboardingImagesRegist} uploadKey="onboarding_images_regist" />
             <div style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', padding: '12px 0 8px', borderBottom: '1px solid #e8f4fb' }}>スタッフ登録手続き</div>
-            <PdfSection title="ABOUT Photo Fleur PDF" desc="スタッフ登録手引きページのABOUT PHOTO FLEURセクションに表示されるPDFです"
-              value={staffOnboardingPdfAbout} setter={setStaffOnboardingPdfAbout} uploadKey="staff_onboarding_pdf_about" />
-            <PdfSection title="撮影会スタッフ登録説明 PDF" desc="スタッフ登録手引きページの撮影会スタッフ登録説明セクションに表示されるPDFです"
-              value={staffOnboardingPdfRegist} setter={setStaffOnboardingPdfRegist} uploadKey="staff_onboarding_pdf_regist" />
+            <PdfSection title="ABOUT Photo Fleur" desc="スタッフ登録手引きページのABOUT PHOTO FLEURセクションに表示されます"
+              images={staffOnboardingImagesAbout} setImages={setStaffOnboardingImagesAbout} uploadKey="staff_onboarding_images_about" />
+            <PdfSection title="撮影会スタッフ登録説明" desc="スタッフ登録手引きページの撮影会スタッフ登録説明セクションに表示されます"
+              images={staffOnboardingImagesRegist} setImages={setStaffOnboardingImagesRegist} uploadKey="staff_onboarding_images_regist" />
           </>
         )}
 
