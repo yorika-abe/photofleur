@@ -13,7 +13,7 @@ export async function POST(req) {
       body: JSON.stringify({
         source_id: sourceId,
         idempotency_key: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        amount_money: { amount: amount * 100, currency: 'JPY' },
+        amount_money: { amount: amount, currency: 'JPY' },
         location_id: process.env.SQUARE_LOCATION_ID,
         ...(email ? { buyer_email_address: email } : {}),
       }),
