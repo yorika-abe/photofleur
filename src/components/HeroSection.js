@@ -63,15 +63,18 @@ function extractAccentColor(src) {
 
 export default function HeroSection({ images, mobileImages }) {
   const [current, setCurrent] = useState(0)
+  const [currentMobile, setCurrentMobile] = useState(0)
   const [leavingSrc, setLeavingSrc] = useState(null)
   const [animKey, setAnimKey] = useState(0)
   const [animPhase, setAnimPhase] = useState('idle') // 'idle' | 'moving' | 'fading'
   const [accentColor, setAccentColor] = useState(DEFAULT_COLOR)
   const currentRef = useRef(0)
+  const currentMobileRef = useRef(0)
 
   const imgs = images?.length > 0 ? images : []
   const mobileImgs = mobileImages?.length > 0 ? mobileImages : imgs
 
+  // PC images interval
   useEffect(() => {
     if (imgs.length <= 1) return
     const t = setInterval(() => {
@@ -83,7 +86,19 @@ export default function HeroSection({ images, mobileImages }) {
       currentRef.current = next
     }, 5000)
     return () => clearInterval(t)
-  }, [imgs, mobileImgs])
+  }, [imgs.length])
+
+  // Mobile images interval — independent from PC
+  useEffect(() => {
+    if (mobileImgs === imgs) return // モバイル未設定ならPCに合わせる（上のintervalに任せる）
+    if (mobileImgs.length <= 1) return
+    const t = setInterval(() => {
+      const next = (currentMobileRef.current + 1) % mobileImgs.length
+      setCurrentMobile(next)
+      currentMobileRef.current = next
+    }, 5000)
+    return () => clearInterval(t)
+  }, [mobileImgs.length])
 
   // Drive animation via CSS transitions on clip-path (stays within overflow:hidden bounds)
   useEffect(() => {
@@ -103,10 +118,10 @@ export default function HeroSection({ images, mobileImages }) {
 
   useEffect(() => {
     const isMobile = typeof window !== 'undefined' && window.innerHeight > window.innerWidth
-    const src = (isMobile && mobileImgs[current]) ? mobileImgs[current] : imgs[current]
+    const src = (isMobile && mobileImgs !== imgs) ? mobileImgs[currentMobile] : imgs[current]
     if (!src) return
     extractAccentColor(src).then(setAccentColor)
-  }, [current, imgs, mobileImgs])
+  }, [current, currentMobile])
 
   // TL triangle: polygon shrinks toward top-left corner
   const tlStyle = animPhase === 'moving'
@@ -134,8 +149,8 @@ export default function HeroSection({ images, mobileImages }) {
       <span className="hero-mobile" style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
         {mobileImgs.length > 0
           ? <>
-              <img key={`mblur-${current}`} src={mobileImgs[current]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(8px) brightness(0.85)', transform: 'scale(1.12)', transformOrigin: 'center' }} />
-              <img key={`mb-${current}`} src={mobileImgs[current]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+              <img key={`mblur-${currentMobile}`} src={mobileImgs[currentMobile]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(8px) brightness(0.85)', transform: 'scale(1.12)', transformOrigin: 'center' }} />
+              <img key={`mb-${currentMobile}`} src={mobileImgs[currentMobile]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
             </>
           : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 45%, #0d2030 100%)' }} />
         }
