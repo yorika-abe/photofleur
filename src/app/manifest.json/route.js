@@ -20,8 +20,8 @@ export async function GET() {
     theme_color: '#1a3560',
     icons: iconUrl
       ? [
-          { src: iconUrl, sizes: '512x512', type: 'image/jpeg', purpose: 'any maskable' },
-          { src: iconUrl, sizes: '192x192', type: 'image/jpeg', purpose: 'any' },
+          { src: '/apple-touch-icon.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/apple-touch-icon.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
         ]
       : [],
   }

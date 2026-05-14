@@ -35,7 +35,10 @@ export async function generateMetadata() {
       capable: true,
       statusBarStyle: 'default',
     },
-    ...(pwaIcon ? { icons: { apple: pwaIcon, icon: pwaIcon } } : {}),
+    icons: {
+      apple: '/apple-touch-icon.png',
+      icon: pwaIcon || '/apple-touch-icon.png',
+    },
   }
 }
 
