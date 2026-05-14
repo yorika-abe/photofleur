@@ -3,13 +3,13 @@
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 
-async function downloadPhoto(url) {
+async function downloadPhoto(url, idx) {
   const res = await fetch(url)
   const blob = await res.blob()
   const ext = blob.type.split('/')[1] || 'jpg'
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
-  a.download = `photo_${Date.now()}.${ext}`
+  a.download = `photo_${idx != null ? String(idx + 1).padStart(3, '0') + '_' : ''}${Date.now()}.${ext}`
   a.click()
   URL.revokeObjectURL(a.href)
 }
@@ -20,9 +20,23 @@ function formatDateTime(str) {
   return d.toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-function PhotoCard({ p, modelMap, onExpand, onToggleStar, starring }) {
+function PhotoCard({ p, modelMap, onExpand, onToggleStar, starring, selected, onSelect }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', overflow: 'hidden', position: 'relative' }}>
+    <div style={{ background: '#fff', borderRadius: 12, border: selected ? '2px solid #1a3560' : '1px solid #e5e5e5', overflow: 'hidden', position: 'relative' }}>
+      <button
+        onClick={e => { e.stopPropagation(); onSelect(p.id) }}
+        style={{
+          position: 'absolute', top: 8, left: 8, zIndex: 2,
+          width: 26, height: 26, borderRadius: 6,
+          background: selected ? '#1a3560' : 'rgba(255,255,255,0.9)',
+          border: selected ? '2px solid #1a3560' : '2px solid #ccc',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', fontSize: 14, color: '#fff', lineHeight: 1,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+        }}
+      >
+        {selected ? '✓' : ''}
+      </button>
       <button
         onClick={() => onToggleStar(p)}
         disabled={starring === p.id}
@@ -129,6 +143,8 @@ export default function AdminPhotosPage() {
   const [lastViewed, setLastViewed] = useState(null)
   const [starring, setStarring] = useState(null)
   const [savingOrder, setSavingOrder] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [bulkDownloading, setBulkDownloading] = useState(false)
   const [notifyModal, setNotifyModal] = useState(null) // { photo }
   const [notifying, setNotifying] = useState(false)
   const [notifyResult, setNotifyResult] = useState(null) // { emailSent, lineSent, lineError }
@@ -209,6 +225,33 @@ export default function AdminPhotosPage() {
     setSavingOrder(false)
   }
 
+  function toggleSelect(id) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function selectAll() {
+    if (selectedIds.size === photos.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(photos.map(p => p.id)))
+    }
+  }
+
+  async function bulkDownload() {
+    setBulkDownloading(true)
+    const toDownload = photos.filter(p => selectedIds.has(p.id))
+    for (let i = 0; i < toDownload.length; i++) {
+      await downloadPhoto(toDownload[i].photo_url, i)
+      if (i < toDownload.length - 1) await new Promise(r => setTimeout(r, 700))
+    }
+    setBulkDownloading(false)
+    setSelectedIds(new Set())
+  }
+
   if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#aaa' }}>読み込み中...</div>
   if (fetchError) return <div style={{ padding: 60, textAlign: 'center', color: '#e53935' }}>エラー: {fetchError}</div>
 
@@ -223,7 +266,30 @@ export default function AdminPhotosPage() {
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, margin: '8px 0 4px', flexWrap: 'wrap' }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: '#2f2244', margin: 0 }}>ご提供写真</h1>
       </div>
-      <p style={{ fontSize: 12, color: '#aaa', marginBottom: 20 }}>※ご提供から2ヶ月で自動消去されます</p>
+      <p style={{ fontSize: 12, color: '#aaa', marginBottom: 12 }}>※ご提供から2ヶ月で自動消去されます</p>
+
+      {/* 一括操作バー */}
+      {photos.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+          <button onClick={selectAll}
+            style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #1a3560', background: selectedIds.size === photos.length ? '#1a3560' : '#fff', color: selectedIds.size === photos.length ? '#fff' : '#1a3560', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+            {selectedIds.size === photos.length ? '✓ 全選択中' : '全て選択'}
+          </button>
+          {selectedIds.size > 0 && (
+            <>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#1a3560' }}>{selectedIds.size}件選択中</span>
+              <button onClick={() => setSelectedIds(new Set())}
+                style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', color: '#666', fontSize: 12, cursor: 'pointer' }}>
+                解除
+              </button>
+              <button onClick={bulkDownload} disabled={bulkDownloading}
+                style={{ padding: '6px 16px', borderRadius: 8, border: 'none', background: bulkDownloading ? '#aaa' : '#1a3560', color: '#fff', fontSize: 12, fontWeight: 700, cursor: bulkDownloading ? 'not-allowed' : 'pointer' }}>
+                {bulkDownloading ? 'ダウンロード中...' : `📥 一括ダウンロード（${selectedIds.size}件）`}
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* タブ */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid #eee' }}>
@@ -255,7 +321,7 @@ export default function AdminPhotosPage() {
                 <div style={{ marginBottom: 32 }}>
                   <p style={{ fontSize: 12, fontWeight: 700, color: '#1a3560', letterSpacing: '0.08em', marginBottom: 12 }}>新着 {newPhotos.length}件</p>
                   <div className="photos-grid" style={grid}>
-                    {newPhotos.map(p => <PhotoCard key={p.id} p={p} modelMap={modelMap} onExpand={setExpanded} onToggleStar={toggleStar} starring={starring} />)}
+                    {newPhotos.map(p => <PhotoCard key={p.id} p={p} modelMap={modelMap} onExpand={setExpanded} onToggleStar={toggleStar} starring={starring} selected={selectedIds.has(p.id)} onSelect={toggleSelect} />)}
                   </div>
                 </div>
               )}
@@ -267,7 +333,7 @@ export default function AdminPhotosPage() {
                   </button>
                   {showAll && (
                     <div className="photos-grid" style={grid}>
-                      {seenPhotos.map(p => <PhotoCard key={p.id} p={p} modelMap={modelMap} onExpand={setExpanded} onToggleStar={toggleStar} starring={starring} />)}
+                      {seenPhotos.map(p => <PhotoCard key={p.id} p={p} modelMap={modelMap} onExpand={setExpanded} onToggleStar={toggleStar} starring={starring} selected={selectedIds.has(p.id)} onSelect={toggleSelect} />)}
                     </div>
                   )}
                 </div>

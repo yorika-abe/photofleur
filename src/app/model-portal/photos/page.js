@@ -4,13 +4,13 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
 
-async function downloadPhoto(url) {
+async function downloadPhoto(url, idx) {
   const res = await fetch(url)
   const blob = await res.blob()
   const ext = blob.type.split('/')[1] || 'jpg'
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
-  a.download = `photo_${Date.now()}.${ext}`
+  a.download = `photo_${idx != null ? String(idx + 1).padStart(3, '0') + '_' : ''}${Date.now()}.${ext}`
   a.click()
   URL.revokeObjectURL(a.href)
 }
@@ -21,9 +21,23 @@ function formatDateTime(str) {
   return d.toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-function PhotoCard({ p, onExpand }) {
+function PhotoCard({ p, onExpand, selected, onSelect }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', overflow: 'hidden' }}>
+    <div style={{ background: '#fff', borderRadius: 12, border: selected ? '2px solid #1a3560' : '1px solid #e5e5e5', overflow: 'hidden', position: 'relative' }}>
+      <button
+        onClick={e => { e.stopPropagation(); onSelect(p.id) }}
+        style={{
+          position: 'absolute', top: 6, left: 6, zIndex: 2,
+          width: 26, height: 26, borderRadius: 6,
+          background: selected ? '#1a3560' : 'rgba(255,255,255,0.9)',
+          border: selected ? '2px solid #1a3560' : '2px solid #ccc',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', fontSize: 14, color: '#fff', lineHeight: 1,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+        }}
+      >
+        {selected ? '✓' : ''}
+      </button>
       <div style={{ aspectRatio: '4/3', background: '#f0f4fb', overflow: 'hidden', cursor: 'pointer' }}
         onClick={() => onExpand(p)}>
         <img src={p.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -56,6 +70,8 @@ export default function ModelPhotosPage() {
   const [expanded, setExpanded] = useState(null)
   const [showAll, setShowAll] = useState(false)
   const [lastViewed, setLastViewed] = useState(null)
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [bulkDownloading, setBulkDownloading] = useState(false)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -84,6 +100,33 @@ export default function ModelPhotosPage() {
     load()
   }, [])
 
+  function toggleSelect(id) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function selectAll() {
+    if (selectedIds.size === photos.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(photos.map(p => p.id)))
+    }
+  }
+
+  async function bulkDownload() {
+    setBulkDownloading(true)
+    const toDownload = photos.filter(p => selectedIds.has(p.id))
+    for (let i = 0; i < toDownload.length; i++) {
+      await downloadPhoto(toDownload[i].photo_url, i)
+      if (i < toDownload.length - 1) await new Promise(r => setTimeout(r, 700))
+    }
+    setBulkDownloading(false)
+    setSelectedIds(new Set())
+  }
+
   const newPhotos = lastViewed
     ? photos.filter(p => new Date(p.created_at) > new Date(lastViewed))
     : photos
@@ -100,7 +143,29 @@ export default function ModelPhotosPage() {
       <style>{`@media (max-width: 640px) { .mp-photos-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; } }`}</style>
       <Link href="/model-portal" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← モデルポータル</Link>
       <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: '12px 0 8px' }}>📸 ご提供いただいた写真</h1>
-      <p style={{ fontSize: 12, color: '#aaa', marginBottom: 24 }}>※ご提供から2ヶ月で自動消去されます</p>
+      <p style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>※ご提供から2ヶ月で自動消去されます</p>
+
+      {photos.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+          <button onClick={selectAll}
+            style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #1a3560', background: selectedIds.size === photos.length ? '#1a3560' : '#fff', color: selectedIds.size === photos.length ? '#fff' : '#1a3560', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+            {selectedIds.size === photos.length ? '✓ 全選択中' : '全て選択'}
+          </button>
+          {selectedIds.size > 0 && (
+            <>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#1a3560' }}>{selectedIds.size}件選択中</span>
+              <button onClick={() => setSelectedIds(new Set())}
+                style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', color: '#666', fontSize: 12, cursor: 'pointer' }}>
+                解除
+              </button>
+              <button onClick={bulkDownload} disabled={bulkDownloading}
+                style={{ padding: '6px 16px', borderRadius: 8, border: 'none', background: bulkDownloading ? '#aaa' : '#1a3560', color: '#fff', fontSize: 12, fontWeight: 700, cursor: bulkDownloading ? 'not-allowed' : 'pointer' }}>
+                {bulkDownloading ? 'ダウンロード中...' : `📥 一括ダウンロード（${selectedIds.size}件）`}
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {photos.length === 0 ? (
         <p style={{ color: '#999' }}>あなたが写っている提供写真はまだありません。</p>
@@ -112,7 +177,7 @@ export default function ModelPhotosPage() {
                 新着 {newPhotos.length}件
               </p>
               <div className="mp-photos-grid" style={grid}>
-                {newPhotos.map(p => <PhotoCard key={p.id} p={p} onExpand={setExpanded} />)}
+                {newPhotos.map(p => <PhotoCard key={p.id} p={p} onExpand={setExpanded} selected={selectedIds.has(p.id)} onSelect={toggleSelect} />)}
               </div>
             </div>
           )}
@@ -127,7 +192,7 @@ export default function ModelPhotosPage() {
               </button>
               {showAll && (
                 <div className="mp-photos-grid" style={grid}>
-                  {seenPhotos.map(p => <PhotoCard key={p.id} p={p} onExpand={setExpanded} />)}
+                  {seenPhotos.map(p => <PhotoCard key={p.id} p={p} onExpand={setExpanded} selected={selectedIds.has(p.id)} onSelect={toggleSelect} />)}
                 </div>
               )}
             </div>
