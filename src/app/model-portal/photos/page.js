@@ -29,7 +29,12 @@ function PhotoCard({ p, onExpand }) {
         <img src={p.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
       <div style={{ padding: '12px 14px' }}>
-        <div style={{ fontSize: 11, color: '#999', marginBottom: 8 }}>{formatDateTime(p.created_at)}</div>
+        <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>{formatDateTime(p.created_at)}</div>
+        {(p.user_name || p.user_email) && (
+          <div style={{ fontSize: 12, color: '#1a3560', fontWeight: 600, marginBottom: 6 }}>
+            📷 {p.user_name || p.user_email}
+          </div>
+        )}
         {p.sns_url && (
           <div style={{ fontSize: 12, marginBottom: 6, wordBreak: 'break-all' }}>
             <span style={{ color: '#999' }}>SNS：</span>
