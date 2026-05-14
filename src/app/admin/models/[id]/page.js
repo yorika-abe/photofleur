@@ -23,6 +23,7 @@ export default function AdminModelEditPage() {
   const [linkEmail, setLinkEmail] = useState('')
   const [linkLoading, setLinkLoading] = useState(false)
   const [linkedUserId, setLinkedUserId] = useState(null)
+  const [linkedEmail, setLinkedEmail] = useState('')
   const [form, setForm] = useState({
     name: '', name_en: '', bio: '', height: '', birthday: '', shoe_size: '',
     street_price: '', studio_price: '', duration_street: '', duration_studio: '',
@@ -41,6 +42,7 @@ export default function AdminModelEditPage() {
         if (!model || model.error) { router.push('/admin/models'); return }
         setStatus(model.status || 'active')
         setLinkedUserId(model.user_id || null)
+        setLinkedEmail(model.linked_email || '')
         setForm({
           name: model.name || '',
           name_en: model.name_en || '',
@@ -50,8 +52,8 @@ export default function AdminModelEditPage() {
           shoe_size: model.shoe_size || '',
           street_price: model.street_price || '',
           studio_price: model.studio_price || '',
-          duration_street: model.duration_street || '',
-          duration_studio: model.duration_studio || '',
+          duration_street: model.duration_street || '90min',
+          duration_studio: model.duration_studio || '60min',
           image: model.image || '',
           twitter_url: model.twitter_url || '',
           instagram_url: model.instagram_url || '',
@@ -124,7 +126,7 @@ export default function AdminModelEditPage() {
       const data = await res.json()
       setSaving(false)
       if (data.error) alert('エラー: ' + data.error)
-      else alert('保存しました')
+      else router.push('/admin/models')
     }
   }
 
@@ -313,7 +315,7 @@ export default function AdminModelEditPage() {
               モデルが自分でプロフィールを編集できるよう、ログインアカウントと紐付けます。
             </p>
             {linkedUserId
-              ? <div style={{ fontSize: 13, color: '#388e3c', fontWeight: 600, marginBottom: 12 }}>✓ アカウント紐付け済み</div>
+              ? <div style={{ fontSize: 13, color: '#388e3c', fontWeight: 600, marginBottom: 12 }}>✓ アカウント紐付け済み{linkedEmail && <span style={{ color: '#555', fontWeight: 400, marginLeft: 8 }}>（{linkedEmail}）</span>}</div>
               : <div style={{ fontSize: 13, color: '#1565c0', marginBottom: 12 }}>未紐付け（モデルは自分でプロフィールを編集できません）</div>
             }
             <div style={{ display: 'flex', gap: 8 }}>

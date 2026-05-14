@@ -7,6 +7,10 @@ export async function GET(req, { params }) {
   const supabase = await createSupabaseAdminClient()
   const { data, error } = await supabase.from('models').select('*').eq('id', id).single()
   if (error) return Response.json({ error: error.message }, { status: 404 })
+  if (data?.user_id) {
+    const { data: profile } = await supabase.from('user_profiles').select('email').eq('id', data.user_id).single()
+    if (profile?.email) data.linked_email = profile.email
+  }
   return Response.json(data)
 }
 
