@@ -1,10 +1,11 @@
-import { createSupabaseAdminClient } from '@/lib/supabase-server'
+import { requireAdmin } from '@/lib/auth'
 
 export async function GET() {
-  const supabase = await createSupabaseAdminClient()
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const [{ data: events }, { data: models }] = await Promise.all([
-    supabase.from('annual_events').select('*').order('month').order('day'),
-    supabase.from('models').select('id, name, birthday, pending_data').order('birthday'),
+    admin.from('annual_events').select('*').order('month').order('day'),
+    admin.from('models').select('id, name, birthday, pending_data').order('birthday'),
   ])
   const normalizedModels = (models || [])
     .map(m => {
@@ -16,9 +17,10 @@ export async function GET() {
 }
 
 export async function POST(req) {
-  const supabase = await createSupabaseAdminClient()
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const { month, day, title, notify_model_group, notify_camera } = await req.json()
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from('annual_events')
     .insert({ month, day, title, notify_model_group, notify_camera })
     .select().single()
@@ -27,16 +29,18 @@ export async function POST(req) {
 }
 
 export async function PUT(req) {
-  const supabase = await createSupabaseAdminClient()
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const { id, ...updates } = await req.json()
-  const { error } = await supabase.from('annual_events').update(updates).eq('id', id)
+  const { error } = await admin.from('annual_events').update(updates).eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json({ ok: true })
 }
 
 export async function DELETE(req) {
-  const supabase = await createSupabaseAdminClient()
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await req.json()
-  await supabase.from('annual_events').delete().eq('id', id)
+  await admin.from('annual_events').delete().eq('id', id)
   return Response.json({ ok: true })
 }

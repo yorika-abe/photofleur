@@ -1,8 +1,9 @@
-import { createSupabaseAdminClient } from '@/lib/supabase-server'
+import { requireAdmin } from '@/lib/auth'
 
 export async function GET(req, { params }) {
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await params
-  const admin = await createSupabaseAdminClient()
   const { data, error } = await admin
     .from('event_product_bookings')
     .select('*')

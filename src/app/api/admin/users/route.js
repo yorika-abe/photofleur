@@ -1,8 +1,9 @@
-import { createSupabaseAdminClient } from '@/lib/supabase-server'
+import { requireAdmin } from '@/lib/auth'
 
 export async function GET() {
-  const supabase = await createSupabaseAdminClient()
-  const { data, error } = await supabase
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  const { data, error } = await admin
     .from('user_profiles')
     .select('id, name, email, roles, role, created_at, registered_via_invite, invite_notif_seen, is_blocked')
     .order('created_at', { ascending: false })
@@ -15,13 +16,14 @@ export async function GET() {
 }
 
 export async function PATCH(req) {
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const body = await req.json()
   const { userId, roles, is_blocked } = body
-  const supabase = await createSupabaseAdminClient()
   const updateData = {}
   if (roles !== undefined) updateData.roles = roles
   if (is_blocked !== undefined) updateData.is_blocked = is_blocked
-  const { error } = await supabase.from('user_profiles').update(updateData).eq('id', userId)
+  const { error } = await admin.from('user_profiles').update(updateData).eq('id', userId)
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json({ ok: true })
 }

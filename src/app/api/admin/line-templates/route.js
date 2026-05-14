@@ -1,4 +1,4 @@
-import { createSupabaseAdminClient } from '@/lib/supabase-server'
+import { requireAdmin } from '@/lib/auth'
 
 const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://photofleur.vercel.app'
 
@@ -20,7 +20,7 @@ export const DEFAULTS = {
   birthday_msg: `今日は○○ちゃんの誕生日！\nお誕生日おめでとうございます💖\n素敵な1日になりますように❣️\n\nPhotoFleur運営`,
   x_event_publish: `📢お知らせ\n【開催イベントが公開されました】\n\n【📍開催日　タイトル】\n{{event_date}} {{title}}\n{{subtitle}}\n\n{{description}}\n\n【⏰予約受付開始日時】\n{{booking_open_at}}~\n\nHPより詳細ご確認ください！\n{{event_url}}`,
   x_booking_open: `📢お知らせ\n【⏰本日予約受付開始されます】\n\n【📍開催日　タイトル】\n{{event_date}} {{title}}\n{{subtitle}}\n\n{{description}}\n\n皆様のご予約心よりお待ち申し上げます。\n{{event_url}}`,
-  x_day_before: `おはようございます☀️\n明日の開催イベントをお知らせいたします。\n\n【📍開催日　タイトル】\n{{event_date}} {{title}}\n{{subtitle}}\n\n{{description}}\n\n本日22時までに第一締め切りされます。\n開放分は当日でもご予約可能ですので\nぜひご予約ご検討ください💖\n{{event_url}}`,
+  x_day_before: `📢お知らせ\n【⏰本日予約受付開始されます】\n\n【📍開催日　タイトル】\n{{event_date}} {{title}}\n{{subtitle}}\n\n{{description}}\n\n本日22時までに第一締め切りされます。\n開放分は当日でもご予約可能ですので\nぜひご予約ご検討ください💖\n{{event_url}}`,
   photographer_booking: `【PhotoFleur】ご予約ありがとうございます📸\n\n撮影日：{{event_date}}\n時間枠：{{slot_label}}\n担当モデル：{{model_name}}\n\n当日お気をつけてお越しください🌸\nご不明点は公式LINEよりご連絡ください。`,
   photographer_special: `【PhotoFleur】特別予約が完了しました📸\n\n商品：{{product_name}}\n撮影日：{{event_date}}\n{{selections}}\n\nご予約ありがとうございます🌸\nご不明点は公式LINEよりご連絡ください。`,
   photographer_private: `【PhotoFleur】非公開予約が完了しました📸\n\n商品：{{product_title}}\n担当モデル：{{model_name}}\n\n詳細は別途メールにてお送りしております🌸\nご不明点は公式LINEよりご連絡ください。`,
@@ -41,8 +41,9 @@ export const DEFAULTS = {
 }
 
 export async function GET() {
-  const supabase = await createSupabaseAdminClient()
-  const { data } = await supabase.from('line_templates').select('key, body')
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  const { data } = await admin.from('line_templates').select('key, body')
   const templates = { ...DEFAULTS }
   for (const row of (data || [])) {
     templates[row.key] = row.body
@@ -51,9 +52,10 @@ export async function GET() {
 }
 
 export async function PUT(req) {
-  const supabase = await createSupabaseAdminClient()
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const { key, body } = await req.json()
   if (key !== '_camera_broadcast_paused' && !DEFAULTS[key]) return Response.json({ error: 'invalid key' }, { status: 400 })
-  await supabase.from('line_templates').upsert({ key, body, updated_at: new Date().toISOString() }, { onConflict: 'key' })
+  await admin.from('line_templates').upsert({ key, body, updated_at: new Date().toISOString() }, { onConflict: 'key' })
   return Response.json({ ok: true })
 }

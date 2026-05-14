@@ -1,24 +1,25 @@
-import { createSupabaseAdminClient } from '@/lib/supabase-server'
+import { requireAdmin } from '@/lib/auth'
 import { syncBookingSlots, get0buPrice, filterSlotsByShift, DEFAULT_SLOTS } from '@/lib/sync-booking-slots'
 
 const DEFAULT_STUDIO_SLOTS = DEFAULT_SLOTS.studio
 const DEFAULT_STREET_SLOTS = DEFAULT_SLOTS.street
 
 export async function POST(req, { params }) {
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await params
-  const supabase = await createSupabaseAdminClient()
   const body = await req.json()
 
   if (body.action === 'auto_add') {
     const { event, slotTemplates } = body
-    const { data: shiftData } = await supabase
+    const { data: shiftData } = await admin
       .from('model_shifts')
       .select('model_id, available_slots, available_from, available_until')
       .eq('event_date', event.event_date)
-    const { data: existing } = await supabase.from('event_entries').select('model_id').eq('event_id', id)
+    const { data: existing } = await admin.from('event_entries').select('model_id').eq('event_id', id)
     const existingIds = (existing || []).map(e => e.model_id)
     const toAdd = (shiftData || []).filter(s => !existingIds.includes(s.model_id))
-    const { data: allModels } = await supabase.from('models').select('id, studio_price, street_price')
+    const { data: allModels } = await admin.from('models').select('id, studio_price, street_price')
 
     const defaultSlots = event.event_type === 'studio' ? DEFAULT_STUDIO_SLOTS : DEFAULT_STREET_SLOTS
     const templateSlots = (slotTemplates && slotTemplates.length > 0) ? slotTemplates : defaultSlots
@@ -26,7 +27,7 @@ export async function POST(req, { params }) {
     for (const shift of toAdd) {
       const model = allModels?.find(m => m.id === shift.model_id)
       if (!model) continue
-      const { data: entry } = await supabase
+      const { data: entry } = await admin
         .from('event_entries')
         .insert({ event_id: id, model_id: shift.model_id })
         .select('id, event_id, model_id')
@@ -49,7 +50,7 @@ export async function POST(req, { params }) {
         price: (isStudioType && slot.order === 0) ? (get0buPrice(parseInt(model.studio_price || 0)) + studioFee) : basePrice,
         max_reservations: 1, is_reserved: false,
       }))
-      await supabase.from('booking_slots').insert(slotsToInsert)
+      await admin.from('booking_slots').insert(slotsToInsert)
     }
     return Response.json({ ok: true })
   }
@@ -57,13 +58,13 @@ export async function POST(req, { params }) {
   // 締め切り前専用: 既存モデルの枠を同期 + 未追加モデルを追加
   if (body.action === 'sync_shifts') {
     const { event, slotTemplates } = body
-    const { data: shiftData } = await supabase
+    const { data: shiftData } = await admin
       .from('model_shifts')
       .select('model_id, available_slots, available_from, available_until')
       .eq('event_date', event.event_date)
-    const { data: existing } = await supabase.from('event_entries').select('model_id').eq('event_id', id)
+    const { data: existing } = await admin.from('event_entries').select('model_id').eq('event_id', id)
     const existingIds = new Set((existing || []).map(e => e.model_id))
-    const { data: allModels } = await supabase.from('models').select('id, studio_price, street_price')
+    const { data: allModels } = await admin.from('models').select('id, studio_price, street_price')
 
     const defaultSlots = event.event_type === 'studio' ? DEFAULT_STUDIO_SLOTS : DEFAULT_STREET_SLOTS
     const templateSlots = (slotTemplates && slotTemplates.length > 0) ? slotTemplates : defaultSlots
@@ -71,14 +72,14 @@ export async function POST(req, { params }) {
     for (const shift of shiftData || []) {
       if (existingIds.has(shift.model_id)) {
         // 既存モデル: シフトに合わせて枠を同期
-        await syncBookingSlots(supabase, { ...shift, event_date: event.event_date })
+        await syncBookingSlots(admin, { ...shift, event_date: event.event_date })
       } else {
         // 未追加モデル: 不参加でなければ追加
         const avail = shift.available_slots?.[0]
         if (avail?.unavailable) continue
         const model = allModels?.find(m => m.id === shift.model_id)
         if (!model) continue
-        const { data: entry } = await supabase
+        const { data: entry } = await admin
           .from('event_entries')
           .insert({ event_id: id, model_id: shift.model_id })
           .select('id')
@@ -91,7 +92,7 @@ export async function POST(req, { params }) {
           : parseInt(model.street_price || 0)
         const targetSlots = filterSlotsByShift(templateSlots, shift)
         if (targetSlots.length === 0) continue
-        await supabase.from('booking_slots').insert(targetSlots.map(slot => ({
+        await admin.from('booking_slots').insert(targetSlots.map(slot => ({
           event_entry_id: entry.id, slot_label: slot.label, slot_order: slot.order,
           start_time: new Date(`${event.event_date}T${slot.start}:00+09:00`).toISOString(),
           end_time: new Date(`${event.event_date}T${slot.end}:00+09:00`).toISOString(),
@@ -105,21 +106,21 @@ export async function POST(req, { params }) {
 
   if (body.action === 'add_model') {
     const { modelId, event, slotTemplates } = body
-    const { data: entry } = await supabase
+    const { data: entry } = await admin
       .from('event_entries')
       .insert({ event_id: id, model_id: modelId })
       .select('id, event_id, model_id')
       .single()
     if (!entry) return Response.json({ error: 'Failed' }, { status: 500 })
 
-    const { data: model } = await supabase.from('models').select('studio_price, street_price').eq('id', modelId).single()
+    const { data: model } = await admin.from('models').select('studio_price, street_price').eq('id', modelId).single()
     const isStudioType = event.event_type === 'studio' || event.event_type === 'irregular'
     const studioFee = parseInt(event.studio_fee) || 2000
     const basePrice = isStudioType
       ? (parseInt(model?.studio_price || 0) + studioFee)
       : parseInt(model?.street_price || 0)
 
-    const { data: shift } = await supabase
+    const { data: shift } = await admin
       .from('model_shifts')
       .select('available_slots, available_from, available_until')
       .eq('model_id', modelId)
@@ -139,7 +140,7 @@ export async function POST(req, { params }) {
       price: (isStudioType && slot.order === 0) ? (get0buPrice(parseInt(model?.studio_price || 0)) + studioFee) : basePrice,
       max_reservations: 1, is_reserved: false,
     }))
-    const { data: slots } = await supabase
+    const { data: slots } = await admin
       .from('booking_slots')
       .insert(slotsToInsert)
       .select('id, slot_label, slot_order, start_time, end_time, price, is_reserved, max_reservations')
@@ -147,21 +148,21 @@ export async function POST(req, { params }) {
   }
 
   if (body.action === 'reset_all_slots') {
-    const { data: entries } = await supabase.from('event_entries').select('id').eq('event_id', id)
+    const { data: entries } = await admin.from('event_entries').select('id').eq('event_id', id)
     if (!entries?.length) return Response.json({ ok: true })
     const entryIds = entries.map(e => e.id)
-    await supabase.from('booking_slots').delete().in('event_entry_id', entryIds)
+    await admin.from('booking_slots').delete().in('event_entry_id', entryIds)
     return Response.json({ ok: true })
   }
 
   if (body.action === 'recalculate_prices') {
     const { entryId } = body
-    const { data: entry } = await supabase.from('event_entries').select('model_id, event_id').eq('id', entryId).single()
+    const { data: entry } = await admin.from('event_entries').select('model_id, event_id').eq('id', entryId).single()
     if (!entry) return Response.json({ error: 'Entry not found' }, { status: 404 })
     const [{ data: model }, { data: ev }, { data: slots }] = await Promise.all([
-      supabase.from('models').select('studio_price, street_price').eq('id', entry.model_id).single(),
-      supabase.from('events').select('event_type, studio_fee').eq('id', entry.event_id).single(),
-      supabase.from('booking_slots').select('id, slot_order').eq('event_entry_id', entryId),
+      admin.from('models').select('studio_price, street_price').eq('id', entry.model_id).single(),
+      admin.from('events').select('event_type, studio_fee').eq('id', entry.event_id).single(),
+      admin.from('booking_slots').select('id, slot_order').eq('event_entry_id', entryId),
     ])
     const isStudioType = ev?.event_type === 'studio' || ev?.event_type === 'irregular'
     const studioFee = parseInt(ev?.studio_fee) || 2000
@@ -170,7 +171,7 @@ export async function POST(req, { params }) {
       : parseInt(model?.street_price || 0)
     for (const slot of slots || []) {
       const price = (isStudioType && slot.slot_order === 0) ? (get0buPrice(parseInt(model?.studio_price || 0)) + studioFee) : basePrice
-      await supabase.from('booking_slots').update({ price }).eq('id', slot.id)
+      await admin.from('booking_slots').update({ price }).eq('id', slot.id)
     }
     return Response.json({ ok: true })
   }
@@ -179,8 +180,9 @@ export async function POST(req, { params }) {
 }
 
 export async function DELETE(req) {
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const { entryId } = await req.json()
-  const supabase = await createSupabaseAdminClient()
-  await supabase.from('event_entries').delete().eq('id', entryId)
+  await admin.from('event_entries').delete().eq('id', entryId)
   return Response.json({ ok: true })
 }

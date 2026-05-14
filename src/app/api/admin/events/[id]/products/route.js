@@ -1,11 +1,12 @@
-import { createSupabaseAdminClient } from '@/lib/supabase-server'
+import { requireAdmin } from '@/lib/auth'
 
 export async function GET(req, { params }) {
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await params
-  const supabase = await createSupabaseAdminClient()
-  const { data } = await supabase.from('event_products').select('*').eq('event_id', id).order('display_order').order('created_at')
+  const { data } = await admin.from('event_products').select('*').eq('event_id', id).order('display_order').order('created_at')
   const products = await Promise.all((data || []).map(async p => {
-    const { count } = await supabase
+    const { count } = await admin
       .from('event_product_bookings')
       .select('*', { count: 'exact', head: true })
       .eq('product_id', p.id)
@@ -16,10 +17,11 @@ export async function GET(req, { params }) {
 }
 
 export async function POST(req, { params }) {
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await params
-  const supabase = await createSupabaseAdminClient()
   const body = await req.json()
-  const { data, error } = await supabase.from('event_products').insert({
+  const { data, error } = await admin.from('event_products').insert({
     event_id: id,
     name: body.name,
     image: body.image || null,
@@ -34,19 +36,21 @@ export async function POST(req, { params }) {
 }
 
 export async function PATCH(req, { params }) {
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await params
-  const supabase = await createSupabaseAdminClient()
   const { productId, ...updates } = await req.json()
   if (updates.price !== undefined) updates.price = parseInt(updates.price)
   if (updates.stock !== undefined) updates.stock = parseInt(updates.stock)
-  await supabase.from('event_products').update(updates).eq('id', productId).eq('event_id', id)
+  await admin.from('event_products').update(updates).eq('id', productId).eq('event_id', id)
   return Response.json({ ok: true })
 }
 
 export async function DELETE(req, { params }) {
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await params
-  const supabase = await createSupabaseAdminClient()
   const { productId } = await req.json()
-  await supabase.from('event_products').delete().eq('id', productId).eq('event_id', id)
+  await admin.from('event_products').delete().eq('id', productId).eq('event_id', id)
   return Response.json({ ok: true })
 }

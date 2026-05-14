@@ -1,14 +1,15 @@
-import { createSupabaseAdminClient } from '@/lib/supabase-server'
+import { requireAdmin } from '@/lib/auth'
 
 const TIER_ORDER = { staff: 0, '12000': 1, '9900': 2, '8900': 3 }
 
 export async function GET() {
-  const supabase = await createSupabaseAdminClient()
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const pastDate = new Date()
   pastDate.setDate(pastDate.getDate() - 90)
   const since = pastDate.toISOString().split('T')[0]
 
-  const { data: events } = await supabase
+  const { data: events } = await admin
     .from('events')
     .select('id, event_date, event_type, title, location_name, studio_budget')
     .gte('event_date', since)
@@ -18,7 +19,7 @@ export async function GET() {
 
   const eventIds = events.map(e => e.id)
 
-  const { data: entries } = await supabase
+  const { data: entries } = await admin
     .from('event_entries')
     .select('id, event_id, model_id')
     .in('event_id', eventIds)
@@ -28,11 +29,11 @@ export async function GET() {
 
   const modelIds = [...new Set((entries || []).map(e => e.model_id).filter(Boolean))]
   const { data: modelsData } = modelIds.length
-    ? await supabase.from('models').select('id, name, price_tier, is_staff').in('id', modelIds)
+    ? await admin.from('models').select('id, name, price_tier, is_staff').in('id', modelIds)
     : { data: [] }
   const modelMap = Object.fromEntries((modelsData || []).map(m => [m.id, m]))
 
-  const { data: slots } = await supabase
+  const { data: slots } = await admin
     .from('booking_slots')
     .select('id, slot_label, slot_order, event_entry_id, price')
     .in('event_entry_id', entryIds)
@@ -42,7 +43,7 @@ export async function GET() {
   const slotIds = (slots || []).map(s => s.id)
 
   const { data: bookings } = slotIds.length
-    ? await supabase
+    ? await admin
         .from('bookings')
         .select('slot_id, last_name, first_name, nickname, sns_url, payment_method, cancelled_at')
         .in('slot_id', slotIds)
