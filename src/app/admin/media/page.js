@@ -521,7 +521,7 @@ export default function AdminMediaPage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #e8f4fb', overflowX: 'auto', flexWrap: 'nowrap' }}>
+      <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #e8f4fb', overflowX: 'auto', overflowY: 'hidden', flexWrap: 'nowrap' }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             style={{
