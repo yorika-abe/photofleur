@@ -5,36 +5,34 @@ export default function PdfImageSlider({ images }) {
   const [page, setPage] = useState(0)
   if (!images || images.length === 0) return null
 
+  const btnStyle = (disabled) => ({
+    background: 'none', border: '1px solid #ccc', borderRadius: '50%', width: 32, height: 32,
+    fontSize: 16, cursor: disabled ? 'default' : 'pointer', color: disabled ? '#ccc' : '#1a3560',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0,
+  })
+
   return (
     <div style={{ borderRadius: 10, border: '1px solid #d6ecf5', overflow: 'hidden', background: '#fff' }}>
-      <div style={{ position: 'relative', background: '#f0f0f0' }}>
+      <div style={{ background: '#f0f0f0' }}>
         <img
           src={images[page]}
           alt={`ページ ${page + 1}`}
           style={{ width: '100%', display: 'block', maxHeight: 560, objectFit: 'contain' }}
         />
-        {images.length > 1 && (
-          <>
-            <button
-              onClick={() => setPage(p => Math.max(0, p - 1))}
-              disabled={page === 0}
-              style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.45)', color: '#fff', border: 'none', borderRadius: '50%', width: 36, height: 36, fontSize: 18, cursor: page === 0 ? 'default' : 'pointer', opacity: page === 0 ? 0.3 : 1 }}
-            >‹</button>
-            <button
-              onClick={() => setPage(p => Math.min(images.length - 1, p + 1))}
-              disabled={page === images.length - 1}
-              style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.45)', color: '#fff', border: 'none', borderRadius: '50%', width: 36, height: 36, fontSize: 18, cursor: page === images.length - 1 ? 'default' : 'pointer', opacity: page === images.length - 1 ? 0.3 : 1 }}
-            >›</button>
-          </>
-        )}
       </div>
-      <div style={{ padding: '8px 14px', background: '#f5f9ff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, color: '#555' }}>
-        <span>{page + 1} / {images.length} ページ</span>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {images.length > 1 && images.map((_, i) => (
-            <button key={i} onClick={() => setPage(i)} style={{ width: 8, height: 8, borderRadius: '50%', border: 'none', background: i === page ? '#1a3560' : '#ccc', cursor: 'pointer', padding: 0 }} />
-          ))}
+      <div style={{ padding: '8px 14px', background: '#f5f9ff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, color: '#555', gap: 8 }}>
+        <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} style={btnStyle(page === 0)}>‹</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'center' }}>
+          <span>{page + 1} / {images.length} ページ</span>
+          {images.length > 1 && (
+            <div style={{ display: 'flex', gap: 4 }}>
+              {images.map((_, i) => (
+                <button key={i} onClick={() => setPage(i)} style={{ width: 7, height: 7, borderRadius: '50%', border: 'none', background: i === page ? '#1a3560' : '#ccc', cursor: 'pointer', padding: 0 }} />
+              ))}
+            </div>
+          )}
         </div>
+        <button onClick={() => setPage(p => Math.min(images.length - 1, p + 1))} disabled={page === images.length - 1} style={btnStyle(page === images.length - 1)}>›</button>
       </div>
     </div>
   )
