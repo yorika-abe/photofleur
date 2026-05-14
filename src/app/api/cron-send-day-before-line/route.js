@@ -152,6 +152,7 @@ export async function GET(req) {
       const model = entry.models
       if (!model?.line_id) continue
 
+      const sortedSlots = [...(entry.booking_slots || [])].sort((a, b) => (a.slot_order || 0) - (b.slot_order || 0))
       const vars = buildVars(event, entry)
       if (!vars) continue
 
