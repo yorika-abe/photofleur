@@ -96,6 +96,7 @@ export default async function AdminPage() {
           { href: '/admin/goods', label: 'グッズ管理', icon: '🛍️' },
           { href: '/admin/activity-reports', label: '外部活動報告', icon: '📣', badge: unreadActivityReports ?? 0 },
           { href: '/admin/staff-recruit', label: 'スタッフ募集', icon: '🐈‍⬛', badge: pendingStaffApps ?? 0 },
+          { href: '/admin/fixed-costs', label: '固定費管理', icon: '💴' },
         ].map(link => (
           <Link key={link.href} href={link.href} style={{ textDecoration: 'none' }}>
             <div style={{ background: '#1a3560', color: '#fff', borderRadius: 12, padding: '16px 14px', display: 'flex', alignItems: 'center', gap: 8, position: 'relative', overflow: 'hidden' }}>
