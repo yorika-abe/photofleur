@@ -4,9 +4,15 @@ export async function GET() {
   const supabase = await createSupabaseAdminClient()
   const [{ data: events }, { data: models }] = await Promise.all([
     supabase.from('annual_events').select('*').order('month').order('day'),
-    supabase.from('models').select('id, name, birthday').not('birthday', 'is', null).order('birthday'),
+    supabase.from('models').select('id, name, birthday, pending_data').order('birthday'),
   ])
-  return Response.json({ events: events || [], models: models || [] })
+  const normalizedModels = (models || [])
+    .map(m => {
+      const bd = m.birthday || m.pending_data?.birthday || null
+      return { id: m.id, name: m.name, birthday: bd ? bd.replace(/\//g, '-') : null }
+    })
+    .filter(m => m.birthday)
+  return Response.json({ events: events || [], models: normalizedModels })
 }
 
 export async function POST(req) {

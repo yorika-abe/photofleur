@@ -81,7 +81,7 @@ export default function ModelProfilePage() {
           name_en: pick('name_en') || '',
           bio: pick('bio') || '',
           height: pick('height') || '',
-          birthday: pick('birthday') || '',
+          birthday: (pick('birthday') || '').replace(/\//g, '-'),
           shoe_size: pick('shoe_size') || '',
           image: pick('image') || '',
           twitter_url: pick('twitter_url') || '',
@@ -305,7 +305,7 @@ export default function ModelProfilePage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
             <div>{lbl('身長（cm）')}<input type="number" style={inp} value={form.height} onChange={e => setForm(f => ({ ...f, height: e.target.value }))} /></div>
-            <div>{lbl('誕生日')}<input style={inp} value={form.birthday} onChange={e => setForm(f => ({ ...f, birthday: e.target.value }))} placeholder="2000/01/01" /></div>
+            <div>{lbl('誕生日')}<input type="date" style={inp} value={form.birthday} onChange={e => setForm(f => ({ ...f, birthday: e.target.value }))} /></div>
             <div>{lbl('靴サイズ')}<input style={inp} value={form.shoe_size} onChange={e => setForm(f => ({ ...f, shoe_size: e.target.value }))} placeholder="24.0cm" /></div>
           </div>
           <div>

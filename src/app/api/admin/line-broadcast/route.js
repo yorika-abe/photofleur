@@ -22,10 +22,15 @@ export async function GET(req) {
   if (type === 'birthdays') {
     const { data: models } = await admin
       .from('models')
-      .select('id, name, birthday, line_id')
+      .select('id, name, birthday, pending_data, line_id')
       .eq('status', 'active')
-      .not('birthday', 'is', null)
-    return Response.json({ models: models || [] })
+    const normalized = (models || [])
+      .map(m => {
+        const bd = m.birthday || m.pending_data?.birthday || null
+        return { ...m, birthday: bd ? bd.replace(/\//g, '-') : null }
+      })
+      .filter(m => m.birthday)
+    return Response.json({ models: normalized })
   }
 
   const { data: models } = await admin
