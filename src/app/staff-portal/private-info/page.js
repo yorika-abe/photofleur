@@ -7,17 +7,85 @@ import Link from 'next/link'
 const REQUIRED_FIELDS = ['real_name', 'phone', 'email', 'address', 'station']
 const EMPTY_FORM = { real_name: '', phone: '', email: '', address: '', station: '', bank_name: '', branch_name: '', account_type: '普通', account_number: '', account_holder: '' }
 
-const STAFF_RULES = [
-  { title: '第1条（業務内容）', body: '受付スタッフは、撮影会当日における受付業務（チェックイン、誘導、問い合わせ対応等）を担当します。' },
-  { title: '第2条（遅刻・欠勤について）', body: '当日の無断欠勤・無連絡遅刻は禁止とします。\n事前に連絡がある場合でも、代役を手配する責任があります。\n撮影時間の15分前までに受付場所へ到着し、集合場所写真を送信してください。' },
-  { title: '第3条（キャンセルについて）', body: 'スタッフ確定後のキャンセルは原則できません。\nやむを得ない場合は必ず事前にモデルと運営に連絡してください。' },
-  { title: '第4条（個人情報の取り扱い）', body: 'スタッフ業務で知り得た参加者の個人情報（氏名、メールアドレス等）を外部に漏洩することを禁止します。' },
-  { title: '第5条（SNSへの投稿）', body: '撮影会参加者を特定できる情報や、運営に関する内部情報をSNSに投稿することを禁止します。\n撮影会の様子を投稿する場合は、参加者の顔が映らないよう配慮してください。' },
-  { title: '第6条（受付マニュアルの遵守）', body: '受付業務は別途共有する受付マニュアルに従って行ってください。' },
-  { title: '第7条（違反時の措置）', body: '本規約に違反した場合、スタッフ登録を解除させていただく場合があります。' },
+const RULES_ARTICLES = [
+  {
+    title: '第1条（業務内容）',
+    body: '受付スタッフは、PhotoFleur撮影会における以下の業務を担当します。\n\n・参加者受付・チェックイン対応\n・参加者およびモデルの誘導\n・問い合わせ対応\n・会場準備・片付け補助\n・その他、運営が依頼する付随業務',
+  },
+  {
+    title: '第2条（集合・遅刻・欠勤について）',
+    body: '1. スタッフは、原則として撮影開始15分前もしくはスタジオ予約時間までに指定場所へ集合するものとします。\n2. 到着後、運営へ集合確認の連絡を行ってください。\n3. 無断欠勤および無連絡遅刻は禁止とします。\n4. やむを得ず遅刻・欠勤する場合は、判明時点で速やかに運営へ連絡してください。\n5. 必要に応じて、運営より代替スタッフの調整を依頼する場合があります。',
+  },
+  {
+    title: '第3条（キャンセルについて）',
+    body: '1. スタッフ確定後のキャンセルは原則として控えてください。\n2. やむを得ない事情がある場合は、速やかに運営へ連絡してください。\n3. 悪質な直前キャンセルや無断欠勤が続く場合、今後の依頼を停止する場合があります。',
+  },
+  {
+    title: '第4条（報酬について）',
+    body: '1. 報酬は、業務委託契約に基づき、撮影会開催形式により異なり、1時間あたり1200円〜（税込）とします。\n2. 支払方法および詳細は個別に定めるものとします。\n3. 交通費支給の有無については、個別に定めるものとします。',
+  },
+  {
+    title: '第5条（個人情報・秘密保持）',
+    body: '1. 業務上知り得た参加者・モデル・運営関係者の個人情報を、第三者へ漏洩してはなりません。\n2. 業務中に知り得た運営情報・参加者情報・内部連絡内容等を外部へ公開することを禁止します。\n3. 本条は契約終了後も有効とします。',
+  },
+  {
+    title: '第6条（SNS・写真投稿について）',
+    body: '1. 撮影会参加者を特定できる情報の投稿を禁止します。\n2. 運営許可のない内部情報の公開を禁止します。\n3. 会場写真等を投稿する場合は、参加者・モデルのプライバシーに十分配慮してください。',
+  },
+  {
+    title: '第7条（禁止事項）',
+    body: '以下の行為を禁止します。\n\n・参加者・モデルへの迷惑行為\n・ナンパ・営業・勧誘行為\n・業務中の無断撮影\n・運営指示に従わない行為\n・運営を介さないモデルへの過度な私的連絡\n・撮影会ブランドイメージを著しく損なう行為',
+  },
+  {
+    title: '第8条（契約解除）',
+    body: '運営は、以下の場合スタッフ登録を解除できるものとします。\n\n・本規約への重大な違反\n・無断欠勤・遅刻の繰り返し\n・業務態度に問題がある場合\n・運営継続が困難と判断した場合',
+  },
+  {
+    title: '第9条（本人確認）',
+    body: '運営は、必要に応じて本人確認書類の提示を求める場合があります。',
+  },
 ]
 
-function ContractModal({ form, onClose, onAgree, readOnly, agreedAt }) {
+const CONTRACT_ARTICLES = [
+  {
+    title: '第1条（業務内容）',
+    body: '甲は乙に対し、PhotoFleur撮影会における受付・案内・運営補助業務を委託し、乙はこれを受託する。',
+  },
+  {
+    title: '第2条（契約形態）',
+    body: '本契約は業務委託契約であり、雇用契約ではない。\n乙は自己の裁量により業務を遂行するものとし、甲乙間に雇用関係は発生しない。',
+  },
+  {
+    title: '第3条（報酬）',
+    body: '1. 甲は乙に対し、業務時間1時間あたり1200円（税込）の報酬を支払う。\n2. 支払方法は、当日現金払いもしくは業務終了後1週間以内の銀行振込とする。\n3. 振込手数料は甲の負担とする。',
+  },
+  {
+    title: '第4条（秘密保持）',
+    body: '乙は、業務上知り得た参加者・モデル・運営関係者の個人情報、内部情報を第三者へ漏洩してはならない。',
+  },
+  {
+    title: '第5条（禁止事項）',
+    body: '乙は以下の行為を行ってはならない。\n\n・無断欠勤\n・参加者・モデルへの迷惑行為\n・個人情報漏洩\n・SNS等への内部情報投稿\n・運営を介さないモデルへの過度な私的連絡\n・撮影会ブランドイメージを損なう行為',
+  },
+  {
+    title: '第6条（契約解除）',
+    body: '甲または乙は、相手方に重大な契約違反がある場合、本契約を解除できる。',
+  },
+  {
+    title: '第7条（損害賠償）',
+    body: '乙の故意または重大な過失により甲へ損害が発生した場合、乙はその損害を賠償するものとする。',
+  },
+  {
+    title: '第8条（本人確認）',
+    body: '甲は、必要に応じて乙へ本人確認書類の提示を求める場合がある。',
+  },
+  {
+    title: '第9条（協議事項）',
+    body: '本契約に定めのない事項については、甲乙協議の上解決する。',
+  },
+]
+
+function DocModal({ title, subtitle, articles, footer, readOnly, agreedAt, onClose, onAgree, checkLabel }) {
   const today = agreedAt
     ? new Date(agreedAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
     : new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -29,7 +97,8 @@ function ContractModal({ form, onClose, onAgree, readOnly, agreedAt }) {
       <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 660, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ padding: '20px 24px', borderBottom: '1px solid #e5e5e5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1a3560' }}>スタッフ規約・個人情報同意書</h2>
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1a3560' }}>{title}</h2>
+            {subtitle && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{subtitle}</div>}
             {readOnly && <div style={{ fontSize: 12, color: '#388e3c', fontWeight: 600, marginTop: 4 }}>✅ 締結済み・閲覧専用</div>}
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#888' }}>×</button>
@@ -39,17 +108,15 @@ function ContractModal({ form, onClose, onAgree, readOnly, agreedAt }) {
           style={{ overflowY: 'auto', padding: '24px', flex: 1, fontSize: 13, lineHeight: 2, color: '#333' }}
         >
           {!readOnly && <p style={{ color: '#888', fontSize: 12, marginTop: 0 }}>※ 最後までスクロールして内容をご確認ください</p>}
-          <h3 style={{ fontSize: 15, fontWeight: 700, borderBottom: '2px solid #1a3560', paddingBottom: 6, color: '#1a3560' }}>受付スタッフ規約</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, borderBottom: '2px solid #1a3560', paddingBottom: 6, color: '#1a3560' }}>{title}</h3>
           <p style={{ margin: '8px 0' }}><strong>PhotoFleur 撮影会</strong></p>
-          {STAFF_RULES.map((a, i) => (
+          {articles.map((a, i) => (
             <div key={i} style={{ marginBottom: 16 }}>
               <div style={{ fontWeight: 700, color: '#1a3560', fontSize: 14, marginBottom: 4 }}>{a.title}</div>
               <div style={{ whiteSpace: 'pre-wrap' }}>{a.body}</div>
             </div>
           ))}
-          <h3 style={{ fontSize: 15, fontWeight: 700, borderBottom: '2px solid #1a3560', paddingBottom: 6, color: '#1a3560', marginTop: 28 }}>個人情報の取り扱いについて</h3>
-          <p>氏名：{form.real_name}<br />住所：{form.address}<br />電話番号：{form.phone}</p>
-          <p>上記の個人情報は、スタッフ管理・緊急連絡・契約確認のみに使用し、第三者に提供しません。<br />同意日：{today}</p>
+          {footer && <div style={{ marginTop: 20, fontSize: 13, whiteSpace: 'pre-wrap', color: '#555' }}>{footer(today)}</div>}
         </div>
         <div style={{ padding: '16px 24px', borderTop: '1px solid #e5e5e5', background: '#f8fbff' }}>
           {readOnly ? (
@@ -60,7 +127,7 @@ function ContractModal({ form, onClose, onAgree, readOnly, agreedAt }) {
               {scrolled && (
                 <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1a3560' }}>
                   <input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)} style={{ width: 18, height: 18, cursor: 'pointer' }} />
-                  上記のスタッフ規約および個人情報の取り扱いに同意します
+                  {checkLabel}
                 </label>
               )}
               <div style={{ display: 'flex', gap: 10 }}>
@@ -100,12 +167,15 @@ export default function StaffPrivateInfoPage() {
   const router = useRouter()
   const [liveData, setLiveData] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
+  const [rulesAgreedAt, setRulesAgreedAt] = useState(null)
   const [contractAgreedAt, setContractAgreedAt] = useState(null)
   const [pendingChanges, setPendingChanges] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [editing, setEditing] = useState(false)
+  const [showRules, setShowRules] = useState(false)
   const [showContract, setShowContract] = useState(false)
+  const [pendingRulesAt, setPendingRulesAt] = useState(null)
   const [message, setMessage] = useState('')
 
   useEffect(() => { load() }, [])
@@ -128,24 +198,34 @@ export default function StaffPrivateInfoPage() {
       account_number: src.account_number || '',
       account_holder: src.account_holder || '',
     })
+    setRulesAgreedAt(data.rules_agreed_at || null)
     setContractAgreedAt(data.contract_agreed_at || null)
     setPendingChanges(data.pending_changes || null)
     setLoading(false)
   }
 
-  async function handleFirstSave() {
+  function handleFirstSave() {
     const missing = REQUIRED_FIELDS.filter(k => !form[k])
     if (missing.length > 0) { setMessage('必須項目をすべて入力してください'); return }
+    setShowRules(true)
+  }
+
+  function handleAgreeRules() {
+    const now = new Date().toISOString()
+    setPendingRulesAt(now)
+    setShowRules(false)
     setShowContract(true)
   }
 
   async function handleAgreeContract() {
     setShowContract(false)
     setSaving(true)
+    const rulesAt = pendingRulesAt || new Date().toISOString()
+    const contractAt = new Date().toISOString()
     const res = await fetch('/api/staff-portal/private-info', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, contract_agreed_at: new Date().toISOString() }),
+      body: JSON.stringify({ ...form, rules_agreed_at: rulesAt, contract_agreed_at: contractAt }),
     })
     setSaving(false)
     if (res.ok) { router.push('/staff-portal/guide') }
@@ -167,12 +247,34 @@ export default function StaffPrivateInfoPage() {
   const hasInfo = !!liveData?.real_name
   const hasPending = !!pendingChanges
 
+  const contractFooter = (today) =>
+    `契約締結日：${today}\n\n【甲】\nPhotoFleur\n代表　阿部依花\n\n【乙】\n氏名：${liveData?.real_name || form.real_name || '＿＿＿＿＿'}\n住所：${liveData?.address || form.address || '＿＿＿＿＿'}`
+
   if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#aaa' }}>読み込み中...</div>
 
   return (
     <div style={{ maxWidth: 700, margin: '0 auto', padding: '28px 16px' }}>
+      {showRules && (
+        <DocModal
+          title="PhotoFleur 受付スタッフ規約"
+          articles={RULES_ARTICLES}
+          readOnly={false}
+          onClose={() => setShowRules(false)}
+          onAgree={handleAgreeRules}
+          checkLabel="上記のスタッフ規約に同意します"
+        />
+      )}
       {showContract && (
-        <ContractModal form={form} onClose={() => setShowContract(false)} onAgree={handleAgreeContract} readOnly={false} />
+        <DocModal
+          title="PhotoFleur 業務委託契約書"
+          subtitle="PhotoFleur（甲）と受付スタッフ（乙）"
+          articles={CONTRACT_ARTICLES}
+          footer={contractFooter}
+          readOnly={false}
+          onClose={() => setShowContract(false)}
+          onAgree={handleAgreeContract}
+          checkLabel="上記の業務委託契約書に同意します"
+        />
       )}
 
       <Link href="/staff-portal" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← スタッフ画面</Link>
@@ -223,7 +325,7 @@ export default function StaffPrivateInfoPage() {
           </div>
           <button onClick={handleFirstSave} disabled={saving}
             style={{ width: '100%', marginTop: 24, background: '#1a3560', color: '#fff', border: 'none', borderRadius: 10, padding: '14px', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
-            {saving ? '保存中...' : '情報を確認して規約に同意する →'}
+            {saving ? '保存中...' : '情報を確認して規約・契約書に同意する →'}
           </button>
         </div>
       ) : (
@@ -283,21 +385,54 @@ export default function StaffPrivateInfoPage() {
             )}
           </div>
 
-          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e5e5', padding: '20px 24px' }}>
+          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e5e5', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 2 }}>スタッフ規約・個人情報同意書</div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 2 }}>PhotoFleur 受付スタッフ規約</div>
+                {rulesAgreedAt
+                  ? <div style={{ fontSize: 12, color: '#388e3c', fontWeight: 600 }}>✅ 締結済み（{new Date(rulesAgreedAt).toLocaleDateString('ja-JP')}）</div>
+                  : <div style={{ fontSize: 12, color: '#e53935', fontWeight: 600 }}>⚠️ 未締結</div>}
+              </div>
+              <button onClick={() => setShowRules(true)}
+                style={{ background: '#f5f5f5', border: '1px solid #ddd', borderRadius: 7, padding: '7px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#555' }}>
+                {rulesAgreedAt ? '規約を確認する →' : '確認する'}
+              </button>
+            </div>
+            <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#1a3560', marginBottom: 2 }}>PhotoFleur 業務委託契約書</div>
                 {contractAgreedAt
                   ? <div style={{ fontSize: 12, color: '#388e3c', fontWeight: 600 }}>✅ 締結済み（{new Date(contractAgreedAt).toLocaleDateString('ja-JP')}）</div>
                   : <div style={{ fontSize: 12, color: '#e53935', fontWeight: 600 }}>⚠️ 未締結</div>}
               </div>
               <button onClick={() => setShowContract(true)}
                 style={{ background: '#f5f5f5', border: '1px solid #ddd', borderRadius: 7, padding: '7px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#555' }}>
-                確認する
+                {contractAgreedAt ? '契約書を確認する →' : '確認する'}
               </button>
             </div>
+            {showRules && (
+              <DocModal
+                title="PhotoFleur 受付スタッフ規約"
+                articles={RULES_ARTICLES}
+                readOnly={!!rulesAgreedAt}
+                agreedAt={rulesAgreedAt}
+                onClose={() => setShowRules(false)}
+                onAgree={() => setShowRules(false)}
+                checkLabel="上記のスタッフ規約に同意します"
+              />
+            )}
             {showContract && (
-              <ContractModal form={liveData} onClose={() => setShowContract(false)} onAgree={() => {}} readOnly={!!contractAgreedAt} agreedAt={contractAgreedAt} />
+              <DocModal
+                title="PhotoFleur 業務委託契約書"
+                subtitle="PhotoFleur（甲）と受付スタッフ（乙）"
+                articles={CONTRACT_ARTICLES}
+                footer={contractFooter}
+                readOnly={!!contractAgreedAt}
+                agreedAt={contractAgreedAt}
+                onClose={() => setShowContract(false)}
+                onAgree={() => setShowContract(false)}
+                checkLabel="上記の業務委託契約書に同意します"
+              />
             )}
           </div>
         </div>
