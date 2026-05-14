@@ -14,6 +14,7 @@ export default async function StaffOnboardingPage() {
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
+      <style>{`body { overflow-x: hidden; }`}</style>
       <div style={{ position: 'fixed', inset: 0, zIndex: 0 }}>
         <FadingHeroBg images={heroImages} opacity={0.55} />
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }} />
@@ -35,12 +36,18 @@ export default async function StaffOnboardingPage() {
             <div style={{ flex: '1 1 400px', background: 'rgba(255,255,255,0.88)', border: '1px solid #d6ecf5', borderRadius: 14, padding: '24px', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 12 }}>ABOUT Photo Fleur</h2>
               {pdfAbout ? (
-                <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #d6ecf5' }}>
-                  <iframe src={pdfAbout} style={{ width: '100%', height: 560, border: 'none', display: 'block' }} title="ABOUT Photo Fleur" />
-                  <div style={{ padding: '8px 12px', background: '#f5f9ff', textAlign: 'right' }}>
-                    <a href={pdfAbout} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#1a3560', textDecoration: 'none', fontWeight: 600 }}>↗ 別タブで開く</a>
+                <>
+                  <div className="pdf-desktop" style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #d6ecf5' }}>
+                    <iframe src={pdfAbout} style={{ width: '100%', height: 560, border: 'none', display: 'block' }} title="ABOUT Photo Fleur" />
+                    <div style={{ padding: '8px 12px', background: '#f5f9ff', textAlign: 'right' }}>
+                      <a href={pdfAbout} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#1a3560', textDecoration: 'none', fontWeight: 600 }}>↗ 別タブで開く</a>
+                    </div>
                   </div>
-                </div>
+                  <div className="pdf-mobile" style={{ display: 'none', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '28px 20px', background: '#f5f9ff', borderRadius: 10, border: '1px solid #d6ecf5', textAlign: 'center' }}>
+                    <div style={{ fontSize: 36 }}>📄</div>
+                    <a href={pdfAbout} target="_blank" rel="noopener noreferrer" style={{ background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '12px 28px', fontWeight: 700, fontSize: 14 }}>PDFを開く →</a>
+                  </div>
+                </>
               ) : (
                 <div style={{ background: '#f5f9ff', borderRadius: 10, padding: '32px', textAlign: 'center', color: '#aaa', fontSize: 14 }}>
                   📄 PDF（後ほど追加されます）
