@@ -7,9 +7,21 @@ async function downloadPhoto(url, idx) {
   const res = await fetch(url)
   const blob = await res.blob()
   const ext = blob.type.split('/')[1] || 'jpg'
+  const filename = `photo_${idx != null ? String(idx + 1).padStart(3, '0') + '_' : ''}${Date.now()}.${ext}`
+
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  if (isIOS && navigator.canShare) {
+    const file = new File([blob], filename, { type: blob.type })
+    if (navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file] }) } catch (e) { /* キャンセル等 */ }
+      return
+    }
+  }
+
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
-  a.download = `photo_${idx != null ? String(idx + 1).padStart(3, '0') + '_' : ''}${Date.now()}.${ext}`
+  a.download = filename
   a.click()
   URL.revokeObjectURL(a.href)
 }
