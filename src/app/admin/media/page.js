@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Cropper from 'react-easy-crop'
 
@@ -375,20 +375,44 @@ export default function AdminMediaPage() {
     )
   }
 
-  function ImageGrid({ images, onRemove, uploadKey, onAdd, label, aspect = '3/4' }) {
+  function ImageGrid({ images, onReorder, onRemove, uploadKey, onAdd, label, aspect = '3/4' }) {
+    const dragIdx = useRef(null)
+    const [dragOver, setDragOver] = useState(null)
+
+    function handleDragStart(i) { dragIdx.current = i }
+    function handleDrop(i) {
+      if (dragIdx.current === null || dragIdx.current === i) return
+      const next = [...images]
+      const [moved] = next.splice(dragIdx.current, 1)
+      next.splice(i, 0, moved)
+      onReorder(next)
+      dragIdx.current = null
+      setDragOver(null)
+    }
+
     return (
       <>
         {images.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 8, marginBottom: 12 }}>
-            {images.map((url, i) => (
-              <div key={i} style={{ position: 'relative', borderRadius: 6, overflow: 'hidden', aspectRatio: aspect }}>
-                <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <div style={{ position: 'absolute', top: 3, left: 4, background: 'rgba(0,0,0,0.5)', color: '#fff', borderRadius: 3, padding: '1px 5px', fontSize: 10 }}>{i + 1}枚目</div>
-                <button onClick={() => onRemove(i)}
-                  style={{ position: 'absolute', top: 3, right: 3, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
-              </div>
-            ))}
-          </div>
+          <>
+            <div style={{ fontSize: 11, color: '#aaa', marginBottom: 6 }}>長押しまたはドラッグで並び替え</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 8, marginBottom: 12 }}>
+              {images.map((url, i) => (
+                <div key={url}
+                  draggable
+                  onDragStart={() => handleDragStart(i)}
+                  onDragOver={e => { e.preventDefault(); setDragOver(i) }}
+                  onDragLeave={() => setDragOver(null)}
+                  onDrop={() => handleDrop(i)}
+                  onDragEnd={() => { dragIdx.current = null; setDragOver(null) }}
+                  style={{ position: 'relative', borderRadius: 6, overflow: 'hidden', aspectRatio: aspect, cursor: 'grab', outline: dragOver === i ? '2px solid #1a3560' : 'none', opacity: dragIdx.current === i ? 0.5 : 1 }}>
+                  <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+                  <div style={{ position: 'absolute', top: 3, left: 4, background: 'rgba(0,0,0,0.5)', color: '#fff', borderRadius: 3, padding: '1px 5px', fontSize: 10 }}>{i + 1}枚目</div>
+                  <button onClick={() => onRemove(i)}
+                    style={{ position: 'absolute', top: 3, right: 3, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                </div>
+              ))}
+            </div>
+          </>
         )}
         <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1a3560', color: '#fff', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
           📷 {label}
@@ -554,12 +578,12 @@ export default function AdminMediaPage() {
         {tab === 'home' && (
           <>
             <Section title="ヒーロー背景画像（PC）" desc="複数枚登録するとフェードで自動切り替えされます（5秒間隔）">
-              <ImageGrid images={heroImages} onRemove={i => setHeroImages(imgs => imgs.filter((_, idx) => idx !== i))}
+              <ImageGrid images={heroImages} onReorder={setHeroImages} onRemove={i => setHeroImages(imgs => imgs.filter((_, idx) => idx !== i))}
                 uploadKey="hero_bg" onAdd={f => uploadWithSignedUrl(f, 'hero_bg', url => setHeroImages(imgs => [...imgs, url]))} label="画像を追加（複数可）" />
             </Section>
 
             <Section title="ヒーロー背景画像（モバイル）" desc="スマホ用の縦長画像。未設定の場合はPC用が使用されます">
-              <ImageGrid images={heroImagesMobile} onRemove={i => setHeroImagesMobile(imgs => imgs.filter((_, idx) => idx !== i))}
+              <ImageGrid images={heroImagesMobile} onReorder={setHeroImagesMobile} onRemove={i => setHeroImagesMobile(imgs => imgs.filter((_, idx) => idx !== i))}
                 uploadKey="hero_bg_mobile" onAdd={f => uploadWithSignedUrl(f, 'hero_bg_mobile', url => setHeroImagesMobile(imgs => [...imgs, url]))} label="画像を追加（複数可）" aspect="9/16" />
             </Section>
 
@@ -590,7 +614,7 @@ export default function AdminMediaPage() {
         {/* ── リクエスト撮影 ── */}
         {tab === 'request' && (
           <Section title="ヒーロー背景画像" desc="複数枚登録するとフェードで自動切り替えされます">
-            <ImageGrid images={requestHeroImages} onRemove={i => setRequestHeroImages(imgs => imgs.filter((_, idx) => idx !== i))}
+            <ImageGrid images={requestHeroImages} onReorder={setRequestHeroImages} onRemove={i => setRequestHeroImages(imgs => imgs.filter((_, idx) => idx !== i))}
               uploadKey="request_hero" onAdd={f => uploadWithSignedUrl(f, 'request_hero', url => setRequestHeroImages(imgs => [...imgs, url]))} label="画像を追加（複数可）" aspect="16/9" />
           </Section>
         )}
@@ -638,7 +662,7 @@ export default function AdminMediaPage() {
         {tab === 'recruit_page' && (
           <>
             <Section title="ヒーロー背景画像" desc="複数枚登録するとフェードで自動切り替えされます">
-              <ImageGrid images={recruitHeroImages} onRemove={i => setRecruitHeroImages(imgs => imgs.filter((_, idx) => idx !== i))}
+              <ImageGrid images={recruitHeroImages} onReorder={setRecruitHeroImages} onRemove={i => setRecruitHeroImages(imgs => imgs.filter((_, idx) => idx !== i))}
                 uploadKey="recruit_hero" onAdd={f => uploadWithSignedUrl(f, 'recruit_hero', url => setRecruitHeroImages(imgs => [...imgs, url]))} label="画像を追加（複数可）" aspect="16/9" />
             </Section>
 
