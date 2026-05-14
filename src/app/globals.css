@@ -87,6 +87,11 @@ label[style*="cursor: pointer"]:active {
   transform: scale(0.96);
   opacity: 0.82;
 }
+label:has(input[type="checkbox"]):active,
+label:has(input[type="radio"]):active {
+  transform: none;
+  opacity: 1;
+}
 
 /* セレクト */
 select {
