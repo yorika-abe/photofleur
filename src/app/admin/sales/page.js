@@ -60,6 +60,7 @@ export default function AdminSalesPage() {
   const [expandedYears, setExpandedYears] = useState({})
   const [expandedRecords, setExpandedRecords] = useState({})
   const [nonEventRecords, setNonEventRecords] = useState({})
+  const [fixedCostMonthly, setFixedCostMonthly] = useState(0)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -71,6 +72,12 @@ export default function AdminSalesPage() {
     setMiscExpenses(loadMiscExpenses())
     setNonEventRecords(loadNonEventRecords())
     load()
+    fetch('/api/admin/fixed-costs').then(r => r.json()).then(d => {
+      const monthly = (d.costs || []).reduce((sum, c) => {
+        return sum + (c.period === 'yearly' ? Math.round(c.amount / 12) : c.amount)
+      }, 0)
+      setFixedCostMonthly(monthly)
+    }).catch(() => {})
   }, [])
 
   async function load() {
@@ -178,7 +185,8 @@ export default function AdminSalesPage() {
     const revenue = slotRevenue + productRevenue + privateRevenue + goodsRevenue
     const grossProfit = recordsInMonth.reduce((s, r) => s + (r.grossProfit || 0), 0) + nonEventGrossProfit
     const misc = miscExpenses[month] || 0
-    const netProfit = grossProfit - Math.round(slotRevenue * 0.036) - misc
+    const fees = Math.round(slotRevenue * 0.036)
+    const netProfit = grossProfit - fees - misc - fixedCostMonthly
 
     // レジ金計算（保存済みイベント記録から）
     const registerCashIn = recordsInMonth.reduce((s, r) => s + (r.cashSlotRevenue || 0) + (r.cashProductRevenue || 0), 0)
@@ -191,7 +199,7 @@ export default function AdminSalesPage() {
     return {
       bookings: bookingsInMonth, revenue, slotRevenue, productRevenue,
       privateRevenue, goodsRevenue, neRecord,
-      records: recordsInMonth, grossProfit, misc, netProfit,
+      records: recordsInMonth, grossProfit, misc, fees, netProfit,
       registerCashIn, registerCashOut, registerBalance,
     }
   }
@@ -333,7 +341,7 @@ export default function AdminSalesPage() {
         {[
           { label: '売上', value: yen(activeData.revenue), color: '#388e3c', note: [activeData.productRevenue > 0 && `イベント商品 ${yen(activeData.productRevenue)}`, activeData.privateRevenue > 0 && `非公開 ${yen(activeData.privateRevenue)}`, activeData.goodsRevenue > 0 && `グッズ ${yen(activeData.goodsRevenue)}`].filter(Boolean).join(' / ') || null },
           { label: '粗利益', value: yen(activeData.grossProfit), color: '#1a3560', note: '保存済み記録' },
-          { label: '純利益', value: yen(activeData.netProfit), color: activeData.netProfit >= 0 ? '#00695c' : '#c62828', note: `粗利−手数料(${yen(Math.round(activeData.slotRevenue * 0.036))})` },
+          { label: '純利益', value: yen(activeData.netProfit), color: activeData.netProfit >= 0 ? '#00695c' : '#c62828', note: `粗利−手数料(${yen(activeData.fees)})${fixedCostMonthly > 0 ? ` / -月間固定費(${yen(fixedCostMonthly)})` : ''}` },
         ].map(s => (
           <div key={s.label} style={{ background: '#fff', borderRadius: 10, padding: '14px', border: '1px solid #e5e5e5', textAlign: 'center' }}>
             <div style={{ fontSize: 11, color: '#aaa', marginBottom: 4 }}>{s.label}</div>
