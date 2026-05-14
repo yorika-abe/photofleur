@@ -93,7 +93,7 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
       const chargeRes = await fetch('/api/square/charge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceId: result.token, amount: price, email: form.email }),
+        body: JSON.stringify({ sourceId: result.token, email: form.email, context: { type: 'private', token } }),
       })
       const chargeData = await chargeRes.json()
       if (!chargeRes.ok) {

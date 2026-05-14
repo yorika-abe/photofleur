@@ -175,10 +175,27 @@ export default function CartCheckoutPage() {
           setError('カード情報の処理に失敗しました。入力内容をご確認ください。')
           setSaving(false); return
         }
+        // カード決済対象アイテムを種別ごとに分類してサーバーに送り、金額はサーバー側でDB参照して計算
+        const cardSlotItems = paymentMethod === 'card' ? bookingItems.filter(i => i.type === 'slot').map(i => ({ slotId: i.slotId })) : []
+        const cardProductItems = paymentMethod === 'card' ? bookingItems.filter(i => i.type === 'product').map(i => ({ productId: i.productId })) : []
+        const cardGoodsItems = [
+          ...forceCardGoods.map(i => ({ goodsId: i.goodsId, quantity: i.quantity || 1 })),
+          ...(paymentMethod === 'card' ? flexGoodsItems.map(i => ({ goodsId: i.goodsId, quantity: i.quantity || 1 })) : []),
+        ]
         const chargeRes = await fetch('/api/square/charge', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sourceId: result.token, amount: cardChargeTotal, email: form.email }),
+          body: JSON.stringify({
+            sourceId: result.token,
+            email: form.email,
+            context: {
+              type: 'cart',
+              slot_items: cardSlotItems,
+              product_items: cardProductItems,
+              goods_items: cardGoodsItems,
+              coupon_code: coupon ? couponCode : null,
+            },
+          }),
         })
         const chargeData = await chargeRes.json()
         if (!chargeRes.ok) {

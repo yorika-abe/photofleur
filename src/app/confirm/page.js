@@ -201,7 +201,7 @@ function ConfirmForm() {
       const chargeRes = await fetch('/api/square/charge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceId: result.token, amount: finalPrice, email: form.email }),
+        body: JSON.stringify({ sourceId: result.token, email: form.email, context: { type: 'slot', slot_id: slotId, coupon_code: coupon ? couponCode.trim() : null } }),
       })
       const chargeData = await chargeRes.json()
       if (!chargeRes.ok) {
