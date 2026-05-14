@@ -72,7 +72,8 @@ export default function HeroSection({ images, mobileImages }) {
   const currentMobileRef = useRef(0)
 
   const imgs = images?.length > 0 ? images : []
-  const mobileImgs = mobileImages?.length > 0 ? mobileImages : imgs
+  const hasMobileImages = (mobileImages?.length ?? 0) > 0
+  const mobileImgs = hasMobileImages ? mobileImages : imgs
 
   // PC images interval
   useEffect(() => {
@@ -88,17 +89,20 @@ export default function HeroSection({ images, mobileImages }) {
     return () => clearInterval(t)
   }, [imgs.length])
 
-  // Mobile images interval — independent from PC
+  // Mobile images interval — only when separate mobile images exist
   useEffect(() => {
-    if (mobileImgs === imgs) return // モバイル未設定ならPCに合わせる（上のintervalに任せる）
+    if (!hasMobileImages) return
     if (mobileImgs.length <= 1) return
     const t = setInterval(() => {
-      const next = (currentMobileRef.current + 1) % mobileImgs.length
+      const prev = currentMobileRef.current
+      const next = (prev + 1) % mobileImgs.length
+      setLeavingSrc(mobileImgs[prev])
+      setAnimKey(k => k + 1)
       setCurrentMobile(next)
       currentMobileRef.current = next
     }, 5000)
     return () => clearInterval(t)
-  }, [mobileImgs.length])
+  }, [hasMobileImages, mobileImgs.length])
 
   // Drive animation via CSS transitions on clip-path (stays within overflow:hidden bounds)
   useEffect(() => {
@@ -118,7 +122,7 @@ export default function HeroSection({ images, mobileImages }) {
 
   useEffect(() => {
     const isMobile = typeof window !== 'undefined' && window.innerHeight > window.innerWidth
-    const src = (isMobile && mobileImgs !== imgs) ? mobileImgs[currentMobile] : imgs[current]
+    const src = (isMobile && hasMobileImages) ? mobileImgs[currentMobile] : imgs[current]
     if (!src) return
     extractAccentColor(src).then(setAccentColor)
   }, [current, currentMobile])
