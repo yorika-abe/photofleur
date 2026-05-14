@@ -140,13 +140,13 @@ export default function HeroSection({ images, mobileImages }) {
   return (
     <section style={{ position: 'relative', height: '100svh', minHeight: 600, overflow: 'hidden', display: 'flex', alignItems: 'flex-end', background: '#000' }}>
       {/* Current image */}
-      <span className="hero-desktop" style={{ position: 'absolute', inset: 0 }}>
+      <span className="hero-desktop">
         {imgs.length > 0
           ? <img key={current} src={imgs[current]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 45%, #0d2030 100%)' }} />
         }
       </span>
-      <span className="hero-mobile" style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+      <span className="hero-mobile">
         {mobileImgs.length > 0
           ? <>
               <img key={`mblur-${currentMobile}`} src={mobileImgs[currentMobile]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(8px) brightness(0.85)', transform: 'scale(1.12)', transformOrigin: 'center' }} />

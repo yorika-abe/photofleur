@@ -39,11 +39,11 @@ body {
 .reveal-delay-3 { transition-delay: 0.3s; }
 .reveal-delay-4 { transition-delay: 0.4s; }
 
-.hero-desktop { display: contents; }
-.hero-mobile { display: none; }
+.hero-desktop { display: block; position: absolute; inset: 0; overflow: hidden; }
+.hero-mobile { display: none; position: absolute; inset: 0; overflow: hidden; }
 @media (orientation: portrait) {
   .hero-desktop { display: none; }
-  .hero-mobile { display: contents; }
+  .hero-mobile { display: block; }
 }
 
 /* ── グローバルクリック感 ── */
