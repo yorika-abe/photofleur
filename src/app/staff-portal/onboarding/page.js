@@ -36,7 +36,7 @@ export default async function StaffOnboardingPage() {
               <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 12 }}>ABOUT Photo Fleur</h2>
               {pdfAbout ? (
                 <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #d6ecf5' }}>
-                  <iframe src={`https://docs.google.com/viewer?url=${encodeURIComponent(pdfAbout)}&embedded=true`} style={{ width: '100%', height: 560, border: 'none', display: 'block' }} title="ABOUT Photo Fleur" />
+                  <iframe src={pdfAbout} style={{ width: '100%', height: 560, border: 'none', display: 'block' }} title="ABOUT Photo Fleur" />
                   <div style={{ padding: '8px 12px', background: '#f5f9ff', textAlign: 'right' }}>
                     <a href={pdfAbout} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#1a3560', textDecoration: 'none', fontWeight: 600 }}>↗ 別タブで開く</a>
                   </div>
@@ -52,7 +52,7 @@ export default async function StaffOnboardingPage() {
               <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 12 }}>撮影会スタッフ登録説明</h2>
               {pdfRegist ? (
                 <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #d6ecf5' }}>
-                  <iframe src={`https://docs.google.com/viewer?url=${encodeURIComponent(pdfRegist)}&embedded=true`} style={{ width: '100%', height: 560, border: 'none', display: 'block' }} title="撮影会スタッフ登録説明" />
+                  <iframe src={pdfRegist} style={{ width: '100%', height: 560, border: 'none', display: 'block' }} title="撮影会スタッフ登録説明" />
                   <div style={{ padding: '8px 12px', background: '#f5f9ff', textAlign: 'right' }}>
                     <a href={pdfRegist} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#1a3560', textDecoration: 'none', fontWeight: 600 }}>↗ 別タブで開く</a>
                   </div>
