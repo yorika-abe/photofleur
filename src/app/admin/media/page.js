@@ -521,7 +521,7 @@ export default function AdminMediaPage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #e8f4fb' }}>
+      <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #e8f4fb', overflowX: 'auto', flexWrap: 'nowrap' }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             style={{
@@ -529,7 +529,7 @@ export default function AdminMediaPage() {
               fontSize: 13, fontWeight: tab === t.id ? 700 : 500,
               color: tab === t.id ? '#1a3560' : '#888',
               borderBottom: tab === t.id ? '2px solid #1a3560' : '2px solid transparent',
-              marginBottom: -2,
+              marginBottom: -2, whiteSpace: 'nowrap', flexShrink: 0,
             }}>
             {t.label}
           </button>
