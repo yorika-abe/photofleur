@@ -8,14 +8,15 @@ export default function AdminFeedbackPage() {
   const [feedbacks, setFeedbacks] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { load() }, [])
-
   async function load() {
     const res = await fetch('/api/admin/feedback')
     const data = await res.json()
     setFeedbacks(Array.isArray(data) ? data : [])
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { load() }, [])
 
   async function markRead(id, is_read) {
     await fetch('/api/admin/feedback', {

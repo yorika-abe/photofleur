@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -28,6 +29,7 @@ export default function AdminNoticeEditPage() {
       if (data) setForm({ title: data.title || '', content: data.content || '', cover_image: data.cover_image || '', status: data.status || 'draft' })
       setLoading(false)
     })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   async function uploadCover(file) {
@@ -105,12 +107,14 @@ export default function AdminNoticeEditPage() {
         <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
           <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 12 }}>カバー画像</label>
           {form.cover_image ? (
-            <div style={{ marginBottom: 12, position: 'relative' }}>
-              <img src={form.cover_image} alt="" style={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 10, display: 'block' }} />
-              <button type="button" onClick={() => setForm(f => ({ ...f, cover_image: '' }))}
-                style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.55)', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 12 }}>
-                削除
-              </button>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ position: 'relative', height: 200, borderRadius: 10, overflow: 'hidden' }}>
+                <Image src={form.cover_image} alt="" fill style={{ objectFit: 'cover' }} />
+                <button type="button" onClick={() => setForm(f => ({ ...f, cover_image: '' }))}
+                  style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.55)', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 12 }}>
+                  削除
+                </button>
+              </div>
             </div>
           ) : (
             <>

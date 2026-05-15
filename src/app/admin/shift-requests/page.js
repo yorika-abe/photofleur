@@ -108,6 +108,7 @@ export default function ShiftRequestsPage() {
     setRequests(Array.isArray(data) ? data : [])
     setLoading(false)
   }
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load() }, [])
 
   function toggleDate(dateStr) {

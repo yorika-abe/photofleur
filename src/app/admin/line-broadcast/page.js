@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
@@ -605,7 +606,7 @@ function LineSettingsPanel({ activeTab }) {
                   {models.map(m => (
                     <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: '#e0d8f0' }}>
-                        {m.image ? <img src={m.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>👤</div>}
+                        {m.image ? <Image src={m.image} alt="" width={32} height={32} style={{ objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>👤</div>}
                       </div>
                       <span style={{ width: 100, fontSize: 13, fontWeight: 600, color: '#333', flexShrink: 0 }}>{m.name}</span>
                       <input

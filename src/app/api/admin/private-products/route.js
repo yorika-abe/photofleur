@@ -1,4 +1,5 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
+import { randomUUID } from 'crypto'
 
 async function checkAdmin() {
   const server = await createSupabaseServerClient()
@@ -20,13 +21,15 @@ export async function GET() {
     .select('*, models(id, name, image)')
     .order('created_at', { ascending: false })
 
-  const products = await Promise.all((data || []).map(async p => {
-    const { count } = await admin
-      .from('private_bookings')
-      .select('*', { count: 'exact', head: true })
-      .eq('product_id', p.id)
-    return { ...p, booking_count: count || 0 }
-  }))
+  const productIds = (data || []).map(p => p.id)
+  const { data: bookingCounts } = productIds.length
+    ? await admin.from('private_bookings').select('product_id').in('product_id', productIds)
+    : { data: [] }
+  const countMap = {}
+  for (const row of bookingCounts || []) {
+    countMap[row.product_id] = (countMap[row.product_id] || 0) + 1
+  }
+  const products = (data || []).map(p => ({ ...p, booking_count: countMap[p.id] || 0 }))
 
   const { data: models } = await admin
     .from('models')
@@ -44,6 +47,7 @@ export async function POST(req) {
   const { error, data } = await admin
     .from('private_products')
     .insert({
+      token: randomUUID(),
       title: body.title,
       description: body.description || null,
       price: body.price || 0,

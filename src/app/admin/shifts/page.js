@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
@@ -43,8 +44,6 @@ export default function AdminShiftsPage() {
   const [modelFilter, setModelFilter] = useState('')
   const [dateFilter, setDateFilter] = useState('')
 
-  useEffect(() => { load(); setModelFilter(''); setDateFilter('') }, [filter])
-
   async function load() {
     setLoading(true)
     const res = await fetch(`/api/admin/shifts?status=${filter}`)
@@ -52,6 +51,9 @@ export default function AdminShiftsPage() {
     setShifts(Array.isArray(data) ? data : [])
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); setModelFilter(''); setDateFilter('') }, [filter])
 
   async function updateStatus(shiftId, status) {
     setUpdating(prev => ({ ...prev, [shiftId]: true }))
@@ -138,7 +140,7 @@ export default function AdminShiftsPage() {
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                       {shift.models?.image && (
-                        <img src={shift.models.image} style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover' }} alt="" />
+                        <Image src={shift.models.image} alt="" width={30} height={30} style={{ borderRadius: '50%', objectFit: 'cover' }} />
                       )}
                       <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e' }}>{shift.models?.name}</span>
                       <span style={{ background: sc.bg, color: sc.color, borderRadius: 6, padding: '2px 8px', fontSize: 12, fontWeight: 600 }}>

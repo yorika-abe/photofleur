@@ -7,12 +7,21 @@ function applyVars(template, vars) {
   return template.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '')
 }
 
+function sanitize(str, maxLen = 200) { return String(str || '').replace(/[\r\n]/g, ' ').trim().slice(0, maxLen) }
+
 export async function POST(req, { params }) {
   const { id } = await params
   const admin = await createSupabaseAdminClient()
   const { product_id, product_name, customer_name, customer_email, selections, selected_model_ids } = await req.json()
 
+  const { data: event } = await admin.from('events').select('id').eq('id', id).single()
+  if (!event) return Response.json({ error: 'イベントが見つかりません' }, { status: 404 })
+
   if (!customer_name?.trim()) return Response.json({ error: 'お名前を入力してください' }, { status: 400 })
+
+  if (selections?._final_price !== undefined && selections._final_price < 0) {
+    return Response.json({ error: '価格が不正です' }, { status: 400 })
+  }
 
   const qrToken = randomUUID()
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || ''
@@ -76,9 +85,9 @@ export async function POST(req, { params }) {
         if (timeSlot) lines.push(timeSlot)
         const manualParts = Object.entries(selections || {})
           .filter(([k]) => !['model', 'モデル', '時間帯', 'slot', 'delivery_address'].includes(k))
-          .map(([k, v]) => `${k}：${Array.isArray(v) ? v.join(', ') : v}`)
+          .map(([k, v]) => `${sanitize(k)}：${Array.isArray(v) ? v.map(i => sanitize(String(i))).join(', ') : sanitize(String(v))}`)
         if (manualParts.length > 0) lines.push(manualParts.join('\n'))
-        lines.push(`ニックネーム：${customer_name}`)
+        lines.push(`ニックネーム：${sanitize(customer_name)}`)
         lines.push(`SNS URL：`)
         const message = lines.filter(Boolean).join('\n')
         const result = await sendLineMessage(model.line_id, message).catch(() => ({ ok: false }))

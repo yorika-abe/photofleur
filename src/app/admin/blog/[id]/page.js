@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { compressImage } from '@/lib/compressImage'
 import { useParams, useRouter } from 'next/navigation'
@@ -38,6 +39,7 @@ export default function AdminBlogEditPage() {
       if (data) setForm({ title: data.title || '', slug: data.slug || '', content: data.content || '', cover_image: data.cover_image || '', status: data.status || 'draft', category: data.category || '' })
       setLoading(false)
     })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   async function uploadCover(rawFile) {
@@ -140,8 +142,8 @@ export default function AdminBlogEditPage() {
         <div style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #e5e5e5' }}>
           <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 12 }}>カバー画像</label>
           {form.cover_image ? (
-            <div style={{ marginBottom: 12, borderRadius: 10, overflow: 'hidden', position: 'relative' }}>
-              <img src={form.cover_image} alt="" style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block', borderRadius: 10 }} />
+            <div style={{ marginBottom: 12, borderRadius: 10, overflow: 'hidden', position: 'relative', height: 200 }}>
+              <Image src={form.cover_image} alt="" fill style={{ objectFit: 'cover', borderRadius: 10 }} />
               <button
                 type="button"
                 onClick={() => setForm(f => ({ ...f, cover_image: '' }))}

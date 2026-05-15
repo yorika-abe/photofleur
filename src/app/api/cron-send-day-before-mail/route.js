@@ -71,10 +71,10 @@ export async function GET(req) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
   try {
-    const { searchParams } = new URL(req.url)
-    if (searchParams.get('secret') !== process.env.CRON_SECRET) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authHeader = req.headers.get('authorization')
+    const querySecret = req.nextUrl.searchParams.get('secret') || req.nextUrl.searchParams.get('cron_secret')
+    const secret = authHeader?.replace('Bearer ', '') || querySecret
+    if (secret !== process.env.CRON_SECRET) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)

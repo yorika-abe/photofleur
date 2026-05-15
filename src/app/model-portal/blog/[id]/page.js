@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -58,6 +59,7 @@ export default function ModelBlogEditPage() {
       setLoading(false)
     }
     init()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   async function uploadCover(file) {
@@ -177,7 +179,7 @@ export default function ModelBlogEditPage() {
           <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 12 }}>カバー画像（任意）</label>
           {form.cover_image && (
             <div style={{ position: 'relative', marginBottom: 12, borderRadius: 10, overflow: 'hidden', height: 200 }}>
-              <img src={form.cover_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <Image src={form.cover_image} alt="" fill style={{ objectFit: 'cover' }} />
               <button type="button" onClick={removeCover}
                 style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 ✕

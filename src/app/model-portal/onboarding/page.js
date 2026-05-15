@@ -27,7 +27,7 @@ export default async function ModelOnboardingPage() {
           <p style={{ fontSize: 15, color: '#444', lineHeight: 2, margin: 0 }}>
             ここに集まる全ての人が一人の人間として、<br />
             モデル、カメラマン、クリエーターとして、<br />
-            それぞれが自分らしい"花"となり、芽生え咲き、輝ける。<br />
+            それぞれが自分らしい&ldquo;花&rdquo;となり、芽生え咲き、輝ける。<br />
             そんな場所を目指しています。
           </p>
         </div>

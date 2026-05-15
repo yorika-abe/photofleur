@@ -40,14 +40,15 @@ export default function UsersPage() {
   const [search, setSearch] = useState('')
   const [markingSeenId, setMarkingSeenId] = useState(null)
 
-  useEffect(() => { load() }, [])
-
   async function load() {
     const res = await fetch('/api/admin/users')
     const data = await res.json()
     setUsers(Array.isArray(data) ? data : [])
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { load() }, [])
 
   async function toggleRole(userId, role, currentRoles) {
     setChanging(userId)

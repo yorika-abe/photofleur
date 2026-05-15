@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import ModelStaffTabs from '@/components/ModelStaffTabs'
@@ -40,9 +41,9 @@ function PendingDiff({ model }) {
               <div style={{ fontWeight: 700, color: '#555', marginBottom: 3 }}>{FIELD_LABELS[k]}</div>
               {k === 'image' ? (
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  {model[k] && <img src={model[k]} alt="現在" style={{ width: 48, height: 60, objectFit: 'cover', borderRadius: 4, border: '1px solid #ddd' }} />}
+                  {model[k] && <Image src={model[k]} alt="現在" width={48} height={60} style={{ objectFit: 'cover', borderRadius: 4, border: '1px solid #ddd' }} />}
                   <span style={{ color: '#aaa' }}>→</span>
-                  {model.pending_data[k] && <img src={model.pending_data[k]} alt="変更後" style={{ width: 48, height: 60, objectFit: 'cover', borderRadius: 4, border: '2px solid #388e3c' }} />}
+                  {model.pending_data[k] && <Image src={model.pending_data[k]} alt="変更後" width={48} height={60} style={{ objectFit: 'cover', borderRadius: 4, border: '2px solid #388e3c' }} />}
                 </div>
               ) : k === 'portfolio_images' ? (
                 <span style={{ color: '#666' }}>画像枚数: {(model[k] || []).length} → {(model.pending_data[k] || []).length}枚</span>

@@ -4,12 +4,16 @@ export async function POST(req) {
   try {
     const { email, password, token } = await req.json()
 
-    if (token !== process.env.MODEL_INVITE_TOKEN) {
-      return Response.json({ error: '無効な招待リンクです' }, { status: 403 })
+    if (!token || token.trim() !== (process.env.MODEL_INVITE_TOKEN || '').trim()) {
+      return Response.json({ error: '登録に失敗しました' }, { status: 403 })
     }
     if (!email || !password) {
       return Response.json({ error: '必須項目が不足しています' }, { status: 400 })
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) return Response.json({ error: '登録に失敗しました' }, { status: 400 })
+
     if (password.length < 8) {
       return Response.json({ error: 'パスワードは8文字以上で設定してください' }, { status: 400 })
     }

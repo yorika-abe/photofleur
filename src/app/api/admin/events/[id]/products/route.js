@@ -40,7 +40,10 @@ export async function PATCH(req, { params }) {
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await params
   const { productId, ...updates } = await req.json()
+  const { data: exists } = await admin.from('event_products').select('id').eq('id', productId).eq('event_id', id).single()
+  if (!exists) return Response.json({ error: '商品が見つかりません' }, { status: 404 })
   if (updates.price !== undefined) updates.price = parseInt(updates.price)
+  if (updates.price !== undefined && updates.price < 0) return Response.json({ error: '価格は0以上を入力してください' }, { status: 400 })
   if (updates.stock !== undefined) updates.stock = parseInt(updates.stock)
   await admin.from('event_products').update(updates).eq('id', productId).eq('event_id', id)
   return Response.json({ ok: true })

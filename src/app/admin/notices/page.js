@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
@@ -13,8 +14,6 @@ export default function AdminNoticesPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   )
 
-  useEffect(() => { load() }, [])
-
   async function load() {
     const { data } = await supabase
       .from('blog_posts')
@@ -24,6 +23,9 @@ export default function AdminNoticesPage() {
     setNotices(data || [])
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load() }, [])
 
   async function deleteNotice(id) {
     if (!confirm('このお知らせを削除しますか？')) return
@@ -55,7 +57,7 @@ export default function AdminNoticesPage() {
             <div key={n.id} style={{ background: '#fff', borderRadius: 12, padding: '16px 20px', border: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{ width: 48, height: 48, borderRadius: 8, overflow: 'hidden', background: '#f4e8f0', flexShrink: 0 }}>
                 {n.cover_image
-                  ? <img src={n.cover_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ? <Image src={n.cover_image} alt="" width={48} height={48} style={{ objectFit: 'cover' }} />
                   : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>📢</div>
                 }
               </div>

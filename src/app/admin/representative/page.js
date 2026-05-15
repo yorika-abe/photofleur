@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -14,14 +15,15 @@ export default function AdminRepresentativeListPage() {
   const dragIdx = useRef(null)
   const dragOverIdx = useRef(null)
 
-  useEffect(() => { load() }, [])
-
   async function load() {
     setLoading(true)
     const res = await fetch('/api/admin/representatives')
     if (res.ok) setReps(await res.json())
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { load() }, [])
 
   async function createNew() {
     setCreating(true)
@@ -140,7 +142,7 @@ export default function AdminRepresentativeListPage() {
 
                 {/* 写真 */}
                 {rep.photo ? (
-                  <img src={rep.photo} alt="" style={{ width: 52, height: 65, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />
+                  <Image src={rep.photo} alt="" width={52} height={65} style={{ objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />
                 ) : (
                   <div style={{ width: 52, height: 65, borderRadius: 8, background: '#f0f0f0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>👤</div>
                 )}

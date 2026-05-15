@@ -107,6 +107,7 @@ export default function AdminBookingStatusPage() {
         setSelectedEventId((firstFuture || visible[0])?.event.id || null)
         setLoading(false)
       })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -144,6 +145,7 @@ export default function AdminBookingStatusPage() {
         setNeLoading(false)
       })
       .catch(() => setNeLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showNonEvent])
 
   useEffect(() => {

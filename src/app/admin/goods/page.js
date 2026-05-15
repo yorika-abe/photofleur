@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Cropper from 'react-easy-crop'
@@ -361,7 +362,7 @@ export default function GoodsAdminPage() {
             <label style={lbl}>画像</label>
             {form.image && (
               <div style={{ marginBottom: 8 }}>
-                <img src={form.image} alt="" style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 8, border: '1px solid #eee' }} />
+                <Image src={form.image} alt="" width={120} height={80} style={{ objectFit: 'cover', borderRadius: 8, border: '1px solid #eee' }} />
                 <button type="button" onClick={() => setForm(f => ({ ...f, image: '' }))}
                   style={{ marginLeft: 10, fontSize: 12, color: '#c62828', background: 'none', border: 'none', cursor: 'pointer' }}>削除</button>
               </div>
@@ -408,7 +409,7 @@ export default function GoodsAdminPage() {
             return (
               <div key={g.id} style={{ background: '#fff', borderRadius: 12, border: `1px solid ${g.is_active && !beforeStart && !afterEnd ? '#e5e5e5' : '#ffcdd2'}`, overflow: 'hidden', opacity: g.is_active ? 1 : 0.7 }}>
                 <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                  {g.image && <img src={g.image} alt="" style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />}
+                  {g.image && <Image src={g.image} alt="" width={52} height={52} style={{ objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />}
                   <div style={{ flex: 1, minWidth: 160 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <span style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>{g.title}</span>

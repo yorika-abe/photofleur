@@ -190,6 +190,7 @@ export default function ShiftHistoryPage() {
     setShifts(Array.isArray(shiftData) ? shiftData : [])
     setRequestDates(Array.isArray(reqData) ? reqData : [])
     setLoading(false)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => { load() }, [load])

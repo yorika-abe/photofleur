@@ -22,6 +22,9 @@ export async function POST(req) {
 
   const formData = await req.formData()
   const file = formData.get('file')
+  const ext = file.name.split('.').pop().toLowerCase()
+  const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'pdf']
+  if (!allowedExts.includes(ext)) return Response.json({ error: 'サポートされていないファイル形式です' }, { status: 400 })
   const path = formData.get('path') || `blog/admin/${Date.now()}-${file.name}`
 
   const arrayBuffer = await file.arrayBuffer()

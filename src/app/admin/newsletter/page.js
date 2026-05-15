@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 
@@ -474,7 +475,9 @@ function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRow
           </label>
           {bodyBg.imageUrl && (
             <div style={{ marginTop: 8 }}>
-              <img src={bodyBg.imageUrl} alt="" style={{ width: '100%', height: 60, objectFit: 'cover', borderRadius: 6 }} />
+              <div style={{ position: 'relative', height: 60, borderRadius: 6, overflow: 'hidden' }}>
+                <Image src={bodyBg.imageUrl} alt="" fill style={{ objectFit: 'cover' }} />
+              </div>
               <button onClick={() => onBodyBgChange({ ...bodyBg, imageUrl: '' })} style={{ ...ctrlBtn, background: '#aaa', marginTop: 6, width: '100%' }}>画像を解除</button>
             </div>
           )}
@@ -553,7 +556,9 @@ function RightPanel({ selection, block, row, onBlockChange, onDeleteBlock, onRow
           </label>
           {bg.imageUrl && (
             <div style={{ marginTop: 8 }}>
-              <img src={bg.imageUrl} alt="" style={{ width: '100%', height: 60, objectFit: 'cover', borderRadius: 6 }} />
+              <div style={{ position: 'relative', height: 60, borderRadius: 6, overflow: 'hidden' }}>
+                <Image src={bg.imageUrl} alt="" fill style={{ objectFit: 'cover' }} />
+              </div>
               <button onClick={() => onRowBgChange({ ...bg, imageUrl: '' })} style={{ ...ctrlBtn, background: '#aaa', marginTop: 6, width: '100%' }}>画像を解除</button>
             </div>
           )}

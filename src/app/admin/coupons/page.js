@@ -23,8 +23,6 @@ export default function AdminCouponsPage() {
   const [randomResult, setRandomResult] = useState(null) // created codes
   const [copied, setCopied] = useState(false)
 
-  useEffect(() => { load() }, [])
-
   async function load() {
     setLoading(true)
     const res = await fetch('/api/admin/coupons')
@@ -32,6 +30,9 @@ export default function AdminCouponsPage() {
     setCoupons(data.coupons || [])
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { load() }, [])
 
   function closeForm() {
     setShowForm(false)

@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 import { useRef, useState, useEffect } from 'react'
 
 function getSuffix(fullName) {
@@ -92,7 +93,7 @@ export default function AdminAvatarButton({ initialUrl, initialName, isOwner }) 
         }}
       >
         {avatarUrl
-          ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ? <Image src={avatarUrl} alt="" width={64} height={64} style={{ objectFit: 'cover' }} />
           : <span style={{ fontSize: 28 }}>👤</span>
         }
       </button>
@@ -116,7 +117,7 @@ export default function AdminAvatarButton({ initialUrl, initialName, isOwner }) 
               marginBottom: 8, border: '2px solid #d0dae8',
             }}>
               {avatarUrl
-                ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ? <Image src={avatarUrl} alt="" width={72} height={72} style={{ objectFit: 'cover' }} />
                 : <span style={{ fontSize: 32 }}>👤</span>
               }
             </div>

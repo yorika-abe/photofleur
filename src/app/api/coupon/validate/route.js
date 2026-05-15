@@ -7,6 +7,7 @@ export async function POST(req) {
   )
   const { code } = await req.json()
   if (!code) return Response.json({ error: 'コードを入力してください' }, { status: 400 })
+  if (code.length > 50) return Response.json({ error: '無効なクーポンコードです' }, { status: 400 })
 
   const { data: coupon } = await supabase
     .from('coupons')

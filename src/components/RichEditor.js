@@ -132,6 +132,7 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
     }
     document.addEventListener('selectionchange', updateFmt)
     return () => document.removeEventListener('selectionchange', updateFmt)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [updateFmt])
 
   function sync() {
@@ -149,6 +150,7 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
     document.execCommand(cmd, false, val)
     sync()
     updateFmt()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [updateFmt])
 
   function applyBlockFormat(format) {

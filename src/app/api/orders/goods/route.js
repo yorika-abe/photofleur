@@ -16,6 +16,10 @@ export async function POST(req) {
   if (!goods_id || !last_name || !email) {
     return Response.json({ error: 'Missing required fields' }, { status: 400 })
   }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (email && !emailRegex.test(email)) {
+    return Response.json({ error: 'メールアドレスの形式が正しくありません' }, { status: 400 })
+  }
 
   const admin = await createSupabaseAdminClient()
   const { data: goods } = await admin
@@ -27,7 +31,9 @@ export async function POST(req) {
   if (!goods || !goods.is_active) return Response.json({ error: 'Not found' }, { status: 404 })
 
   const qty = Math.max(1, Number(quantity) || 1)
-  if (goods.stock >= 0 && goods.stock < qty) return Response.json({ error: 'Out of stock' }, { status: 409 })
+  if (qty > 99) return Response.json({ error: '数量が不正です' }, { status: 400 })
+  if (goods.stock >= 0 && goods.stock < qty) return Response.json({ error: '在庫が不足しています' }, { status: 409 })
+  if (goods.stock >= 0 && goods.stock - qty < 0) return Response.json({ error: '在庫が不足しています' }, { status: 409 })
 
   const layersLabel = layers_path?.length > 0 && goods.options?.type === 'layers'
     ? buildSelectionsLabel(goods.options, layers_path)
@@ -54,16 +60,24 @@ export async function POST(req) {
     options_selected: storedOptions,
     delivery_address: delivery_address || null,
   }
-  let { error } = await admin.from('goods_orders').insert({ ...insertBase, sns_url: sns_url || null })
+  let insertedOrderId = null
+  let { error, data: insertedOrder } = await admin.from('goods_orders').insert({ ...insertBase, sns_url: sns_url || null }).select('id').single()
   if (error?.code === '42703') {
-    const r = await admin.from('goods_orders').insert(insertBase)
+    const r = await admin.from('goods_orders').insert(insertBase).select('id').single()
     error = r.error
+    insertedOrder = r.data
   }
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
+  insertedOrderId = insertedOrder?.id ?? null
 
   if (goods.stock >= 0) {
-    await admin.from('goods').update({ stock: goods.stock - qty }).eq('id', goods.id)
+    const { error: stockErr } = await admin.from('goods').update({ stock: goods.stock - qty }).eq('id', goods.id)
+    if (stockErr) {
+      console.error('goods stock update error:', stockErr)
+      if (insertedOrderId) await admin.from('goods_orders').delete().eq('id', insertedOrderId).catch(err => console.error('rollback order delete error:', err))
+      return Response.json({ error: '在庫の更新に失敗しました。もう一度お試しください。' }, { status: 500 })
+    }
   }
 
   // 選択肢ごとの在庫デクリメント（layers形式）
@@ -71,6 +85,7 @@ export async function POST(req) {
     const updatedOptions = decrementLayersStock(goods.options, layers_path)
     if (updatedOptions !== goods.options) {
       await admin.from('goods').update({ options: updatedOptions }).eq('id', goods.id)
+        .catch(err => console.error('layers options update error:', err))
     }
   }
 

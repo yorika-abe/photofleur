@@ -35,7 +35,7 @@ export async function POST(request) {
   // Notify admin
   await resend.emails.send({
     from: 'PhotoFleur <noreply@photofleur.jp>',
-    to: 'yorika.photo@gmail.com',
+    to: process.env.ADMIN_EMAIL || 'yorikarin1101@icloud.com',
     subject: '【PhotoFleur】リクエスト撮影の問い合わせがありました',
     html: `
       <h2>新しいリクエスト撮影</h2>

@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import PrivateProductBookingForm from './BookingForm'
 import { buildMetadata } from '@/lib/ogp'
@@ -43,16 +44,17 @@ export default async function PrivateProductPage({ params }) {
       {/* 商品情報 */}
       <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e5e5e5', overflow: 'hidden', marginBottom: 24 }}>
         {product.image && (
-          <img src={product.image} alt={product.title}
-            style={{ width: '100%', height: 240, objectFit: 'cover' }} />
+          <div style={{ position: 'relative', height: 240 }}>
+            <Image src={product.image} alt={product.title} fill style={{ objectFit: 'cover' }} />
+          </div>
         )}
         <div style={{ padding: '20px 24px' }}>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: '0 0 8px' }}>{product.title}</h1>
           {product.models && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
               {product.models.image && (
-                <img src={product.models.image} alt={product.models.name}
-                  style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
+                <Image src={product.models.image} alt={product.models.name}
+                  width={32} height={32} style={{ borderRadius: '50%', objectFit: 'cover' }} />
               )}
               <span style={{ fontSize: 14, color: '#555', fontWeight: 600 }}>担当: {product.models.name}</span>
             </div>

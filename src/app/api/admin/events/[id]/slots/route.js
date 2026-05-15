@@ -40,6 +40,7 @@ export async function PATCH(req) {
   const admin = await requireAdmin()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const { slotId, price, max_reservations } = await req.json()
+  if (price !== undefined && (isNaN(price) || price < 0)) return Response.json({ error: '価格は0以上の値を入力してください' }, { status: 400 })
   const updates = {}
   if (price !== undefined) updates.price = price
   if (max_reservations !== undefined) updates.max_reservations = max_reservations

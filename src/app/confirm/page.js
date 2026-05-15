@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -46,38 +47,6 @@ function ConfirmForm() {
   const cardRef = useRef(null)
   const paymentsRef = useRef(null)
 
-  useEffect(() => {
-    if (!slotId) { setLoading(false); return }
-    loadSlotInfo()
-    // ログイン確認＋プロフィール自動入力
-    fetch('/api/customer/profile').then(r => r.json()).then(({ profile, email }) => {
-      if (!email) {
-        // 未ログインなら予約ページにリダイレクト
-        window.location.href = `/login?redirect=${encodeURIComponent('/confirm?slot_id=' + slotId)}`
-        return
-      }
-      if (profile) {
-        setForm(f => ({
-          ...f,
-          last_name: profile.last_name || f.last_name,
-          first_name: profile.first_name || f.first_name,
-          last_name_kana: profile.last_name_kana || f.last_name_kana,
-          first_name_kana: profile.first_name_kana || f.first_name_kana,
-          phone: profile.phone || f.phone,
-          sns_url: profile.sns_url || f.sns_url,
-          nickname: profile.nickname || f.nickname,
-        }))
-      }
-      if (email) setForm(f => ({ ...f, email: f.email || email }))
-    }).catch(() => {})
-  }, [slotId])
-
-  useEffect(() => {
-    if (!loading && paymentMethod === 'card' && !squareReady) {
-      loadSquareSDK()
-    }
-  }, [paymentMethod, loading])
-
   async function loadSlotInfo() {
     const { data: slot } = await supabase
       .from('booking_slots')
@@ -120,13 +89,32 @@ function ConfirmForm() {
     setLoading(false)
   }
 
-  async function loadSquareSDK() {
-    if (window.Square) { await initCard(); return }
-    const script = document.createElement('script')
-    script.src = 'https://web.squarecdn.com/v1/square.js'
-    script.onload = initCard
-    document.head.appendChild(script)
-  }
+  useEffect(() => {
+    if (!slotId) { setLoading(false); return }
+    loadSlotInfo()
+    // ログイン確認＋プロフィール自動入力
+    fetch('/api/customer/profile').then(r => r.json()).then(({ profile, email }) => {
+      if (!email) {
+        // 未ログインなら予約ページにリダイレクト
+        window.location.href = `/login?redirect=${encodeURIComponent('/confirm?slot_id=' + slotId)}`
+        return
+      }
+      if (profile) {
+        setForm(f => ({
+          ...f,
+          last_name: profile.last_name || f.last_name,
+          first_name: profile.first_name || f.first_name,
+          last_name_kana: profile.last_name_kana || f.last_name_kana,
+          first_name_kana: profile.first_name_kana || f.first_name_kana,
+          phone: profile.phone || f.phone,
+          sns_url: profile.sns_url || f.sns_url,
+          nickname: profile.nickname || f.nickname,
+        }))
+      }
+      if (email) setForm(f => ({ ...f, email: f.email || email }))
+    }).catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slotId])
 
   async function initCard() {
     try {
@@ -144,6 +132,21 @@ function ConfirmForm() {
       setError('カード入力フォームの初期化に失敗しました。当日現金をお選びいただくか、時間をおいて再度お試しください。')
     }
   }
+
+  async function loadSquareSDK() {
+    if (window.Square) { await initCard(); return }
+    const script = document.createElement('script')
+    script.src = 'https://web.squarecdn.com/v1/square.js'
+    script.onload = initCard
+    document.head.appendChild(script)
+  }
+
+  useEffect(() => {
+    if (!loading && paymentMethod === 'card' && !squareReady) {
+      loadSquareSDK()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentMethod, loading])
 
   async function validateCoupon() {
     if (!couponCode.trim()) return
@@ -286,7 +289,7 @@ function ConfirmForm() {
         <div style={{ fontSize: 12, color: '#888', marginBottom: 10 }}>予約内容</div>
         {modelInfo && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            {modelInfo.image && <img src={modelInfo.image} alt={modelInfo.name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />}
+            {modelInfo.image && <Image src={modelInfo.image} alt={modelInfo.name} width={40} height={40} style={{ borderRadius: '50%', objectFit: 'cover' }} />}
             <span style={{ fontWeight: 700, fontSize: 16, color: '#1a3560' }}>{modelInfo.name}</span>
           </div>
         )}

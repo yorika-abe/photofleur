@@ -1,17 +1,10 @@
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
+import { requireAdmin } from '@/lib/auth'
 import { sendLineGroupMessage, buildShiftOpenMessage } from '@/lib/line'
 
-async function checkAdmin(admin) {
-  const server = await createSupabaseServerClient()
-  const { data: { user } } = await server.auth.getUser()
-  if (!user) return false
-  const { data: profile } = await admin.from('user_profiles').select('roles, role').eq('id', user.id).single()
-  const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
-  return roles.includes('admin')
-}
-
 export async function GET() {
-  const admin = await createSupabaseAdminClient()
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+
   const today = new Date().toISOString().split('T')[0]
 
   // 過去の指定日を自動削除
@@ -26,8 +19,8 @@ export async function GET() {
 }
 
 export async function POST(req) {
-  const admin = await createSupabaseAdminClient()
-  if (!(await checkAdmin(admin))) return Response.json({ error: 'Forbidden' }, { status: 403 })
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await req.json()
   const { request_date, dates, event_type, notes, deadline, notify } = body
@@ -63,8 +56,8 @@ export async function POST(req) {
 }
 
 export async function DELETE(req) {
-  const admin = await createSupabaseAdminClient()
-  if (!(await checkAdmin(admin))) return Response.json({ error: 'Forbidden' }, { status: 403 })
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
   const { id } = await req.json()
   const { error } = await admin.from('shift_request_dates').delete().eq('id', id)

@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -95,6 +96,7 @@ export default function EventEditPage() {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
 
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [id])
 
   async function load() {
@@ -709,7 +711,7 @@ export default function EventEditPage() {
                 <p style={{ fontSize: 11, color: '#aaa', margin: '0 0 8px' }}>イベント詳細ページのヘッダー用</p>
                 {event.main_image && (
                   <div style={{ position: 'relative', marginBottom: 8 }}>
-                    <img src={event.main_image} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: 8 }} />
+                    <img src={event.main_image} alt="イベントメイン画像" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: 8 }} />
                     <button onClick={() => updateField('main_image', '')}
                       style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: 6, padding: '2px 8px', cursor: 'pointer', fontSize: 12 }}>削除</button>
                   </div>
@@ -733,7 +735,7 @@ export default function EventEditPage() {
                 <p style={{ fontSize: 11, color: '#aaa', margin: '0 0 8px' }}>HOME・イベント一覧のカード表示用</p>
                 {event.thumbnail_image && (
                   <div style={{ position: 'relative', marginBottom: 8, display: 'inline-block' }}>
-                    <img src={event.thumbnail_image} style={{ width: 80, aspectRatio: '4/5', objectFit: 'cover', borderRadius: 8, display: 'block' }} />
+                    <img src={event.thumbnail_image} alt="イベントサムネイル" style={{ width: 80, aspectRatio: '4/5', objectFit: 'cover', borderRadius: 8, display: 'block' }} />
                     <button onClick={() => updateField('thumbnail_image', '')}
                       style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
                   </div>
@@ -977,7 +979,7 @@ export default function EventEditPage() {
                     return (
                       <button key={m.id} onClick={() => addModelToEvent(m.id)}
                         style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff', border: '2px solid #a5d6a7', borderRadius: 20, padding: '4px 10px 4px 5px', cursor: 'pointer' }}>
-                        {m.image && <img src={m.image} style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />}
+                        {m.image && <Image src={m.image} alt={m.name} width={22} height={22} style={{ borderRadius: '50%', objectFit: 'cover' }} />}
                         <span style={{ fontSize: 12, fontWeight: 700, color: '#2e7d32' }}>+ {m.name}</span>
                       </button>
                     )
@@ -1007,7 +1009,7 @@ export default function EventEditPage() {
                     return (
                       <button key={m.id} onClick={() => addModelToEvent(m.id)}
                         style={{ display: 'flex', alignItems: 'center', gap: 6, background: hasShift ? '#f1f8e9' : '#f8f5ff', border: `1px solid ${hasShift ? '#c5e1a5' : '#e0d5f5'}`, borderRadius: 20, padding: '5px 12px 5px 6px', cursor: 'pointer' }}>
-                        {m.image && <img src={m.image} style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover' }} />}
+                        {m.image && <Image src={m.image} alt={m.name} width={24} height={24} style={{ borderRadius: '50%', objectFit: 'cover' }} />}
                         <span style={{ fontSize: 13, fontWeight: 600, color: '#2f2244' }}>+ {m.name}</span>
                         {hasShift && <span style={{ fontSize: 10, color: '#388e3c', fontWeight: 700 }}>提出済</span>}
                       </button>
@@ -1060,7 +1062,7 @@ export default function EventEditPage() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             {newProduct.image && (
                               <div style={{ position: 'relative' }}>
-                                <img src={newProduct.image} alt="" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6, border: '1px solid #ddd' }} />
+                                <Image src={newProduct.image} alt="" width={48} height={48} style={{ objectFit: 'cover', borderRadius: 6, border: '1px solid #ddd' }} />
                                 <button type="button" onClick={() => setNewProduct(p => ({ ...p, image: '' }))}
                                   style={{ position: 'absolute', top: -6, right: -6, background: 'rgba(0,0,0,0.45)', color: '#fff', border: 'none', borderRadius: '50%', width: 16, height: 16, cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>×</button>
                               </div>
@@ -1150,7 +1152,7 @@ export default function EventEditPage() {
               <div key={p.id} style={{ background: '#fff', borderRadius: 12, padding: 20, border: '2px solid #c0d8f4' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    {p.image && <img src={p.image} style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />}
+                    {p.image && <Image src={p.image} alt={p.name} width={40} height={40} style={{ borderRadius: 6, objectFit: 'cover' }} />}
                     <div>
                       <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560' }}>{p.name}</div>
                       <div style={{ fontSize: 13, color: '#888' }}>¥{(p.price || 0).toLocaleString()}</div>
@@ -1293,7 +1295,7 @@ export default function EventEditPage() {
               <div key={entry.id} style={{ background: '#fff', borderRadius: 12, padding: 20, border: '2px solid #e0d5f5' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    {model?.image && <img src={model.image} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />}
+                    {model?.image && <Image src={model.image} alt={model?.name} width={36} height={36} style={{ borderRadius: '50%', objectFit: 'cover' }} />}
                     <span style={{ fontWeight: 700, fontSize: 16, color: '#2f2244' }}>{model?.name}</span>
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>

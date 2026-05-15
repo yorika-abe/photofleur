@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState, useCallback } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Cropper from 'react-easy-crop'
@@ -93,6 +94,7 @@ export default function ModelProfilePage() {
       setLoading(false)
     }
     init()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function uploadViaSignedUrl(file, path) {
@@ -321,7 +323,7 @@ export default function ModelProfilePage() {
           <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
             {form.image && (
               <div style={{ width: 100, height: 125, borderRadius: 10, overflow: 'hidden', background: '#d6ecf5', flexShrink: 0, position: 'relative' }}>
-                <img src={form.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <Image src={form.image} alt="" fill style={{ objectFit: 'cover' }} />
                 <button onClick={() => setForm(f => ({ ...f, image: '' }))}
                   style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: 13 }}>×</button>
               </div>

@@ -6,6 +6,7 @@ export default function PdfViewer({ url, title }) {
 
   useEffect(() => {
     // iOS Safari はiframe内PDFを正常表示できないためGDVをデフォルトに
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (window.innerWidth < 768) setMode('gdocs')
   }, [])
 

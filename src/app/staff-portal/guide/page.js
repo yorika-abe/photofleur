@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Cropper from 'react-easy-crop'
@@ -133,7 +134,7 @@ export default function StaffGuidePage() {
           <div style={{ position: 'relative', flexShrink: 0 }}>
             {photo ? (
               <>
-                <img src={photo} alt="" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e5e5e5', display: 'block' }} />
+                <Image src={photo} alt="" width={80} height={80} style={{ borderRadius: '50%', objectFit: 'cover', border: '2px solid #e5e5e5', display: 'block' }} />
                 <button onClick={() => setPhoto('')}
                   style={{ position: 'absolute', top: -4, right: -4, width: 22, height: 22, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
               </>

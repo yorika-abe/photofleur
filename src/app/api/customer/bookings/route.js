@@ -4,6 +4,7 @@ export async function GET() {
   const server = await createSupabaseServerClient()
   const { data: { user } } = await server.auth.getUser()
   if (!user) return Response.json({ bookings: [] })
+  if (!user.email) return Response.json({ bookings: [] })
 
   const admin = await createSupabaseAdminClient()
   const { data: bookings } = await admin

@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
@@ -61,8 +62,8 @@ export default async function BlogPostPage({ params }) {
       <Link href="/blog" style={{ color: '#2f2244', textDecoration: 'none', fontSize: 14 }}>← ブログ一覧</Link>
 
       {post.cover_image && (
-        <div style={{ marginTop: 24, borderRadius: 16, overflow: 'hidden', maxHeight: 400 }}>
-          <img src={post.cover_image} alt={post.title} style={{ width: '100%', height: 400, objectFit: 'cover' }} />
+        <div style={{ marginTop: 24, borderRadius: 16, overflow: 'hidden', position: 'relative', height: 400 }}>
+          <Image src={post.cover_image} alt={post.title} fill style={{ objectFit: 'cover' }} />
         </div>
       )}
 
@@ -73,7 +74,7 @@ export default async function BlogPostPage({ params }) {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
           {authorAvatar && (
-            <img src={authorAvatar} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+            <Image src={authorAvatar} alt="" width={32} height={32} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
           )}
           <div style={{ fontSize: 13, color: '#aaa' }}>
             {authorName && <span style={{ marginRight: 8, color: '#888' }}>{authorName}</span>}

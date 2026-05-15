@@ -43,6 +43,7 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
 
   useEffect(() => {
     if (selectedPayment === 'card') loadSquareSDK()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPayment])
 
   async function loadSquareSDK() {

@@ -18,6 +18,9 @@ export async function POST(req) {
       return Response.json({ error: '必須項目が不足しています' }, { status: 400 })
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) return Response.json({ error: 'メールアドレスの形式が正しくありません' }, { status: 400 })
+
     const { data: slot } = await supabase
       .from('booking_slots')
       .select('id, is_reserved, max_reservations')
@@ -55,6 +58,16 @@ export async function POST(req) {
 
     if (bookingError) return Response.json({ error: bookingError.message }, { status: 500 })
 
+    // Optimistic concurrency: re-count after insert to catch race conditions
+    const { count: totalAfterInsert } = await supabase
+      .from('bookings')
+      .select('*', { count: 'exact', head: true })
+      .eq('slot_id', slot_id)
+    if ((totalAfterInsert || 0) > maxBookings * 2) {
+      await supabase.from('bookings').delete().eq('id', booking.id)
+      return Response.json({ error: 'この枠の予約は満員です' }, { status: 400 })
+    }
+
     const { count: newIndoorCount } = await supabase
       .from('bookings')
       .select('*', { count: 'exact', head: true })
@@ -67,7 +80,7 @@ export async function POST(req) {
 
     if (coupon_id) {
       await supabase.rpc('increment_coupon_used', { coupon_id_arg: coupon_id })
-        .catch(() => supabase.from('coupons').update({ used_count: supabase.rpc('used_count + 1') }))
+        .catch(err => console.error('Failed to increment coupon used_count:', err))
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || ''
@@ -75,7 +88,7 @@ export async function POST(req) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'booking', slot_id }),
-    }).catch(() => {})
+    }).catch(err => console.error('Notification failed:', err))
 
     return Response.json({ success: true, booking_id: booking.id, qr_token })
   } catch (e) {

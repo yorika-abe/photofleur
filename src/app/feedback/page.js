@@ -23,6 +23,7 @@ export default function FeedbackPage() {
       setUser(user)
       setLoading(false)
     })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function submit() {

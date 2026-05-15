@@ -14,6 +14,9 @@ export async function POST(request) {
     return Response.json({ error: 'お名前とメールアドレスは必須です。' }, { status: 400 })
   }
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(email)) return Response.json({ error: 'メールアドレスの形式が正しくありません。' }, { status: 400 })
+
   const { error } = await supabase.from('model_applications').insert({
     name,
     name_en: name_en || null,
@@ -36,7 +39,7 @@ export async function POST(request) {
   // Notify admin
   await resend.emails.send({
     from: 'PhotoFleur <noreply@photofleur.jp>',
-    to: 'yorika.photo@gmail.com',
+    to: process.env.ADMIN_EMAIL || 'yorikarin1101@icloud.com',
     subject: '【PhotoFleur】新しいモデル応募がありました',
     html: `
       <h2>新しいモデル応募</h2>

@@ -6,9 +6,19 @@ function applyVars(template, vars) {
   return template.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '')
 }
 
+function sanitize(str, maxLen = 200) {
+  return String(str || '')
+    .replace(/[\r\n]/g, ' ')
+    .replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' }[c]))
+    .trim()
+    .slice(0, maxLen)
+}
+
 async function getTemplate(admin, key) {
   const { data } = await admin.from('line_templates').select('body').eq('key', key).maybeSingle()
-  return data?.body || DEFAULTS[key] || ''
+  const result = data?.body || DEFAULTS[key] || ''
+  if (!result) console.warn('Template not found:', key)
+  return result
 }
 
 async function checkAdmin() {
@@ -33,44 +43,44 @@ function buildRecruitNoticeBlock(r) {
   let date = '', location = '', shoot_time = '', type_label = '', model_names = ''
   if (r.type === 'custom') {
     date = fmtDate(r.recruit_date)
-    location = r.location || '未定'
-    shoot_time = r.shoot_time || '未定'
+    location = sanitize(r.location || '未定')
+    shoot_time = sanitize(r.shoot_time || '未定')
     type_label = r.shoot_type === 'request' ? 'リクエスト撮影' : '通常撮影会'
-    model_names = (r.models_info || []).map(m => m.name).join('、') || '未定'
+    model_names = sanitize((r.models_info || []).map(m => m.name).join('、') || '未定')
   } else if (r.type === 'event') {
     const e = r.event || {}
     date = fmtDate(e.event_date)
-    location = [e.title, e.subtitle].filter(Boolean).join(' ') || '未定'
+    location = sanitize([e.title, e.subtitle].filter(Boolean).join(' ') || '未定')
     shoot_time = '未定'
     type_label = '通常撮影会'
     model_names = '（イベント詳細参照）'
   } else if (r.type === 'request') {
     const b = r.booking || {}
     date = fmtDate(b.event_date_input)
-    location = b.meeting_place || '未定'
-    shoot_time = b.shooting_time || '未定'
+    location = sanitize(b.meeting_place || '未定')
+    shoot_time = sanitize(b.shooting_time || '未定')
     type_label = 'リクエスト撮影'
-    model_names = b.private_products?.models?.name || '未定'
+    model_names = sanitize(b.private_products?.models?.name || '未定')
   }
   return `ーーー${date}ーーー\n【📍集合場所】${location}\n【⏰撮影時間】${shoot_time}\n【❓撮影形式】${type_label}\n【👠撮影モデル】${model_names}`
 }
 
 function buildRecruitLine(r) {
   if (r.type === 'custom') {
-    const models = (r.models_info || []).map(m => m.name).join('、')
+    const models = sanitize((r.models_info || []).map(m => m.name).join('、'))
     const typeLabel = r.shoot_type === 'request' ? 'リク撮' : '通常撮影会'
-    return `${fmtDate(r.recruit_date)} 📍${r.location || '未定'}　${r.shoot_time || '未定'}（${typeLabel}）${models ? `　撮影モデル：${models}` : ''}`
+    return `${fmtDate(r.recruit_date)} 📍${sanitize(r.location || '未定')}　${sanitize(r.shoot_time || '未定')}（${typeLabel}）${models ? `　撮影モデル：${models}` : ''}`
   }
   if (r.type === 'event') {
     const e = r.event
     if (!e) return '（イベント情報なし）'
-    return `${fmtDate(e.event_date)} 📍${e.title}${e.subtitle ? `　${e.subtitle}` : ''}　（通常イベント）`
+    return `${fmtDate(e.event_date)} 📍${sanitize(e.title)}${e.subtitle ? `　${sanitize(e.subtitle)}` : ''}　（通常イベント）`
   }
   if (r.type === 'request') {
     const b = r.booking
     if (!b) return '（予約情報なし）'
-    const modelName = b.private_products?.models?.name || ''
-    return `${fmtDate(b.event_date_input) || '未定'} 📍${b.meeting_place || ''}　${b.shooting_time || ''}${modelName ? `　${modelName}` : ''}（リク撮）`
+    const modelName = sanitize(b.private_products?.models?.name || '')
+    return `${fmtDate(b.event_date_input) || '未定'} 📍${sanitize(b.meeting_place || '')}　${sanitize(b.shooting_time || '')}${modelName ? `　${modelName}` : ''}（リク撮）`
   }
   return ''
 }
@@ -273,7 +283,7 @@ export async function PATCH(req) {
     try {
       const { data: lineIdsRow } = await admin.from('site_settings').select('value').eq('key', 'line_staff_ids').maybeSingle()
       let staffLineIds = {}
-      try { staffLineIds = JSON.parse(lineIdsRow?.value || '{}') } catch {}
+      try { staffLineIds = JSON.parse(lineIdsRow?.value || '{}') } catch (e) { console.error('Failed to parse line_staff_ids:', e) }
       const staffLineId = app ? staffLineIds[app.user_id] : null
 
       const enriched = await enrichRecruitments(admin, [rec])
@@ -325,7 +335,7 @@ export async function PATCH(req) {
 
       const { data: lineIdsRow } = await admin.from('site_settings').select('value').eq('key', 'line_staff_ids').maybeSingle()
       let staffLineIds = {}
-      try { staffLineIds = JSON.parse(lineIdsRow?.value || '{}') } catch {}
+      try { staffLineIds = JSON.parse(lineIdsRow?.value || '{}') } catch (e) { console.error('Failed to parse line_staff_ids:', e) }
       const staffLineId = app ? staffLineIds[app.user_id] : null
       if (staffLineId) {
         const tmpl = await getTemplate(admin, 'staff_cancel_notice')
@@ -373,7 +383,7 @@ export async function PATCH(req) {
       const detailLine = buildRecruitLine(enriched[0])
       const { data: lineIdsRow } = await admin.from('site_settings').select('value').eq('key', 'line_staff_ids').maybeSingle()
       let staffLineIds = {}
-      try { staffLineIds = JSON.parse(lineIdsRow?.value || '{}') } catch {}
+      try { staffLineIds = JSON.parse(lineIdsRow?.value || '{}') } catch (e) { console.error('Failed to parse line_staff_ids:', e) }
       const tmpl = await getTemplate(admin, 'staff_event_cancel_notice')
       for (const app of confirmedApps || []) {
         const lineId = staffLineIds[app.user_id]
@@ -466,7 +476,7 @@ export async function PATCH(req) {
     try {
       const { data: lineIdsRow } = await admin.from('site_settings').select('value').eq('key', 'line_staff_ids').maybeSingle()
       let staffLineIds = {}
-      try { staffLineIds = JSON.parse(lineIdsRow?.value || '{}') } catch {}
+      try { staffLineIds = JSON.parse(lineIdsRow?.value || '{}') } catch (e) { console.error('Failed to parse line_staff_ids:', e) }
       const staffLineId = staffLineIds[staff_user_id]
       if (staffLineId && rec) {
         const enriched = await enrichRecruitments(admin, [rec])

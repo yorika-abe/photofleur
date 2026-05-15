@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 
@@ -30,8 +31,8 @@ export default async function NoticePage({ params }) {
       <Link href="/" style={{ color: '#5bbfd6', fontSize: 13, textDecoration: 'none' }}>← ホーム</Link>
 
       {notice.cover_image && (
-        <div style={{ margin: '24px 0', borderRadius: 14, overflow: 'hidden', height: 320 }}>
-          <img src={notice.cover_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <div style={{ margin: '24px 0', borderRadius: 14, overflow: 'hidden', height: 320, position: 'relative' }}>
+          <Image src={notice.cover_image} alt="" fill style={{ objectFit: 'cover' }} />
         </div>
       )}
 

@@ -4,12 +4,15 @@ export async function POST(req) {
   try {
     const { mode, name, email, password, token } = await req.json()
 
-    if (token !== process.env.STAFF_INVITE_TOKEN) {
-      return Response.json({ error: '無効な招待リンクです' }, { status: 403 })
+    if (!token || token.trim() !== (process.env.STAFF_INVITE_TOKEN || '').trim()) {
+      return Response.json({ error: '登録に失敗しました' }, { status: 403 })
     }
     if (!email) {
       return Response.json({ error: 'メールアドレスを入力してください' }, { status: 400 })
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) return Response.json({ error: '登録に失敗しました' }, { status: 400 })
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,

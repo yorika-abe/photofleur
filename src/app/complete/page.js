@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { Suspense, useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
@@ -81,6 +82,7 @@ function CompleteContent() {
       setLoading(false)
     }
     load()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>読み込み中...</div>
@@ -103,7 +105,7 @@ function CompleteContent() {
         <div style={{ background: '#f8fbff', borderRadius: 12, padding: '20px', marginBottom: 24, border: '1px solid #d6ecf5' }}>
           {model && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              {model.image && <img src={model.image} alt={model.name} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />}
+              {model.image && <Image src={model.image} alt={model.name} width={44} height={44} style={{ borderRadius: '50%', objectFit: 'cover' }} />}
               <span style={{ fontWeight: 700, fontSize: 17, color: '#1a3560' }}>{model.name}</span>
             </div>
           )}

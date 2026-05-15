@@ -41,7 +41,7 @@ export async function GET() {
 export async function POST(req) {
   const server = await createSupabaseServerClient()
   const { data: { user } } = await server.auth.getUser()
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user || !user.email) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const admin = await createSupabaseAdminClient()
   const formData = await req.formData()

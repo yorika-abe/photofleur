@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { getLayerChoices, getChoiceStock } from '@/lib/product-layers'
 
 export default function LayerOptionPicker({ options, eventModels = [], slotLabels = [], value = [], onChange }) {
@@ -54,7 +55,7 @@ export default function LayerOptionPicker({ options, eventModels = [], slotLabel
                       opacity: soldOut ? 0.6 : 1,
                     }}>
                     {model?.image && (
-                      <img src={model.image} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
+                      <Image src={model.image} alt="" width={28} height={28} style={{ borderRadius: '50%', objectFit: 'cover' }} />
                     )}
                     <span>
                       {choice.name || choice.model_name}

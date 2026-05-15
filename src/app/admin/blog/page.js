@@ -29,13 +29,9 @@ export default function AdminBlogPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   )
 
-  useEffect(() => {
-    load()
-    fetch('/api/admin/blog/categories').then(r => r.json()).then(d => setCategories(Array.isArray(d) ? d : []))
-  }, [])
-
   async function load() {
     setLoading(true)
+    fetch('/api/admin/blog/categories').then(r => r.json()).then(d => setCategories(Array.isArray(d) ? d : []))
     const [{ data: postsData }, { data: settingRow }] = await Promise.all([
       supabase
         .from('blog_posts')
@@ -75,6 +71,9 @@ export default function AdminBlogPage() {
     setAuthors(unique)
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load() }, [])
 
   async function approvePendingEdits(post) {
     const res = await fetch(`/api/admin/blog/${post.id}`, {

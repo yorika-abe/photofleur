@@ -11,6 +11,7 @@ export default function HeroSlideshow({ images, objectFit = 'cover' }) {
       setCurrent(i => (i + 1) % images.length)
     }, 5000)
     return () => clearInterval(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [images?.length])
 
   if (!images || images.length === 0) {

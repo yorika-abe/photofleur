@@ -16,8 +16,6 @@ export default function AdminBlogCategoriesPage() {
   const [reordering, setReordering] = useState(false)
   const dragIdx = useRef(null)
 
-  useEffect(() => { load() }, [])
-
   async function load() {
     setLoading(true)
     const res = await fetch('/api/admin/blog/categories')
@@ -25,6 +23,9 @@ export default function AdminBlogCategoriesPage() {
     setCategories(Array.isArray(data) ? data : [])
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { load() }, [])
 
   async function save() {
     if (!form.name.trim()) { alert('カテゴリー名を入力してください'); return }

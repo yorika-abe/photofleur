@@ -54,7 +54,7 @@ async function squareRefund(paymentId, amount) {
       body: JSON.stringify({
         idempotency_key: `refund-${paymentId}-${Date.now()}`,
         payment_id: paymentId,
-        amount_money: { amount: amount * 100, currency: 'JPY' },
+        amount_money: { amount: amount, currency: 'JPY' },
       }),
     })
     const data = await res.json()

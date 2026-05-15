@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
@@ -21,11 +22,6 @@ export default function AdminBookingsPage() {
   const [toast, setToast] = useState(null)
   const [refundModal, setRefundModal] = useState(null)
 
-  useEffect(() => {
-    document.cookie = `bookings_last_viewed=${new Date().toISOString()}; path=/; max-age=${60 * 60 * 24 * 365}`
-    load()
-  }, [])
-
   async function load() {
     setLoading(true)
     const res = await fetch('/api/admin/bookings')
@@ -34,6 +30,12 @@ export default function AdminBookingsPage() {
     setBookings(all || [])
     setLoading(false)
   }
+
+  useEffect(() => {
+    document.cookie = `bookings_last_viewed=${new Date().toISOString()}; path=/; max-age=${60 * 60 * 24 * 365}`
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load()
+  }, [])
 
   function cancelBooking(b) {
     const price = b.final_price || b.slot?.price || 0
@@ -429,10 +431,12 @@ export default function AdminBookingsPage() {
                       <div style={{ fontSize: 11, color: '#999', marginBottom: 8, fontWeight: 600 }}>QR / その他</div>
                       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                         {b.qr_token ? (
-                          <img
+                          <Image
                             src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(`${process.env.NEXT_PUBLIC_BASE_URL}/booking-verify?token=${b.qr_token}`)}`}
                             alt="QR"
-                            style={{ width: 100, height: 100, borderRadius: 6, border: '1px solid #e5e5e5', flexShrink: 0 }}
+                            width={100}
+                            height={100}
+                            style={{ borderRadius: 6, border: '1px solid #e5e5e5', flexShrink: 0 }}
                           />
                         ) : <div style={{ fontSize: 12, color: '#ccc' }}>QRなし</div>}
                         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>

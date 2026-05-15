@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -65,6 +66,7 @@ export default function AdminModelEditPage() {
         setPortfolioImages(model.portfolio_images || [])
         setLoading(false)
       })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   async function uploadImage(rawFile, field) {
@@ -209,7 +211,7 @@ export default function AdminModelEditPage() {
           <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
             {form.image && (
               <div style={{ width: 100, height: 133, borderRadius: 10, overflow: 'hidden', background: '#e0d8f0', flexShrink: 0 }}>
-                <img src={form.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <Image src={form.image} alt="" width={100} height={133} style={{ objectFit: 'cover' }} />
               </div>
             )}
             <div style={{ flex: 1, minWidth: 200 }}>

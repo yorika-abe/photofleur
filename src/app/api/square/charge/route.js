@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { randomUUID } from 'crypto'
 
 function db() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -64,7 +65,7 @@ export async function POST(req) {
       }
       for (const { productId } of product_items) {
         const { data: p } = await supabase.from('event_products').select('price').eq('id', productId).single()
-        total += p?.price || 0
+        total += Math.max(0, p?.price || 0)
       }
       for (const { goodsId, quantity = 1 } of goods_items) {
         const { data: g } = await supabase.from('goods').select('price').eq('id', goodsId).single()
@@ -78,6 +79,7 @@ export async function POST(req) {
 
     if (amount === 0) return Response.json({ success: true, payment_id: null })
 
+    if (!email) console.warn('Square charge: no email provided')
     const res = await fetch('https://connect.squareup.com/v2/payments', {
       method: 'POST',
       headers: {
@@ -87,10 +89,10 @@ export async function POST(req) {
       },
       body: JSON.stringify({
         source_id: sourceId,
-        idempotency_key: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        idempotency_key: randomUUID(),
         amount_money: { amount, currency: 'JPY' },
         location_id: process.env.SQUARE_LOCATION_ID,
-        ...(email ? { buyer_email_address: email } : {}),
+        buyer_email_address: email || undefined,
       }),
     })
 

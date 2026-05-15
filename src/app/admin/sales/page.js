@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
@@ -67,19 +68,6 @@ export default function AdminSalesPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   )
 
-  useEffect(() => {
-    setSavedRecords(loadSavedRecords())
-    setMiscExpenses(loadMiscExpenses())
-    setNonEventRecords(loadNonEventRecords())
-    load()
-    fetch('/api/admin/fixed-costs').then(r => r.json()).then(d => {
-      const monthly = (d.costs || []).reduce((sum, c) => {
-        return sum + (c.period === 'yearly' ? Math.round(c.amount / 12) : c.amount)
-      }, 0)
-      setFixedCostMonthly(monthly)
-    }).catch(() => {})
-  }, [])
-
   async function load() {
     const { data: bookings } = await supabase
       .from('bookings')
@@ -124,6 +112,20 @@ export default function AdminSalesPage() {
     setData(enriched)
     setLoading(false)
   }
+
+  useEffect(() => {
+    setSavedRecords(loadSavedRecords())
+    setMiscExpenses(loadMiscExpenses())
+    setNonEventRecords(loadNonEventRecords())
+    load()
+    fetch('/api/admin/fixed-costs').then(r => r.json()).then(d => {
+      const monthly = (d.costs || []).reduce((sum, c) => {
+        return sum + (c.period === 'yearly' ? Math.round(c.amount / 12) : c.amount)
+      }, 0)
+      setFixedCostMonthly(monthly)
+    }).catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function updateMiscExpense(month, value) {
     const next = { ...miscExpenses, [month]: Number(value) || 0 }
@@ -500,7 +502,7 @@ export default function AdminSalesPage() {
                 <div key={m.name} style={{ marginBottom: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <span style={{ fontSize: 11, color: '#aaa', minWidth: 16 }}>#{i + 1}</span>
-                    {m.image && <img src={m.image} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />}
+                    {m.image && <Image src={m.image} alt="" width={20} height={20} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />}
                     <span style={{ fontWeight: 600, fontSize: 13, color: '#333', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</span>
                     <span className="sales-model-rev-desktop" style={{ fontWeight: 700, fontSize: 13, color: '#2f2244' }}>{yen(m.revenue)}</span>
                   </div>

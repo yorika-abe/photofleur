@@ -12,6 +12,8 @@ export async function POST(req, { params }) {
 
   if (body.action === 'auto_add') {
     const { event, slotTemplates } = body
+    const studioFeeCheck = parseInt(event?.studio_fee) || 0
+    if (studioFeeCheck < 0) return Response.json({ error: '料金に負の値は使用できません' }, { status: 400 })
     const { data: shiftData } = await admin
       .from('model_shifts')
       .select('model_id, available_slots, available_from, available_until')
@@ -58,6 +60,8 @@ export async function POST(req, { params }) {
   // 締め切り前専用: 既存モデルの枠を同期 + 未追加モデルを追加
   if (body.action === 'sync_shifts') {
     const { event, slotTemplates } = body
+    const studioFeeCheckSync = parseInt(event?.studio_fee) || 0
+    if (studioFeeCheckSync < 0) return Response.json({ error: '料金に負の値は使用できません' }, { status: 400 })
     const { data: shiftData } = await admin
       .from('model_shifts')
       .select('model_id, available_slots, available_from, available_until')
@@ -106,6 +110,8 @@ export async function POST(req, { params }) {
 
   if (body.action === 'add_model') {
     const { modelId, event, slotTemplates } = body
+    const studioFeeCheckAdd = parseInt(event?.studio_fee) || 0
+    if (studioFeeCheckAdd < 0) return Response.json({ error: '料金に負の値は使用できません' }, { status: 400 })
     const { data: entry } = await admin
       .from('event_entries')
       .insert({ event_id: id, model_id: modelId })

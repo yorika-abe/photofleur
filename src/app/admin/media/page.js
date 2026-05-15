@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Cropper from 'react-easy-crop'
@@ -500,7 +501,7 @@ export default function AdminMediaPage() {
             <div style={{ fontSize: 12, color: '#388e3c', fontWeight: 600, marginBottom: 8 }}>✅ {images.length}ページ変換済み</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
               {images.slice(0, 4).map((url, i) => (
-                <img key={i} src={url} alt="" style={{ width: 72, height: 54, objectFit: 'cover', borderRadius: 4, border: '1px solid #ddd' }} />
+                <Image key={i} src={url} alt="" width={72} height={54} style={{ objectFit: 'cover', borderRadius: 4, border: '1px solid #ddd' }} />
               ))}
               {images.length > 4 && <div style={{ width: 72, height: 54, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', borderRadius: 4, fontSize: 11, color: '#888' }}>+{images.length - 4}枚</div>}
             </div>
@@ -625,7 +626,7 @@ export default function AdminMediaPage() {
             <Section title="🏠 ホーム画面アイコン（PWA）" desc="スマホでサイトをホーム画面に追加したときに表示されるアイコンです。512×512px の正方形に自動リサイズされます。">
               {pwaIcon && (
                 <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <img src={pwaIcon} alt="" style={{ width: 80, height: 80, borderRadius: 16, border: '1px solid #e5e5e5', objectFit: 'cover' }} />
+                  <Image src={pwaIcon} alt="" width={80} height={80} style={{ borderRadius: 16, border: '1px solid #e5e5e5', objectFit: 'cover' }} />
                   <button onClick={() => { deleteFile(pwaIcon); setPwaIcon('') }}
                     style={{ background: 'none', border: '1px solid #ddd', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, color: '#888' }}>削除</button>
                 </div>

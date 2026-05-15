@@ -19,6 +19,10 @@ export async function POST(req) {
   if (!customer?.email || !customer?.last_name || !customer?.first_name || !customer?.nickname) {
     return Response.json({ error: '必須項目が不足しています' }, { status: 400 })
   }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!customer?.email || !emailRegex.test(customer.email)) {
+    return Response.json({ error: 'メールアドレスの形式が正しくありません' }, { status: 400 })
+  }
 
   const qrTokens = {}
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || ''
@@ -44,6 +48,9 @@ export async function POST(req) {
         const { data: entry } = await admin.from('event_entries').select('event_id').eq('id', slot.event_entry_id).single()
         if (entry) {
           const { data: event } = await admin.from('events').select('studio_fee').eq('id', entry.event_id).single()
+          if (!event) {
+            console.warn(`cart-checkout: event not found for entry ${entry.event_id}`)
+          }
           studioFee = event?.studio_fee || 0
         }
       }
@@ -89,7 +96,7 @@ export async function POST(req) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'booking', slot_id: item.slotId }),
-        }).catch(() => {})
+        }).catch(err => console.error('Notification failed:', err))
       }
 
     } else if (item.type === 'product') {
@@ -178,7 +185,7 @@ export async function POST(req) {
             const result = await sendLineMessage(model.line_id, message).catch(() => ({ ok: false }))
             await admin.from('line_notifications').insert({
               model_id: model.id, type: 'booking', message, status: result.ok ? 'sent' : 'failed',
-            }).catch(() => {})
+            }).catch(err => console.error('Operation failed:', err))
           }
         }
       }
@@ -197,7 +204,7 @@ export async function POST(req) {
         slotItems: cartSlotItems,
         productItems: cartProductItems,
       }),
-    }).catch(() => {})
+    }).catch(err => console.error('Confirmation mail failed:', err))
   }
 
   // クーポン使用数更新

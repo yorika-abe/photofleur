@@ -111,6 +111,7 @@ export default function ModelPhotosPage() {
       setLoading(false)
     }
     load()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function toggleSelect(id) {

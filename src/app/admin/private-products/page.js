@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Cropper from 'react-easy-crop'
@@ -314,7 +315,7 @@ export default function PrivateProductsPage() {
             <label style={lbl}>画像</label>
             {form.image && (
               <div style={{ marginBottom: 8 }}>
-                <img src={form.image} alt="" style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 8, border: '1px solid #eee' }} />
+                <Image src={form.image} alt="" width={120} height={80} style={{ objectFit: 'cover', borderRadius: 8, border: '1px solid #eee' }} />
                 <button onClick={() => setForm(f => ({ ...f, image: '' }))}
                   style={{ marginLeft: 10, fontSize: 12, color: '#c62828', background: 'none', border: 'none', cursor: 'pointer' }}>削除</button>
               </div>
@@ -355,7 +356,7 @@ export default function PrivateProductsPage() {
             return (
               <div key={p.id} style={{ background: '#fff', borderRadius: 12, border: `1px solid ${p.is_active ? '#e5e5e5' : '#ffcdd2'}`, overflow: 'hidden', opacity: p.is_active ? 1 : 0.7 }}>
                 <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                  {p.image && <img src={p.image} alt="" style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />}
+                  {p.image && <Image src={p.image} alt="" width={52} height={52} style={{ objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />}
                   <div style={{ flex: 1, minWidth: 160 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <span style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>{p.title}</span>
@@ -426,6 +427,7 @@ function BookingList({ productId, productPrice }) {
     setBookings(d.bookings || [])
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [productId])
 
   if (!bookings) return <p style={{ fontSize: 12, color: '#aaa' }}>読み込み中...</p>

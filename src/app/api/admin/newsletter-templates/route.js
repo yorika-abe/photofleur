@@ -1,17 +1,7 @@
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
-
-async function checkAdmin() {
-  const server = await createSupabaseServerClient()
-  const { data: { user } } = await server.auth.getUser()
-  if (!user) return null
-  const admin = await createSupabaseAdminClient()
-  const { data: profile } = await admin.from('user_profiles').select('roles, role').eq('id', user.id).single()
-  const roles = profile?.roles?.length > 0 ? profile.roles : (profile?.role ? [profile.role] : [])
-  return roles.includes('admin') ? admin : null
-}
+import { requireAdmin } from '@/lib/auth'
 
 export async function GET() {
-  const admin = await checkAdmin()
+  const admin = await requireAdmin()
   if (!admin) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
   const { data } = await admin
@@ -24,7 +14,7 @@ export async function GET() {
 }
 
 export async function POST(req) {
-  const admin = await checkAdmin()
+  const admin = await requireAdmin()
   if (!admin) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
   const { name, subject, rows_json, header_json, footer } = await req.json()

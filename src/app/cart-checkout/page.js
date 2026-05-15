@@ -100,19 +100,8 @@ export default function CartCheckoutPage() {
         email: f.email || email,
       }))
     }).catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready])
-
-  useEffect(() => {
-    if (needsCardInput && !squareReady) loadSquareSDK()
-  }, [needsCardInput])
-
-  async function loadSquareSDK() {
-    if (window.Square) { await initCard(); return }
-    const script = document.createElement('script')
-    script.src = 'https://web.squarecdn.com/v1/square.js'
-    script.onload = initCard
-    document.head.appendChild(script)
-  }
 
   async function initCard() {
     try {
@@ -127,6 +116,19 @@ export default function CartCheckoutPage() {
       setSquareReady(true)
     } catch {}
   }
+
+  async function loadSquareSDK() {
+    if (window.Square) { await initCard(); return }
+    const script = document.createElement('script')
+    script.src = 'https://web.squarecdn.com/v1/square.js'
+    script.onload = initCard
+    document.head.appendChild(script)
+  }
+
+  useEffect(() => {
+    if (needsCardInput && !squareReady) loadSquareSDK()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needsCardInput])
 
   async function validateCoupon() {
     if (!couponCode.trim()) return
@@ -284,8 +286,9 @@ export default function CartCheckoutPage() {
       clearCart()
 
       const firstSlot = bookingItems.find(i => i.type === 'slot')
-      if (firstSlot && qrTokens[firstSlot.cartId]) {
-        window.location.href = `/complete?slot_id=${firstSlot.slotId}&email=${encodeURIComponent(form.email)}&qr=${qrTokens[firstSlot.cartId]}`
+      const firstSlotQr = firstSlot != null ? (qrTokens[firstSlot.cartId] ?? null) : null
+      if (firstSlot != null && firstSlotQr != null) {
+        window.location.href = `/complete?slot_id=${firstSlot.slotId}&email=${encodeURIComponent(form.email)}&qr=${firstSlotQr}`
       } else {
         window.location.href = `/complete-cart?email=${encodeURIComponent(form.email)}`
       }

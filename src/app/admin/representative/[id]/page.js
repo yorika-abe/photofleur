@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
@@ -174,7 +175,7 @@ export default function AdminRepresentativeEditPage() {
           <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
             {form.photo && (
               <div style={{ position: 'relative' }}>
-                <img src={form.photo} alt="" style={{ width: 120, height: 150, objectFit: 'cover', borderRadius: 10, border: '1px solid #e5e5e5' }} />
+                <Image src={form.photo} alt="" width={120} height={150} style={{ objectFit: 'cover', borderRadius: 10, border: '1px solid #e5e5e5' }} />
                 <button onClick={() => setForm(f => ({ ...f, photo: '' }))}
                   style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
               </div>
@@ -239,7 +240,7 @@ export default function AdminRepresentativeEditPage() {
           <div style={{ background: '#f8fbff', border: '1px solid #d6ecf5', borderRadius: 14, padding: '24px' }}>
             <h2 style={{ fontSize: 14, fontWeight: 700, color: '#888', marginTop: 0, marginBottom: 16 }}>プレビュー</h2>
             <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
-              {form.photo && <img src={form.photo} alt="" style={{ width: 72, height: 90, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />}
+              {form.photo && <Image src={form.photo} alt="" width={72} height={90} style={{ objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />}
               <div>
                 {form.role && <div style={{ fontSize: 11, color: '#5bbfd6', fontWeight: 600, letterSpacing: '0.1em', marginBottom: 2 }}>{form.role}</div>}
                 {form.name && <div style={{ fontSize: 18, fontWeight: 700, color: '#0d1f3a', marginBottom: 8 }}>{form.name}</div>}

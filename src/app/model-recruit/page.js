@@ -52,7 +52,7 @@ export default async function ModelRecruitPage() {
           <p style={{ fontSize: 'clamp(15px, 2.2vw, 18px)', lineHeight: 2.2, color: '#3a3050' }}>
             未経験でも大丈夫。<br />
             上手くポーズが取れなくても、モデル経験がなくても、<br />
-            <strong><em style={{ ...serif, fontSize: '1.2em', color: '#e8829a' }}>"やってみたい" という気持ち</em></strong>を大切にしています。
+            <strong><em style={{ ...serif, fontSize: '1.2em', color: '#e8829a' }}>&ldquo;やってみたい&rdquo; という気持ち</em></strong>を大切にしています。
           </p>
           <div style={{ margin: '40px 0', padding: '28px 32px', background: 'linear-gradient(135deg, #fce8f4 0%, #e8f7fc 100%)', borderLeft: '3px solid #f4a0be', borderRadius: '0 8px 8px 0', textAlign: 'left' }}>
             <p style={{ fontSize: 15, lineHeight: 2, color: '#3a3050', margin: 0 }}>

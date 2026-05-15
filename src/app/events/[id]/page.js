@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
@@ -279,7 +280,7 @@ export default async function EventDetailPage({ params }) {
               <Link key={e.model_id} href={`/models/${e.model_id}`} style={{ textDecoration: 'none', textAlign: 'center' }}>
                 <div style={{ width: 90, height: 110, borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%', overflow: 'hidden', margin: '0 auto 8px', border: '2px solid #e5e5e5' }}>
                   {e.models.image
-                    ? <img src={e.models.image} alt={e.models.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ? <Image src={e.models.image} alt={e.models.name} width={90} height={110} style={{ objectFit: 'cover' }} />
                     : <div style={{ width: '100%', height: '100%', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>👤</div>
                   }
                 </div>

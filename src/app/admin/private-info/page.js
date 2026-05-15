@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import ModelStaffTabs from '@/components/ModelStaffTabs'
@@ -25,7 +26,7 @@ function InfoCard({ model, info, onApprove, onReject }) {
       >
         <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#e8f4fb', overflow: 'hidden', flexShrink: 0 }}>
           {model.image
-            ? <img src={model.image} alt={model.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ? <Image src={model.image} alt={model.name} width={44} height={44} style={{ objectFit: 'cover' }} />
             : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>👤</div>}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>

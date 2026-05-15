@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { requireAdmin } from '@/lib/auth'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 
 const r2 = new S3Client({
@@ -11,15 +11,16 @@ const r2 = new S3Client({
 })
 
 export async function POST(req) {
-  const server = await createSupabaseServerClient()
-  const { data: { user } } = await server.auth.getUser()
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  const admin = await requireAdmin()
+  if (!admin) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
   const formData = await req.formData()
   const file = formData.get('file')
   if (!file) return Response.json({ error: 'No file' }, { status: 400 })
 
   const ext = file.name.split('.').pop().toLowerCase() || 'jpg'
+  const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']
+  if (!allowedExts.includes(ext)) return Response.json({ error: 'サポートされていないファイル形式です' }, { status: 400 })
   const path = `newsletter/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
   const arrayBuffer = await file.arrayBuffer()
 

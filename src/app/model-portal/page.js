@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
@@ -118,7 +119,7 @@ function UpcomingEvents({ events, privateBookings }) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: '#f8fbff', borderRadius: 10, border: '1px solid #e8f4fb' }}>
                     {ev.main_image && (
                       <div style={{ width: 48, height: 48, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
-                        <img src={ev.main_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <Image src={ev.main_image} alt="" width={48} height={48} style={{ objectFit: 'cover' }} />
                       </div>
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -269,6 +270,7 @@ export default function ModelPortalHome() {
       setLoading(false)
     }
     init()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#aaa' }}>読み込み中...</div>
@@ -283,7 +285,7 @@ export default function ModelPortalHome() {
           <a key={m.id} href={`/model-portal?model_id=${m.id}`} style={{ textDecoration: 'none' }}>
             <div style={{ background: '#fff', border: '1px solid #d6ecf5', borderRadius: 12, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#e8f4fb', overflow: 'hidden', flexShrink: 0 }}>
-                {m.image ? <img src={m.image} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>👤</div>}
+                {m.image ? <Image src={m.image} alt={m.name} width={44} height={44} style={{ objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>👤</div>}
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700, color: '#0d1f3a' }}>{m.name}</div>
@@ -328,7 +330,7 @@ export default function ModelPortalHome() {
         <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
           <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#1a3560', overflow: 'hidden', flexShrink: 0, border: '2px solid rgba(168,226,244,0.4)' }}>
             {model.image
-              ? <img src={model.image} alt={model.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ? <Image src={model.image} alt={model.name} width={72} height={72} style={{ objectFit: 'cover' }} />
               : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>👤</div>
             }
           </div>

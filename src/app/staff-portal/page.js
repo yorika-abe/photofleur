@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
@@ -174,14 +175,6 @@ export default function StaffPortalPage() {
   const [recruitOpen, setRecruitOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
 
-  useEffect(() => {
-    load()
-    fetch('/api/staff-portal/private-info')
-      .then(r => r.json())
-      .then(d => setProfile({ photo: d.profile_photo || '', name: d.display_name || d.real_name || '' }))
-      .catch(() => {})
-  }, [])
-
   async function load() {
     setLoading(true)
     const res = await fetch('/api/staff-portal/staff-recruit')
@@ -192,6 +185,15 @@ export default function StaffPortalPage() {
     }
     setLoading(false)
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load()
+    fetch('/api/staff-portal/private-info')
+      .then(r => r.json())
+      .then(d => setProfile({ photo: d.profile_photo || '', name: d.display_name || d.real_name || '' }))
+      .catch(() => {})
+  }, [])
 
   async function handleApply(recruitmentId) {
     setApplying(true)
@@ -231,7 +233,7 @@ export default function StaffPortalPage() {
         <Link href="/staff-portal/guide" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
           <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#f0f4f8', border: '2px solid #e5e5e5', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             {profile.photo
-              ? <img src={profile.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ? <Image src={profile.photo} alt="" width={38} height={38} style={{ objectFit: 'cover' }} />
               : <span style={{ fontSize: 20 }}>🐈‍⬛</span>}
           </div>
           {profile.name && <span style={{ fontSize: 13, fontWeight: 600, color: '#1a3560' }}>{profile.name}</span>}

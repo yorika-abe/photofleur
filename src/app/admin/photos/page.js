@@ -366,6 +366,7 @@ export default function AdminPhotosPage() {
                 ドラッグで表示順を変更できます。{savingOrder && <span style={{ color: '#f4a0be' }}>保存中...</span>}
               </p>
               <div className="photos-grid" style={grid}>
+                {/* eslint-disable react-hooks/refs */}
                 {favorites.map((p, idx) => (
                   <FavoriteCard
                     key={p.id}
@@ -379,6 +380,7 @@ export default function AdminPhotosPage() {
                     isDragging={dragItem.current === idx}
                   />
                 ))}
+                {/* eslint-enable react-hooks/refs */}
               </div>
             </>
           )}

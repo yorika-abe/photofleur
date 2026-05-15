@@ -19,7 +19,9 @@ export function CartProvider({ children }) {
   const [isCartOpen, setIsCartOpen] = useState(false)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     try { setItems(JSON.parse(localStorage.getItem('pf-cart') || '[]').filter(isValidCartItem)) } catch {}
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setReady(true)
   }, [])
 

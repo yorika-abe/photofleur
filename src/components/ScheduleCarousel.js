@@ -17,12 +17,11 @@ export default function ScheduleCarousel({ events }) {
   const wrapRef = useRef(null)
   const trackRef = useRef(null)
 
-  if (!events || events.length === 0) return null
-
-  const n = events.length
-  const looped = [...events, ...events, ...events]
+  const n = events?.length || 0
+  const looped = events && events.length > 0 ? [...events, ...events, ...events] : []
 
   useEffect(() => {
+    if (!events || events.length === 0) return
     const wrap = wrapRef.current
     const track = trackRef.current
     if (!wrap || !track) return
@@ -97,7 +96,10 @@ export default function ScheduleCarousel({ events }) {
       clearInterval(interval)
       window.removeEventListener('resize', handleResize)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [n])
+
+  if (!events || events.length === 0) return null
 
   return (
     <div ref={wrapRef} style={{ padding: '60px 0 60px' }}>

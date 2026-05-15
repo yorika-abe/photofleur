@@ -87,6 +87,7 @@ export default function HeroSection({ images, mobileImages }) {
       currentRef.current = next
     }, 5000)
     return () => clearInterval(t)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imgs.length])
 
   // Mobile images interval — only when separate mobile images exist
@@ -102,6 +103,7 @@ export default function HeroSection({ images, mobileImages }) {
       currentMobileRef.current = next
     }, 5000)
     return () => clearInterval(t)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasMobileImages, mobileImgs.length])
 
   // Drive animation via CSS transitions on clip-path (stays within overflow:hidden bounds)
@@ -118,6 +120,7 @@ export default function HeroSection({ images, mobileImages }) {
     const t2 = setTimeout(() => { setLeavingSrc(null); setAnimPhase('idle') }, 3100)
 
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animKey])
 
   useEffect(() => {
@@ -125,6 +128,7 @@ export default function HeroSection({ images, mobileImages }) {
     const src = (isMobile && hasMobileImages) ? mobileImgs[currentMobile] : imgs[current]
     if (!src) return
     extractAccentColor(src).then(setAccentColor)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, currentMobile])
 
   // TL triangle: polygon shrinks toward top-left corner

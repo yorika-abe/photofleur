@@ -178,8 +178,6 @@ export default function StaffPrivateInfoPage() {
   const [pendingRulesAt, setPendingRulesAt] = useState(null)
   const [message, setMessage] = useState('')
 
-  useEffect(() => { load() }, [])
-
   async function load() {
     setLoading(true)
     const res = await fetch('/api/staff-portal/private-info')
@@ -203,6 +201,9 @@ export default function StaffPrivateInfoPage() {
     setPendingChanges(data.pending_changes || null)
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { load() }, [])
 
   function handleFirstSave() {
     const missing = REQUIRED_FIELDS.filter(k => !form[k])

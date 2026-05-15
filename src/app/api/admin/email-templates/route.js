@@ -1,7 +1,7 @@
 import { requireAdmin } from '@/lib/auth'
 
 export async function GET() {
-  const admin = await checkAdmin()
+  const admin = await requireAdmin()
   if (!admin) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
   const { data } = await admin

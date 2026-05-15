@@ -38,6 +38,9 @@ export async function POST(req) {
   if (!product || !product.is_active) {
     return Response.json({ error: 'Product not found' }, { status: 404 })
   }
+  if (product.price < 0) {
+    return Response.json({ error: '商品の価格が不正です' }, { status: 400 })
+  }
   if (product.stock <= 0) {
     return Response.json({ error: 'Out of stock' }, { status: 409 })
   }
@@ -82,6 +85,14 @@ export async function POST(req) {
 
   await admin.from('private_products').update({ stock: product.stock - 1 }).eq('id', product.id)
 
+  // Optimistic concurrency check: verify stock did not go negative
+  const { data: refreshed } = await admin.from('private_products').select('stock').eq('id', product.id).single()
+  if (refreshed && refreshed.stock < 0) {
+    await admin.from('private_products').update({ stock: 0 }).eq('id', product.id)
+    await admin.from('private_bookings').delete().eq('qr_token', qrToken)
+    return Response.json({ error: '申し込みが集中しています。もう一度お試しください。' }, { status: 400 })
+  }
+
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || ''
 
   fetch(`${baseUrl}/api/send-private-booking-mail`, {
@@ -94,10 +105,10 @@ export async function POST(req) {
       modelName: product.models?.name || null,
       modelImage: product.models?.image || null,
     }),
-  }).catch(() => {})
+  }).catch(err => console.error('send-private-booking-mail error:', err))
 
   // モデルにLINE通知
-  const model = product.models
+  const model = product.models ?? null
   if (model?.line_id) {
     const { data: tmplRow } = await admin.from('line_templates').select('body').eq('key', 'private_booking_notify').single()
     const template = tmplRow?.body ?? DEFAULTS.private_booking_notify
@@ -116,7 +127,7 @@ export async function POST(req) {
       type: 'private_booking',
       message,
       status: result.ok ? 'sent' : 'failed',
-    }).catch(() => {})
+    }).catch(err => console.error('Operation failed:', err))
   }
 
   // カメラマン個人LINE通知（LINE連携済みの場合）
@@ -132,7 +143,7 @@ export async function POST(req) {
           product_title: product.title,
           model_name: product.models?.name || '',
         })
-        await sendLineCameraUser(userProfile.line_user_id, message).catch(() => {})
+        await sendLineCameraUser(userProfile.line_user_id, message).catch(err => console.error('Operation failed:', err))
       }
     }
   } catch {}

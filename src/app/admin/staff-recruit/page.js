@@ -389,8 +389,6 @@ export default function StaffRecruitPage() {
   const [eventCapacity, setEventCapacity] = useState(1)
   const [requestCapacity, setRequestCapacity] = useState(1)
 
-  useEffect(() => { load() }, [])
-
   async function load() {
     setLoading(true)
     const res = await fetch('/api/admin/staff-recruit')
@@ -402,6 +400,9 @@ export default function StaffRecruitPage() {
     setStaffUsers(data.staffUsers || [])
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { load() }, [])
 
   function openModal() {
     setModalType(null)

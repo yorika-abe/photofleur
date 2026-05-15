@@ -20,14 +20,16 @@ export async function GET() {
     .select('*')
     .order('created_at', { ascending: false })
 
-  const goods = await Promise.all((data || []).map(async g => {
-    const { count } = await admin
-      .from('goods_orders')
-      .select('*', { count: 'exact', head: true })
-      .eq('goods_id', g.id)
-      .is('cancelled_at', null)
-    return { ...g, order_count: count || 0 }
-  }))
+  const goodsList = data || []
+  const goodsIds = goodsList.map(g => g.id)
+  const { data: orderRows } = goodsIds.length
+    ? await admin.from('goods_orders').select('goods_id').in('goods_id', goodsIds).is('cancelled_at', null)
+    : { data: [] }
+  const orderCountMap = {}
+  for (const row of orderRows || []) {
+    orderCountMap[row.goods_id] = (orderCountMap[row.goods_id] || 0) + 1
+  }
+  const goods = goodsList.map(g => ({ ...g, order_count: orderCountMap[g.id] || 0 }))
 
   const { data: models } = await admin.from('models').select('id, name').order('name')
   return Response.json({ goods, models: models || [] })

@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useRef, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -27,13 +28,6 @@ function BlogContent() {
   const [sort, setSort] = useState('desc')
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetch('/api/admin/blog/categories').then(r => r.json()).then(d => setCategories(Array.isArray(d) ? d : []))
-    loadAuthors()
-  }, [])
-
-  useEffect(() => { load() }, [activeCategory, activeAuthor, sort])
-
   async function loadAuthors() {
     const res = await fetch('/api/blog/authors')
     const data = await res.json()
@@ -58,6 +52,14 @@ function BlogContent() {
     setPosts(data || [])
     setLoading(false)
   }
+
+  useEffect(() => {
+    fetch('/api/admin/blog/categories').then(r => r.json()).then(d => setCategories(Array.isArray(d) ? d : []))
+    loadAuthors()
+  }, [])
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load() }, [activeCategory, activeAuthor, sort])
 
   const filtered = searchTitle
     ? posts.filter(p => p.title?.toLowerCase().includes(searchTitle.toLowerCase()))
@@ -119,9 +121,9 @@ function BlogContent() {
           {filtered.map(post => (
             <Link key={post.id} href={`/blog/${post.slug}`} style={{ textDecoration: 'none' }}>
               <article style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid #d6ecf5', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ height: 180, background: '#e0d8f0', overflow: 'hidden', flexShrink: 0 }}>
+                <div style={{ height: 180, background: '#e0d8f0', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
                   {post.cover_image
-                    ? <img src={post.cover_image} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ? <Image src={post.cover_image} alt={post.title} fill style={{ objectFit: 'cover' }} />
                     : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>✍️</div>
                   }
                 </div>
@@ -141,7 +143,7 @@ function BlogContent() {
                       const avatar = authorInfo?.avatar || null
                       return (
                         <>
-                          {avatar && <img src={avatar} alt="" style={{ width: 18, height: 18, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />}
+                          {avatar && <Image src={avatar} alt="" width={18} height={18} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />}
                           {name && <span style={{ fontSize: 11, color: '#888' }}>{name}</span>}
                         </>
                       )

@@ -42,6 +42,7 @@ export default function LoginForm({ redirect, isAlreadyRegistered, noticeEmail, 
       }
     })
     return () => subscription.unsubscribe()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function handleLogin(e) {

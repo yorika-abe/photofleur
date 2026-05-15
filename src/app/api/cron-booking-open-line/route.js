@@ -24,10 +24,10 @@ function toJSTTimeStr(isoStr) {
 }
 
 export async function GET(req) {
-  const { searchParams } = new URL(req.url)
-  if (searchParams.get('secret') !== process.env.CRON_SECRET) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authHeader = req.headers.get('authorization')
+  const querySecret = req.nextUrl.searchParams.get('secret') || req.nextUrl.searchParams.get('cron_secret')
+  const secret = authHeader?.replace('Bearer ', '') || querySecret
+  if (secret !== process.env.CRON_SECRET) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,

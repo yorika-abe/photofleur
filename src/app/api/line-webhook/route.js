@@ -1,13 +1,21 @@
 import { createClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
 
 export async function POST(req) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
-  const body = await req.json()
+  const rawBody = await req.text()
+  const signature = req.headers.get('x-line-signature')
+  const secret = process.env.LINE_CHANNEL_SECRET
+  if (secret) {
+    const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('base64')
+    if (signature !== expected) return Response.json({ error: 'Invalid signature' }, { status: 401 })
+  }
+  const data = JSON.parse(rawBody)
 
-  for (const event of body.events || []) {
+  for (const event of data.events || []) {
     // ボットがグループに追加された → グループIDをログ
     if (event.type === 'join' && event.source?.type === 'group') {
       const groupId = event.source.groupId

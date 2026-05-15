@@ -87,17 +87,25 @@ export async function POST(req) {
   const { data: rec } = await admin.from('staff_recruitments').select('status, capacity').eq('id', recruitment_id).single()
   if (rec?.status !== 'open') return Response.json({ error: '募集は締め切りました' }, { status: 400 })
 
-  await admin.from('staff_recruitment_applications').insert({
+  // Insert first (optimistic), then re-count to detect race condition
+  const { data: inserted, error: insertError } = await admin.from('staff_recruitment_applications').insert({
     recruitment_id,
     user_id: user.id,
     user_name: profile?.name || '',
     status: 'applied',
-  })
+  }).select('id').single()
+  if (insertError) return Response.json({ error: '申し込みに失敗しました' }, { status: 500 })
 
   const { count } = await admin.from('staff_recruitment_applications')
     .select('*', { count: 'exact', head: true })
     .eq('recruitment_id', recruitment_id)
     .neq('status', 'cancelled')
+
+  if (count > rec.capacity) {
+    await admin.from('staff_recruitment_applications').delete().eq('id', inserted.id)
+    return Response.json({ error: '募集定員に達しています' }, { status: 400 })
+  }
+
   if (count >= rec.capacity) {
     await admin.from('staff_recruitments').update({ status: 'closed' }).eq('id', recruitment_id)
   }

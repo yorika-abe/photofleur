@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 import { useCart } from '@/context/CartContext'
 import { useRouter } from 'next/navigation'
 
@@ -27,7 +28,7 @@ export default function CartButton() {
             <p style={{ color: '#aaa', textAlign: 'center', padding: '24px 0' }}>カートは空です</p>
           ) : items.map(item => (
             <div key={item.cartId} style={{ display: 'flex', gap: 12, padding: '12px', background: '#f8f8f8', borderRadius: 10, marginBottom: 10 }}>
-              {item.image && <img src={item.image} alt="" style={{ width: 52, height: 52, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
+              {item.image && <Image src={item.image} alt="" width={52} height={52} style={{ borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 2, color: item.type === 'slot' ? '#1a3560' : item.type === 'goods' ? '#2e7d32' : '#5bbfd6' }}>
                   {item.type === 'slot' ? '通常予約' : item.type === 'goods' ? 'グッズ' : '予約商品'}

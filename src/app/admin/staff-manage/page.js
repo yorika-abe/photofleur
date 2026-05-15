@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import ModelStaffTabs from '@/components/ModelStaffTabs'
@@ -26,7 +27,7 @@ function StaffCard({ staff, onApprove, onReject, actionLoading }) {
         style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', cursor: 'pointer' }}>
         <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#e8f0fb', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {photo
-            ? <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ? <Image src={photo} alt="" width={40} height={40} style={{ objectFit: 'cover' }} />
             : <span style={{ fontSize: 20 }}>🐈‍⬛</span>}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -110,8 +111,6 @@ export default function StaffManagePage() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(null)
 
-  useEffect(() => { load() }, [])
-
   async function load() {
     setLoading(true)
     const res = await fetch('/api/admin/staff-manage')
@@ -119,6 +118,9 @@ export default function StaffManagePage() {
     setStaff(data.staff || [])
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { load() }, [])
 
   async function handleApprove(userId) {
     if (!confirm('この変更申請を承認しますか？')) return

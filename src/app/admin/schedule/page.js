@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
@@ -35,8 +36,6 @@ export default function AdminSchedulePage() {
   const [memoSaving, setMemoSaving] = useState({})
   const [memoSaved, setMemoSaved] = useState({})
 
-  useEffect(() => { load() }, [])
-
   async function load() {
     const res = await fetch('/api/admin/events')
     const data = await res.json()
@@ -52,6 +51,8 @@ export default function AdminSchedulePage() {
     }
     setLoading(false)
   }
+
+  useEffect(() => { load() }, [])
 
   async function saveMemo(evId) {
     setMemoSaving(prev => ({ ...prev, [evId]: true }))
@@ -249,6 +250,7 @@ export default function AdminSchedulePage() {
     const created = data.event || data
     setReusing(null)
     if (created.error || !created.id) { alert('エラー: ' + (created.error || 'unknown')); return }
+    // eslint-disable-next-line react-hooks/immutability
     window.location.href = `/admin/schedule/${created.id}`
   }
 
@@ -417,7 +419,7 @@ export default function AdminSchedulePage() {
               <div className="sched-mobile" style={{ padding: '12px 14px' }}>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                   {ev.main_image && (
-                    <img src={ev.main_image} alt="" style={{ width: 60, height: 60, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
+                    <Image src={ev.main_image} alt="" width={60} height={60} style={{ borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     {/* Buttons row */}
@@ -506,7 +508,7 @@ export default function AdminSchedulePage() {
                 <div style={{ display: 'flex', gap: 14, flex: 1, minWidth: 0 }}>
                   {ev.main_image && (
                     <div style={{ flexShrink: 0, width: 72, height: 72, borderRadius: 8, overflow: 'hidden', background: '#f0f4fb' }}>
-                      <img src={ev.main_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <Image src={ev.main_image} alt="" width={72} height={72} style={{ objectFit: 'cover' }} />
                     </div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -530,7 +532,7 @@ export default function AdminSchedulePage() {
                       <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
                         {models.map((m, i) => (
                           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#f8f5ff', borderRadius: 20, padding: '3px 10px 3px 4px' }}>
-                            {m.image && <img src={m.image} style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />}
+                            {m.image && <Image src={m.image} alt={m.name} width={20} height={20} style={{ borderRadius: '50%', objectFit: 'cover' }} />}
                             <span style={{ fontSize: 12, color: '#2f2244', fontWeight: 600 }}>{m.name}</span>
                           </div>
                         ))}

@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { getOgpImage, buildMetadata } from '@/lib/ogp'
 import Link from 'next/link'
 
@@ -132,7 +133,7 @@ export default async function Home() {
 
       {/* ─── MISSION ─── */}
       <section style={{ position: 'relative', padding: 'clamp(40px, 7vw, 80px) 20px', textAlign: 'center', overflow: 'hidden', background: '#fff' }}>
-        {missionBg && <img src={missionBg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+        {missionBg && <Image src={missionBg} alt="" fill style={{ objectFit: 'cover' }} />}
         {missionBg && <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.45)' }} />}
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 640, margin: '0 auto' }}>
           <p className="reveal" style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 12, fontWeight: 600 }}>Mission Statement.</p>
