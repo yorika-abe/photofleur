@@ -18,12 +18,17 @@ export async function GET(req) {
   const { user, admin, roles } = result
 
   // Admin: if model_id param provided, return that model; else return all models
+  // ただしadmin+model両方持つ場合はmodel_idがない時は自分のモデルページを表示
   if (roles?.includes('admin')) {
     const { searchParams } = new URL(req.url)
     const modelId = searchParams.get('model_id')
     if (modelId) {
       const { data: model } = await admin.from('models').select('*').eq('id', modelId).single()
       return Response.json({ model: model || null })
+    }
+    if (roles?.includes('model')) {
+      const { data: ownModel } = await admin.from('models').select('*').eq('user_id', user.id).single()
+      if (ownModel) return Response.json({ model: ownModel })
     }
     const { data: models } = await admin.from('models').select('id, name, image, status').order('name')
     return Response.json({ model: null, allModels: models || [] })
