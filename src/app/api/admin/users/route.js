@@ -13,12 +13,19 @@ export async function GET() {
     .from('models')
     .select('user_id, name')
 
+  const { data: staffInfos } = await admin
+    .from('staff_private_info')
+    .select('user_id, display_name, real_name')
+
   const modelNameByUserId = Object.fromEntries((models || []).map(m => [m.user_id, m.name]))
+  const staffNameByUserId = Object.fromEntries((staffInfos || []).map(s => [s.user_id, s.display_name || s.real_name || null]))
 
   const normalized = (data || []).map(u => {
     const roles = u.roles?.length > 0 ? u.roles : (u.role ? [u.role] : ['photographer'])
     const modelName = roles.includes('model') ? (modelNameByUserId[u.id] || null) : null
-    return { ...u, roles, model_name: modelName }
+    const staffName = roles.includes('staff') ? (staffNameByUserId[u.id] || null) : null
+    const displayName = modelName || staffName || u.name || null
+    return { ...u, roles, display_name: displayName }
   })
   return Response.json(normalized)
 }
