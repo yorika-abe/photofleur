@@ -3,6 +3,12 @@ import { notFound } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
+function shootingLocation(eventType, isOutdoor) {
+  if (eventType === 'street') return 'ストリート'
+  if (isOutdoor) return '野外'
+  return 'スタジオ'
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return '—'
   const d = new Date(dateStr + 'T00:00:00')
@@ -83,7 +89,7 @@ async function CartTokenView({ cartToken, supabase }) {
                   ['開催日', b.event?.event_date ? formatDate(b.event.event_date) : '—'],
                   ['撮影時間', b.slot?.slot_label || '—'],
                   ['場所', b.event?.location_name || '—'],
-                  ['撮影場所', b.is_outdoor ? '屋外' : '屋内'],
+                  ['撮影場所', shootingLocation(b.event?.event_type, b.is_outdoor)],
                   ['料金', `¥${Number(b.final_price || 0).toLocaleString()}`],
                 ].map(([label, value]) => (
                   <tr key={label} style={{ borderBottom: '1px solid #f5f5f5' }}>
@@ -200,7 +206,7 @@ async function SingleTokenView({ token, supabase }) {
                 ['開催日', event?.event_date ? formatDate(event.event_date) : '—'],
                 ['撮影時間', slot?.slot_label || '—'],
                 ['場所', event?.location_name || '—'],
-                ['撮影場所', booking.is_outdoor ? '屋外' : '屋内'],
+                ['撮影場所', shootingLocation(event?.event_type, booking.is_outdoor)],
                 ['電話番号', booking.phone || '—'],
                 ['SNS URL', booking.sns_url || '—'],
                 ['メール', booking.email],
@@ -304,6 +310,7 @@ async function SingleTokenView({ token, supabase }) {
                 ['担当モデル', product?.models?.name || '—'],
                 ['開催日', product?.event_date ? formatDate(product.event_date) : '—'],
                 ['時間枠', product?.time_label || '—'],
+                ['撮影場所', 'リクエスト撮影'],
                 ['料金', `¥${Number(product?.price || 0).toLocaleString()}`],
                 ['メール', pb.email],
               ].map(([label, value]) => (
