@@ -60,6 +60,19 @@ function ColorPicker({ onSelect, title, current, icon }) {
 
 const sep = <div style={{ width: 1, height: 22, background: '#ddd', margin: '0 2px' }} />
 
+function stripColorStyles(html) {
+  const div = document.createElement('div')
+  div.innerHTML = html
+  div.querySelectorAll('*').forEach(el => {
+    const c = el.style.color?.toLowerCase().replace(/\s/g, '')
+    const isWhite = c === 'white' || c === '#fff' || c === '#ffffff' || c === 'rgb(255,255,255)'
+    if (isWhite) el.style.color = ''
+    el.style.backgroundColor = ''
+    el.style.background = ''
+  })
+  return div.innerHTML
+}
+
 export default function RichEditor({ value, onChange, uploadPath = 'blog', uploadEndpoint = '/api/model-portal/upload' }) {
   const editorRef = useRef(null)
   const imgInputRef = useRef(null)
@@ -127,7 +140,7 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
 
   useEffect(() => {
     if (editorRef.current && !editorRef.current.dataset.initialized) {
-      editorRef.current.innerHTML = value || ''
+      editorRef.current.innerHTML = stripColorStyles(value || '')
       editorRef.current.dataset.initialized = '1'
     }
     document.addEventListener('selectionchange', updateFmt)
@@ -468,14 +481,7 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
           e.preventDefault()
           const html = e.clipboardData.getData('text/html')
           if (html) {
-            const div = document.createElement('div')
-            div.innerHTML = html
-            div.querySelectorAll('*').forEach(el => {
-              el.style.color = ''
-              el.style.backgroundColor = ''
-              el.style.background = ''
-            })
-            document.execCommand('insertHTML', false, div.innerHTML)
+            document.execCommand('insertHTML', false, stripColorStyles(html))
           } else {
             const text = e.clipboardData.getData('text/plain')
             document.execCommand('insertText', false, text)
