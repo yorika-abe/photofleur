@@ -4,7 +4,7 @@ export async function compressImage(file, { maxWidth = 1920, quality = 0.85, asp
   return new Promise((resolve) => {
     const reader = new FileReader()
     reader.onload = (e) => {
-      const img = new Image()
+      const img = new window.Image()
       img.onload = () => {
         let srcX = 0, srcY = 0, srcW = img.width, srcH = img.height
 

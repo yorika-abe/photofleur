@@ -89,7 +89,7 @@ export default function AdminRepresentativeEditPage() {
       URL.revokeObjectURL(src)
       const path = `site/rep-${Date.now()}.jpg`
       const formData = new FormData()
-      formData.append('file', blob)
+      formData.append('file', blob, 'photo.jpg')
       formData.append('path', path)
       const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
       const data = await res.json()

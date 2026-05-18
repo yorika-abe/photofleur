@@ -74,7 +74,7 @@ export default function PrivateProductsPage() {
       URL.revokeObjectURL(src)
       const path = `private-products/${Date.now()}.jpg`
       const fd = new FormData()
-      fd.append('file', blob)
+      fd.append('file', blob, 'photo.jpg')
       fd.append('path', path)
       const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
       const { url, error } = await res.json()
