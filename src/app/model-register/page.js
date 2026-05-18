@@ -11,6 +11,7 @@ function ModelRegisterForm() {
   const router = useRouter()
 
   const [mode, setMode] = useState('new') // 'new' | 'existing'
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -42,7 +43,7 @@ function ModelRegisterForm() {
     const res = await fetch('/api/model-register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode, email, password, token }),
+      body: JSON.stringify({ mode, name, email, password, token }),
     })
     const data = await res.json()
 
@@ -113,6 +114,15 @@ function ModelRegisterForm() {
         {mode === 'existing' && (
           <div style={{ background: '#e8f4fb', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#1565c0', lineHeight: 1.7 }}>
             すでにスタッフやカメラマンとして登録済みの場合は、そのアカウントのメールアドレスとパスワードを入力してください。モデル権限が追加されます。
+          </div>
+        )}
+
+        {mode === 'new' && (
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14, color: '#333' }}>モデル名</label>
+            <input type="text" value={name} onChange={e => setName(e.target.value)} required
+              style={{ width: '100%', padding: '11px', border: '1px solid #ddd', borderRadius: 8, fontSize: 15, boxSizing: 'border-box' }}
+              placeholder="例：Yuki" />
           </div>
         )}
 
