@@ -39,6 +39,12 @@ export const DEFAULTS = {
   staff_event_cancel_notice: `🔴スタッフ参加予定のイベントの開催見送りが決まりました。\n\n{{details}}`,
   cancel_notify_model: `❌📸撮影枠キャンセルのお知らせ\n\n{{booking_details}}\n\n【理由】\n{{cancel_reason}}`,
   cancel_notify_staff: `❌📸スタッフが確定していた撮影枠キャンセルのお知らせ\n\n{{booking_details}}\n\n【理由】\n{{cancel_reason}}`,
+  shift_change_approved: `【🗓️シフトの変更申請】\n{{date}}のシフトの変更申請が\n🟢承認されました`,
+  shift_change_rejected: `【🗓️シフトの変更申請】\n{{date}}のシフトの変更申請が\n❌却下されました`,
+  profile_change_approved: `【📝プロフィールの変更申請】\n🟢承認されました\nモデルページが更新されます`,
+  profile_change_rejected: `【📝プロフィールの変更申請】\n❌却下されました`,
+  blog_post_approved: `【✍️ブログ記事】\n🟢申請が承認されました\nブログが公開されます`,
+  blog_post_rejected: `【✍️ブログ記事】\n❌申請が却下されました。`,
 }
 
 export async function GET() {

@@ -114,6 +114,7 @@ export async function GET(req) {
           : { data: [] }
         const modelMap = Object.fromEntries((models || []).map(m => [m.id, m]))
 
+
         const { data: slots } = await supabase
           .from('booking_slots').select('id, slot_label, price, event_entry_id').in('event_entry_id', entries.map(e => e.id))
 

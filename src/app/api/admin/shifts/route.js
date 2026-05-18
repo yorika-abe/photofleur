@@ -1,5 +1,7 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
 import { syncBookingSlots } from '@/lib/sync-booking-slots'
+import { sendLineMessage } from '@/lib/line'
+import { DEFAULTS } from '@/app/api/admin/line-templates/route'
 
 async function checkAdmin(admin) {
   const server = await createSupabaseServerClient()
@@ -41,17 +43,29 @@ export async function PATCH(req) {
 
   const { id, status } = await req.json()
 
-  // 承認時は先にシフト情報を取得してスロット同期
-  if (status === 'submitted') {
-    const { data: shift } = await admin
-      .from('model_shifts')
-      .select('model_id, event_date, available_from, available_until, available_slots')
-      .eq('id', id)
-      .single()
-    if (shift) await syncBookingSlots(admin, shift)
-  }
+  const { data: shift } = await admin
+    .from('model_shifts')
+    .select('model_id, event_date, available_from, available_until, available_slots')
+    .eq('id', id)
+    .single()
+
+  if (status === 'submitted' && shift) await syncBookingSlots(admin, shift)
 
   const { error } = await admin.from('model_shifts').update({ status }).eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 500 })
+
+  if ((status === 'submitted' || status === 'rejected') && shift) {
+    const { data: model } = await admin.from('models').select('line_id').eq('id', shift.model_id).maybeSingle()
+    if (model?.line_id) {
+      const templateKey = status === 'submitted' ? 'shift_change_approved' : 'shift_change_rejected'
+      const { data: tmplRow } = await admin.from('line_templates').select('body').eq('key', templateKey).maybeSingle()
+      const template = tmplRow?.body || DEFAULTS[templateKey]
+      const [, m, d] = (shift.event_date || '').split('-').map(Number)
+      const dateStr = `${m}月${d}日`
+      const message = template.replace(/{{date}}/g, dateStr)
+      sendLineMessage(model.line_id, message).catch(err => console.error('LINE送信エラー:', err))
+    }
+  }
+
   return Response.json({ ok: true })
 }

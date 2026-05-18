@@ -1,5 +1,16 @@
 import { requireAdmin } from '@/lib/auth'
 import { deleteFromR2, R2_BASE } from '@/lib/r2'
+import { sendLineMessage } from '@/lib/line'
+import { DEFAULTS } from '@/app/api/admin/line-templates/route'
+
+async function sendBlogLineNotification(admin, authorId, templateKey) {
+  if (!authorId) return
+  const { data: model } = await admin.from('models').select('line_id').eq('user_id', authorId).maybeSingle()
+  if (!model?.line_id) return
+  const { data: tmplRow } = await admin.from('line_templates').select('body').eq('key', templateKey).maybeSingle()
+  const message = tmplRow?.body || DEFAULTS[templateKey]
+  sendLineMessage(model.line_id, message).catch(err => console.error('LINE送信エラー:', err))
+}
 
 function extractStoragePaths(content, base) {
   if (!content) return []
@@ -41,8 +52,25 @@ export async function PATCH(req, { params }) {
   const body = await req.json()
   const base = R2_BASE()
 
+  if (body._action === 'approve_new') {
+    const { data: post } = await admin.from('blog_posts').select('author_id, posted_as_admin').eq('id', id).single()
+    const updates = { status: 'published', published_at: new Date().toISOString() }
+    const { error } = await admin.from('blog_posts').update(updates).eq('id', id)
+    if (error) return Response.json({ error: error.message }, { status: 500 })
+    if (!post?.posted_as_admin) await sendBlogLineNotification(admin, post?.author_id, 'blog_post_approved')
+    return Response.json({ ok: true, updates })
+  }
+
+  if (body._action === 'reject_pending_edits') {
+    const { data: post } = await admin.from('blog_posts').select('author_id, posted_as_admin').eq('id', id).single()
+    const { error } = await admin.from('blog_posts').update({ pending_edits: null }).eq('id', id)
+    if (error) return Response.json({ error: error.message }, { status: 500 })
+    if (!post?.posted_as_admin) await sendBlogLineNotification(admin, post?.author_id, 'blog_post_rejected')
+    return Response.json({ ok: true })
+  }
+
   if (body._action === 'approve_pending_edits') {
-    const { data: post } = await admin.from('blog_posts').select('cover_image, content, pending_edits').eq('id', id).single()
+    const { data: post } = await admin.from('blog_posts').select('cover_image, content, pending_edits, author_id, posted_as_admin').eq('id', id).single()
     if (!post?.pending_edits) return Response.json({ error: 'No pending edits' }, { status: 400 })
 
     const edits = post.pending_edits
@@ -62,6 +90,7 @@ export async function PATCH(req, { params }) {
 
     const { error } = await admin.from('blog_posts').update(updates).eq('id', id)
     if (error) return Response.json({ error: error.message }, { status: 500 })
+    if (!post.posted_as_admin) await sendBlogLineNotification(admin, post.author_id, 'blog_post_approved')
     return Response.json({ ok: true, updates })
   }
 

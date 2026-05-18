@@ -1,7 +1,8 @@
 import { requireAdmin } from '@/lib/auth'
 import { createClient } from '@supabase/supabase-js'
 import { deleteFromR2 } from '@/lib/r2'
-import { sendLineGroupMessage } from '@/lib/line'
+import { sendLineGroupMessage, sendLineMessage } from '@/lib/line'
+import { DEFAULTS } from '@/app/api/admin/line-templates/route'
 
 export async function GET(_req, { params }) {
   const admin = await requireAdmin()
@@ -78,13 +79,26 @@ export async function POST(req, { params }) {
       sendLineGroupMessage(message).catch(err => console.error('LINE送信エラー:', err))
     }
 
+    if (model?.line_id) {
+      const { data: tmplRow } = await admin.from('line_templates').select('body').eq('key', 'profile_change_approved').maybeSingle()
+      const message = tmplRow?.body || DEFAULTS.profile_change_approved
+      sendLineMessage(model.line_id, message).catch(err => console.error('LINE送信エラー:', err))
+    }
+
     return Response.json({ ok: true })
   }
 
   if (action === 'reject') {
-    const { data: current } = await admin.from('models').select('status').eq('id', id).single()
+    const { data: current } = await admin.from('models').select('status, line_id').eq('id', id).single()
     const newStatus = current?.status === 'active' ? 'active' : 'inactive'
     await admin.from('models').update({ status: newStatus, pending_data: null }).eq('id', id)
+
+    if (current?.line_id) {
+      const { data: tmplRow } = await admin.from('line_templates').select('body').eq('key', 'profile_change_rejected').maybeSingle()
+      const message = tmplRow?.body || DEFAULTS.profile_change_rejected
+      sendLineMessage(current.line_id, message).catch(err => console.error('LINE送信エラー:', err))
+    }
+
     return Response.json({ ok: true })
   }
 

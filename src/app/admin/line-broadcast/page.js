@@ -219,6 +219,42 @@ const INDIVIDUAL_TEMPLATES = [
     ],
   },
   {
+    key: 'blog_post_approved',
+    label: '✅ ブログ記事申請 — 承認通知（モデル個人）',
+    trigger: 'ブログ記事・編集申請を承認した時（自動）',
+    vars: [],
+  },
+  {
+    key: 'blog_post_rejected',
+    label: '❌ ブログ記事申請 — 却下通知（モデル個人）',
+    trigger: 'ブログ編集申請を却下した時（自動）',
+    vars: [],
+  },
+  {
+    key: 'shift_change_approved',
+    label: '✅ シフト変更申請 — 承認通知（モデル個人）',
+    trigger: 'シフト変更申請を承認した時（自動）',
+    vars: [{ key: '{{date}}', desc: 'シフトの日付（例: 6月15日）' }],
+  },
+  {
+    key: 'shift_change_rejected',
+    label: '❌ シフト変更申請 — 却下通知（モデル個人）',
+    trigger: 'シフト変更申請を却下した時（自動）',
+    vars: [{ key: '{{date}}', desc: 'シフトの日付（例: 6月15日）' }],
+  },
+  {
+    key: 'profile_change_approved',
+    label: '✅ プロフィール変更申請 — 承認通知（モデル個人）',
+    trigger: 'プロフィール変更申請を承認した時（自動）',
+    vars: [],
+  },
+  {
+    key: 'profile_change_rejected',
+    label: '❌ プロフィール変更申請 — 却下通知（モデル個人）',
+    trigger: 'プロフィール変更申請を却下した時（自動）',
+    vars: [],
+  },
+  {
     key: 'model_day_before',
     label: '撮影前日案内（モデル個人）',
     trigger: '撮影前日の夜23時（自動cron）',

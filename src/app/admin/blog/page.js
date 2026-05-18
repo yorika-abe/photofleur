@@ -87,11 +87,26 @@ export default function AdminBlogPage() {
   }
 
   async function rejectPendingEdits(id) {
-    await supabase.from('blog_posts').update({ pending_edits: null }).eq('id', id)
+    await fetch(`/api/admin/blog/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ _action: 'reject_pending_edits' }),
+    })
     setPosts(prev => prev.map(p => p.id === id ? { ...p, pending_edits: null } : p))
   }
 
-  async function updateStatus(id, status) {
+  async function updateStatus(id, status, fromPendingReview) {
+    if (fromPendingReview && status === 'published') {
+      const res = await fetch(`/api/admin/blog/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ _action: 'approve_new' }),
+      })
+      if (!res.ok) { alert('エラーが発生しました'); return }
+      const { updates } = await res.json()
+      setPosts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))
+      return
+    }
     const updates = { status }
     if (status === 'published') updates.published_at = new Date().toISOString()
     await supabase.from('blog_posts').update(updates).eq('id', id)
@@ -209,7 +224,7 @@ export default function AdminBlogPage() {
                 </span>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                   {post.status === 'pending_review' && (
-                    <button onClick={() => updateStatus(post.id, 'published')}
+                    <button onClick={() => updateStatus(post.id, 'published', true)}
                       style={{ background: '#e8f5e9', color: '#388e3c', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                       承認・公開
                     </button>

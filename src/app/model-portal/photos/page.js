@@ -56,9 +56,9 @@ function PhotoCard({ p, onExpand, selected, onSelect }) {
       </div>
       <div style={{ padding: '12px 14px' }}>
         <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>{formatDateTime(p.created_at)}</div>
-        {(p.user_name || p.user_email) && (
+        {p.nickname && (
           <div style={{ fontSize: 12, color: '#1a3560', fontWeight: 600, marginBottom: 6 }}>
-            📷 {p.user_name || p.user_email}
+            📷 {p.nickname}
           </div>
         )}
         {p.sns_url && (
