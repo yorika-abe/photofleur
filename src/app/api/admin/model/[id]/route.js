@@ -1,6 +1,7 @@
 import { requireAdmin } from '@/lib/auth'
 import { createClient } from '@supabase/supabase-js'
 import { deleteFromR2 } from '@/lib/r2'
+import { sendLineGroupMessage } from '@/lib/line'
 
 export async function GET(_req, { params }) {
   const admin = await requireAdmin()
@@ -65,6 +66,17 @@ export async function POST(req, { params }) {
     }
 
     await admin.from('models').update(updates).eq('id', id)
+
+    // XアカウントURLが新規追加された場合にLINE雑談へ通知
+    const hadTwitter = !!model?.twitter_url
+    const newTwitter = model?.pending_data?.twitter_url
+    if (!hadTwitter && newTwitter) {
+      const modelName = model.pending_data?.name || model.name || ''
+      sendLineGroupMessage(
+        `${modelName}のXアカウントが作成されました！\nみんなフォローしてね✨\n🔗${newTwitter}`
+      ).catch(err => console.error('LINE送信エラー:', err))
+    }
+
     return Response.json({ ok: true })
   }
 
