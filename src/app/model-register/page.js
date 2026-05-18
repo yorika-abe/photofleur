@@ -114,7 +114,7 @@ function ModelRegisterForm() {
 
         {mode === 'existing' && (
           <div style={{ background: '#e8f4fb', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#1565c0', lineHeight: 1.7 }}>
-            すでにスタッフやカメラマンとして登録済みの場合はメールアドレスを入力してください。そのアカウントにモデル権限が追加されます。
+            すでにスタッフやカメラマンとして登録済みの場合は、そのアカウントのメールアドレスとパスワードを入力してください。モデル権限が追加されます。
           </div>
         )}
 
@@ -125,16 +125,14 @@ function ModelRegisterForm() {
             placeholder="example@email.com" />
         </div>
 
-        {mode === 'new' && (
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14, color: '#333' }}>パスワード（8文字以上）</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={8}
-              style={{ width: '100%', padding: '11px', border: '1px solid #ddd', borderRadius: 8, fontSize: 15, boxSizing: 'border-box' }}
-              placeholder="••••••••" />
-          </div>
-        )}
-
-        {mode === 'existing' && <div style={{ marginBottom: 8 }} />}
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14, color: '#333' }}>
+            {mode === 'new' ? 'パスワード（8文字以上）' : '現在のパスワード'}
+          </label>
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={mode === 'new' ? 8 : 1}
+            style={{ width: '100%', padding: '11px', border: '1px solid #ddd', borderRadius: 8, fontSize: 15, boxSizing: 'border-box' }}
+            placeholder="••••••••" />
+        </div>
 
         <button type="submit" disabled={loading}
           style={{ width: '100%', background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '13px', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>

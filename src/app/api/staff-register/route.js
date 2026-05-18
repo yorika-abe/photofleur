@@ -20,6 +20,20 @@ export async function POST(req) {
     )
 
     if (mode === 'existing') {
+      if (!password) {
+        return Response.json({ error: 'パスワードを入力してください' }, { status: 400 })
+      }
+
+      // パスワードで本人確認
+      const anonClient = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      )
+      const { error: signInError } = await anonClient.auth.signInWithPassword({ email, password })
+      if (signInError) {
+        return Response.json({ error: 'メールアドレスまたはパスワードが正しくありません' }, { status: 401 })
+      }
+
       // 既存アカウントにスタッフ権限を追加
       const { data: profile } = await supabase
         .from('user_profiles')
