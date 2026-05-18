@@ -12,7 +12,7 @@ export default function RepMessage({ photo, role, name, message, modelId, showTi
   const hasMore = textContent.length > 100
 
   return (
-    <section style={{ background: '#fff', padding: 'clamp(36px, 5vw, 60px) 20px', overflow: 'hidden' }}>
+    <section style={{ background: '#fff', padding: showTitle ? 'clamp(24px, 4vw, 48px) 20px' : 'clamp(12px, 2vw, 24px) 20px', overflow: 'hidden' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
         {showTitle && (
           <div style={{ textAlign: 'center', marginBottom: 28, paddingBottom: 8 }}>
@@ -49,7 +49,7 @@ export default function RepMessage({ photo, role, name, message, modelId, showTi
               <>
                 <div
                   style={{
-                    fontSize: 14, color: '#555', lineHeight: 2, margin: '0 0 12px',
+                    fontSize: 14, color: '#555', lineHeight: 1.75, margin: '0 0 12px',
                     ...(!expanded && hasMore ? { display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : {}),
                   }}
                   dangerouslySetInnerHTML={{ __html: message }}
