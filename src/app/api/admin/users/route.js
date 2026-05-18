@@ -11,20 +11,29 @@ export async function GET() {
 
   const { data: models } = await admin
     .from('models')
-    .select('user_id, name')
+    .select('id, user_id')
+
+  const modelIds = (models || []).map(m => m.id)
+  const { data: modelPrivateInfos } = modelIds.length > 0
+    ? await admin.from('model_private_info').select('model_id, real_name').in('model_id', modelIds)
+    : { data: [] }
 
   const { data: staffInfos } = await admin
     .from('staff_private_info')
     .select('user_id, display_name, real_name')
 
-  const modelNameByUserId = Object.fromEntries((models || []).map(m => [m.user_id, m.name]))
+  const modelIdByUserId = Object.fromEntries((models || []).map(m => [m.user_id, m.id]))
+  const modelRealNameByModelId = Object.fromEntries((modelPrivateInfos || []).map(m => [m.model_id, m.real_name || null]))
   const staffNameByUserId = Object.fromEntries((staffInfos || []).map(s => [s.user_id, s.display_name || s.real_name || null]))
 
   const normalized = (data || []).map(u => {
     const roles = u.roles?.length > 0 ? u.roles : (u.role ? [u.role] : ['photographer'])
-    const modelName = roles.includes('model') ? (modelNameByUserId[u.id] || null) : null
-    const staffName = roles.includes('staff') ? (staffNameByUserId[u.id] || null) : null
-    const displayName = modelName || staffName || u.name || null
+    let displayName = u.name || null
+    if (roles.includes('staff')) displayName = staffNameByUserId[u.id] || displayName
+    if (roles.includes('model')) {
+      const modelId = modelIdByUserId[u.id]
+      displayName = (modelId && modelRealNameByModelId[modelId]) || displayName
+    }
     return { ...u, roles, display_name: displayName }
   })
   return Response.json(normalized)
