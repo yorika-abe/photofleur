@@ -194,6 +194,11 @@ export default function ModelPortalHome() {
       if (!model) { setLoading(false); return }
       setModel(model)
 
+      if (!localStorage.getItem('model_guide_visited')) {
+        window.location.href = '/model-portal/guide'
+        return
+      }
+
       // 参加予定イベントを取得
       const today = new Date().toISOString().split('T')[0]
       const { data: entries } = await supabase

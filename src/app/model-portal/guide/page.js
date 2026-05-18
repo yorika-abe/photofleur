@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import PdfImageSlider from '@/components/PdfImageSlider'
+import MarkGuideVisited from './MarkGuideVisited'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +21,7 @@ export default async function ModelGuidePage() {
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 16px' }}>
+      <MarkGuideVisited />
       <Link href="/model-portal" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← モデルポータル</Link>
       <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: '16px 0 28px' }}>モデル活動の手引き</h1>
 
