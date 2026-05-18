@@ -290,20 +290,17 @@ const ZATSUDAN_TEMPLATES = [
   },
 ]
 
-function AutoTemplateSection({ templateDefs }) {
-  const [templates, setTemplates] = useState(null)
+function AutoTemplateSection({ templateDefs, defaultOpen = false }) {
   const [editing, setEditing] = useState({})
   const [saving, setSaving] = useState({})
   const [saved, setSaved] = useState({})
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(defaultOpen)
 
   useEffect(() => {
     fetch('/api/admin/line-templates')
       .then(r => r.json())
-      .then(d => {
-        setTemplates(d.templates || {})
-        setEditing(d.templates || {})
-      })
+      .then(d => setEditing(d.templates || {}))
+      .catch(() => {})
   }, [])
 
   async function saveTemplate(key) {
@@ -313,7 +310,6 @@ function AutoTemplateSection({ templateDefs }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key, body: editing[key] }),
     })
-    setTemplates(t => ({ ...t, [key]: editing[key] }))
     setSaving(s => ({ ...s, [key]: false }))
     setSaved(s => ({ ...s, [key]: true }))
     setTimeout(() => setSaved(s => ({ ...s, [key]: false })), 2000)
@@ -350,10 +346,10 @@ function AutoTemplateSection({ templateDefs }) {
                 {saved[tmpl.key] && <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 600 }}>✅ 保存しました</span>}
                 <button
                   onClick={() => saveTemplate(tmpl.key)}
-                  disabled={saving[tmpl.key] || editing[tmpl.key] === templates?.[tmpl.key]}
+                  disabled={saving[tmpl.key]}
                   style={{ padding: '6px 16px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                    background: (saving[tmpl.key] || editing[tmpl.key] === templates?.[tmpl.key]) ? '#e0e0e0' : '#1a3560',
-                    color: (saving[tmpl.key] || editing[tmpl.key] === templates?.[tmpl.key]) ? '#999' : '#fff' }}>
+                    background: saving[tmpl.key] ? '#e0e0e0' : '#1a3560',
+                    color: saving[tmpl.key] ? '#999' : '#fff' }}>
                   {saving[tmpl.key] ? '保存中...' : '保存'}
                 </button>
               </div>
@@ -1297,7 +1293,7 @@ function TabAdmin() {
           各メッセージはデフォルト文から変更して保存することができます。
         </div>
       </div>
-      <AutoTemplateSection templateDefs={ADMIN_TEMPLATES} />
+      <AutoTemplateSection templateDefs={ADMIN_TEMPLATES} defaultOpen={true} />
     </div>
   )
 }
