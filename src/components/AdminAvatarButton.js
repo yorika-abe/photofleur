@@ -29,7 +29,7 @@ export default function AdminAvatarButton({ initialUrl, initialName, isOwner }) 
 
   function cropAndCompress(file) {
     return new Promise((resolve) => {
-      const img = new Image()
+      const img = new window.Image()
       const url = URL.createObjectURL(file)
       img.onload = () => {
         const size = Math.min(img.width, img.height)

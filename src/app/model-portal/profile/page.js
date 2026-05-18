@@ -7,7 +7,7 @@ import Cropper from 'react-easy-crop'
 
 async function getCroppedBlob(imageSrc, pixelCrop, quality = 0.85, maxW = 1200, maxH = 1500) {
   const img = await new Promise((resolve, reject) => {
-    const i = new Image()
+    const i = new window.Image()
     i.onload = () => resolve(i)
     i.onerror = reject
     i.src = imageSrc
@@ -24,7 +24,7 @@ async function getCroppedBlob(imageSrc, pixelCrop, quality = 0.85, maxW = 1200, 
 
 function compressToJpeg(file, maxW, maxH, quality = 0.85) {
   return new Promise(resolve => {
-    const img = new Image()
+    const img = new window.Image()
     const blobUrl = URL.createObjectURL(file)
     img.onload = () => {
       URL.revokeObjectURL(blobUrl)

@@ -65,7 +65,7 @@ export default function PrivateProductsPage() {
     setUploading(true)
     try {
       const img = await new Promise((resolve, reject) => {
-        const i = new Image(); i.onload = () => resolve(i); i.onerror = reject; i.src = src
+        const i = new window.Image(); i.onload = () => resolve(i); i.onerror = reject; i.src = src
       })
       const canvas = document.createElement('canvas')
       canvas.width = pixels.width; canvas.height = pixels.height

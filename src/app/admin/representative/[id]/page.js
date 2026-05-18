@@ -9,7 +9,7 @@ import Cropper from 'react-easy-crop'
 
 async function getCroppedBlob(imageSrc, pixelCrop, quality = 0.85, maxW = 1200, maxH = 1500) {
   const img = await new Promise((resolve, reject) => {
-    const i = new Image()
+    const i = new window.Image()
     i.onload = () => resolve(i)
     i.onerror = reject
     i.src = imageSrc

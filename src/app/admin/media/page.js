@@ -7,7 +7,7 @@ import Cropper from 'react-easy-crop'
 
 async function compressImage(file, maxW = 2000, maxH = 2000, quality = 0.88) {
   return new Promise(resolve => {
-    const img = new Image()
+    const img = new window.Image()
     const url = URL.createObjectURL(file)
     img.onload = () => {
       let w = img.width, h = img.height
@@ -226,7 +226,7 @@ export default function AdminMediaPage() {
     setUploadProgress(0)
     try {
       const img = await new Promise((resolve, reject) => {
-        const i = new Image(); i.onload = () => resolve(i); i.onerror = reject; i.src = src
+        const i = new window.Image(); i.onload = () => resolve(i); i.onerror = reject; i.src = src
       })
       const { x, y, width, height } = croppedAreaPixels
       const canvas = document.createElement('canvas')

@@ -8,7 +8,7 @@ import { createBrowserClient } from '@supabase/ssr'
 
 async function compressImage(file, maxW = 1600, maxH = 1600, quality = 0.85) {
   return new Promise(resolve => {
-    const img = new Image()
+    const img = new window.Image()
     const url = URL.createObjectURL(file)
     img.onload = () => {
       let w = img.width, h = img.height

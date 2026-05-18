@@ -8,7 +8,7 @@ import { compressImage } from '@/lib/compressImage'
 
 async function getCroppedBlob(imageSrc, pixelCrop) {
   const img = await new Promise((resolve, reject) => {
-    const i = new Image()
+    const i = new window.Image()
     i.onload = () => resolve(i)
     i.onerror = reject
     i.src = imageSrc

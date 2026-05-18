@@ -11,7 +11,7 @@ import RichEditor from '@/components/RichEditor'
 
 async function compressImage(file, maxW = 1600, maxH = 1600, quality = 0.85) {
   return new Promise(resolve => {
-    const img = new Image()
+    const img = new window.Image()
     const url = URL.createObjectURL(file)
     img.onload = () => {
       let w = img.width, h = img.height
@@ -29,7 +29,7 @@ async function compressImage(file, maxW = 1600, maxH = 1600, quality = 0.85) {
 
 async function getCroppedBlob(imageSrc, pixelCrop, quality = 0.85, maxW = 1920, maxH = 1080) {
   const img = await new Promise((resolve, reject) => {
-    const i = new Image()
+    const i = new window.Image()
     i.onload = () => resolve(i)
     i.onerror = reject
     i.src = imageSrc
