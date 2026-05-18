@@ -139,9 +139,8 @@ export default function ModelProfilePage() {
     try {
       const blob = await getCroppedBlob(src, pixels, 0.85, 1200, 1500)
       URL.revokeObjectURL(src)
-      const file = new File([blob], `profile-${Date.now()}.jpg`, { type: 'image/jpeg' })
-      const path = `models/${file.name}`
-      const url = await uploadViaSignedUrl(file, path)
+      const path = `models/profile-${Date.now()}.jpg`
+      const url = await uploadViaSignedUrl(blob, path)
       setForm(f => ({ ...f, image: url }))
     } catch (e) {
       URL.revokeObjectURL(src)
