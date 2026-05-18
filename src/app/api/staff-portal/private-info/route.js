@@ -38,7 +38,7 @@ export async function POST(req) {
       fields.profile_photo = body.profile_photo || null
     }
     if ('display_name' in body) fields.display_name = body.display_name || null
-    const { error } = await admin.from('staff_private_info').update(fields).eq('user_id', user.id)
+    const { error } = await admin.from('staff_private_info').upsert({ user_id: user.id, ...fields }, { onConflict: 'user_id' })
     if (error) return Response.json({ error: error.message }, { status: 500 })
     return Response.json({ ok: true })
   }
