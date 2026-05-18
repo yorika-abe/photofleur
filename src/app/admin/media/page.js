@@ -74,6 +74,7 @@ export default function AdminMediaPage() {
   const [staffOnboardingImagesRegist, setStaffOnboardingImagesRegist] = useState([])
   const [guideImagesHowto, setGuideImagesHowto] = useState([])
   const [guideImagesBooking, setGuideImagesBooking] = useState([])
+  const [staffGuideImagesHowto, setStaffGuideImagesHowto] = useState([])
 
   useEffect(() => {
     fetch('/api/admin/site-settings').then(r => r.json()).then(data => {
@@ -100,6 +101,7 @@ export default function AdminMediaPage() {
       setStaffOnboardingImagesRegist(JSON.parse(data.staff_onboarding_images_regist || '[]'))
       setGuideImagesHowto(JSON.parse(data.guide_images_howto || '[]'))
       setGuideImagesBooking(JSON.parse(data.guide_images_booking || '[]'))
+      setStaffGuideImagesHowto(JSON.parse(data.staff_guide_images_howto || '[]'))
     })
   }, [])
 
@@ -311,6 +313,7 @@ export default function AdminMediaPage() {
         staff_onboarding_images_regist: JSON.stringify(staffOnboardingImagesRegist),
         guide_images_howto: JSON.stringify(guideImagesHowto),
         guide_images_booking: JSON.stringify(guideImagesBooking),
+        staff_guide_images_howto: JSON.stringify(staffGuideImagesHowto),
       }),
     })
     setSaving(false)
@@ -761,6 +764,9 @@ export default function AdminMediaPage() {
               images={staffOnboardingImagesAbout} setImages={setStaffOnboardingImagesAbout} uploadKey="staff_onboarding_images_about" />
             <PdfSection title="撮影会スタッフ登録説明" desc="スタッフ登録手引きページの撮影会スタッフ登録説明セクションに表示されます"
               images={staffOnboardingImagesRegist} setImages={setStaffOnboardingImagesRegist} uploadKey="staff_onboarding_images_regist" />
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', padding: '12px 0 8px', borderBottom: '1px solid #e8f4fb' }}>スタッフ活動手引き</div>
+            <PdfSection title="スタッフ活動手引き" desc="スタッフ活動の手引きページに表示されます"
+              images={staffGuideImagesHowto} setImages={setStaffGuideImagesHowto} uploadKey="staff_guide_images_howto" />
           </>
         )}
 
