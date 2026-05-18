@@ -29,6 +29,7 @@ const TABS = [
   { id: 'recruit_page', label: 'モデル募集' },
   { id: 'ogp', label: '共有画像設定(OGP)' },
   { id: 'registration', label: '登録手続きPDF' },
+  { id: 'guide', label: 'モデル活動の手引き' },
 ]
 
 const OGP_PAGES = [
@@ -71,6 +72,8 @@ export default function AdminMediaPage() {
   const [onboardingImagesRegist, setOnboardingImagesRegist] = useState([])
   const [staffOnboardingImagesAbout, setStaffOnboardingImagesAbout] = useState([])
   const [staffOnboardingImagesRegist, setStaffOnboardingImagesRegist] = useState([])
+  const [guideImagesHowto, setGuideImagesHowto] = useState([])
+  const [guideImagesBooking, setGuideImagesBooking] = useState([])
 
   useEffect(() => {
     fetch('/api/admin/site-settings').then(r => r.json()).then(data => {
@@ -95,6 +98,8 @@ export default function AdminMediaPage() {
       setOnboardingImagesRegist(JSON.parse(data.onboarding_images_regist || '[]'))
       setStaffOnboardingImagesAbout(JSON.parse(data.staff_onboarding_images_about || '[]'))
       setStaffOnboardingImagesRegist(JSON.parse(data.staff_onboarding_images_regist || '[]'))
+      setGuideImagesHowto(JSON.parse(data.guide_images_howto || '[]'))
+      setGuideImagesBooking(JSON.parse(data.guide_images_booking || '[]'))
     })
   }, [])
 
@@ -304,6 +309,8 @@ export default function AdminMediaPage() {
         onboarding_images_regist: JSON.stringify(onboardingImagesRegist),
         staff_onboarding_images_about: JSON.stringify(staffOnboardingImagesAbout),
         staff_onboarding_images_regist: JSON.stringify(staffOnboardingImagesRegist),
+        guide_images_howto: JSON.stringify(guideImagesHowto),
+        guide_images_booking: JSON.stringify(guideImagesBooking),
       }),
     })
     setSaving(false)
@@ -689,6 +696,16 @@ export default function AdminMediaPage() {
                 onAddVideo={f => uploadVideoWithSignedUrl(f, 'recruit_page_gallery', url => setRecruitPageGallery(imgs => [...imgs, url]))}
               />
             </Section>
+          </>
+        )}
+
+        {/* ── モデル活動の手引き ── */}
+        {tab === 'guide' && (
+          <>
+            <PdfSection title="モデフルの使い方" desc="シフト提出や変更・予約状況の確認（モデル活動の手引きページに表示されます）"
+              images={guideImagesHowto} setImages={setGuideImagesHowto} uploadKey="guide_images_howto" />
+            <PdfSection title="予約の埋め方・Xの運用方法" desc="予約を埋めるのに大切なのはXの運用です（モデル活動の手引きページに表示されます）"
+              images={guideImagesBooking} setImages={setGuideImagesBooking} uploadKey="guide_images_booking" />
           </>
         )}
 

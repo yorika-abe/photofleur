@@ -65,6 +65,7 @@ export default function ModelInvitePage() {
               { label: '芸名・X作成', desc: '芸名入力とXアカウント作成説明', href: '/model-portal/stage-name' },
               { label: '非公開登録情報', desc: '本名・住所・契約書への同意', href: '/model-portal/private-info' },
               { label: 'プロフィール編集', desc: '公開プロフィールの作成', href: '/model-portal/profile' },
+              { label: 'モデル活動の手引き', desc: 'シフト提出・予約確認・X運用方法', href: '/model-portal/guide' },
             ].map((item, i) => (
               <div key={item.href} style={{ display: 'flex', alignItems: 'center', gap: 16, background: '#f5f9ff', borderRadius: 10, padding: '14px 18px' }}>
                 <div style={{ background: '#1a3560', color: '#fff', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
