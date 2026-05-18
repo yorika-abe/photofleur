@@ -164,7 +164,7 @@ export default function UsersPage() {
               }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontWeight: 700, fontSize: 15, color: isBlocked ? '#c62828' : '#1a3560' }}>{user.name || '（名前なし）'}</span>
+                    <span style={{ fontWeight: 700, fontSize: 15, color: isBlocked ? '#c62828' : '#1a3560' }}>{user.model_name || user.name || '（名前なし）'}</span>
                     {isBlocked && <span style={{ background: '#e53935', color: '#fff', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>ブロック中</span>}
                     {isNew && <span style={{ background: '#ff9800', color: '#fff', borderRadius: 4, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>招待登録</span>}
                   </div>

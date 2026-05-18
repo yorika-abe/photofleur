@@ -8,10 +8,18 @@ export async function GET() {
     .select('id, name, email, roles, role, created_at, registered_via_invite, invite_notif_seen, is_blocked')
     .order('created_at', { ascending: false })
   if (error) return Response.json({ error: error.message }, { status: 500 })
-  const normalized = (data || []).map(u => ({
-    ...u,
-    roles: u.roles?.length > 0 ? u.roles : (u.role ? [u.role] : ['photographer']),
-  }))
+
+  const { data: models } = await admin
+    .from('models')
+    .select('user_id, name')
+
+  const modelNameByUserId = Object.fromEntries((models || []).map(m => [m.user_id, m.name]))
+
+  const normalized = (data || []).map(u => {
+    const roles = u.roles?.length > 0 ? u.roles : (u.role ? [u.role] : ['photographer'])
+    const modelName = roles.includes('model') ? (modelNameByUserId[u.id] || null) : null
+    return { ...u, roles, model_name: modelName }
+  })
   return Response.json(normalized)
 }
 
