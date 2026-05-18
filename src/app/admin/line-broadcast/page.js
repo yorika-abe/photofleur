@@ -1293,7 +1293,7 @@ function TabAdmin() {
           各メッセージはデフォルト文から変更して保存することができます。
         </div>
       </div>
-      <AutoTemplateSection templateDefs={ADMIN_TEMPLATES} defaultOpen={true} />
+      <AutoTemplateSection templateDefs={ADMIN_TEMPLATES} />
     </div>
   )
 }
