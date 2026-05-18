@@ -241,6 +241,16 @@ const ZATSUDAN_TEMPLATES = [
     trigger: '誕生日一覧の「手動送信」ボタンを押した時に自動挿入',
     vars: [{ key: '○○ または {{name}}', desc: 'モデル名に自動置換されます' }],
   },
+  {
+    key: 'x_account_created',
+    label: '🐦 X（Twitter）アカウント作成通知',
+    trigger: 'モデルのXアカウントURLが初めて承認された時に自動送信',
+    vars: [
+      { key: '{{name}}', desc: 'モデル名に自動置換されます' },
+      { key: '{{url}}', desc: 'XアカウントURLに自動置換されます' },
+    ],
+    defaultValue: '{{name}}のXアカウントが作成されました！\nみんなフォローしてね✨\n🔗{{url}}',
+  },
 ]
 
 function AutoTemplateSection({ templateDefs }) {

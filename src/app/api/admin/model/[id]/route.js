@@ -72,9 +72,10 @@ export async function POST(req, { params }) {
     const newTwitter = model?.pending_data?.twitter_url
     if (!hadTwitter && newTwitter) {
       const modelName = model.pending_data?.name || model.name || ''
-      sendLineGroupMessage(
-        `${modelName}のXアカウントが作成されました！\nみんなフォローしてね✨\n🔗${newTwitter}`
-      ).catch(err => console.error('LINE送信エラー:', err))
+      const { data: tmplRow } = await admin.from('line_templates').select('body').eq('key', 'x_account_created').maybeSingle()
+      const template = tmplRow?.body || '{{name}}のXアカウントが作成されました！\nみんなフォローしてね✨\n🔗{{url}}'
+      const message = template.replace(/{{name}}/g, modelName).replace(/{{url}}/g, newTwitter)
+      sendLineGroupMessage(message).catch(err => console.error('LINE送信エラー:', err))
     }
 
     return Response.json({ ok: true })

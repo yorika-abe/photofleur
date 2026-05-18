@@ -18,6 +18,7 @@ export const DEFAULTS = {
   monthly_events_model: `【今月のイベントのお知らせ】\nおはようございます☀️\n{{month}}月がスタートしましたね！\n\n今月の季節のイベントをお知らせします❤︎\n{{events_list}}\n\n今月も楽しくみんなが過ごせますように🙏`,
   monthly_events_camera: `【今月のイベントのお知らせ】\nおはようございます☀️\n{{month}}月がスタートしましたね！\n\n今月の季節のイベントをお知らせします❤︎\n{{events_list}}\n\n今月も楽しくみんなが過ごせますように🙏`,
   birthday_msg: `今日は○○ちゃんの誕生日！\nお誕生日おめでとうございます💖\n素敵な1日になりますように❣️\n\nPhotoFleur運営`,
+  x_account_created: `{{name}}のXアカウントが作成されました！\nみんなフォローしてね✨\n🔗{{url}}`,
   x_event_publish: `📢お知らせ\n【開催イベントが公開されました】\n\n【📍開催日　タイトル】\n{{event_date}} {{title}}\n{{subtitle}}\n\n{{description}}\n\n【⏰予約受付開始日時】\n{{booking_open_at}}~\n\nHPより詳細ご確認ください！\n{{event_url}}`,
   x_booking_open: `📢お知らせ\n【⏰本日予約受付開始されます】\n\n【📍開催日　タイトル】\n{{event_date}} {{title}}\n{{subtitle}}\n\n{{description}}\n\n皆様のご予約心よりお待ち申し上げます。\n{{event_url}}`,
   x_day_before: `📢お知らせ\n【⏰本日予約受付開始されます】\n\n【📍開催日　タイトル】\n{{event_date}} {{title}}\n{{subtitle}}\n\n{{description}}\n\n本日22時までに第一締め切りされます。\n開放分は当日でもご予約可能ですので\nぜひご予約ご検討ください💖\n{{event_url}}`,
