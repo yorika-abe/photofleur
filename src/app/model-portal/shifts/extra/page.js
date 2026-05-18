@@ -33,6 +33,7 @@ export default function ExtraEntryPage() {
   const [open, setOpen] = useState({})
   const [submitting, setSubmitting] = useState({})
   const [results, setResults] = useState({})
+  const [noteErrors, setNoteErrors] = useState({})
   const [loading, setLoading] = useState(true)
 
   const supabase = createBrowserClient(
@@ -99,6 +100,11 @@ export default function ExtraEntryPage() {
   async function submit(req) {
     const f = forms[req.id]
     if (!f) return
+    if (!f.notes?.trim()) {
+      setNoteErrors(prev => ({ ...prev, [req.id]: true }))
+      return
+    }
+    setNoteErrors(prev => ({ ...prev, [req.id]: false }))
     setSubmitting(prev => ({ ...prev, [req.id]: true }))
     const from = f.allDay || f.unavailable ? '00:00' : f.from
     const until = f.allDay || f.unavailable ? '00:00' : f.until
@@ -238,11 +244,13 @@ export default function ExtraEntryPage() {
                         style={{ padding: '4px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, fontWeight: 600, width: 95 }} />
                     </div>
                   )}
-                  {!f.unavailable && (
-                    <input value={f.notes || ''} onChange={e => updateForm(req.id, 'notes', e.target.value)}
-                      placeholder="備考・申請理由（任意）"
-                      style={{ width: '100%', boxSizing: 'border-box', padding: '5px 10px', border: '1px solid #e0e0e0', borderRadius: 6, fontSize: 12, color: '#555', background: '#f8f8f8', marginBottom: 8 }} />
+                  <input value={f.notes || ''} onChange={e => { updateForm(req.id, 'notes', e.target.value); setNoteErrors(prev => ({ ...prev, [req.id]: false })) }}
+                    placeholder="備考・申請理由（必須）"
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '5px 10px', border: `1px solid ${noteErrors[req.id] ? '#e53935' : '#e0e0e0'}`, borderRadius: 6, fontSize: 12, color: '#555', background: noteErrors[req.id] ? '#fff8f8' : '#f8f8f8', marginBottom: 4 }} />
+                  {noteErrors[req.id] && (
+                    <p style={{ fontSize: 11, color: '#e53935', margin: '0 0 8px' }}>申請理由を入力してください</p>
                   )}
+                  <div style={{ marginBottom: 8 }} />
                   <button disabled={submitting[req.id]} onClick={() => submit(req)}
                     style={{ width: '100%', background: '#1a3560', color: '#fff', border: 'none', borderRadius: 7, padding: '9px', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: submitting[req.id] ? 0.7 : 1 }}>
                     {submitting[req.id] ? '申請中...' : existing ? '変更申請を送る' : '追加申請を送る'}
