@@ -13,10 +13,10 @@ function MediaItem({ url }) {
   return (
     <div className="recruit-media-item" style={{ flexShrink: 0, borderRadius: 10, overflow: 'hidden', background: '#f0f0f0' }}>
       {isVideo(url) ? (
-        <video src={url} autoPlay muted loop playsInline
+        <video src={url} autoPlay muted loop playsInline preload="none"
           style={{ height: '100%', width: 'auto', display: 'block' }} />
       ) : (
-        <img src={url} alt=""
+        <img src={url} alt="" loading="lazy"
           style={{ height: '100%', width: 'auto', display: 'block' }} />
       )}
     </div>

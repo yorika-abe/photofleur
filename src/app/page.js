@@ -16,7 +16,7 @@ import RepMessage from '@/components/RepMessage'
 import SectionTitle from '@/components/SectionTitle'
 import FeaturedPhotosSection from '@/components/FeaturedPhotosSection'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 300
 
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
@@ -185,7 +185,7 @@ export default async function Home() {
                   <div>
                     <div style={{ position: 'relative', aspectRatio: '2/3', background: '#f0f0f0', overflow: 'hidden', borderRadius: 2 }} className="model-card">
                       {model.image
-                        ? <img src={model.image} alt={model.name} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.6s ease' }} className="model-img" />
+                        ? <img src={model.image} alt={model.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.6s ease' }} className="model-img" />
                         : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc' }}>
                             <span style={{ fontSize: 36 }}>👤</span>
                           </div>
