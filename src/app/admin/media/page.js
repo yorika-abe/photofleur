@@ -17,7 +17,7 @@ async function compressImage(file, maxW = 2000, maxH = 2000, quality = 0.88) {
       canvas.width = w; canvas.height = h
       canvas.getContext('2d').drawImage(img, 0, 0, w, h)
       URL.revokeObjectURL(url)
-      canvas.toBlob(blob => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' })), 'image/jpeg', quality)
+      canvas.toBlob(blob => resolve(blob), 'image/jpeg', quality)
     }
     img.src = url
   })
@@ -229,9 +229,8 @@ export default function AdminMediaPage() {
       canvas.getContext('2d').drawImage(img, x, y, width, height, 0, 0, outputW, outputH)
       URL.revokeObjectURL(src)
       const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.92))
-      const file = new File([blob], `${key}.jpg`, { type: 'image/jpeg' })
       const path = `site/${key}-${Date.now()}.jpg`
-      const url = await uploadWithProgress(file, path)
+      const url = await uploadWithProgress(blob, path)
       if (setter) {
         setter(url)
       } else {

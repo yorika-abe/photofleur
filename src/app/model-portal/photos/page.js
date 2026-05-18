@@ -14,9 +14,8 @@ async function downloadPhoto(url, idx) {
   const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
   if (isIOS && navigator.canShare) {
-    const file = new File([blob], filename, { type: blob.type })
-    if (navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file] }) } catch (e) { /* キャンセル等 */ }
+    if (navigator.canShare({ files: [blob] })) {
+      try { await navigator.share({ files: [blob] }) } catch (e) { /* キャンセル等 */ }
       return
     }
   }

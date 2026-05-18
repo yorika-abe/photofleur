@@ -18,7 +18,7 @@ async function compressImage(file, maxW = 1600, maxH = 1600, quality = 0.85) {
       canvas.width = w; canvas.height = h
       canvas.getContext('2d').drawImage(img, 0, 0, w, h)
       URL.revokeObjectURL(url)
-      canvas.toBlob(blob => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' })), 'image/jpeg', quality)
+      canvas.toBlob(blob => resolve(blob), 'image/jpeg', quality)
     }
     img.src = url
   })

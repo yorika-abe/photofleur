@@ -74,7 +74,7 @@ export default function GoodsAdminPage() {
       URL.revokeObjectURL(src)
       const path = `goods/${Date.now()}.jpg`
       const fd = new FormData()
-      fd.append('file', new File([blob], 'image.jpg', { type: 'image/jpeg' }))
+      fd.append('file', blob)
       fd.append('path', path)
       const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
       if (!res.ok) { alert('アップロード失敗'); return }

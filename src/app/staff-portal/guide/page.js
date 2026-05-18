@@ -68,7 +68,7 @@ export default function StaffGuidePage() {
     try {
       const blob = await getCroppedBlob(src, pixels)
       URL.revokeObjectURL(src)
-      const compressed = await compressImage(new File([blob], 'photo.jpg', { type: 'image/jpeg' }))
+      const compressed = await compressImage(new Blob([blob], { type: 'image/jpeg' }))
       const path = `staff/profile/${Date.now()}.jpg`
       const fd = new FormData()
       fd.append('file', compressed)
