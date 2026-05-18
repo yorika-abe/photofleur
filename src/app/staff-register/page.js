@@ -53,15 +53,12 @@ function StaffRegisterForm() {
       return
     }
 
-    if (mode === 'new') {
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-      if (!signInError) {
-        router.push('/staff-portal')
-        return
-      }
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+    if (!signInError) {
+      router.push('/staff-portal/guide')
+      return
     }
 
-    // 既存アカウントの場合 or サインイン失敗時
     setDone(true)
     setLoading(false)
   }

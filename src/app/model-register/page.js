@@ -52,12 +52,10 @@ function ModelRegisterForm() {
       return
     }
 
-    if (mode === 'new') {
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-      if (!signInError) {
-        router.push('/model-portal/onboarding')
-        return
-      }
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+    if (!signInError) {
+      router.push('/model-portal/onboarding')
+      return
     }
 
     setDone(true)
