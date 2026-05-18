@@ -384,7 +384,11 @@ export default function AdminMediaPage() {
 
   function ImageGrid({ images, onReorder, onRemove, uploadKey, onAdd, label, aspect = '3/4' }) {
     const dragIdx = useRef(null)
+    const dragOverRef = useRef(null)
     const [dragOver, setDragOver] = useState(null)
+    const gridRef = useRef(null)
+
+    function setDragOverBoth(idx) { dragOverRef.current = idx; setDragOver(idx) }
 
     function handleDragStart(i) { dragIdx.current = i }
     function handleDrop(i) {
@@ -394,23 +398,58 @@ export default function AdminMediaPage() {
       next.splice(i, 0, moved)
       onReorder(next)
       dragIdx.current = null
-      setDragOver(null)
+      setDragOverBoth(null)
     }
+
+    function handleTouchStart(i) { dragIdx.current = i }
+    function handleTouchEnd() {
+      const from = dragIdx.current
+      const to = dragOverRef.current
+      if (from !== null && to !== null && from !== to) {
+        const next = [...images]
+        const [moved] = next.splice(from, 1)
+        next.splice(to, 0, moved)
+        onReorder(next)
+      }
+      dragIdx.current = null
+      setDragOverBoth(null)
+    }
+
+    useEffect(() => {
+      const el = gridRef.current
+      if (!el) return
+      function onTouchMove(e) {
+        if (dragIdx.current === null) return
+        e.preventDefault()
+        const touch = e.touches[0]
+        const target = document.elementFromPoint(touch.clientX, touch.clientY)
+        const item = target?.closest('[data-drag-idx]')
+        if (item) {
+          const idx = parseInt(item.dataset.dragIdx)
+          if (!isNaN(idx)) setDragOverBoth(idx)
+        }
+      }
+      el.addEventListener('touchmove', onTouchMove, { passive: false })
+      return () => el.removeEventListener('touchmove', onTouchMove)
+    }, [])
 
     return (
       <>
         {images.length > 0 && (
           <>
-            <div style={{ fontSize: 11, color: '#aaa', marginBottom: 6 }}>長押しまたはドラッグで並び替え</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 8, marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: '#aaa', marginBottom: 6 }}>ドラッグで並び替え</div>
+            <div ref={gridRef} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 8, marginBottom: 12 }}>
               {images.map((url, i) => (
                 <div key={url}
+                  data-drag-idx={i}
                   draggable
                   onDragStart={() => handleDragStart(i)}
-                  onDragOver={e => { e.preventDefault(); setDragOver(i) }}
-                  onDragLeave={() => setDragOver(null)}
+                  onDragOver={e => { e.preventDefault(); setDragOverBoth(i) }}
+                  onDragLeave={() => setDragOverBoth(null)}
                   onDrop={() => handleDrop(i)}
-                  onDragEnd={() => { dragIdx.current = null; setDragOver(null) }}
+                  onDragEnd={() => { dragIdx.current = null; setDragOverBoth(null) }}
+                  onTouchStart={() => handleTouchStart(i)}
+                  onTouchEnd={handleTouchEnd}
                   style={{ position: 'relative', borderRadius: 6, overflow: 'hidden', aspectRatio: aspect, cursor: 'grab', outline: dragOver === i ? '2px solid #1a3560' : 'none', opacity: dragIdx.current === i ? 0.5 : 1 }}>
                   <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
                   <div style={{ position: 'absolute', top: 3, left: 4, background: 'rgba(0,0,0,0.5)', color: '#fff', borderRadius: 3, padding: '1px 5px', fontSize: 10 }}>{i + 1}枚目</div>
