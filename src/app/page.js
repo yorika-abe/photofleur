@@ -295,8 +295,8 @@ export default async function Home() {
       <RecruitMarquee items={recruitBgImages} />
 
       {/* ─── REPRESENTATIVE MESSAGE ─── */}
-      {representatives.map(rep => (
-        <RepMessage key={rep.id} photo={rep.photo} role={rep.role} name={rep.name} message={rep.message} modelId={rep.model_id} />
+      {representatives.map((rep, idx) => (
+        <RepMessage key={rep.id} photo={rep.photo} role={rep.role} name={rep.name} message={rep.message} modelId={rep.model_id} showTitle={idx === 0} />
       ))}
 
       {/* ─── STAFF ─── */}

@@ -464,6 +464,24 @@ export default function RichEditor({ value, onChange, uploadPath = 'blog', uploa
         onInput={sync}
         onClick={handleEditorClick}
         onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') autoLinkLastWord() }}
+        onPaste={e => {
+          e.preventDefault()
+          const html = e.clipboardData.getData('text/html')
+          if (html) {
+            const div = document.createElement('div')
+            div.innerHTML = html
+            div.querySelectorAll('*').forEach(el => {
+              el.style.color = ''
+              el.style.backgroundColor = ''
+              el.style.background = ''
+            })
+            document.execCommand('insertHTML', false, div.innerHTML)
+          } else {
+            const text = e.clipboardData.getData('text/plain')
+            document.execCommand('insertText', false, text)
+          }
+          sync()
+        }}
         style={{ minHeight: 320, maxHeight: 480, padding: '16px', outline: 'none', fontSize: 15, lineHeight: 1.9, color: '#333', overflowY: 'auto', overflowX: 'hidden', wordBreak: 'break-word', borderRadius: '0 0 10px 10px', background: '#fff' }}
         data-placeholder="ここに記事の内容を書いてください..." />
 

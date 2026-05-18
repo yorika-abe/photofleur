@@ -6,7 +6,7 @@ import SectionTitle from './SectionTitle'
 
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
-export default function RepMessage({ photo, role, name, message, modelId }) {
+export default function RepMessage({ photo, role, name, message, modelId, showTitle = true }) {
   const [expanded, setExpanded] = useState(false)
   const textContent = message?.replace(/<[^>]+>/g, '') || ''
   const hasMore = textContent.length > 100
@@ -14,9 +14,11 @@ export default function RepMessage({ photo, role, name, message, modelId }) {
   return (
     <section style={{ background: '#fff', padding: 'clamp(36px, 5vw, 60px) 20px' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 28, paddingBottom: 8 }}>
-          <SectionTitle text="MESSAGE" />
-        </div>
+        {showTitle && (
+          <div style={{ textAlign: 'center', marginBottom: 28, paddingBottom: 8 }}>
+            <SectionTitle text="MESSAGE" />
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 'clamp(14px, 4vw, 48px)', alignItems: 'flex-start' }}>
 
