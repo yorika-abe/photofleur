@@ -32,8 +32,7 @@ export async function compressImage(file, { maxWidth = 1920, quality = 0.85, asp
         canvas.getContext('2d').drawImage(img, srcX, srcY, srcW, srcH, 0, 0, dstW, dstH)
         canvas.toBlob((blob) => {
           if (!blob || blob.size >= file.size) { resolve(file); return }
-          const name = file.name.replace(/\.[^.]+$/, '.jpg')
-          resolve(new File([blob], name, { type: 'image/jpeg' }))
+          resolve(blob)
         }, 'image/jpeg', quality)
       }
       img.src = e.target.result

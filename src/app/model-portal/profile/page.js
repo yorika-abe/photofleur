@@ -36,7 +36,7 @@ function compressToJpeg(file, maxW, maxH, quality = 0.85) {
       canvas.height = Math.round(dstH)
       canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
       canvas.toBlob(blob => {
-        resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }))
+        resolve(blob || file)
       }, 'image/jpeg', quality)
     }
     img.src = blobUrl
