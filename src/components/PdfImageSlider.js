@@ -39,14 +39,14 @@ export default function PdfImageSlider({ images }) {
           style={{ width: '100%', display: 'block', maxHeight: 560, objectFit: 'contain', userSelect: 'none', pointerEvents: 'none' }}
         />
       </div>
-      <div style={{ padding: '8px 14px', background: '#f5f9ff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, color: '#555', gap: 8 }}>
+      <div style={{ padding: '8px 14px', background: '#f5f9ff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, color: '#555', gap: 8, flexWrap: 'nowrap' }}>
         <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} style={btnStyle(page === 0)}>‹</button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'center' }}>
-          <span>{page + 1} / {images.length} ページ</span>
-          {images.length > 1 && (
-            <div style={{ display: 'flex', gap: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'center', minWidth: 0, overflow: 'hidden' }}>
+          <span style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>{page + 1} / {images.length}</span>
+          {images.length > 1 && images.length <= 20 && (
+            <div style={{ display: 'flex', gap: 3, flexWrap: 'nowrap', overflow: 'hidden' }}>
               {images.map((_, i) => (
-                <button key={i} onClick={() => setPage(i)} style={{ width: 7, height: 7, borderRadius: '50%', border: 'none', background: i === page ? '#1a3560' : '#ccc', cursor: 'pointer', padding: 0 }} />
+                <button key={i} onClick={() => setPage(i)} style={{ width: 6, height: 6, borderRadius: '50%', border: 'none', background: i === page ? '#1a3560' : '#ccc', cursor: 'pointer', padding: 0, flexShrink: 0 }} />
               ))}
             </div>
           )}
