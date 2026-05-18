@@ -45,6 +45,15 @@ export const DEFAULTS = {
   profile_change_rejected: `【📝プロフィールの変更申請】\n❌却下されました`,
   blog_post_approved: `【✍️ブログ記事】\n🟢申請が承認されました\nブログが公開されます`,
   blog_post_rejected: `【✍️ブログ記事】\n❌申請が却下されました。`,
+  admin_new_booking: `【📋予約通知】\n新規予約が入りました\n👉 管理画面で確認してください`,
+  admin_profile_change: `【👤申請通知】\nモデルのプロフィール変更申請があります\n👉 管理画面で確認してください`,
+  admin_shift_change: `【🗓️申請通知】\nシフトの変更申請があります\n👉 管理画面で確認してください`,
+  admin_blog_pending: `【✍️申請通知】\nブログの承認待ち投稿があります\n👉 管理画面で確認してください`,
+  admin_feedback: `【📮通知】\nご意見箱に投稿がありました\n👉 管理画面で確認してください`,
+  admin_invite_registered: `【🔑通知】\n招待リンクから新規登録がありました\n👉 管理画面で確認してください`,
+  admin_photo_contributed: `【📸通知】\n写真が提供されました\n👉 管理画面で確認してください`,
+  admin_activity_report: `【📣通知】\n外部活動報告が投稿されました\n👉 管理画面で確認してください`,
+  admin_staff_applied: `【🐈‍⬛通知】\nスタッフ応募がありました\n👉 管理画面で確認してください`,
 }
 
 export async function GET() {

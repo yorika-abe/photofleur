@@ -12,6 +12,7 @@ const TABS = [
   { id: 'staff', label: '受付スタッフ', mobileLines: ['受付', 'スタッフ'], icon: '🐈‍⬛', from: 'モデフル', desc: 'スタッフグループ・個人LINEに送信' },
   { id: 'camera', label: '公式LINE', mobileLines: ['公式LINE'], icon: '📣', from: 'photofleur公式', desc: '公式LINEの全フォロワーに一斉ブロードキャスト' },
   { id: 'photographer', label: 'カメラマン個人', mobileLines: ['カメラマン', '個人'], icon: '📸', from: 'photofleur公式（個人push）', desc: 'LINE連携済みカメラマンへ予約・購入時に個別通知' },
+  { id: 'admin', label: '運営通知', mobileLines: ['運営', '通知'], icon: '🔔', from: 'モデフル', desc: '運営グループLINEへの自動通知設定' },
 ]
 
 function LinePreview({ message, accountName }) {
@@ -510,6 +511,7 @@ function LineSettingsPanel({ activeTab }) {
   const [groupAll, setGroupAll] = useState('')
   const [groupZatsudan, setGroupZatsudan] = useState('')
   const [groupStaff, setGroupStaff] = useState('')
+  const [groupAdmin, setGroupAdmin] = useState('')
   const [lastModeful, setLastModeful] = useState('')
   const [lastOfficial, setLastOfficial] = useState('')
   const [models, setModels] = useState([])
@@ -534,6 +536,7 @@ function LineSettingsPanel({ activeTab }) {
         setGroupAll(d.group_all || '')
         setGroupZatsudan(d.group_zatsudan || '')
         setGroupStaff(d.group_staff || '')
+        setGroupAdmin(d.group_admin || '')
         setLastModeful(d.last_joined_modeful || '')
         setLastOfficial(d.last_joined_official || '')
         setModels(d.models || [])
@@ -553,7 +556,7 @@ function LineSettingsPanel({ activeTab }) {
     await fetch('/api/admin/line-settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ group_all: groupAll, group_zatsudan: groupZatsudan, group_staff: groupStaff, model_line_ids: modelLineIds, staff_line_ids: staffLineIds }),
+      body: JSON.stringify({ group_all: groupAll, group_zatsudan: groupZatsudan, group_staff: groupStaff, group_admin: groupAdmin, model_line_ids: modelLineIds, staff_line_ids: staffLineIds }),
     })
     setSaving(false)
     setSaved(true)
@@ -601,6 +604,13 @@ function LineSettingsPanel({ activeTab }) {
                     </button>
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeTab === 'admin' && (
+              <div>
+                <label style={{ display: 'block', fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 6 }}>🔔 運営グループID</label>
+                <input style={inp} value={groupAdmin} onChange={e => setGroupAdmin(e.target.value)} placeholder="C..." />
               </div>
             )}
 
@@ -980,6 +990,63 @@ const STAFF_GROUP_TEMPLATES = [
   },
 ]
 
+const ADMIN_TEMPLATES = [
+  {
+    key: 'admin_new_booking',
+    label: '📋 新規予約通知',
+    trigger: '予約が完了した時（自動）',
+    vars: [],
+  },
+  {
+    key: 'admin_profile_change',
+    label: '👤 プロフィール変更申請',
+    trigger: 'モデルがプロフィール変更申請を送った時（自動）',
+    vars: [],
+  },
+  {
+    key: 'admin_shift_change',
+    label: '🗓️ シフト変更申請',
+    trigger: 'モデルがシフト変更申請を送った時（自動）',
+    vars: [],
+  },
+  {
+    key: 'admin_blog_pending',
+    label: '✍️ ブログ承認待ち',
+    trigger: 'モデルがブログを申請した時（自動）',
+    vars: [],
+  },
+  {
+    key: 'admin_feedback',
+    label: '📮 ご意見箱投稿',
+    trigger: 'ご意見箱に投稿があった時（自動）',
+    vars: [],
+  },
+  {
+    key: 'admin_invite_registered',
+    label: '🔑 招待登録',
+    trigger: '招待リンクから新規登録があった時（自動）',
+    vars: [],
+  },
+  {
+    key: 'admin_photo_contributed',
+    label: '📸 写真提供',
+    trigger: 'お客様が写真を提供した時（自動）',
+    vars: [],
+  },
+  {
+    key: 'admin_activity_report',
+    label: '📣 外部活動報告',
+    trigger: 'モデルが外部活動報告を投稿した時（自動）',
+    vars: [],
+  },
+  {
+    key: 'admin_staff_applied',
+    label: '🐈‍⬛ スタッフ応募',
+    trigger: 'スタッフ応募があった時（自動）',
+    vars: [],
+  },
+]
+
 const STAFF_INDIVIDUAL_TEMPLATES = [
   {
     key: 'staff_confirmed_notice',
@@ -1218,6 +1285,23 @@ function CameraAutoToggle() {
   )
 }
 
+// ---- タブ7: 運営通知 ----
+function TabAdmin() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ background: '#fff8e1', borderRadius: 12, border: '1px solid #ffe082', padding: '14px 18px', fontSize: 13 }}>
+        <div style={{ fontWeight: 700, color: '#f57f17', marginBottom: 6 }}>🔔 運営グループへの自動通知</div>
+        <div style={{ color: '#e65100', lineHeight: 1.8 }}>
+          予約・申請・投稿などのイベントが発生した際に、運営グループLINEへ自動通知が送られます。<br />
+          送信先グループIDは下の「送信先グループID設定」から設定してください。<br />
+          各メッセージはデフォルト文から変更して保存することができます。
+        </div>
+      </div>
+      <AutoTemplateSection templateDefs={ADMIN_TEMPLATES} />
+    </div>
+  )
+}
+
 // ---- メインページ ----
 export default function LineBroadcastPage() {
   const [activeTab, setActiveTab] = useState('all')
@@ -1282,8 +1366,8 @@ export default function LineBroadcastPage() {
       {/* 公式LINE自動送信トグル（公式LINEタブのみ） */}
       {activeTab === 'camera' && <CameraAutoToggle />}
 
-      {/* 送信先設定パネル（モデル関連タブのみ） */}
-      {['all', 'individual', 'zatsudan', 'staff'].includes(activeTab) && <LineSettingsPanel activeTab={activeTab} />}
+      {/* 送信先設定パネル（モデル関連タブ + 運営通知） */}
+      {['all', 'individual', 'zatsudan', 'staff', 'admin'].includes(activeTab) && <LineSettingsPanel activeTab={activeTab} />}
 
       {/* タブコンテンツ */}
       {activeTab === 'all' && <TabAll />}
@@ -1292,6 +1376,7 @@ export default function LineBroadcastPage() {
       {activeTab === 'staff' && <TabStaff staff={staff} />}
       {activeTab === 'camera' && <TabCamera />}
       {activeTab === 'photographer' && <TabPhotographer />}
+      {activeTab === 'admin' && <TabAdmin />}
     </div>
   )
 }

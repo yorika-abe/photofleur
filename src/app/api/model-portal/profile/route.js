@@ -1,5 +1,6 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
 import { deleteFromR2 } from '@/lib/r2'
+import { notifyAdmin } from '@/lib/notify-admin'
 
 async function getAuthUser() {
   const server = await createSupabaseServerClient()
@@ -65,5 +66,6 @@ export async function PUT(req) {
   const { error } = await admin.from('models').update(updateData).eq('user_id', user.id)
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
+  notifyAdmin(admin, 'admin_profile_change').catch(() => {})
   return Response.json({ ok: true, status: 'pending' })
 }

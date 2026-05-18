@@ -1,4 +1,5 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
+import { notifyAdmin } from '@/lib/notify-admin'
 
 async function checkStaff() {
   const server = await createSupabaseServerClient()
@@ -110,5 +111,6 @@ export async function POST(req) {
     await admin.from('staff_recruitments').update({ status: 'closed' }).eq('id', recruitment_id)
   }
 
+  notifyAdmin(admin, 'admin_staff_applied').catch(() => {})
   return Response.json({ ok: true })
 }

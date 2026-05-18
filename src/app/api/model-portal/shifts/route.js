@@ -1,5 +1,6 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
 import { syncBookingSlots } from '@/lib/sync-booking-slots'
+import { notifyAdmin } from '@/lib/notify-admin'
 
 async function getModelUser() {
   const server = await createSupabaseServerClient()
@@ -76,8 +77,9 @@ export async function POST(req) {
 
   if (result.error) return Response.json({ error: result.error.message }, { status: 500 })
 
-  // 締め切り前の保存時のみ、イベント枠を自動同期
-  if (result.data?.status === 'submitted') {
+  if (result.data?.status === 'pending_approval') {
+    notifyAdmin(admin, 'admin_shift_change').catch(() => {})
+  } else if (result.data?.status === 'submitted') {
     await syncBookingSlots(admin, result.data)
   }
 

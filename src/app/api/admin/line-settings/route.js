@@ -22,6 +22,7 @@ export async function GET() {
       'line_group_id_all',
       'line_group_id_zatsudan',
       'line_group_id_staff',
+      'line_group_id_admin',
       'line_staff_ids',
       'line_model_ids',
       'line_group_id_last_joined_modeful',
@@ -52,6 +53,7 @@ export async function GET() {
     group_all: settings.line_group_id_all || '',
     group_zatsudan: settings.line_group_id_zatsudan || '',
     group_staff: settings.line_group_id_staff || '',
+    group_admin: settings.line_group_id_admin || '',
     last_joined_modeful: settings.line_group_id_last_joined_modeful || '',
     last_joined_official: settings.line_group_id_last_joined_official || '',
     models: (models || []).map(m => ({ ...m, line_id: modelLineIds[m.id] || '' })),
@@ -63,12 +65,13 @@ export async function PUT(req) {
   const admin = await checkAdmin()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { group_all, group_zatsudan, group_staff, model_line_ids, staff_line_ids } = await req.json()
+  const { group_all, group_zatsudan, group_staff, group_admin, model_line_ids, staff_line_ids } = await req.json()
 
   const upserts = []
   if (group_all !== undefined) upserts.push({ key: 'line_group_id_all', value: group_all })
   if (group_zatsudan !== undefined) upserts.push({ key: 'line_group_id_zatsudan', value: group_zatsudan })
   if (group_staff !== undefined) upserts.push({ key: 'line_group_id_staff', value: group_staff })
+  if (group_admin !== undefined) upserts.push({ key: 'line_group_id_admin', value: group_admin })
   if (staff_line_ids !== undefined) upserts.push({ key: 'line_staff_ids', value: JSON.stringify(staff_line_ids) })
 
   if (model_line_ids && typeof model_line_ids === 'object') {

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { notifyAdmin } from '@/lib/notify-admin'
 
 export async function POST(req) {
   try {
@@ -49,11 +50,8 @@ export async function POST(req) {
       invite_notif_seen: false,
     }, { onConflict: 'id' })
 
-    // Create models entry
-    await supabase.from('models').insert({
-      user_id: userId,
-      status: 'pending',
-    })
+    await supabase.from('models').insert({ user_id: userId, status: 'pending' })
+    notifyAdmin(supabase, 'admin_invite_registered').catch(() => {})
 
     return Response.json({ ok: true })
   } catch (e) {

@@ -1,5 +1,6 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { notifyAdmin } from '@/lib/notify-admin'
 
 const r2 = new S3Client({
   region: 'auto',
@@ -74,5 +75,6 @@ export async function POST(req) {
 
   const { error } = await admin.from('contributed_photos').insert(rows)
   if (error) return Response.json({ error: error.message }, { status: 500 })
+  notifyAdmin(admin, 'admin_photo_contributed').catch(() => {})
   return Response.json({ ok: true, count: urls.length })
 }

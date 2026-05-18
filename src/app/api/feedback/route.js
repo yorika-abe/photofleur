@@ -1,5 +1,6 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
 import { requireAdmin } from '@/lib/auth'
+import { notifyAdmin } from '@/lib/notify-admin'
 
 export async function POST(req) {
   const server = await createSupabaseServerClient()
@@ -25,6 +26,7 @@ export async function POST(req) {
   })
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
+  notifyAdmin(admin, 'admin_feedback').catch(() => {})
   return Response.json({ ok: true })
 }
 
