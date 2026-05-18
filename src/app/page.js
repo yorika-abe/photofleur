@@ -61,7 +61,7 @@ export default async function Home() {
   ])
   const representatives = repsData || []
   const staffMembers = (staffData || []).map(s => ({
-    name: s.display_name || s.real_name || '',
+    name: s.display_name || '',
     photo: s.profile_photo || '',
   }))
 
