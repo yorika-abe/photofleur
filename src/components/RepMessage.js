@@ -12,7 +12,7 @@ export default function RepMessage({ photo, role, name, message, modelId, showTi
   const hasMore = textContent.length > 100
 
   return (
-    <section style={{ background: '#fff', padding: 'clamp(36px, 5vw, 60px) 20px' }}>
+    <section style={{ background: '#fff', padding: 'clamp(36px, 5vw, 60px) 20px', overflow: 'hidden' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
         {showTitle && (
           <div style={{ textAlign: 'center', marginBottom: 28, paddingBottom: 8 }}>
@@ -37,7 +37,7 @@ export default function RepMessage({ photo, role, name, message, modelId, showTi
           )}
 
           {/* テキスト */}
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
             {role && (
               <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.15em', color: '#5bbfd6', textTransform: 'uppercase', margin: '0 0 6px' }}>{role}</p>
             )}
