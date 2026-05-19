@@ -11,7 +11,6 @@ function ModelRegisterForm() {
   const router = useRouter()
 
   const [mode, setMode] = useState('new') // 'new' | 'existing'
-  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -43,7 +42,7 @@ function ModelRegisterForm() {
     const res = await fetch('/api/model-register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode, name, email, password, token }),
+      body: JSON.stringify({ mode, email, password, token }),
     })
     const data = await res.json()
 
@@ -117,16 +116,7 @@ function ModelRegisterForm() {
           </div>
         )}
 
-        {mode === 'new' && (
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14, color: '#333' }}>モデル名</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)}
-              style={{ width: '100%', padding: '11px', border: '1px solid #ddd', borderRadius: 8, fontSize: 15, boxSizing: 'border-box' }}
-              placeholder="例：Yuki（後で決めてもOK）" />
-          </div>
-        )}
-
-        <div style={{ marginBottom: 20 }}>
+<div style={{ marginBottom: 20 }}>
           <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14, color: '#333' }}>メールアドレス</label>
           <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
             style={{ width: '100%', padding: '11px', border: '1px solid #ddd', borderRadius: 8, fontSize: 15, boxSizing: 'border-box' }}
