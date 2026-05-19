@@ -51,14 +51,29 @@ export async function POST(req, { params }) {
 
   if (action === 'approve') {
     const { data: model } = await admin.from('models').select('*').eq('id', id).single()
-    const updates = { status: 'active', pending_data: null }
-    if (model?.pending_data) {
-      const { status: _s, id: _i, user_id: _u, pending_data: _p,
-              created_at: _c, updated_at: _ut, ...safeFields } = model.pending_data
-      Object.assign(updates, safeFields)
+    // Step 1: まず status と pending_data だけ確実に更新
+    const { error: statusError } = await admin.from('models')
+      .update({ status: 'active', pending_data: null })
+      .eq('id', id)
+    if (statusError) {
+      console.error('approve status error:', statusError)
+      return Response.json({ error: statusError.message }, { status: 500 })
     }
 
+    // Step 2: pending_data の内容（プロフィール変更）を反映
     if (model?.pending_data) {
+      const ALLOWED = ['name', 'name_en', 'bio', 'height', 'birthday', 'shoe_size',
+        'image', 'twitter_url', 'instagram_url', 'favorite_things', 'portfolio_images']
+      const profileUpdates = {}
+      for (const key of ALLOWED) {
+        if (key in model.pending_data) profileUpdates[key] = model.pending_data[key]
+      }
+      if (Object.keys(profileUpdates).length > 0) {
+        const { error: profileError } = await admin.from('models').update(profileUpdates).eq('id', id)
+        if (profileError) console.error('approve profile fields error:', profileError, profileUpdates)
+      }
+
+      // 古い画像を削除
       const toDelete = []
       if (model.image && model.pending_data.image && model.image !== model.pending_data.image)
         toDelete.push(model.image)
@@ -68,12 +83,6 @@ export async function POST(req, { params }) {
         if (!newPf.includes(url)) toDelete.push(url)
       }
       if (toDelete.length > 0) await deleteFromR2(toDelete)
-    }
-
-    const { error: updateError } = await admin.from('models').update(updates).eq('id', id)
-    if (updateError) {
-      console.error('approve update error:', updateError, 'updates:', JSON.stringify(updates))
-      return Response.json({ error: updateError.message }, { status: 500 })
     }
 
     // XアカウントURLが新規追加された場合にLINE雑談へ通知
