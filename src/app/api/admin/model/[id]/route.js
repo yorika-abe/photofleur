@@ -52,7 +52,10 @@ export async function POST(req, { params }) {
   if (action === 'approve') {
     const { data: model } = await admin.from('models').select('*').eq('id', id).single()
     const updates = { status: 'active', pending_data: null }
-    if (model?.pending_data) Object.assign(updates, model.pending_data)
+    if (model?.pending_data) {
+      const { status: _s, id: _i, user_id: _u, pending_data: _p, ...safeFields } = model.pending_data
+      Object.assign(updates, safeFields)
+    }
 
     if (model?.pending_data) {
       const toDelete = []
