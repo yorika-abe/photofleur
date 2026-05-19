@@ -53,7 +53,8 @@ export async function POST(req, { params }) {
     const { data: model } = await admin.from('models').select('*').eq('id', id).single()
     const updates = { status: 'active', pending_data: null }
     if (model?.pending_data) {
-      const { status: _s, id: _i, user_id: _u, pending_data: _p, ...safeFields } = model.pending_data
+      const { status: _s, id: _i, user_id: _u, pending_data: _p,
+              created_at: _c, updated_at: _ut, ...safeFields } = model.pending_data
       Object.assign(updates, safeFields)
     }
 
@@ -69,7 +70,11 @@ export async function POST(req, { params }) {
       if (toDelete.length > 0) await deleteFromR2(toDelete)
     }
 
-    await admin.from('models').update(updates).eq('id', id)
+    const { error: updateError } = await admin.from('models').update(updates).eq('id', id)
+    if (updateError) {
+      console.error('approve update error:', updateError, 'updates:', JSON.stringify(updates))
+      return Response.json({ error: updateError.message }, { status: 500 })
+    }
 
     // XアカウントURLが新規追加された場合にLINE雑談へ通知
     const hadTwitter = !!model?.twitter_url
