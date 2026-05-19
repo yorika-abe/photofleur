@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# PhotoFleur
 
-## Getting Started
+撮影会予約サービス。モデルとカメラマンをつなぐ予約・管理プラットフォーム。
 
-First, run the development server:
+## 概要
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- カメラマンがイベント・撮影枠を予約
+- モデルがシフト提出・プロフィール管理
+- スタッフが受付・運営管理
+- 運営が承認・通知・コンテンツ管理
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 技術スタック
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+| 分類 | 技術 |
+|------|------|
+| フレームワーク | Next.js 16 (App Router) |
+| データベース | Supabase (PostgreSQL) |
+| 認証 | Supabase Auth |
+| ストレージ | Cloudflare R2 |
+| メール送信 | Resend |
+| LINE通知 | LINE Messaging API |
+| デプロイ | Vercel |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 主な機能
 
-## Learn More
+**一般ユーザー**
+- スケジュール・イベント閲覧・予約
+- カート決済（QRコード発行）
+- リクエスト撮影予約
+- ブログ閲覧
 
-To learn more about Next.js, take a look at the following resources:
+**モデルポータル**
+- プロフィール編集・承認申請
+- シフト提出・管理
+- 予約状況確認・カメラマンSNS確認
+- 活動手引きPDF閲覧
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**スタッフポータル**
+- 活動手引きPDF閲覧
+- プロフィール・表示名設定
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**管理画面**
+- モデル・スタッフ・ユーザー権限管理
+- イベント・予約管理
+- LINE一斉送信・自動通知テンプレート設定
+- メディア管理（ヒーロー画像・PDF）
+- ショップ・グッズ・非公開商品管理
 
-## Deploy on Vercel
+## 環境変数
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+CLOUDFLARE_R2_ACCOUNT_ID=
+CLOUDFLARE_R2_ACCESS_KEY_ID=
+CLOUDFLARE_R2_SECRET_ACCESS_KEY=
+CLOUDFLARE_R2_BUCKET_NAME=
+NEXT_PUBLIC_R2_PUBLIC_URL=
+RESEND_API_KEY=
+LINE_CHANNEL_ACCESS_TOKEN=
+LINE_GROUP_ID=
+MODEL_INVITE_TOKEN=
+STAFF_INVITE_TOKEN=
+CRON_SECRET=
