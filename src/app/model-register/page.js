@@ -120,9 +120,9 @@ function ModelRegisterForm() {
         {mode === 'new' && (
           <div style={{ marginBottom: 20 }}>
             <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14, color: '#333' }}>モデル名</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} required
+            <input type="text" value={name} onChange={e => setName(e.target.value)}
               style={{ width: '100%', padding: '11px', border: '1px solid #ddd', borderRadius: 8, fontSize: 15, boxSizing: 'border-box' }}
-              placeholder="例：Yuki" />
+              placeholder="例：Yuki（後で決めてもOK）" />
           </div>
         )}
 
