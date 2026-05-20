@@ -53,6 +53,12 @@ export default async function StaffGuidePage() {
           <PdfImageSlider images={aboutImages} />
         </div>
       )}
+
+      <div style={{ marginTop: 32, textAlign: 'center' }}>
+        <Link href="/staff-portal" style={{ display: 'inline-block', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '14px 40px', fontWeight: 700, fontSize: 15 }}>
+          スタッフポータルに戻る
+        </Link>
+      </div>
     </div>
   )
 }

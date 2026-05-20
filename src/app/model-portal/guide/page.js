@@ -68,6 +68,12 @@ export default async function ModelGuidePage() {
         )}
 
       </div>
+
+      <div style={{ marginTop: 32, textAlign: 'center' }}>
+        <Link href="/model-portal" style={{ display: 'inline-block', background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '14px 40px', fontWeight: 700, fontSize: 15 }}>
+          モデルポータルに戻る
+        </Link>
+      </div>
     </div>
   )
 }
