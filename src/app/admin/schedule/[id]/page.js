@@ -101,7 +101,7 @@ export default function EventEditPage() {
 
   async function load() {
     if (id === 'new') {
-      setEvent({ event_type: 'street', status: 'draft', title: '', subtitle: '', description: '', gallery_images: [], location_name: '', address: '' })
+      setEvent({ event_type: 'street', status: 'draft', title: '', subtitle: '', description: '', gallery_images: [], location_name: '', address: '', auto_sync_shifts: true })
       setSlotTemplates(STREET_SLOTS.map(s => ({ ...s })))
       try {
         const res = await fetch('/api/admin/models')
@@ -1011,51 +1011,74 @@ export default function EventEditPage() {
             <p style={{ fontSize: 11, color: '#aaa', margin: '8px 0 0' }}>変更後は「保存する」ボタンで保存してください</p>
           </div>
 
-          {/* シフト提出済み：締め切り前は全同期、締め切り後は未追加のみ追加 */}
+          {/* シフト自動反映設定 + 手動同期ボタン */}
           {(() => {
             const today = new Date().toISOString().split('T')[0]
             const isBeforeDeadline = shiftDeadline ? shiftDeadline >= today : false
             const notAdded = shifts.filter(s => !entryModelIds.includes(s.model_id))
-            const showSection = isBeforeDeadline ? shifts.length > 0 : notAdded.length > 0
-            if (!showSection) return null
+            const showAfterSection = !isBeforeDeadline && notAdded.length > 0
             return (
-              <div style={{ background: '#e8f5e9', borderRadius: 12, padding: 16, border: '1px solid #a5d6a7' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <div>
-                    {isBeforeDeadline ? (
-                      <>
-                        <span style={{ fontWeight: 700, fontSize: 14, color: '#2e7d32' }}>シフト提出済み</span>
-                        <span style={{ fontSize: 12, color: '#388e3c', marginLeft: 8 }}>{shifts.length}名</span>
-                        <span style={{ fontSize: 11, color: '#81c784', marginLeft: 8 }}>締切前・自動反映中</span>
-                      </>
-                    ) : (
-                      <>
-                        <span style={{ fontWeight: 700, fontSize: 14, color: '#2e7d32' }}>シフト提出済み（未追加）</span>
-                        <span style={{ fontSize: 12, color: '#388e3c', marginLeft: 8 }}>{notAdded.length}名</span>
-                      </>
+              <>
+                {/* シフト自動反映トグル（締め切り前のみ表示） */}
+                {(isBeforeDeadline || id === 'new') && (
+                  <div style={{ background: '#f3f8ff', borderRadius: 12, padding: '12px 16px', border: '1px solid #b3d4f5', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 700, fontSize: 13, color: '#1a3560' }}>シフト自動反映</span>
+                    <button
+                      onClick={() => updateField('auto_sync_shifts', !event.auto_sync_shifts)}
+                      style={{
+                        background: event.auto_sync_shifts ? '#2e7d32' : '#bbb',
+                        color: '#fff', border: 'none', borderRadius: 20, padding: '4px 18px',
+                        cursor: 'pointer', fontSize: 12, fontWeight: 700, transition: 'background 0.2s',
+                      }}>
+                      {event.auto_sync_shifts ? 'ON' : 'OFF'}
+                    </button>
+                    <span style={{ fontSize: 11, color: '#666', flex: 1 }}>
+                      {event.auto_sync_shifts
+                        ? 'ONのとき締め切り前にシフトを提出したモデルを自動でイベントに追加します'
+                        : '手動でモデルを追加します'}
+                    </span>
+                    {isBeforeDeadline && (
+                      <button
+                        onClick={syncShiftedModels}
+                        disabled={autoAdding}
+                        style={{ background: '#2e7d32', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: autoAdding ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13, opacity: autoAdding ? 0.6 : 1 }}>
+                        {autoAdding ? '処理中...' : `提出されたシフトを反映${shifts.length > 0 ? `（${shifts.length}名）` : ''}`}
+                      </button>
                     )}
                   </div>
-                  <button
-                    onClick={isBeforeDeadline ? syncShiftedModels : autoAddShiftedModels}
-                    disabled={autoAdding}
-                    style={{ background: '#2e7d32', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                    {autoAdding ? '処理中...' : isBeforeDeadline ? '提出されたシフトを反映' : '全員一括追加'}
-                  </button>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {notAdded.map(s => {
-                    const m = models.find(m => m.id === s.model_id)
-                    if (!m) return null
-                    return (
-                      <button key={m.id} onClick={() => addModelToEvent(m.id)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff', border: '2px solid #a5d6a7', borderRadius: 20, padding: '4px 10px 4px 5px', cursor: 'pointer' }}>
-                        {m.image && <Image src={m.image} alt={m.name} width={22} height={22} style={{ borderRadius: '50%', objectFit: 'cover' }} />}
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#2e7d32' }}>+ {m.name}</span>
+                )}
+
+                {/* 締め切り後・未追加モデルがいる場合 */}
+                {showAfterSection && (
+                  <div style={{ background: '#e8f5e9', borderRadius: 12, padding: 16, border: '1px solid #a5d6a7' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                      <div>
+                        <span style={{ fontWeight: 700, fontSize: 14, color: '#2e7d32' }}>シフト提出済み（未追加）</span>
+                        <span style={{ fontSize: 12, color: '#388e3c', marginLeft: 8 }}>{notAdded.length}名</span>
+                      </div>
+                      <button
+                        onClick={autoAddShiftedModels}
+                        disabled={autoAdding}
+                        style={{ background: '#2e7d32', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: autoAdding ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {autoAdding ? '処理中...' : '全員一括追加'}
                       </button>
-                    )
-                  })}
-                </div>
-              </div>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {notAdded.map(s => {
+                        const m = models.find(m => m.id === s.model_id)
+                        if (!m) return null
+                        return (
+                          <button key={m.id} onClick={() => addModelToEvent(m.id)}
+                            style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff', border: '2px solid #a5d6a7', borderRadius: 20, padding: '4px 10px 4px 5px', cursor: 'pointer' }}>
+                            {m.image && <Image src={m.image} alt={m.name} width={22} height={22} style={{ borderRadius: '50%', objectFit: 'cover' }} />}
+                            <span style={{ fontSize: 12, fontWeight: 700, color: '#2e7d32' }}>+ {m.name}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
             )
           })()}
 

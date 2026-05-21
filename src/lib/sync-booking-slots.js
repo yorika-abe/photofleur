@@ -31,7 +31,6 @@ function toJSTTime(isoStr) {
   return `${String(jst.getUTCHours()).padStart(2, '0')}:${String(jst.getUTCMinutes()).padStart(2, '0')}`
 }
 
-// シフト内容に基づきスロットをフィルタ
 export function filterSlotsByShift(slots, shift) {
   const avail = shift?.available_slots?.[0]
   if (avail?.unavailable) return []
@@ -41,25 +40,65 @@ export function filterSlotsByShift(slots, shift) {
   return slots.filter(s => s.start >= from && s.end <= until)
 }
 
-// シフト変更時に booking_slots を自動同期（削除＋追加）
-// 締め切り前モデル保存時・締め切り後管理者承認時の両方で使用
 export async function syncBookingSlots(admin, shift) {
   const isUnavailable = shift.available_slots?.[0]?.unavailable === true
   const isAllDay = !isUnavailable && (!shift.available_from || !shift.available_until || (shift.available_from === '00:00' && shift.available_until === '00:00'))
   const from = shift.available_from
   const until = shift.available_until
+  const today = new Date().toISOString().split('T')[0]
 
-  const [{ data: events }, { data: model }] = await Promise.all([
-    admin.from('events').select('id, event_type, studio_fee, event_date').eq('event_date', shift.event_date),
+  const [{ data: events }, { data: model }, { data: shiftRequest }] = await Promise.all([
+    admin.from('events').select('id, event_type, studio_fee, event_date, auto_sync_shifts, slot_templates').eq('event_date', shift.event_date),
     admin.from('models').select('studio_price, street_price').eq('id', shift.model_id).single(),
+    admin.from('shift_request_dates').select('deadline').eq('request_date', shift.event_date).maybeSingle(),
   ])
   if (!events?.length) return
+
+  const isBeforeDeadline = shiftRequest?.deadline ? shiftRequest.deadline >= today : false
 
   for (const event of events) {
     const { data: entry } = await admin
       .from('event_entries').select('id').eq('event_id', event.id).eq('model_id', shift.model_id).maybeSingle()
-    if (!entry) continue
 
+    if (!entry) {
+      // auto_sync_shifts=true かつ締め切り前かつ不参加でなければ自動エントリー追加
+      if (!event.auto_sync_shifts || !isBeforeDeadline || isUnavailable) continue
+
+      const isStudioType = event.event_type === 'studio' || event.event_type === 'irregular'
+      const studioFee = parseInt(event.studio_fee) || 2000
+      const basePrice = isStudioType
+        ? (parseInt(model?.studio_price || 0) + studioFee)
+        : parseInt(model?.street_price || 0)
+
+      let savedTemplates = null
+      try { savedTemplates = event.slot_templates ? JSON.parse(event.slot_templates) : null } catch {}
+      const defaults = isStudioType ? DEFAULT_STUDIO_SLOTS : DEFAULT_STREET_SLOTS
+      const templateSlots = savedTemplates || defaults
+
+      const targetSlots = filterSlotsByShift(templateSlots, shift)
+      if (targetSlots.length === 0) continue
+
+      const { data: newEntry } = await admin
+        .from('event_entries')
+        .insert({ event_id: event.id, model_id: shift.model_id })
+        .select('id')
+        .single()
+      if (!newEntry) continue
+
+      await admin.from('booking_slots').insert(targetSlots.map(slot => ({
+        event_entry_id: newEntry.id,
+        slot_label: slot.label,
+        slot_order: slot.order,
+        start_time: new Date(`${event.event_date}T${slot.start}:00+09:00`).toISOString(),
+        end_time: new Date(`${event.event_date}T${slot.end}:00+09:00`).toISOString(),
+        price: (isStudioType && slot.order === 0) ? (get0buPrice(parseInt(model?.studio_price || 0)) + studioFee) : basePrice,
+        max_reservations: 1,
+        is_reserved: false,
+      })))
+      continue
+    }
+
+    // 既存エントリーの同期処理
     const { data: slots } = await admin
       .from('booking_slots').select('id, start_time, end_time, is_reserved, slot_order, slot_label').eq('event_entry_id', entry.id)
     const currentSlots = slots || []
@@ -70,7 +109,6 @@ export async function syncBookingSlots(admin, shift) {
       continue
     }
 
-    // 範囲外スロットを削除
     if (!isAllDay) {
       const toDelete = currentSlots.filter(s => {
         if (s.is_reserved) return false
@@ -104,7 +142,6 @@ export async function syncBookingSlots(admin, shift) {
       }))
     }
 
-    // 既存スロット削除後の現在スロットを再取得して重複チェック
     const { data: remainingSlots } = await admin
       .from('booking_slots').select('slot_order').eq('event_entry_id', entry.id)
     const existingOrders = new Set((remainingSlots || []).map(s => s.slot_order))
