@@ -19,61 +19,86 @@ export async function GET() {
     // DB内の全画像URLを収集
     const usedUrls = new Set()
 
+    const base = R2_BASE()
+
+    function addIfR2(url) {
+      if (url && typeof url === 'string' && url.startsWith(base)) usedUrls.add(url)
+    }
+
+    function extractAndAddUrls(text) {
+      extractUrls(text).filter(u => u.startsWith(base)).forEach(u => usedUrls.add(u))
+    }
+
     const [
       { data: events },
       { data: models },
       { data: blogs },
       { data: modelPrivate },
       { data: staffPrivate },
+      { data: siteSettings },
+      { data: blogAuthors },
     ] = await Promise.all([
       admin.from('events').select('main_image, thumbnail_image, gallery_images'),
       admin.from('models').select('image, portfolio_images'),
       admin.from('blog_posts').select('cover_image, content'),
       admin.from('model_private_info').select('photos'),
       admin.from('staff_private_info').select('photo'),
+      admin.from('site_settings').select('value'),
+      admin.from('blog_authors').select('avatar').catch(() => ({ data: [] })),
     ])
 
     for (const ev of events || []) {
-      if (ev.main_image) usedUrls.add(ev.main_image)
-      if (ev.thumbnail_image) usedUrls.add(ev.thumbnail_image)
-      try {
-        const imgs = JSON.parse(ev.gallery_images || '[]')
-        imgs.forEach(u => usedUrls.add(u))
-      } catch {}
+      addIfR2(ev.main_image)
+      addIfR2(ev.thumbnail_image)
+      try { JSON.parse(ev.gallery_images || '[]').forEach(addIfR2) } catch {}
     }
 
     for (const m of models || []) {
-      if (m.image) usedUrls.add(m.image)
-      try {
-        const imgs = JSON.parse(m.portfolio_images || '[]')
-        imgs.forEach(u => usedUrls.add(u))
-      } catch {}
+      addIfR2(m.image)
+      try { JSON.parse(m.portfolio_images || '[]').forEach(addIfR2) } catch {}
     }
 
     for (const b of blogs || []) {
-      if (b.cover_image) usedUrls.add(b.cover_image)
-      extractUrls(b.content).forEach(u => usedUrls.add(u))
+      addIfR2(b.cover_image)
+      extractAndAddUrls(b.content)
     }
 
     for (const mp of modelPrivate || []) {
-      try {
-        const imgs = JSON.parse(mp.photos || '[]')
-        imgs.forEach(u => usedUrls.add(u))
-      } catch {}
+      try { JSON.parse(mp.photos || '[]').forEach(addIfR2) } catch {}
     }
 
     for (const sp of staffPrivate || []) {
-      if (sp.photo) usedUrls.add(sp.photo)
+      addIfR2(sp.photo)
+    }
+
+    // site_settings: すべての値からR2 URLを抽出
+    for (const row of siteSettings || []) {
+      const val = row.value
+      if (!val) continue
+      if (val.startsWith(base)) {
+        usedUrls.add(val)
+      } else if (val.startsWith('[') || val.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(val)
+          const arr = Array.isArray(parsed) ? parsed : Object.values(parsed)
+          arr.forEach(v => { if (typeof v === 'string') addIfR2(v) })
+        } catch {}
+      } else {
+        extractAndAddUrls(val)
+      }
+    }
+
+    for (const a of blogAuthors || []) {
+      addIfR2(a.avatar)
     }
 
     // event_productsのimageも取得
     const { data: products } = await admin.from('event_products').select('image')
     for (const p of products || []) {
-      if (p.image) usedUrls.add(p.image)
+      addIfR2(p.image)
     }
 
     // R2全オブジェクト取得
-    const base = R2_BASE()
     const r2Objects = await listR2Objects()
 
     // 孤立ファイルを検出
