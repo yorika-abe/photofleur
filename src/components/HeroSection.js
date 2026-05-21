@@ -157,15 +157,15 @@ export default function HeroSection({ images, mobileImages }) {
       {/* Current image */}
       <span className="hero-desktop">
         {imgs.length > 0
-          ? <img key={current} src={optimizeUrl(imgs[current], 1920)} alt="" fetchPriority={current === 0 ? 'high' : 'auto'} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          ? <img key={current} src={imgs[current]} alt="" fetchPriority={current === 0 ? 'high' : 'auto'} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 45%, #0d2030 100%)' }} />
         }
       </span>
       <span className="hero-mobile">
         {mobileImgs.length > 0
           ? <>
-              <img key={`mblur-${currentMobile}`} src={optimizeUrl(mobileImgs[currentMobile], 828)} alt="" fetchPriority="high" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(8px) brightness(0.85)', transform: 'scale(1.12)', transformOrigin: 'center' }} />
-              <img key={`mb-${currentMobile}`} src={optimizeUrl(mobileImgs[currentMobile], 828)} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+              <img key={`mblur-${currentMobile}`} src={mobileImgs[currentMobile]} alt="" fetchPriority="high" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(8px) brightness(0.85)', transform: 'scale(1.12)', transformOrigin: 'center' }} />
+              <img key={`mb-${currentMobile}`} src={mobileImgs[currentMobile]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
             </>
           : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 45%, #0d2030 100%)' }} />
         }
@@ -180,7 +180,7 @@ export default function HeroSection({ images, mobileImages }) {
             filter: 'drop-shadow(4px 4px 12px rgba(0,0,0,0.7))',
             ...tlStyle,
           }}>
-            <img src={optimizeUrl(leavingSrc, 1920)} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={leavingSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <div style={{
             position: 'absolute', inset: 0, display: 'block',
@@ -188,7 +188,7 @@ export default function HeroSection({ images, mobileImages }) {
             filter: 'drop-shadow(-4px -4px 12px rgba(0,0,0,0.7))',
             ...brStyle,
           }}>
-            <img src={optimizeUrl(leavingSrc, 1920)} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={leavingSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
         </>
       )}
