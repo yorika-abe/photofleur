@@ -92,8 +92,10 @@ export default function AnnualEventsPage() {
         ...monthEvents.filter(e => e.notify_model_group).map(e => ({ day: e.day, title: e.title })),
       ].sort((a, b) => a.day - b.day)
     } else {
-      items = monthEvents.filter(e => e.notify_camera).map(e => ({ day: e.day, title: e.title }))
-        .sort((a, b) => a.day - b.day)
+      items = [
+        ...birthdays,
+        ...monthEvents.filter(e => e.notify_camera).map(e => ({ day: e.day, title: e.title })),
+      ].sort((a, b) => a.day - b.day)
     }
 
     if (items.length === 0) {

@@ -51,11 +51,11 @@ export async function GET(req) {
     ...(events || []).filter(e => e.notify_model_group).map(e => ({ day: e.day, title: e.title })),
   ].sort((a, b) => a.day - b.day)
 
-  // 公式LINE用（notify_camera=trueのイベントのみ）
-  const cameraItems = (events || [])
-    .filter(e => e.notify_camera)
-    .map(e => ({ day: e.day, title: e.title }))
-    .sort((a, b) => a.day - b.day)
+  // 公式LINE用（誕生日＋notify_camera=trueのイベント）
+  const cameraItems = [
+    ...birthdays,
+    ...(events || []).filter(e => e.notify_camera).map(e => ({ day: e.day, title: e.title })),
+  ].sort((a, b) => a.day - b.day)
 
   const { data: templates } = await supabase.from('line_templates').select('key, body')
   const tmplMap = {}
