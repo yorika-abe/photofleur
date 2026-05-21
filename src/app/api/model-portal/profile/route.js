@@ -66,6 +66,6 @@ export async function PUT(req) {
   const { error } = await admin.from('models').update(updateData).eq('user_id', user.id)
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
-  notifyAdmin(admin, 'admin_profile_change').catch(() => {})
+  await notifyAdmin(admin, 'admin_profile_change').catch(() => {})
   return Response.json({ ok: true, status: 'pending' })
 }

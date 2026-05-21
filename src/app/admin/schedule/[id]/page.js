@@ -103,6 +103,13 @@ export default function EventEditPage() {
     if (id === 'new') {
       setEvent({ event_type: 'street', status: 'draft', title: '', subtitle: '', description: '', gallery_images: [], location_name: '', address: '' })
       setSlotTemplates(STREET_SLOTS.map(s => ({ ...s })))
+      try {
+        const res = await fetch('/api/admin/models')
+        if (res.ok) {
+          const { models: mods } = await res.json()
+          setModels(mods || [])
+        }
+      } catch {}
       setLoading(false)
       return
     }

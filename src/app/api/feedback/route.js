@@ -26,7 +26,7 @@ export async function POST(req) {
   })
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
-  notifyAdmin(admin, 'admin_feedback').catch(() => {})
+  await notifyAdmin(admin, 'admin_feedback').catch(() => {})
   return Response.json({ ok: true })
 }
 

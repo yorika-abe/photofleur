@@ -67,7 +67,7 @@ export async function POST(req) {
         await supabase.from('models').insert({ user_id: profile.id, status: 'pending' })
       }
 
-      notifyAdmin(supabase, 'admin_invite_registered').catch(() => {})
+      await notifyAdmin(supabase, 'admin_invite_registered').catch(() => {})
       return Response.json({ ok: true, mode: 'existing' })
     }
 
@@ -105,7 +105,7 @@ export async function POST(req) {
     }, { onConflict: 'id' })
 
     await supabase.from('models').insert({ user_id: userId, name: name || null, status: 'pending' })
-    notifyAdmin(supabase, 'admin_invite_registered').catch(() => {})
+    await notifyAdmin(supabase, 'admin_invite_registered').catch(() => {})
 
     return Response.json({ ok: true, mode: 'new' })
   } catch (e) {

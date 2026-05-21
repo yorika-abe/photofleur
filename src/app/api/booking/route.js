@@ -91,7 +91,7 @@ export async function POST(req) {
       body: JSON.stringify({ type: 'booking', slot_id }),
     }).catch(err => console.error('Notification failed:', err))
 
-    notifyAdmin(supabase, 'admin_new_booking').catch(() => {})
+    await notifyAdmin(supabase, 'admin_new_booking').catch(() => {})
 
     return Response.json({ success: true, booking_id: booking.id, qr_token })
   } catch (e) {

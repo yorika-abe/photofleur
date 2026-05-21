@@ -75,6 +75,6 @@ export async function POST(req) {
 
   const { error } = await admin.from('contributed_photos').insert(rows)
   if (error) return Response.json({ error: error.message }, { status: 500 })
-  notifyAdmin(admin, 'admin_photo_contributed').catch(() => {})
+  await notifyAdmin(admin, 'admin_photo_contributed').catch(() => {})
   return Response.json({ ok: true, count: urls.length })
 }

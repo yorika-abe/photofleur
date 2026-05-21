@@ -111,6 +111,6 @@ export async function POST(req) {
     await admin.from('staff_recruitments').update({ status: 'closed' }).eq('id', recruitment_id)
   }
 
-  notifyAdmin(admin, 'admin_staff_applied').catch(() => {})
+  await notifyAdmin(admin, 'admin_staff_applied').catch(() => {})
   return Response.json({ ok: true })
 }

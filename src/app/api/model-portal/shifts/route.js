@@ -78,7 +78,7 @@ export async function POST(req) {
   if (result.error) return Response.json({ error: result.error.message }, { status: 500 })
 
   if (result.data?.status === 'pending_approval') {
-    notifyAdmin(admin, 'admin_shift_change').catch(() => {})
+    await notifyAdmin(admin, 'admin_shift_change').catch(() => {})
   } else if (result.data?.status === 'submitted') {
     await syncBookingSlots(admin, result.data)
   }
