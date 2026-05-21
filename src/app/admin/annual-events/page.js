@@ -261,7 +261,7 @@ export default function AnnualEventsPage() {
                           <div key={`b-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 14px', background: '#f8fbff', borderBottom: '1px solid #f5f5f5' }}>
                             <span style={{ fontSize: 12, color: '#888', minWidth: 32, textAlign: 'right' }}>{month}/{b.day}</span>
                             <span style={{ flex: 1, fontSize: 13 }}>{b.title}</span>
-                            <span style={{ fontSize: 11, color: '#1a3560', fontWeight: 600 }}>👥 自動</span>
+                            <span style={{ fontSize: 11, color: '#1a3560', fontWeight: 600 }}>🎂 👥 📣 自動</span>
                           </div>
                         ))}
                         {monthEvents.map((ev, i) => (
