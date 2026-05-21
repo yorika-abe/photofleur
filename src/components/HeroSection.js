@@ -6,6 +6,13 @@ import Link from 'next/link'
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 const DEFAULT_COLOR = '#a8e2f4'
 
+function optimizeUrl(src, width = 1920) {
+  if (!src) return src
+  // すでに最適化済みまたは外部URL以外はそのまま
+  if (src.startsWith('/_next/') || src.startsWith('data:')) return src
+  return `/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=80`
+}
+
 function rgbToHsl(r, g, b) {
   r /= 255; g /= 255; b /= 255
   const max = Math.max(r, g, b), min = Math.min(r, g, b)
@@ -57,7 +64,7 @@ function extractAccentColor(src) {
       } catch { resolve(DEFAULT_COLOR) }
     }
     img.onerror = () => resolve(DEFAULT_COLOR)
-    img.src = src.includes('?') ? src + '&_c=1' : src + '?_c=1'
+    img.src = optimizeUrl(src, 128)
   })
 }
 
@@ -150,15 +157,15 @@ export default function HeroSection({ images, mobileImages }) {
       {/* Current image */}
       <span className="hero-desktop">
         {imgs.length > 0
-          ? <img key={current} src={imgs[current]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          ? <img key={current} src={optimizeUrl(imgs[current], 1920)} alt="" fetchPriority={current === 0 ? 'high' : 'auto'} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 45%, #0d2030 100%)' }} />
         }
       </span>
       <span className="hero-mobile">
         {mobileImgs.length > 0
           ? <>
-              <img key={`mblur-${currentMobile}`} src={mobileImgs[currentMobile]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(8px) brightness(0.85)', transform: 'scale(1.12)', transformOrigin: 'center' }} />
-              <img key={`mb-${currentMobile}`} src={mobileImgs[currentMobile]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+              <img key={`mblur-${currentMobile}`} src={optimizeUrl(mobileImgs[currentMobile], 828)} alt="" fetchPriority="high" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(8px) brightness(0.85)', transform: 'scale(1.12)', transformOrigin: 'center' }} />
+              <img key={`mb-${currentMobile}`} src={optimizeUrl(mobileImgs[currentMobile], 828)} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
             </>
           : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 45%, #0d2030 100%)' }} />
         }
@@ -173,7 +180,7 @@ export default function HeroSection({ images, mobileImages }) {
             filter: 'drop-shadow(4px 4px 12px rgba(0,0,0,0.7))',
             ...tlStyle,
           }}>
-            <img src={leavingSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={optimizeUrl(leavingSrc, 1920)} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <div style={{
             position: 'absolute', inset: 0, display: 'block',
@@ -181,7 +188,7 @@ export default function HeroSection({ images, mobileImages }) {
             filter: 'drop-shadow(-4px -4px 12px rgba(0,0,0,0.7))',
             ...brStyle,
           }}>
-            <img src={leavingSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={optimizeUrl(leavingSrc, 1920)} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
         </>
       )}
