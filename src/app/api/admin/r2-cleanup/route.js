@@ -39,7 +39,7 @@ export async function GET() {
       { data: blogAuthors },
     ] = await Promise.all([
       admin.from('events').select('main_image, thumbnail_image, gallery_images'),
-      admin.from('models').select('image, portfolio_images'),
+      admin.from('models').select('image, portfolio_images, pending_data'),
       admin.from('blog_posts').select('cover_image, content'),
       admin.from('model_private_info').select('photos'),
       admin.from('staff_private_info').select('photo'),
@@ -56,6 +56,14 @@ export async function GET() {
     for (const m of models || []) {
       addIfR2(m.image)
       try { JSON.parse(m.portfolio_images || '[]').forEach(addIfR2) } catch {}
+      // 申請中の pending_data 内の画像も対象
+      try {
+        const pd = typeof m.pending_data === 'object' ? m.pending_data : JSON.parse(m.pending_data || 'null')
+        if (pd) {
+          addIfR2(pd.image)
+          ;(pd.portfolio_images || []).forEach(addIfR2)
+        }
+      } catch {}
     }
 
     for (const b of blogs || []) {
@@ -96,6 +104,12 @@ export async function GET() {
     const { data: products } = await admin.from('event_products').select('image')
     for (const p of products || []) {
       addIfR2(p.image)
+    }
+
+    // カメラマンのご提供写真
+    const { data: contribPhotos } = await admin.from('contributed_photos').select('photo_url')
+    for (const cp of contribPhotos || []) {
+      addIfR2(cp.photo_url)
     }
 
     // R2全オブジェクト取得
