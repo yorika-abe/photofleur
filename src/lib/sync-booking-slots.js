@@ -54,7 +54,7 @@ export async function syncBookingSlots(admin, shift) {
   ])
   if (!events?.length) return
 
-  const isBeforeDeadline = shiftRequest?.deadline ? shiftRequest.deadline >= today : false
+  const isBeforeDeadline = shiftRequest?.deadline ? shiftRequest.deadline >= today : true
 
   for (const event of events) {
     const { data: entry } = await admin
