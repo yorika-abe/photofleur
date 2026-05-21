@@ -44,7 +44,7 @@ export async function GET() {
       admin.from('model_private_info').select('photos'),
       admin.from('staff_private_info').select('photo'),
       admin.from('site_settings').select('value'),
-      admin.from('blog_authors').select('avatar').catch(() => ({ data: [] })),
+      admin.from('blog_authors').select('avatar'),
     ])
 
     for (const ev of events || []) {
