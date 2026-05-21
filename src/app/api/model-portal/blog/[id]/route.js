@@ -76,7 +76,7 @@ export async function PATCH(req, { params }) {
       submitted: body.submitted ?? post.pending_edits?.submitted ?? false,
     }
     await admin.from('blog_posts').update({ pending_edits: pendingEdits, updated_at: new Date().toISOString() }).eq('id', id)
-    if (body.submitted === true) notifyAdmin(admin, 'admin_blog_pending').catch(() => {})
+    if (body.submitted === true) await notifyAdmin(admin, 'admin_blog_pending').catch(() => {})
   } else {
     const toDelete = []
     if ('cover_image' in body && post.cover_image && post.cover_image !== body.cover_image) toDelete.push(post.cover_image)
@@ -84,7 +84,7 @@ export async function PATCH(req, { params }) {
     if (toDelete.length > 0) await deleteFromR2(toDelete)
     const { error } = await admin.from('blog_posts').update({ ...body, updated_at: new Date().toISOString() }).eq('id', id)
     if (error) return Response.json({ error: error.message }, { status: 500 })
-    if (body.status === 'pending_review') notifyAdmin(admin, 'admin_blog_pending').catch(() => {})
+    if (body.status === 'pending_review') await notifyAdmin(admin, 'admin_blog_pending').catch(() => {})
   }
 
   return Response.json({ ok: true })
