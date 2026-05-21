@@ -100,6 +100,12 @@ export default function EventEditPage() {
   useEffect(() => { load() }, [id])
 
   async function load() {
+    if (id === 'new') {
+      setEvent({ event_type: 'street', status: 'draft', title: '', subtitle: '', description: '', gallery_images: [], location_name: '', address: '' })
+      setSlotTemplates(STREET_SLOTS.map(s => ({ ...s })))
+      setLoading(false)
+      return
+    }
     try {
       const res = await fetch(`/api/admin/events/${id}`)
       if (!res.ok) { setLoading(false); return }
@@ -196,6 +202,43 @@ export default function EventEditPage() {
 
   async function saveEvent() {
     setSaving(true)
+    if (id === 'new') {
+      const res = await fetch('/api/admin/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_type: event.event_type || 'street',
+          title: event.title || '',
+          subtitle: event.subtitle || null,
+          description: event.description || null,
+          event_date: event.event_date || null,
+          event_end_date: event.event_end_date || null,
+          status: 'draft',
+          location_name: event.location_name || null,
+          address: event.address || null,
+          map_address: event.map_address || null,
+          access_note: event.access_note || null,
+          studio_url: event.studio_url || null,
+          studio_capacity: event.studio_capacity ? parseInt(event.studio_capacity) : null,
+          studio_fee: event.studio_fee != null ? parseInt(event.studio_fee) : 2000,
+          meeting_place: event.meeting_place || null,
+          meeting_address: event.meeting_address || null,
+          baggage_storage: event.baggage_storage || null,
+          model_assembly_offset_minutes: 30,
+          slot_templates: slotTemplates ? JSON.stringify(slotTemplates) : null,
+          booking_open_at: event.booking_open_at ? new Date(event.booking_open_at + ':00+09:00').toISOString() : null,
+        }),
+      })
+      const data = await res.json()
+      const created = data.event || data
+      setSaving(false)
+      if (created.id) {
+        router.push(`/admin/schedule/${created.id}`)
+      } else {
+        alert('作成に失敗しました: ' + (created.error || '不明なエラー'))
+      }
+      return
+    }
     const res = await fetch('/api/admin/events', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -592,6 +635,19 @@ export default function EventEditPage() {
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '20px 16px' }}>
+      <style>{`
+        .slot-label { display: inline; }
+        .slot-time-input { width: 88px !important; }
+        .model-add-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        .model-add-btn { display: flex; align-items: center; gap: 6px; }
+        @media (max-width: 640px) {
+          .slot-label { display: none !important; }
+          .slot-time-input { width: 72px !important; font-size: 12px !important; padding: 3px 4px !important; }
+          .model-add-grid { display: grid !important; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+          .model-add-btn { width: 100%; border-radius: 10px !important; justify-content: flex-start; padding: 7px 10px !important; }
+          .slot-row { padding: 5px 8px !important; gap: 5px !important; }
+        }
+      `}</style>
 
       {/* Crop modal */}
       {cropSrc && (
@@ -632,7 +688,7 @@ export default function EventEditPage() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0 20px' }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: '#2f2244', margin: 0 }}>
-          {event.event_date ? `${new Date(event.event_date + 'T00:00:00').getMonth() + 1}/${new Date(event.event_date + 'T00:00:00').getDate()}` : ''} {event.title || 'イベント編集'}
+          {id === 'new' ? '新規イベント作成' : `${event.event_date ? `${new Date(event.event_date + 'T00:00:00').getMonth() + 1}/${new Date(event.event_date + 'T00:00:00').getDate()}` : ''} ${event.title || 'イベント編集'}`}
         </h1>
         <button onClick={saveEvent} disabled={saving}
           style={{ background: saved ? '#388e3c' : '#2f2244', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
@@ -704,6 +760,12 @@ export default function EventEditPage() {
                 <input type="datetime-local" value={event.booking_open_at ? event.booking_open_at.slice(0, 16) : ''} onChange={e => updateField('booking_open_at', e.target.value)} style={inp} />
               </div>
             </div>
+            {id === 'new' && (
+              <div style={{ background: '#fff9e6', border: '1px solid #ffe082', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: '#b45309' }}>
+                📷 画像は保存後に追加できます
+              </div>
+            )}
+            {id !== 'new' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               {/* 横長メインイメージ 16:9 */}
               <div>
@@ -753,6 +815,7 @@ export default function EventEditPage() {
                 )}
               </div>
             </div>
+            )}
           </div>
 
           {(event.event_type === 'studio' || event.event_type === 'irregular') && (
@@ -925,16 +988,16 @@ export default function EventEditPage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {currentSlots.map((slot, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f8f8f8', borderRadius: 8, padding: '6px 10px' }}>
-                  <span style={{ fontSize: 12, color: '#888', minWidth: 24, textAlign: 'right' }}>{slot.order}部</span>
+                <div key={idx} className="slot-row" style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f8f8f8', borderRadius: 8, padding: '6px 10px' }}>
+                  <span style={{ fontSize: 12, color: '#888', minWidth: 22, textAlign: 'right', flexShrink: 0 }}>{slot.order}部</span>
                   <input type="time" value={slot.start} onChange={e => updateSlotTemplate(idx, 'start', e.target.value)}
-                    style={{ padding: '3px 6px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, fontWeight: 600, width: 88 }} />
-                  <span style={{ color: '#bbb', fontSize: 13 }}>〜</span>
+                    className="slot-time-input" style={{ padding: '3px 6px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, fontWeight: 600, width: 88, flexShrink: 0 }} />
+                  <span style={{ color: '#bbb', fontSize: 13, flexShrink: 0 }}>〜</span>
                   <input type="time" value={slot.end} onChange={e => updateSlotTemplate(idx, 'end', e.target.value)}
-                    style={{ padding: '3px 6px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, fontWeight: 600, width: 88 }} />
-                  <span style={{ fontSize: 12, color: '#aaa', flex: 1 }}>{slot.label}</span>
+                    className="slot-time-input" style={{ padding: '3px 6px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, fontWeight: 600, width: 88, flexShrink: 0 }} />
+                  <span className="slot-label" style={{ fontSize: 12, color: '#aaa', flex: 1 }}>{slot.label}</span>
                   <button onClick={() => removeSlotTemplate(idx)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 16, padding: '0 4px', lineHeight: 1 }}>×</button>
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 16, padding: '0 4px', lineHeight: 1, flexShrink: 0 }}>×</button>
                 </div>
               ))}
             </div>
@@ -1003,15 +1066,15 @@ export default function EventEditPage() {
 
             <div style={{ padding: 20 }}>
               {modelsSubTab === 'models' && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <div className="model-add-grid">
                   {models.filter(m => !entryModelIds.includes(m.id)).map(m => {
                     const hasShift = shifts.some(s => s.model_id === m.id)
                     return (
-                      <button key={m.id} onClick={() => addModelToEvent(m.id)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, background: hasShift ? '#f1f8e9' : '#f8f5ff', border: `1px solid ${hasShift ? '#c5e1a5' : '#e0d5f5'}`, borderRadius: 20, padding: '5px 12px 5px 6px', cursor: 'pointer' }}>
-                        {m.image && <Image src={m.image} alt={m.name} width={24} height={24} style={{ borderRadius: '50%', objectFit: 'cover' }} />}
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#2f2244' }}>+ {m.name}</span>
-                        {hasShift && <span style={{ fontSize: 10, color: '#388e3c', fontWeight: 700 }}>提出済</span>}
+                      <button key={m.id} onClick={() => addModelToEvent(m.id)} className="model-add-btn"
+                        style={{ background: hasShift ? '#f1f8e9' : '#f8f5ff', border: `1px solid ${hasShift ? '#c5e1a5' : '#e0d5f5'}`, borderRadius: 20, padding: '6px 12px 6px 6px', cursor: 'pointer' }}>
+                        {m.image && <Image src={m.image} alt={m.name} width={24} height={24} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={e => { e.target.style.display = 'none' }} />}
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#2f2244', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>+ {m.name}</span>
+                        {hasShift && <span style={{ fontSize: 10, color: '#388e3c', fontWeight: 700, flexShrink: 0 }}>提出済</span>}
                       </button>
                     )
                   })}

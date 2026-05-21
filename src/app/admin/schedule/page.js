@@ -17,7 +17,7 @@ export default function AdminSchedulePage() {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
-  const [tab, setTab] = useState('upcoming')
+  const [tab, setTab] = useState('draft')
   const [saving, setSaving] = useState(false)
   const [reusing, setReusing] = useState(null)
   const [cameraNotify, setCameraNotify] = useState(null)
@@ -66,19 +66,8 @@ export default function AdminSchedulePage() {
     setTimeout(() => setMemoSaved(prev => ({ ...prev, [evId]: false })), 2000)
   }
 
-  async function createNewEvent() {
-    setSaving(true)
-    const today = new Date().toISOString().split('T')[0]
-    const res = await fetch('/api/admin/events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event_date: today, event_type: 'street', title: '', status: 'draft' }),
-    })
-    const data = await res.json()
-    const created = data.event || data
-    if (created.error || !created.id) { alert('エラー: ' + (created.error || 'unknown')); setSaving(false); return }
-    window.location.href = `/admin/schedule/${created.id}`
-    setSaving(false)
+  function createNewEvent() {
+    window.location.href = '/admin/schedule/new'
   }
 
   function buildEventDateLabel(eventDate, eventEndDate) {
@@ -254,7 +243,8 @@ export default function AdminSchedulePage() {
     window.location.href = `/admin/schedule/${created.id}`
   }
 
-  const upcoming = events.filter(ev => ev.event_date >= TODAY || !ev.event_date)
+  const drafts = events.filter(ev => !ev.event_date)
+  const upcoming = events.filter(ev => ev.event_date && ev.event_date >= TODAY)
   const past = events.filter(ev => ev.event_date && ev.event_date < TODAY)
 
   const filteredPast = past.filter(ev => {
@@ -265,7 +255,7 @@ export default function AdminSchedulePage() {
     return matchSearch && matchType
   })
 
-  const tabEvents = tab === 'upcoming' ? upcoming : filteredPast
+  const tabEvents = tab === 'draft' ? drafts : tab === 'upcoming' ? upcoming : filteredPast
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>読み込み中...</div>
 
@@ -362,6 +352,7 @@ export default function AdminSchedulePage() {
       {/* タブ */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #e5e5e5' }}>
         {[
+          { key: 'draft', label: '下書き', count: drafts.length },
           { key: 'upcoming', label: '開催予定', count: upcoming.length },
           { key: 'past', label: '開催終了', count: past.length },
         ].map(t => (
@@ -404,13 +395,14 @@ export default function AdminSchedulePage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {tabEvents.length === 0 ? (
-          <p style={{ color: '#999' }}>{tab === 'upcoming' ? '開催予定のイベントはありません。' : '開催終了したイベントはありません。'}</p>
+          <p style={{ color: '#999' }}>{tab === 'draft' ? '下書きのイベントはありません。' : tab === 'upcoming' ? '開催予定のイベントはありません。' : '開催終了したイベントはありません。'}</p>
         ) : tabEvents.map(ev => {
           const models = ev.event_entries?.map(e => e.models).filter(Boolean) || []
           const typeLabel = ev.event_type === 'street' ? 'ストリート' : ev.event_type === 'studio' ? 'スタジオ' : '不定期'
           const typeColor = ev.event_type === 'street' ? { bg: '#e0f7fa', color: '#0097a7' } : ev.event_type === 'studio' ? { bg: '#fce4ec', color: '#c2185b' } : { bg: '#e3f2fd', color: '#1a3560' }
           const isActive = ev.status === 'active'
           const isPast = tab === 'past'
+          const isDraft = tab === 'draft'
 
           return (
             <div key={ev.id} style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', opacity: isPast ? 0.85 : 1 }}>
@@ -425,12 +417,12 @@ export default function AdminSchedulePage() {
                     {/* Buttons row */}
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
                       <span style={{ background: typeColor.bg, color: typeColor.color, borderRadius: 4, padding: '2px 7px', fontSize: 11, fontWeight: 600, flexShrink: 0 }}>{typeLabel}</span>
-                      {isPast ? (
+                      {(isPast || isDraft) ? (
                         <>
-                          <button onClick={() => reuseEvent(ev)} disabled={reusing === ev.id}
+                          {isPast && <button onClick={() => reuseEvent(ev)} disabled={reusing === ev.id}
                             style={{ background: '#e8f0fe', color: '#1a3560', border: 'none', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
                             {reusing === ev.id ? '作成中...' : '再使用'}
-                          </button>
+                          </button>}
                           <Link href={`/admin/schedule/${ev.id}`}
                             style={{ background: '#f5f5f5', color: '#555', textDecoration: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 11, fontWeight: 600 }}>
                             編集
@@ -557,12 +549,12 @@ export default function AdminSchedulePage() {
                 </div>
 
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                  {isPast ? (
+                  {(isPast || isDraft) ? (
                     <>
-                      <button onClick={() => reuseEvent(ev)} disabled={reusing === ev.id}
+                      {isPast && <button onClick={() => reuseEvent(ev)} disabled={reusing === ev.id}
                         style={{ background: '#e8f0fe', color: '#1a3560', border: 'none', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
                         {reusing === ev.id ? '作成中...' : '再使用する'}
-                      </button>
+                      </button>}
                       <Link href={`/admin/schedule/${ev.id}`}
                         style={{ background: '#f5f5f5', color: '#555', textDecoration: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 600 }}>
                         編集

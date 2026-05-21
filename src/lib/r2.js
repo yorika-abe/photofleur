@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3'
 
 export const r2 = new S3Client({
   region: 'auto',
@@ -20,6 +20,23 @@ export async function deleteFromR2(urls) {
   await Promise.all(keys.map(key =>
     r2.send(new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: key }))
   ))
+}
+
+export async function listR2Objects(prefix = '') {
+  const keys = []
+  let continuationToken = undefined
+  do {
+    const res = await r2.send(new ListObjectsV2Command({
+      Bucket: process.env.R2_BUCKET_NAME,
+      Prefix: prefix,
+      ContinuationToken: continuationToken,
+    }))
+    for (const obj of res.Contents || []) {
+      keys.push({ key: obj.Key, size: obj.Size, lastModified: obj.LastModified })
+    }
+    continuationToken = res.IsTruncated ? res.NextContinuationToken : undefined
+  } while (continuationToken)
+  return keys
 }
 
 export async function uploadToR2(key, buffer, contentType) {
