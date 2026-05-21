@@ -20,7 +20,7 @@ export async function notifyAdmin(supabase, templateKey, vars = {}) {
     for (const [k, v] of Object.entries(vars)) {
       message = message.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), v ?? '')
     }
-    sendLineGroupMessageToId(groupId, message).catch(err =>
+    await sendLineGroupMessageToId(groupId, message).catch(err =>
       console.error('Admin LINE通知エラー:', err)
     )
   } catch {}
