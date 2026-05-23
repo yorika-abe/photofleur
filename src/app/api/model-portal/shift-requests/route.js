@@ -10,7 +10,7 @@ export async function GET() {
 
   const { data, error } = await admin
     .from('shift_request_dates')
-    .select('request_date, deadline, event_type, notes')
+    .select('id, request_date, deadline, event_type, notes')
     .gte('request_date', today)
     .order('request_date', { ascending: true })
 
