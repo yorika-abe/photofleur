@@ -260,7 +260,7 @@ export default function ModelPortalHome() {
 
       // 未提出シフト数カウント
       const [reqRes, shiftRes] = await Promise.all([
-        fetch('/api/admin/shift-requests'),
+        fetch('/api/model-portal/shift-requests'),
         fetch('/api/model-portal/shifts'),
       ])
       const reqData = await reqRes.json()
