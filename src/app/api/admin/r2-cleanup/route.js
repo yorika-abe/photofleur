@@ -40,7 +40,7 @@ export async function GET() {
     ] = await Promise.all([
       admin.from('events').select('main_image, thumbnail_image, gallery_images'),
       admin.from('models').select('image, portfolio_images, pending_data'),
-      admin.from('blog_posts').select('cover_image, content'),
+      admin.from('blog_posts').select('cover_image, content, pending_edits'),
       admin.from('model_private_info').select('photos'),
       admin.from('staff_private_info').select('photo'),
       admin.from('site_settings').select('value'),
@@ -69,6 +69,14 @@ export async function GET() {
     for (const b of blogs || []) {
       addIfR2(b.cover_image)
       extractAndAddUrls(b.content)
+      // 承認待ち編集内の画像も対象
+      try {
+        const pe = typeof b.pending_edits === 'object' ? b.pending_edits : JSON.parse(b.pending_edits || 'null')
+        if (pe) {
+          addIfR2(pe.cover_image)
+          extractAndAddUrls(pe.content)
+        }
+      } catch {}
     }
 
     for (const mp of modelPrivate || []) {
