@@ -89,7 +89,11 @@ export default function AdminModelsPage() {
       body: JSON.stringify({ action: 'approve' }),
     })
     setProcessing(null)
-    if (!res.ok) { showToast('エラーが発生しました', '#c62828'); return }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      showToast('エラー: ' + (err.error || '不明なエラー'), '#c62828')
+      return
+    }
     setModels(prev => prev.map(m => m.id === id ? { ...m, status: 'active', pending_data: null } : m))
     showToast(isChange ? '変更を承認しました ✓' : 'モデルを公開しました ✓')
   }
