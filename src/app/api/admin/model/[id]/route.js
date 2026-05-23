@@ -58,7 +58,12 @@ export async function POST(req, { params }) {
     const profileUpdates = { status: 'active', pending_data: null }
     if (model?.pending_data) {
       for (const key of ALLOWED) {
-        if (key in model.pending_data) profileUpdates[key] = model.pending_data[key]
+        if (key in model.pending_data) {
+          let val = model.pending_data[key]
+          if ((key === 'height' || key === 'shoe_size') && val !== null && val !== undefined)
+            val = Math.round(Number(val))
+          profileUpdates[key] = val
+        }
       }
     }
     const { error: approveError } = await admin.from('models').update(profileUpdates).eq('id', id)

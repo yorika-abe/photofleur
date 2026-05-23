@@ -185,7 +185,7 @@ export default function ModelProfilePage() {
         name: form.name,
         name_en: form.name_en || null,
         bio: form.bio || null,
-        height: form.height ? Number(form.height) : null,
+        height: form.height ? Math.round(Number(form.height)) : null,
         birthday: form.birthday || null,
         shoe_size: form.shoe_size || null,
         image: form.image || null,
