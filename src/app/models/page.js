@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 
+export const dynamic = 'force-dynamic'
+
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
 import { getOgpImage, buildMetadata } from '@/lib/ogp'

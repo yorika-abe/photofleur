@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 import PortfolioSlider from '@/components/PortfolioSlider'
 import { buildMetadata } from '@/lib/ogp'
 
+export const dynamic = 'force-dynamic'
+
 
 export async function generateMetadata({ params }) {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)

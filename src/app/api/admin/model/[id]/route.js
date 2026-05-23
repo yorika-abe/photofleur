@@ -70,7 +70,10 @@ export async function POST(req, { params }) {
       }
       if (Object.keys(profileUpdates).length > 0) {
         const { error: profileError } = await admin.from('models').update(profileUpdates).eq('id', id)
-        if (profileError) console.error('approve profile fields error:', profileError, profileUpdates)
+        if (profileError) {
+          console.error('approve profile fields error:', profileError, profileUpdates)
+          return Response.json({ error: 'プロフィール更新に失敗しました: ' + profileError.message }, { status: 500 })
+        }
       }
 
       // 古い画像を削除
