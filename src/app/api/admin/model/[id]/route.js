@@ -51,30 +51,23 @@ export async function POST(req, { params }) {
 
   if (action === 'approve') {
     const { data: model } = await admin.from('models').select('*').eq('id', id).single()
-    // Step 1: まず status と pending_data だけ確実に更新
-    const { error: statusError } = await admin.from('models')
-      .update({ status: 'active', pending_data: null })
-      .eq('id', id)
-    if (statusError) {
-      console.error('approve status error:', statusError)
-      return Response.json({ error: statusError.message }, { status: 500 })
-    }
 
-    // Step 2: pending_data の内容（プロフィール変更）を反映
+    // pending_dataの内容とstatus/pending_dataクリアを1回のupdateで実行
+    const ALLOWED = ['name', 'name_en', 'bio', 'height', 'birthday', 'shoe_size',
+      'image', 'twitter_url', 'instagram_url', 'favorite_things', 'portfolio_images']
+    const profileUpdates = { status: 'active', pending_data: null }
     if (model?.pending_data) {
-      const ALLOWED = ['name', 'name_en', 'bio', 'height', 'birthday', 'shoe_size',
-        'image', 'twitter_url', 'instagram_url', 'favorite_things', 'portfolio_images']
-      const profileUpdates = {}
       for (const key of ALLOWED) {
         if (key in model.pending_data) profileUpdates[key] = model.pending_data[key]
       }
-      if (Object.keys(profileUpdates).length > 0) {
-        const { error: profileError } = await admin.from('models').update(profileUpdates).eq('id', id)
-        if (profileError) {
-          console.error('approve profile fields error:', profileError, profileUpdates)
-          return Response.json({ error: 'プロフィール更新に失敗しました: ' + profileError.message }, { status: 500 })
-        }
-      }
+    }
+    const { error: approveError } = await admin.from('models').update(profileUpdates).eq('id', id)
+    if (approveError) {
+      console.error('approve error:', approveError, profileUpdates)
+      return Response.json({ error: '承認に失敗しました: ' + approveError.message }, { status: 500 })
+    }
+
+    if (model?.pending_data) {
 
       // 古い画像を削除
       const toDelete = []
