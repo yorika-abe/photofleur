@@ -360,7 +360,8 @@ export default function EventEditPage() {
   function uploadWithProgress(file, path) {
     return new Promise((resolve, reject) => {
       const formData = new FormData()
-      formData.append('file', file)
+      const ext = path.split('.').pop() || 'jpg'
+      formData.append('file', file, `upload.${ext}`)
       formData.append('path', path)
       const xhr = new XMLHttpRequest()
       xhr.upload.addEventListener('progress', e => {
