@@ -135,8 +135,7 @@ export default function AdminModelsPage() {
       return next
     })
   }
-  async function onDrop() {
-    dragIdx.current = null
+  async function saveOrder() {
     const activeIds = models.filter(m => m.status === 'active' && !m.pending_data).map(m => m.id)
     setSaving(true)
     await fetch('/api/admin/models/reorder', {
@@ -147,6 +146,32 @@ export default function AdminModelsPage() {
     setSaving(false)
     showToast('並び順を保存しました ✓')
   }
+  async function onDrop() { dragIdx.current = null; await saveOrder() }
+
+  // Touch drag handlers
+  function onTouchStart(e, i) { dragIdx.current = i }
+  function onTouchMove(e, i) {
+    if (dragIdx.current === null) return
+    const touch = e.touches[0]
+    const el = document.elementFromPoint(touch.clientX, touch.clientY)
+    const card = el?.closest('[data-model-idx]')
+    if (!card) return
+    const targetIdx = parseInt(card.getAttribute('data-model-idx'))
+    if (isNaN(targetIdx) || targetIdx === dragIdx.current) return
+    setModels(prev => {
+      const activeIds = prev.filter(m => m.status === 'active' && !m.pending_data).map(m => m.id)
+      const fromId = activeIds[dragIdx.current]
+      const toId = activeIds[targetIdx]
+      const fromGlobal = prev.findIndex(m => m.id === fromId)
+      const toGlobal = prev.findIndex(m => m.id === toId)
+      const next = [...prev]
+      const [moved] = next.splice(fromGlobal, 1)
+      next.splice(toGlobal, 0, moved)
+      return next
+    })
+    dragIdx.current = targetIdx
+  }
+  async function onTouchEnd() { dragIdx.current = null; await saveOrder() }
 
   const pending = models.filter(m => m.status === 'pending' || (m.status === 'active' && m.pending_data))
   const active = models.filter(m => m.status === 'active' && !m.pending_data)
@@ -222,16 +247,21 @@ export default function AdminModelsPage() {
               const isDraggable = tab === 'active'
               return (
                 <div key={model.id}
+                  data-model-idx={i}
                   draggable={isDraggable}
                   onDragStart={isDraggable ? () => onDragStart(i) : undefined}
                   onDragOver={isDraggable ? e => onDragOver(e, i) : undefined}
                   onDrop={isDraggable ? onDrop : undefined}
+                  onTouchStart={isDraggable ? e => onTouchStart(e, i) : undefined}
+                  onTouchMove={isDraggable ? e => onTouchMove(e, i) : undefined}
+                  onTouchEnd={isDraggable ? onTouchEnd : undefined}
                   style={{
                     background: '#fff', borderRadius: 12,
                     border: tab === 'pending' ? '2px solid #ef9a9a' : '1px solid #e5e5e5',
                     overflow: 'hidden',
                     cursor: isDraggable ? 'grab' : 'default',
                     userSelect: 'none',
+                    touchAction: isDraggable ? 'none' : undefined,
                   }}
                 >
                   <div style={{ aspectRatio: '2/3', background: '#e0d8f0', overflow: 'hidden', position: 'relative' }}>
