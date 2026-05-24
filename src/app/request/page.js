@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
 import FadingHeroBg from '@/components/FadingHeroBg'
 import { getOgpImage, buildMetadata } from '@/lib/ogp'
+import EligibilityChecker from './EligibilityChecker'
 
 export async function generateMetadata() {
   const image = await getOgpImage('ogp_request')
@@ -21,10 +22,14 @@ function LineIcon() {
 
 export default async function RequestPage() {
   const supabase = await createSupabaseAdminClient()
-  const { data } = await supabase.from('site_settings').select('value').eq('key', 'request_hero_image').single()
+  const [{ data }, { data: modelsData }] = await Promise.all([
+    supabase.from('site_settings').select('value').eq('key', 'request_hero_image').single(),
+    supabase.from('models').select('id, name').eq('status', 'active').order('display_order'),
+  ])
   const raw = data?.value || ''
   let heroImages = []
   try { const p = JSON.parse(raw); heroImages = Array.isArray(p) ? p : (raw ? [raw] : []) } catch { heroImages = raw ? [raw] : [] }
+  const activeModels = modelsData || []
 
   return (
     <div style={{ background: '#fff', color: '#1a1228' }}>
@@ -149,6 +154,9 @@ export default async function RequestPage() {
           </div>
         </div>
       </section>
+
+      {/* ─── ELIGIBILITY CHECK ─── */}
+      <EligibilityChecker models={activeModels} />
 
       {/* ─── HOW TO APPLY ─── */}
       <section style={{ background: '#fafcff', padding: 'clamp(32px, 5vw, 56px) 20px' }}>

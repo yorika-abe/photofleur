@@ -269,6 +269,22 @@ const INDIVIDUAL_TEMPLATES = [
       { key: '{{extra_sections}}', desc: '追加セクション（伝達事項の【タイトル】形式）' },
     ],
   },
+  {
+    key: 'request_model_notify',
+    label: '🔗 リク撮依頼通知（モデル個人）',
+    trigger: 'リクエスト撮影申請が入った時（自動）',
+    vars: [
+      { key: '{{site_url}}', desc: 'サイトURL（自動挿入）' },
+    ],
+  },
+  {
+    key: 'request_model_reminder',
+    label: '🔗 リク撮依頼リマインダー（モデル個人）',
+    trigger: '申請から2日後の朝7時（自動cron）/ まだ未回答のモデルに送信',
+    vars: [
+      { key: '{{site_url}}', desc: 'サイトURL（自動挿入）' },
+    ],
+  },
 ]
 
 const ZATSUDAN_TEMPLATES = [
@@ -984,6 +1000,23 @@ const PHOTOGRAPHER_TEMPLATES = [
     vars: [
       { key: '{{site_url}}', desc: 'ホームページURL（自動挿入）' },
     ],
+  },
+  {
+    key: 'request_confirmed_customer',
+    label: '🔗 リク撮確定連絡（カメラマン個人）',
+    trigger: '管理画面で「申し込みリンクを作成してLINEで確定連絡」を押した時（手動）',
+    vars: [
+      { key: '{{location}}', desc: '集合解散場所' },
+      { key: '{{model_names}}', desc: '参加モデル名' },
+      { key: '{{duration}}', desc: '撮影時間（時間数）' },
+      { key: '{{payment_url}}', desc: 'お支払いURL' },
+    ],
+  },
+  {
+    key: 'request_decline_customer',
+    label: '🔗 リク撮お断り（カメラマン個人）',
+    trigger: '管理画面の「直接LINEを送信」から送信（手動）/ デフォルト文として使用',
+    vars: [],
   },
 ]
 

@@ -165,6 +165,7 @@ export default function ModelPortalHome() {
   const [pendingShiftCount, setPendingShiftCount] = useState(0)
   const [newPhotoCount, setNewPhotoCount] = useState(0)
   const [newBookingCount, setNewBookingCount] = useState(0)
+  const [requestAppCount, setRequestAppCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   const supabase = createBrowserClient(
@@ -272,6 +273,11 @@ export default function ModelPortalHome() {
       const submittedDates = new Set((Array.isArray(shiftData) ? shiftData : []).map(s => s.event_date))
       setPendingShiftCount(activeReqs.filter(r => !submittedDates.has(r.request_date)).length)
 
+      // リクエスト申請（未回答）件数
+      const raRes = await fetch('/api/model-portal/request-applications')
+      const raData = await raRes.json().catch(() => ({ applications: [] }))
+      setRequestAppCount((raData.applications || []).filter(a => !a.responded).length)
+
       setLoading(false)
     }
     init()
@@ -377,6 +383,7 @@ export default function ModelPortalHome() {
             { href: '/model-portal/profile', icon: '✏️', label: 'プロフィール編集', desc: '写真・プロフィールを更新' },
             { href: '/model-portal/bookings', icon: '📋', label: '予約状況', desc: 'カメラマンSNS・空き確認', badge: newBookingCount },
             { href: '/model-portal/shifts', icon: '📅', label: 'シフト提出', desc: '参加可能日程を登録', badge: pendingShiftCount },
+            { href: '/model-portal/request-applications', icon: '🔗', label: 'リクエスト撮影申請', desc: '依頼の確認・参加可否を回答', badge: requestAppCount },
             { href: '/model-portal/blog', icon: '📝', label: 'ブログ', desc: '記事を書く' },
             { href: '/model-portal/private-info', icon: '🔒', label: '非公開登録情報', desc: '住所・連絡先・契約同意' },
             { href: '/model-portal/photos', icon: '📸', label: 'ご提供写真', desc: '提供いただいた写真を確認', badge: newPhotoCount },

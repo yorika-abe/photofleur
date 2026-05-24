@@ -12,7 +12,7 @@ export async function POST(req) {
     const {
       slot_id, name, last_name, first_name, last_name_kana, first_name_kana,
       email, phone, sns_url, nickname, is_outdoor, discount_amount, final_price,
-      coupon_id, marketing_consent,
+      coupon_id, marketing_consent, payment_method, square_payment_id,
     } = body
 
     if (!slot_id || !email || !last_name || !first_name || !nickname) {
@@ -52,6 +52,8 @@ export async function POST(req) {
         final_price: final_price || 0,
         coupon_id: coupon_id || null,
         marketing_consent: marketing_consent || false,
+        payment_method: payment_method || null,
+        square_payment_id: square_payment_id || null,
         qr_token,
       })
       .select('id')

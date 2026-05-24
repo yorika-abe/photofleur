@@ -53,12 +53,14 @@ function getTypeIndicator(r) {
 
 function RecruitCard({ r, onApply, applying }) {
   const [expanded, setExpanded] = useState(false)
+  const [transportFee, setTransportFee] = useState('')
   const myApp = r.my_application
   const isClosed = r.status === 'closed'
   const hasApplied = !!myApp && myApp.status !== 'cancelled'
   const isConfirmed = myApp?.status === 'confirmed'
   const indicator = getTypeIndicator(r)
   const info = getRecruitInfo(r)
+  const isRequest = r.shoot_type === 'request' || r.type === 'request'
 
   const actionEl = isConfirmed ? (
     <span style={{ background: '#388e3c', color: '#fff', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700 }}>✅ スタッフ確定</span>
@@ -119,12 +121,30 @@ function RecruitCard({ r, onApply, applying }) {
             ※応募確定後はキャンセル不可能です。<br />
             ※確定ラインにてスタッフ確定となります。
           </p>
+          {isRequest && (
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#c62828', display: 'block', marginBottom: 4 }}>
+                往復交通費（円）*
+              </label>
+              <input type="number" min="0" value={transportFee}
+                onChange={e => setTransportFee(e.target.value)}
+                placeholder="例: 1200"
+                style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1.5px solid #ffcdd2', fontSize: 13, boxSizing: 'border-box' }} />
+              <p style={{ fontSize: 11, color: '#888', margin: '4px 0 0' }}>リクエスト撮影の場合、交通費の入力が必須です</p>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => setExpanded(false)}
               style={{ flex: 1, background: '#f5f5f5', border: 'none', borderRadius: 6, padding: '7px', fontSize: 12, cursor: 'pointer' }}>
               キャンセル
             </button>
-            <button onClick={async () => { await onApply(r.id); setExpanded(false) }} disabled={applying}
+            <button
+              onClick={async () => {
+                if (isRequest && !transportFee) { alert('往復交通費を入力してください'); return }
+                await onApply(r.id, isRequest ? Number(transportFee) : null)
+                setExpanded(false)
+              }}
+              disabled={applying}
               style={{ flex: 2, background: applying ? '#ccc' : '#06c755', color: '#fff', border: 'none', borderRadius: 6, padding: '7px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
               {applying ? '応募中...' : '応募する'}
             </button>
@@ -195,12 +215,12 @@ export default function StaffPortalPage() {
       .catch(() => {})
   }, [])
 
-  async function handleApply(recruitmentId) {
+  async function handleApply(recruitmentId, transportFee = null) {
     setApplying(true)
     const res = await fetch('/api/staff-portal/staff-recruit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ recruitment_id: recruitmentId }),
+      body: JSON.stringify({ recruitment_id: recruitmentId, transport_fee: transportFee }),
     })
     setApplying(false)
     if (!res.ok) {

@@ -35,6 +35,7 @@ export default async function AdminPage() {
     { count: newModelInvites },
     { count: pendingStaffApps },
     { count: pendingBlogReview },
+    { count: pendingRequestApps },
   ] = await Promise.all([
     supabase.from('model_shifts').select('*', { count: 'exact', head: true }).eq('status', 'pending_approval').gte('event_date', today),
     supabase.from('models').select('*', { count: 'exact', head: true }).not('pending_data', 'is', null),
@@ -50,6 +51,7 @@ export default async function AdminPage() {
     supabase.from('user_profiles').select('*', { count: 'exact', head: true }).eq('registered_via_invite', true).eq('invite_notif_seen', false),
     supabase.from('staff_recruitment_applications').select('*', { count: 'exact', head: true }).eq('status', 'applied'),
     supabase.from('blog_posts').select('*', { count: 'exact', head: true }).eq('status', 'pending_review'),
+    supabase.from('request_applications').select('*', { count: 'exact', head: true }).in('status', ['pending', 'notified', 'model_responded', 'staff_recruiting']),
   ])
 
   return (
@@ -92,7 +94,7 @@ export default async function AdminPage() {
           { href: '/admin/line-broadcast', label: 'LINE一斉送信', icon: '💬' },
           { href: '/admin/x-templates', label: 'X投稿テンプレート', icon: '𝕏' },
           { href: '/admin/annual-events', label: '年間イベント一覧', icon: '🌱' },
-          { href: '/admin/private-products', label: '非公開商品管理', icon: '🔗' },
+          { href: '/admin/private-products', label: '非公開商品管理', icon: '🔗', badge: pendingRequestApps ?? 0 },
           { href: '/admin/goods', label: 'グッズ管理', icon: '🛍️' },
           { href: '/admin/activity-reports', label: '外部活動報告', icon: '📣', badge: unreadActivityReports ?? 0 },
           { href: '/admin/staff-recruit', label: 'スタッフ募集', icon: '🐈‍⬛', badge: pendingStaffApps ?? 0 },

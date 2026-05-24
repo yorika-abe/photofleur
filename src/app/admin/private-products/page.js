@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Cropper from 'react-easy-crop'
 import CancelModal from '@/components/CancelModal'
+import RequestApplicationsSection from './RequestApplicationsSection'
 
 const PAYMENT_OPTIONS = [
   { value: 'cash', label: '現金のみ' },
@@ -18,6 +19,7 @@ const EMPTY_FORM = {
 }
 
 export default function PrivateProductsPage() {
+  const [tab, setTab] = useState('requests')
   const [products, setProducts] = useState([])
   const [models, setModels] = useState([])
   const [loading, setLoading] = useState(true)
@@ -224,9 +226,24 @@ export default function PrivateProductsPage() {
       )}
 
       <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: '12px 0 4px' }}>非公開商品管理</h1>
-      <p style={{ color: '#888', fontSize: 13, marginBottom: 28 }}>リンクを共有した相手だけが予約できる商品を管理します</p>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: '12px 0 16px' }}>非公開商品管理</h1>
 
+      {/* タブ */}
+      <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid #e5e5e5' }}>
+        {[['requests', '🔗 リクエスト撮影申請'], ['products', '🔒 非公開商品']].map(([key, label]) => (
+          <button key={key} onClick={() => setTab(key)}
+            style={{ padding: '10px 20px', fontSize: 14, fontWeight: 700, border: 'none', background: 'none', cursor: 'pointer',
+              color: tab === key ? '#1a3560' : '#aaa',
+              borderBottom: `3px solid ${tab === key ? '#1a3560' : 'transparent'}`,
+              marginBottom: -2 }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'requests' && <RequestApplicationsSection />}
+
+      {tab === 'products' && <div>
       {/* 作成・編集フォーム */}
       <div ref={formRef} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e5e5', padding: '20px 24px', marginBottom: 28 }}>
         <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560', marginBottom: 16 }}>{formTitle}</div>
@@ -414,6 +431,7 @@ export default function PrivateProductsPage() {
           })}
         </div>
       )}
+      </div>}
     </div>
   )
 }

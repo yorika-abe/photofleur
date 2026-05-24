@@ -74,6 +74,9 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
   async function submit(e) {
     e.preventDefault()
     if (!form.last_name || !form.email) { setError('氏名・メールアドレスは必須です'); return }
+    if (!form.nickname) { setError('ニックネームは必須です'); return }
+    if (!form.phone) { setError('電話番号は必須です'); return }
+    if (!form.sns_url) { setError('SNS URLは必須です'); return }
     if (requireEventDetails) {
       if (!form.event_date_input) { setError('開催日を入力してください'); return }
       if (!form.meeting_place) { setError('集合・解散場所を入力してください'); return }
@@ -161,9 +164,9 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
       </div>
 
       <div style={{ marginBottom: 14 }}>
-        <label style={lbl}>ニックネーム（撮影会で使用する名前）</label>
+        <label style={lbl}>ニックネーム（撮影会で使用する名前）*</label>
         <input value={form.nickname} onChange={e => setForm(f => ({ ...f, nickname: e.target.value }))}
-          placeholder="例: ゆきの" style={inp} />
+          placeholder="例: ゆきの" required style={inp} />
       </div>
 
       <div style={{ marginBottom: 14 }}>
@@ -173,15 +176,15 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
       </div>
 
       <div style={{ marginBottom: 14 }}>
-        <label style={lbl}>電話番号（任意）</label>
+        <label style={lbl}>電話番号 *</label>
         <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-          placeholder="090-0000-0000" style={inp} />
+          placeholder="090-0000-0000" required style={inp} />
       </div>
 
       <div style={{ marginBottom: 14 }}>
-        <label style={lbl}>SNS URL（Instagram等）</label>
+        <label style={lbl}>SNS URL（Instagram等）*</label>
         <input value={form.sns_url} onChange={e => setForm(f => ({ ...f, sns_url: e.target.value }))}
-          placeholder="https://www.instagram.com/..." style={inp} />
+          placeholder="https://www.instagram.com/..." required style={inp} />
       </div>
 
       {paymentMethod === 'both' && (
@@ -227,7 +230,7 @@ export default function PrivateProductBookingForm({ token, paymentMethod, price 
           <div style={{ marginBottom: 12 }}>
             <label style={lbl}>集合・解散場所 *</label>
             <input value={form.meeting_place} onChange={e => setForm(f => ({ ...f, meeting_place: e.target.value }))}
-              placeholder="例: 渋谷駅ハチ公前" required style={inp} />
+              placeholder="例: 渋谷駅ハチ公前（詳細な場所をご記入ください）" required style={inp} />
           </div>
           <div>
             <label style={lbl}>撮影時間 *</label>

@@ -43,6 +43,10 @@
     {
       "path": "/api/cron-cleanup-expired-coupons?secret=photofleur_super_secret_2026",
       "schedule": "0 2 1 * *"
+    },
+    {
+      "path": "/api/cron-request-reminder?secret=photofleur_super_secret_2026",
+      "schedule": "0 22 * * *"
     }
   ]
 }

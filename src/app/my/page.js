@@ -35,6 +35,7 @@ const typeColors = {
   street: { bg: '#e0f7fa', color: '#0097a7', label: 'ストリート' },
   studio: { bg: '#fce4ec', color: '#c2185b', label: 'スタジオ' },
   irregular: { bg: '#e3f2fd', color: '#1a3560', label: '不定期' },
+  private: { bg: '#f3e5f5', color: '#7b1fa2', label: 'リクエスト撮影' },
 }
 
 function MyPageContent() {
@@ -58,6 +59,8 @@ function MyPageContent() {
   const [feedbackContent, setFeedbackContent] = useState('')
   const [feedbackSending, setFeedbackSending] = useState(false)
   const [feedbackDone, setFeedbackDone] = useState(false)
+  const [requestApps, setRequestApps] = useState([])
+  const justApplied = searchParams.get('request_applied') === '1'
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -69,11 +72,13 @@ function MyPageContent() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.href = '/login?redirect=/my'; return }
 
-      const [profileRes, bookingsRes, modelsRes] = await Promise.all([
+      const [profileRes, bookingsRes, modelsRes, requestAppsRes] = await Promise.all([
         fetch('/api/customer/profile'),
         fetch('/api/customer/bookings'),
         fetch('/api/admin/models').then(r => r.json()).catch(() => ({ models: [] })),
+        fetch('/api/customer/request-applications').then(r => r.json()).catch(() => ({ applications: [] })),
       ])
+      setRequestApps(requestAppsRes.applications || [])
       const { profile, email: userEmail, hasLine: hl } = await profileRes.json()
       setHasLine(hl || false)
       const { bookings } = await bookingsRes.json()
@@ -348,24 +353,28 @@ function MyPageContent() {
               {recentBookings.map(b => {
                 const tc = typeColors[b.event_type] || { bg: '#f5f5f5', color: '#888', label: '' }
                 const isPaid = b.payment_method === 'card'
+                const isCancelled = !!b.cancelled_at
                 return (
-                  <div key={b.id} style={{ padding: '14px 16px', borderRadius: 10, border: '1px solid #e0ecf8', background: '#f8fbff' }}>
+                  <div key={`${b.booking_type || 'r'}-${b.id}`} style={{ padding: '14px 16px', borderRadius: 10, border: `1px solid ${isCancelled ? '#e0e0e0' : '#e0ecf8'}`, background: isCancelled ? '#fafafa' : '#f8fbff', opacity: isCancelled ? 0.7 : 1 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                           {tc.label && <span style={{ fontSize: 11, background: tc.bg, color: tc.color, borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>{tc.label}</span>}
+                          {isCancelled && <span style={{ fontSize: 11, background: '#ffebee', color: '#c62828', borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>キャンセル済み</span>}
                           <span style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>{formatDate(b.event_date)}</span>
                         </div>
                         {b.event_title && <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 2 }}>{b.event_title}</div>}
                         {b.location_name && <div style={{ fontSize: 12, color: '#888', marginBottom: 2 }}>{b.location_name}</div>}
-                        <div style={{ fontSize: 13, color: '#555', marginBottom: 2 }}>{b.slot_label}</div>
+                        {b.slot_label && <div style={{ fontSize: 13, color: '#555', marginBottom: 2 }}>{b.slot_label}</div>}
                         {b.model_name && <div style={{ fontSize: 12, color: '#888' }}>モデル：{b.model_name}</div>}
                       </div>
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
                         <div style={{ fontWeight: 700, color: '#1a3560', fontSize: 15 }}>¥{(b.final_price || 0).toLocaleString()}</div>
-                        <div style={{ fontSize: 12, color: isPaid ? '#0097a7' : '#1565c0', marginTop: 2 }}>
-                          {isPaid ? '💳 カード払い' : '💴 現金払い'}
-                        </div>
+                        {!isCancelled && (
+                          <div style={{ fontSize: 12, color: isPaid ? '#0097a7' : '#1565c0', marginTop: 2 }}>
+                            {isPaid ? '💳 カード払い' : '💴 現金払い'}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -382,6 +391,53 @@ function MyPageContent() {
           </>
         )}
       </section>
+
+      {/* リクエスト撮影申請 */}
+      {(justApplied || requestApps.length > 0) && (
+        <section style={{ background: '#fff', borderRadius: 16, padding: '20px 24px', marginTop: 20 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a3560', margin: '0 0 16px' }}>リクエスト撮影申請</h2>
+          {justApplied && (
+            <div style={{ background: '#e8f5e9', border: '1px solid #c8e6c9', borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#2e7d32', fontWeight: 600 }}>
+              ✅ 申し込みを受け付けました
+            </div>
+          )}
+          {requestApps.map(app => {
+            const statusLabel = {
+              pending: '申請中',
+              notified: 'モデル回答待ち',
+              model_responded: 'モデル回答済み・確認中',
+              staff_recruiting: 'スタッフ募集中',
+              confirmed: '確定',
+              declined: '不可',
+            }[app.status] || app.status
+            const statusColor = {
+              pending: '#888', notified: '#1565c0', model_responded: '#e65100',
+              staff_recruiting: '#6a1b9a', confirmed: '#2e7d32', declined: '#c62828',
+            }[app.status] || '#888'
+            return (
+              <div key={app.id} style={{ border: '1px solid #eef4f8', borderRadius: 10, padding: '14px 16px', marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1a3560' }}>
+                    {app.models?.map(m => m.name).join('・') || '未定'}
+                  </span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: statusColor, background: `${statusColor}18`, borderRadius: 20, padding: '3px 10px' }}>
+                    {statusLabel}
+                  </span>
+                </div>
+                <p style={{ fontSize: 12, color: '#888', margin: 0 }}>
+                  申請日: {new Date(app.created_at).toLocaleDateString('ja-JP')}
+                  {app.preferences?.[0] && ` ／ 第一希望: ${app.preferences[0].preferred_date}`}
+                </p>
+                {app.status === 'notified' && (
+                  <p style={{ fontSize: 12, color: '#1565c0', margin: '6px 0 0' }}>
+                    モデル・スタッフのスケジュールを確認のうえ、公式ラインより折り返しご連絡させていただきます。少々お待ちください。
+                  </p>
+                )}
+              </div>
+            )
+          })}
+        </section>
+      )}
     </div>
   )
 }

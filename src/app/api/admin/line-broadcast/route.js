@@ -36,7 +36,7 @@ export async function POST(req) {
   const admin = await requireAdmin()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { message, model_ids, channel, image_url, staff_user_id } = await req.json()
+  const { message, model_ids, channel, image_url, staff_user_id, customer_user_id } = await req.json()
   if (!message?.trim()) return Response.json({ error: 'メッセージを入力してください' }, { status: 400 })
 
   // カメラマン公式LINE（broadcastAPI）
@@ -74,6 +74,15 @@ export async function POST(req) {
     if (!groupId) return Response.json({ error: 'スタッフグループIDが設定されていません' }, { status: 400 })
     const { sendLineGroupMessageToId } = await import('@/lib/line')
     const result = await sendLineGroupMessageToId(groupId, message)
+    return Response.json({ ok: result.ok, error: result.ok ? null : result.reason })
+  }
+
+  // カメラマン個人LINE（user_profiles.line_user_id）
+  if (channel === 'customer_individual') {
+    if (!customer_user_id) return Response.json({ error: 'ユーザーIDが必要です' }, { status: 400 })
+    const { data: profile } = await admin.from('user_profiles').select('line_user_id').eq('id', customer_user_id).maybeSingle()
+    if (!profile?.line_user_id) return Response.json({ error: 'このユーザーのLINE IDが登録されていません' }, { status: 400 })
+    const result = await sendLineMessage(profile.line_user_id, message)
     return Response.json({ ok: result.ok, error: result.ok ? null : result.reason })
   }
 

@@ -75,7 +75,7 @@ export async function POST(req) {
   if (!ctx) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const { admin, user, profile } = ctx
 
-  const { recruitment_id } = await req.json()
+  const { recruitment_id, transport_fee } = await req.json()
 
   const { data: existing } = await admin
     .from('staff_recruitment_applications')
@@ -94,6 +94,7 @@ export async function POST(req) {
     user_id: user.id,
     user_name: profile?.name || '',
     status: 'applied',
+    ...(transport_fee != null ? { transport_fee: Number(transport_fee) } : {}),
   }).select('id').single()
   if (insertError) return Response.json({ error: '申し込みに失敗しました' }, { status: 500 })
 
