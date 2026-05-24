@@ -20,6 +20,15 @@ function getHourlyRate(studioPrice) {
   return parseInt(studioPrice || 0)
 }
 
+function addHours(timeStr, hours) {
+  if (!timeStr) return ''
+  const [h, m] = timeStr.split(':').map(Number)
+  const totalMin = h * 60 + m + Math.round(hours * 60)
+  const eh = Math.floor(totalMin / 60) % 24
+  const em = totalMin % 60
+  return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`
+}
+
 function findOverlapDates(modelResponses, preferences) {
   return preferences.map(pref => {
     const statuses = modelResponses.map(mr => {
@@ -73,6 +82,7 @@ function ApplicationCard({ app, onUpdate }) {
 
   // 確定フロー
   const [selectedPrefOrder, setSelectedPrefOrder] = useState(null)
+  const [actualStartTime, setActualStartTime] = useState('')
   const [productTitle, setProductTitle] = useState('')
   const [priceComp, setPriceComp] = useState(null)
   const [paymentMethod, setPaymentMethod] = useState('both')
@@ -99,6 +109,7 @@ function ApplicationCard({ app, onUpdate }) {
     if (!pref) return
     const comp = initPriceComponents(app, pref)
     setPriceComp(comp)
+    setActualStartTime('')
     const modelNames = app.model_responses.map(mr => mr.models?.name || '').join('・')
     setProductTitle(`${pref.preferred_date} ${modelNames} リクエスト撮影`)
   }, [selectedPrefOrder])
@@ -180,10 +191,13 @@ function ApplicationCard({ app, onUpdate }) {
 
   async function confirmApplication() {
     if (!selectedPrefOrder) return alert('確定する日程を選択してください')
+    if (!actualStartTime) return alert('実際の開始時刻を入力してください')
     if (!priceComp) return
     setConfirming(true); setConfirmResult(null)
     try {
       const pref = app.preferences.find(p => p.preference_order === selectedPrefOrder)
+      const endTime = addHours(actualStartTime, Number(pref.duration_hours))
+      const actualTimeRange = `${actualStartTime}〜${endTime}`
       const modelIds = app.model_responses.map(mr => mr.model_id)
       const firstModelImage = app.model_responses[0]?.models?.image || null
 
@@ -195,7 +209,7 @@ function ApplicationCard({ app, onUpdate }) {
           price: totalPrice,
           model_ids: modelIds,
           event_date: pref.preferred_date,
-          time_label: pref.time_range,
+          time_label: actualTimeRange,
           stock: 1,
           image: firstModelImage,
           payment_method: paymentMethod,
@@ -217,7 +231,7 @@ function ApplicationCard({ app, onUpdate }) {
 
       const modelNames = app.model_responses.map(mr => mr.models?.name || '').join('・')
       const bookingUrl = `${SITE_URL}/p/${product.token}`
-      const confirmMsg = `【リクエスト撮影が確定しました】\n\nこの度はリクエスト撮影をご希望くださりありがとうございます。\n撮影日が確定しましたのでご確認ください。\n📍${app.location}\n👤${modelNames}\n⏰${pref.duration_hours}時間\n\n以下のリンクよりお支払いに関してご確認ください。\n🔗${bookingUrl}`
+      const confirmMsg = `【リクエスト撮影が確定しました】\n\nこの度はリクエスト撮影をご希望くださりありがとうございます。\n撮影日が確定しましたのでご確認ください。\n📅${pref.preferred_date} ${actualTimeRange}\n📍${app.location}\n👤${modelNames}\n⏰${pref.duration_hours}時間\n\n以下のリンクよりお支払いに関してご確認ください。\n🔗${bookingUrl}`
       await fetch('/api/admin/line-broadcast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -350,6 +364,34 @@ function ApplicationCard({ app, onUpdate }) {
               </label>
             ))}
           </div>
+
+          {/* 実際の開始時刻 */}
+          {selectedPrefOrder && (() => {
+            const pref = app.preferences.find(p => p.preference_order === selectedPrefOrder)
+            if (!pref) return null
+            const endTime = addHours(actualStartTime, Number(pref.duration_hours))
+            return (
+              <div style={{ marginBottom: 12, background: '#fff', borderRadius: 8, padding: '12px', border: '1px solid #86efac' }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', margin: '0 0 8px' }}>
+                  実際の撮影時間（候補: {pref.time_range}）
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div>
+                    <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 2 }}>開始時刻</label>
+                    <input type="time" value={actualStartTime} onChange={e => setActualStartTime(e.target.value)}
+                      style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #86efac', fontSize: 13 }} />
+                  </div>
+                  <span style={{ color: '#888', marginTop: 16 }}>〜</span>
+                  <div>
+                    <label style={{ fontSize: 11, color: '#888', display: 'block', marginBottom: 2 }}>終了（自動）</label>
+                    <input type="text" value={endTime} readOnly
+                      style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #d0d0d0', fontSize: 13, background: '#f5f5f5', width: 72 }} />
+                  </div>
+                  {actualStartTime && <span style={{ fontSize: 12, color: '#166534', marginTop: 16, fontWeight: 700 }}>✓ {pref.duration_hours}h</span>}
+                </div>
+              </div>
+            )
+          })()}
 
           {priceComp && (
             <>
