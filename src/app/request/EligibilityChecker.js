@@ -62,7 +62,7 @@ export default function EligibilityChecker({ models }) {
         {!loggedIn ? (
           <div style={{ background: '#f8fbff', borderRadius: 12, padding: '28px', border: '1px solid #d6ecf5', textAlign: 'center' }}>
             <p style={{ fontSize: 14, color: '#556070', marginBottom: 20 }}>ご利用条件を確認するにはログインが必要です</p>
-            <a href="/login?next=/request" style={{ display: 'inline-block', background: '#1a3560', color: '#fff', borderRadius: 8, padding: '12px 32px', fontSize: 14, fontWeight: 700, textDecoration: 'none', marginBottom: 12 }}>
+            <a href="/login?redirect=/request" style={{ display: 'inline-block', background: '#1a3560', color: '#fff', borderRadius: 8, padding: '12px 32px', fontSize: 14, fontWeight: 700, textDecoration: 'none', marginBottom: 12 }}>
               ログインする
             </a>
             <p style={{ fontSize: 12, color: '#aaa', margin: 0 }}>LINEアカウントでもログインできます</p>
