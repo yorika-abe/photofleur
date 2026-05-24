@@ -162,12 +162,23 @@ function ApplyForm() {
                       onChange={e => setPref(i, 'preferred_date', e.target.value)}
                       required={i === 0} style={inp} />
                   </div>
-                  <div style={{ flex: '1 1 140px' }}>
+                  <div style={{ flex: '1 1 200px' }}>
                     <label style={lbl}>希望時間帯</label>
-                    <input value={form.preferences[i].time_range}
-                      onChange={e => setPref(i, 'time_range', e.target.value)}
-                      placeholder="例: 13:00〜18:00"
-                      required={i === 0} style={inp} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <input type="time" value={form.preferences[i].time_range?.split('〜')[0] || ''}
+                        onChange={e => {
+                          const end = form.preferences[i].time_range?.split('〜')[1] || ''
+                          setPref(i, 'time_range', e.target.value + '〜' + end)
+                        }}
+                        required={i === 0} style={{ ...inp, flex: 1, padding: '10px 6px' }} />
+                      <span style={{ color: '#888', flexShrink: 0 }}>〜</span>
+                      <input type="time" value={form.preferences[i].time_range?.split('〜')[1] || ''}
+                        onChange={e => {
+                          const start = form.preferences[i].time_range?.split('〜')[0] || ''
+                          setPref(i, 'time_range', start + '〜' + e.target.value)
+                        }}
+                        required={i === 0} style={{ ...inp, flex: 1, padding: '10px 6px' }} />
+                    </div>
                   </div>
                   <div style={{ flex: '0 0 120px' }}>
                     <label style={lbl}>撮影時間（時間）</label>
