@@ -10,15 +10,6 @@ export async function generateMetadata() {
 
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 
-const LINE_URL = 'https://lin.ee/VgTzmhe'
-
-function LineIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
-    </svg>
-  )
-}
 
 export default async function RequestPage() {
   const supabase = await createSupabaseAdminClient()
@@ -155,9 +146,6 @@ export default async function RequestPage() {
         </div>
       </section>
 
-      {/* ─── ELIGIBILITY CHECK ─── */}
-      <EligibilityChecker models={activeModels} />
-
       {/* ─── HOW TO APPLY ─── */}
       <section style={{ background: '#fafcff', padding: 'clamp(32px, 5vw, 56px) 20px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -167,45 +155,41 @@ export default async function RequestPage() {
               ✉️ お申し込み方法
             </h2>
           </div>
-          <div style={{ background: '#fff', borderRadius: 12, padding: '24px 28px', border: '1px solid #d6ecf5', marginBottom: 28 }}>
-            <p style={{ fontSize: 14, color: '#556070', marginTop: 0, marginBottom: 6, lineHeight: 1.9 }}>
-              以下の内容をご記入のうえ、公式LINEにてご連絡ください。
-            </p>
-            <p style={{ fontSize: 12, color: '#aaa', marginTop: 0, marginBottom: 20, lineHeight: 1.7 }}>
-              ※公式ライン追加後リクエスト撮影を選択し、手順に沿ってお進みください。
-            </p>
-            <div style={{ background: '#f0f7fb', borderRadius: 8, padding: '18px 22px' }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', margin: '0 0 14px' }}>リクエスト撮影の依頼</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 0 }}>
-                {[
-                  '希望モデル名',
-                  'お名前',
-                  'SNSアカウントURL',
-                  '電話番号',
-                  '第1希望日・希望時間',
-                  '第2希望日・希望時間',
-                  '第3希望日・希望時間',
-                  '撮影希望場所',
-                  '集合場所 / 解散場所',
-                ].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#3a3050', padding: '8px 0', borderBottom: '1px solid #eef4f8' }}>
-                    <span style={{ ...serif, fontSize: 15, color: '#5bbfd6', fontStyle: 'italic', lineHeight: 1, flexShrink: 0 }}>{i + 1}.</span>
-                    {item}
-                  </div>
-                ))}
-              </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', border: '1px solid #d6ecf5' }}>
+              <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0 }}>
+                下の<strong>👤 ご利用条件を確認</strong>から予約条件を満たしているか確認してください。<br />
+                予約条件を満たしている場合、グレーアウトしている「リクエスト撮影に申し込む」が押せるようになります。
+              </p>
             </div>
-          </div>
-
-          <div style={{ textAlign: 'center' }}>
-            <a href={LINE_URL} target="_blank" rel="noopener noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: '#06C755', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '14px 40px', fontWeight: 700, fontSize: 15 }}>
-              <LineIcon />
-              LINEで申し込む →
-            </a>
+            <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', border: '1px solid #d6ecf5' }}>
+              <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: '0 0 12px' }}>
+                リクエスト撮影に関するご連絡は公式LINEよりさせていただきますので、会員アカウントとの紐付けをお願いしております。
+              </p>
+              <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0 }}>
+                必要情報を入力の上、希望日時を3日程お送りください。<br />
+                該当モデルに参加可否を確認、スタッフの日程調整の上<strong>1週間以内にご連絡</strong>させていただきます。
+              </p>
+            </div>
+            <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', border: '1px solid #d6ecf5' }}>
+              <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0 }}>
+                会員マイページよりリクエスト撮影の確認ステータスが表示されます。<br />
+                詳細とお支払いに関するご連絡をいたしますので、そちらからご予約いただきましたらリクエスト予約の確定となります。
+              </p>
+            </div>
+            <div style={{ background: '#f0f7fb', borderRadius: 12, padding: '20px 24px', border: '1px solid #c8e8f5' }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', margin: '0 0 8px' }}>💳 お支払い方法に関して</p>
+              <p style={{ fontSize: 13, lineHeight: 2, color: '#3a3050', margin: 0 }}>
+                原則クレジット払いをお願いしております。<br />
+                現金の場合はリクエスト撮影前の通常撮影会にお越しいただき前払い、もしくは特例で当日現金払いが可能になる場合もございますので、申し込み時に要望欄にてご相談ください。
+              </p>
+            </div>
           </div>
         </div>
       </section>
+
+      {/* ─── ELIGIBILITY CHECK ─── */}
+      <EligibilityChecker models={activeModels} />
 
       {/* ─── CLOSING ─── */}
       <section style={{ background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 100%)', color: '#fff', padding: 'clamp(40px, 6vw, 70px) 20px', textAlign: 'center' }}>
