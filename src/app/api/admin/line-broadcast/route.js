@@ -1,8 +1,6 @@
 import { sendLineMessage, broadcastCameraLine, broadcastCameraLineWithImage } from '@/lib/line'
 import { requireAdmin } from '@/lib/auth'
 
-export const maxDuration = 30
-
 export async function GET(req) {
   const admin = await requireAdmin()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
@@ -34,6 +32,7 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
+  try {
   const admin = await requireAdmin()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -114,4 +113,8 @@ export async function POST(req) {
 
   if (failed > 0 && sent === 0) return Response.json({ ok: false, error: `送信失敗 (${failed}件)`, sent, failed }, { status: 500 })
   return Response.json({ ok: true, sent, failed })
+  } catch (e) {
+    console.error('line-broadcast error:', e)
+    return Response.json({ error: e.message || '内部エラー' }, { status: 500 })
+  }
 }
