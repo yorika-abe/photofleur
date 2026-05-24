@@ -50,7 +50,7 @@ export default function EligibilityChecker({ models }) {
   if (loggedIn === null) return null
 
   return (
-    <section style={sectionStyle}>
+    <section id="eligibility" style={sectionStyle}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 8, fontWeight: 600 }}>Eligibility</p>
@@ -62,7 +62,7 @@ export default function EligibilityChecker({ models }) {
         {!loggedIn ? (
           <div style={{ background: '#f8fbff', borderRadius: 12, padding: '28px', border: '1px solid #d6ecf5', textAlign: 'center' }}>
             <p style={{ fontSize: 14, color: '#556070', marginBottom: 20 }}>ご利用条件を確認するにはログインが必要です</p>
-            <a href="/login?redirect=/request" style={{ display: 'inline-block', background: '#1a3560', color: '#fff', borderRadius: 8, padding: '12px 32px', fontSize: 14, fontWeight: 700, textDecoration: 'none', marginBottom: 12 }}>
+            <a href="/login?redirect=/request%23eligibility" style={{ display: 'inline-block', background: '#1a3560', color: '#fff', borderRadius: 8, padding: '12px 32px', fontSize: 14, fontWeight: 700, textDecoration: 'none', marginBottom: 12 }}>
               ログインする
             </a>
             <p style={{ fontSize: 12, color: '#aaa', margin: 0 }}>LINEアカウントでもログインできます</p>
