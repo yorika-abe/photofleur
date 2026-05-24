@@ -110,5 +110,6 @@ export async function POST(req) {
     }).catch(() => {})
   }
 
+  if (failed > 0 && sent === 0) return Response.json({ ok: false, error: `送信失敗 (${failed}件)`, sent, failed }, { status: 500 })
   return Response.json({ ok: true, sent, failed })
 }

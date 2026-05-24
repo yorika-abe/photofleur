@@ -9,12 +9,24 @@ export async function sendLineCameraUser(lineUserId, message) {
 
 async function pushMessage(token, to, message) {
   if (!token || !to) return { ok: false, reason: 'missing config' }
-  const res = await fetch('https://api.line.me/v2/bot/message/push', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ to, messages: [{ type: 'text', text: message }] }),
-  })
-  return { ok: res.ok, status: res.status }
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 8000)
+  try {
+    const res = await fetch('https://api.line.me/v2/bot/message/push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ to, messages: [{ type: 'text', text: message }] }),
+      signal: controller.signal,
+    })
+    const body = await res.json().catch(() => ({}))
+    if (!res.ok) console.error('LINE push error:', res.status, JSON.stringify(body))
+    return { ok: res.ok, status: res.status, error: body?.message }
+  } catch (e) {
+    console.error('LINE push exception:', e.message)
+    return { ok: false, reason: e.message }
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 async function broadcastMessages(token, messages) {
