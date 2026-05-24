@@ -24,12 +24,18 @@ function calcAssemblyTime(shoot_time) {
   return `${h}:${m.toString().padStart(2, '0')}`
 }
 
-function buildDayBeforeVars(r, modelsMap = {}) {
+function buildDayBeforeVars(r, modelsMap = {}, confirmedDate = null) {
   let date = '', location = '', shoot_time = '', model_names = '', photographer_info = ''
   if (r.type === 'custom') {
-    date = fmtDate(r.recruit_date)
+    if (confirmedDate && r.recruit_dates?.length > 0) {
+      const found = r.recruit_dates.find(d => d.date === confirmedDate)
+      date = fmtDate(confirmedDate)
+      shoot_time = found ? found.time_range : r.shoot_time || '未定'
+    } else {
+      date = fmtDate(r.recruit_date)
+      shoot_time = r.shoot_time || '未定'
+    }
     location = r.location || '未定'
-    shoot_time = r.shoot_time || '未定'
     model_names = (r.model_ids || []).map(id => modelsMap[id]?.name).filter(Boolean).join('、') || '未定'
     const parts = []
     if (r.photographer_name) parts.push(r.photographer_name)
@@ -92,6 +98,15 @@ export async function GET(req) {
     .eq('recruit_date', tomorrow)
     .eq('status', 'closed')
 
+  // recruit_dates（複数日程）のカスタム募集 — confirmed_date で明日かどうかはアプリ側で判定
+  const { data: multiDateRecs } = await admin
+    .from('staff_recruitments')
+    .select('*')
+    .eq('type', 'custom')
+    .is('recruit_date', null)
+    .not('recruit_dates', 'is', null)
+    .eq('status', 'closed')
+
   // 明日が event_date のイベント募集（確定済みスタッフあり）
   const { data: eventRecs } = await admin
     .from('staff_recruitments')
@@ -110,6 +125,7 @@ export async function GET(req) {
 
   const allRecs = [
     ...(customRecs || []),
+    ...(multiDateRecs || []),
     ...(eventRecs || []).map(r => ({ ...r, event: r.events })),
     ...(requestRecs || []).map(r => ({ ...r, booking: r.private_bookings })),
   ]
@@ -155,11 +171,12 @@ export async function GET(req) {
   let sent = 0
   for (const r of allRecs) {
     const apps = appsMap[r.id] || []
-    const vars = buildDayBeforeVars(r, modelsMap)
 
     for (const app of apps) {
+      if (r.recruit_dates?.length > 0 && app.confirmed_date !== tomorrow) continue
       const lineId = staffLineIds[app.user_id]
       if (!lineId) continue
+      const vars = buildDayBeforeVars(r, modelsMap, app.confirmed_date || null)
       const msg = applyVars(tmpl, vars)
       const result = await sendLineMessage(lineId, msg)
       if (result.ok) sent++

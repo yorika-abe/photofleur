@@ -107,6 +107,8 @@ function ConfirmCard({ item, staffUsers, selectedStaffMap, setSelectedStaffMap, 
   const appliedApps = (rec?.applications || []).filter(a => a.status === 'applied')
   const selectedStaff = selectedStaffMap[item.key] || ''
   const hasRecruitment = !!rec
+  const [confirmingAppId, setConfirmingAppId] = useState(null)
+  const [selectedConfirmedDate, setSelectedConfirmedDate] = useState('')
 
   // 募集あり：左ボーダーで強調、背景を少し色付け
   const recStatusColor = rec?.status === 'closed' ? '#388e3c' : '#1565c0'
@@ -138,19 +140,60 @@ function ConfirmCard({ item, staffUsers, selectedStaffMap, setSelectedStaffMap, 
       {(confirmedApps.length > 0 || appliedApps.length > 0) && (
         <div style={{ marginTop: 5, display: 'flex', flexDirection: 'column', gap: 3 }}>
           {[...confirmedApps, ...appliedApps].map(app => (
-            <div key={app.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 8px', borderRadius: 5, background: app.status === 'confirmed' ? '#e8f5e9' : '#f8fbff', border: `1px solid ${app.status === 'confirmed' ? '#a5d6a7' : '#ddd'}` }}>
-              <span style={{ fontWeight: 700, fontSize: 13, flex: 1 }}>{app.user_name || '（名前なし）'}</span>
-              {app.status === 'confirmed' && <span style={{ fontSize: 11, background: '#388e3c', color: '#fff', borderRadius: 4, padding: '1px 6px', fontWeight: 700 }}>✅ 確定済み</span>}
-              {app.status === 'applied' && (
-                <button onClick={() => handleAction('confirm_application', rec.id, app.id)} disabled={actionLoading === app.id}
-                  style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                  {actionLoading === app.id ? '...' : '確定'}
+            <div key={app.id} style={{ borderRadius: 5, background: app.status === 'confirmed' ? '#e8f5e9' : '#f8fbff', border: `1px solid ${app.status === 'confirmed' ? '#a5d6a7' : '#ddd'}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 8px' }}>
+                <span style={{ fontWeight: 700, fontSize: 13, flex: 1 }}>{app.user_name || '（名前なし）'}</span>
+                {app.available_dates?.length > 0 && (
+                  <span style={{ fontSize: 11, color: '#1565c0' }}>
+                    参加可能日：{app.available_dates.map(d => {
+                      const dt = new Date(d + 'T00:00:00')
+                      return `${dt.getMonth() + 1}/${dt.getDate()}`
+                    }).join(', ')}
+                  </span>
+                )}
+                {app.status === 'confirmed' && (
+                  <span style={{ fontSize: 11, background: '#388e3c', color: '#fff', borderRadius: 4, padding: '1px 6px', fontWeight: 700 }}>
+                    ✅ 確定済み{app.confirmed_date ? `（${app.confirmed_date}）` : ''}
+                  </span>
+                )}
+                {app.status === 'applied' && (
+                  rec?.recruit_dates?.length > 0 ? (
+                    <button onClick={() => setConfirmingAppId(confirmingAppId === app.id ? null : app.id)} disabled={actionLoading === app.id}
+                      style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                      {actionLoading === app.id ? '...' : '確定'}
+                    </button>
+                  ) : (
+                    <button onClick={() => handleAction('confirm_application', rec.id, app.id)} disabled={actionLoading === app.id}
+                      style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                      {actionLoading === app.id ? '...' : '確定'}
+                    </button>
+                  )
+                )}
+                <button onClick={() => { if (confirm('キャンセルしますか？')) handleAction('cancel_application', rec.id, app.id) }} disabled={actionLoading === app.id}
+                  style={{ background: '#ffebee', color: '#c62828', border: 'none', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                  キャンセル
                 </button>
+              </div>
+              {confirmingAppId === app.id && rec?.recruit_dates?.length > 0 && (
+                <div style={{ padding: '4px 8px 6px', borderTop: '1px solid #ddd', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <select value={selectedConfirmedDate} onChange={e => setSelectedConfirmedDate(e.target.value)}
+                    style={{ flex: 1, padding: '3px 6px', border: '1px solid #90caf9', borderRadius: 4, fontSize: 11 }}>
+                    <option value="">日程を選択</option>
+                    {rec.recruit_dates.map(d => (
+                      <option key={d.date} value={d.date}>{d.date} {d.time_range}</option>
+                    ))}
+                  </select>
+                  <button onClick={() => {
+                    if (!selectedConfirmedDate) { alert('日程を選択してください'); return }
+                    handleAction('confirm_application', rec.id, app.id, selectedConfirmedDate)
+                    setConfirmingAppId(null)
+                    setSelectedConfirmedDate('')
+                  }} disabled={actionLoading === app.id || !selectedConfirmedDate}
+                    style={{ background: selectedConfirmedDate ? '#388e3c' : '#ccc', color: '#fff', border: 'none', borderRadius: 4, padding: '2px 10px', fontSize: 11, fontWeight: 700, cursor: selectedConfirmedDate ? 'pointer' : 'not-allowed' }}>
+                    確定する
+                  </button>
+                </div>
               )}
-              <button onClick={() => { if (confirm('キャンセルしますか？')) handleAction('cancel_application', rec.id, app.id) }} disabled={actionLoading === app.id}
-                style={{ background: '#ffebee', color: '#c62828', border: 'none', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                キャンセル
-              </button>
             </div>
           ))}
         </div>
@@ -474,13 +517,15 @@ export default function StaffRecruitPage() {
     load()
   }
 
-  async function handleAction(action, recruitment_id, application_id = null) {
+  async function handleAction(action, recruitment_id, application_id = null, confirmedDate = null) {
     const key = application_id || recruitment_id
     setActionLoading(key)
+    const body = { action, recruitment_id, application_id }
+    if (confirmedDate) body.confirmed_date = confirmedDate
     await fetch('/api/admin/staff-recruit', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, recruitment_id, application_id }),
+      body: JSON.stringify(body),
     })
     setActionLoading(null)
     if (action === 'cancel_application') {

@@ -89,11 +89,6 @@ function ApplicationCard({ app, onUpdate }) {
   const [confirming, setConfirming] = useState(false)
   const [confirmResult, setConfirmResult] = useState(null)
 
-  // スタッフ募集
-  const [staffRecruitPrefOrder, setStaffRecruitPrefOrder] = useState(null)
-  const [addingStaff, setAddingStaff] = useState(false)
-  const [staffRecruitResult, setStaffRecruitResult] = useState(null)
-
   const isPending = ['pending', 'notified'].includes(app.status)
   const isResponded = app.all_responded
   const isStaffRecruiting = app.status === 'staff_recruiting'
@@ -101,6 +96,12 @@ function ApplicationCard({ app, onUpdate }) {
   const isDeclined = app.status === 'declined'
 
   const overlaps = isResponded ? findOverlapDates(app.model_responses, app.preferences) : []
+
+  // スタッフ募集
+  const defaultChecked = isResponded ? new Set(overlaps.filter(o => o.canAll).map(o => o.pref.preference_order)) : new Set()
+  const [staffRecruitCheckedOrders, setStaffRecruitCheckedOrders] = useState(defaultChecked)
+  const [addingStaff, setAddingStaff] = useState(false)
+  const [staffRecruitResult, setStaffRecruitResult] = useState(null)
 
   // 選択された希望日が変わったら料金を初期化
   useEffect(() => {
@@ -152,18 +153,32 @@ function ApplicationCard({ app, onUpdate }) {
   }
 
   async function addToStaffRecruit() {
-    const prefOrder = staffRecruitPrefOrder || app.preferences[0]?.preference_order
     setAddingStaff(true); setStaffRecruitResult(null)
     try {
-      const pref = app.preferences.find(p => p.preference_order === prefOrder)
       const modelIds = app.model_responses.map(mr => mr.model_id)
-      // ステータス更新
+      const checkedPrefs = app.preferences.filter(p => staffRecruitCheckedOrders.has(p.preference_order))
+
+      const recruitDates = checkedPrefs.map(pref => {
+        const responses = app.model_responses.map(mr => mr.responses.find(r => r.preference_order === pref.preference_order)).filter(Boolean)
+        const allAvailable = responses.every(r => r.status === 'available')
+        let time_range
+        if (allAvailable) {
+          time_range = pref.time_range
+        } else {
+          const froms = responses.filter(r => r.available_from).map(r => r.available_from)
+          const untils = responses.filter(r => r.available_until).map(r => r.available_until)
+          const maxFrom = froms.length > 0 ? froms.sort().at(-1) : pref.time_range.split('〜')[0]
+          const minUntil = untils.length > 0 ? untils.sort()[0] : pref.time_range.split('〜')[1]
+          time_range = `${maxFrom}〜${minUntil}`
+        }
+        return { date: pref.preferred_date, time_range, duration_hours: pref.duration_hours }
+      })
+
       await fetch('/api/admin/request-applications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: app.id, status: 'staff_recruiting' }),
       })
-      // スタッフ募集日に追加
       await fetch('/api/admin/staff-recruit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -171,11 +186,12 @@ function ApplicationCard({ app, onUpdate }) {
           entries: [{
             type: 'custom',
             shoot_type: 'request',
-            recruit_date: pref?.preferred_date || null,
+            recruit_date: null,
             location: app.location || '未定',
-            shoot_time: pref ? `${pref.time_range}（${pref.duration_hours}h）` : '未定',
+            shoot_time: null,
             model_ids: modelIds,
             capacity: 1,
+            recruit_dates: recruitDates,
             photographer_name: `${app.last_name}${app.first_name}`,
             photographer_nickname: app.nickname,
             photographer_sns: app.sns_url,
@@ -324,16 +340,37 @@ function ApplicationCard({ app, onUpdate }) {
         <div style={{ marginBottom: 12 }}>
           {!isStaffRecruiting ? (
             <div style={{ background: '#f5f0ff', borderRadius: 8, padding: '12px 16px', border: '1px solid #e1d4f5' }}>
-              <p style={{ fontSize: 12, fontWeight: 700, color: '#6a1b9a', margin: '0 0 8px' }}>スタッフを募集する</p>
+              <p style={{ fontSize: 12, fontWeight: 700, color: '#6a1b9a', margin: '0 0 8px' }}>スタッフを募集する（複数日程同時募集）</p>
               <div style={{ marginBottom: 8 }}>
-                {app.preferences.map(pref => (
-                  <label key={pref.preference_order} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, marginBottom: 4, cursor: 'pointer' }}>
-                    <input type="radio" name={`staff-pref-${app.id}`} value={pref.preference_order}
-                      checked={staffRecruitPrefOrder === pref.preference_order}
-                      onChange={() => setStaffRecruitPrefOrder(pref.preference_order)} />
-                    第{pref.preference_order}希望 {pref.preferred_date} {pref.time_range}
-                  </label>
-                ))}
+                {overlaps.map(({ pref, canAll }) => {
+                  const responses = app.model_responses.map(mr => mr.responses.find(r => r.preference_order === pref.preference_order)).filter(Boolean)
+                  const hasTimeSpec = responses.some(r => r.status === 'time_specified')
+                  let timeDisplay = pref.time_range
+                  if (hasTimeSpec) {
+                    const froms = responses.filter(r => r.available_from).map(r => r.available_from)
+                    const untils = responses.filter(r => r.available_until).map(r => r.available_until)
+                    if (froms.length > 0 && untils.length > 0) {
+                      timeDisplay = `${froms.sort().at(-1)}〜${untils.sort()[0]}`
+                    }
+                  }
+                  return (
+                    <label key={pref.preference_order} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, marginBottom: 4, cursor: canAll ? 'pointer' : 'default', opacity: canAll ? 1 : 0.4 }}>
+                      <input type="checkbox" disabled={!canAll}
+                        checked={staffRecruitCheckedOrders.has(pref.preference_order)}
+                        onChange={() => {
+                          setStaffRecruitCheckedOrders(prev => {
+                            const next = new Set(prev)
+                            if (next.has(pref.preference_order)) next.delete(pref.preference_order)
+                            else next.add(pref.preference_order)
+                            return next
+                          })
+                        }} />
+                      第{pref.preference_order}希望 {pref.preferred_date} {timeDisplay}
+                      {hasTimeSpec && <span style={{ fontSize: 10, color: '#e65100' }}>（時間調整済み）</span>}
+                      {!canAll && <span style={{ fontSize: 10, color: '#c62828' }}>（不可あり）</span>}
+                    </label>
+                  )
+                })}
               </div>
               <button onClick={addToStaffRecruit} disabled={addingStaff}
                 style={{ padding: '8px 18px', borderRadius: 8, border: '1.5px solid #6a1b9a', background: '#fff', color: '#6a1b9a', fontSize: 13, fontWeight: 700, cursor: addingStaff ? 'not-allowed' : 'pointer' }}>

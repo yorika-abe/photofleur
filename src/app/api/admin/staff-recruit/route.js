@@ -42,9 +42,15 @@ function fmtDate(d) {
 function buildRecruitNoticeBlock(r) {
   let date = '', location = '', shoot_time = '', type_label = '', model_names = ''
   if (r.type === 'custom') {
-    date = fmtDate(r.recruit_date)
+    if (r.recruit_dates?.length > 0) {
+      const dates = r.recruit_dates.map(d => `${fmtDate(d.date)} ${d.time_range}`).join(' / ')
+      date = `${fmtDate(r.recruit_dates[0].date)}〜${fmtDate(r.recruit_dates.at(-1).date)}候補`
+      shoot_time = dates
+    } else {
+      date = fmtDate(r.recruit_date)
+      shoot_time = sanitize(r.shoot_time || '未定')
+    }
     location = sanitize(r.location || '未定')
-    shoot_time = sanitize(r.shoot_time || '未定')
     type_label = r.shoot_type === 'request' ? 'リクエスト撮影' : '通常撮影会'
     model_names = sanitize((r.models_info || []).map(m => m.name).join('、') || '未定')
   } else if (r.type === 'event') {
@@ -69,6 +75,10 @@ function buildRecruitLine(r) {
   if (r.type === 'custom') {
     const models = sanitize((r.models_info || []).map(m => m.name).join('、'))
     const typeLabel = r.shoot_type === 'request' ? 'リク撮' : '通常撮影会'
+    if (r.recruit_dates?.length > 0) {
+      const datesStr = r.recruit_dates.map(d => `${fmtDate(d.date)} ${d.time_range}`).join(' / ')
+      return `【候補日】${datesStr} 📍${sanitize(r.location || '未定')}（${typeLabel}）${models ? `　撮影モデル：${models}` : ''}`
+    }
     return `${fmtDate(r.recruit_date)} 📍${sanitize(r.location || '未定')}　${sanitize(r.shoot_time || '未定')}（${typeLabel}）${models ? `　撮影モデル：${models}` : ''}`
   }
   if (r.type === 'event') {
@@ -96,12 +106,18 @@ function calcAssemblyTime(shoot_time) {
   return `${h}:${m.toString().padStart(2, '0')}`
 }
 
-function buildConfirmedVars(r) {
+function buildConfirmedVars(r, confirmedDate = null) {
   let date = '', location = '', shoot_time = '', model_names = '', photographer_info = ''
   if (r.type === 'custom') {
-    date = fmtDate(r.recruit_date)
+    if (confirmedDate && r.recruit_dates?.length > 0) {
+      const found = r.recruit_dates.find(d => d.date === confirmedDate)
+      date = fmtDate(confirmedDate)
+      shoot_time = found ? found.time_range : r.shoot_time || '未定'
+    } else {
+      date = fmtDate(r.recruit_date)
+      shoot_time = r.shoot_time || '未定'
+    }
     location = r.location || '未定'
-    shoot_time = r.shoot_time || '未定'
     model_names = (r.models_info || []).map(m => m.name).join('、') || '未定'
     const parts = []
     if (r.photographer_name) parts.push(r.photographer_name)
@@ -243,6 +259,7 @@ export async function POST(req) {
       photographer_sns: entry.photographer_sns || null,
       payment_status: entry.payment_status || '未定',
       status: 'open',
+      ...(entry.recruit_dates ? { recruit_dates: entry.recruit_dates } : {}),
     }).select().single()
     if (!error && data) inserted.push(data)
   }
@@ -268,11 +285,13 @@ export async function PATCH(req) {
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { action, recruitment_id, application_id, event_id, private_booking_id, staff_user_id } = body
+  const { action, recruitment_id, application_id, event_id, private_booking_id, staff_user_id, confirmed_date } = body
 
   if (action === 'confirm_application') {
+    const updateData = { status: 'confirmed', confirmed_at: new Date().toISOString() }
+    if (confirmed_date) updateData.confirmed_date = confirmed_date
     const { data: app } = await admin.from('staff_recruitment_applications')
-      .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
+      .update(updateData)
       .eq('id', application_id)
       .select()
       .single()
@@ -299,7 +318,7 @@ export async function PATCH(req) {
 
       if (staffLineId) {
         const tmpl = await getTemplate(admin, 'staff_confirmed_notice')
-        const msg = applyVars(tmpl, buildConfirmedVars(recEnriched))
+        const msg = applyVars(tmpl, buildConfirmedVars(recEnriched, confirmed_date || null))
         await sendLineMessage(staffLineId, msg)
       }
 

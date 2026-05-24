@@ -54,6 +54,7 @@ function getTypeIndicator(r) {
 function RecruitCard({ r, onApply, applying }) {
   const [expanded, setExpanded] = useState(false)
   const [transportFee, setTransportFee] = useState('')
+  const [availableDates, setAvailableDates] = useState(new Set())
   const myApp = r.my_application
   const isClosed = r.status === 'closed'
   const hasApplied = !!myApp && myApp.status !== 'cancelled'
@@ -79,6 +80,14 @@ function RecruitCard({ r, onApply, applying }) {
     <span style={{ fontSize: 12, background: info.typeBg, color: info.typeColor, borderRadius: 4, padding: '2px 7px' }}>{info.typeBadge}</span>
   ) : null
 
+  const hasMultiDates = r.recruit_dates?.length > 0
+  const multiDateLabel = hasMultiDates
+    ? r.recruit_dates.map(d => {
+        const dt = new Date(d.date + 'T00:00:00')
+        return `${dt.getMonth() + 1}/${dt.getDate()}`
+      }).join(', ')
+    : null
+
   return (
     <div style={{
       background: '#fff', border: `1px solid ${isConfirmed ? '#a5d6a7' : hasApplied ? '#90caf9' : '#e5e5e5'}`,
@@ -89,6 +98,7 @@ function RecruitCard({ r, onApply, applying }) {
       <div className="sp-rc-desktop" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <RecruitLabel r={r} />
+          {hasMultiDates && <div style={{ fontSize: 11, color: '#e65100', marginTop: 2 }}>候補日程：{multiDateLabel}</div>}
           <div style={{ marginTop: 2, fontSize: 11, color: '#aaa' }}>応募{r.counts?.total || 0}名 / 定員{r.capacity}名</div>
         </div>
         <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
@@ -104,6 +114,7 @@ function RecruitCard({ r, onApply, applying }) {
             <div style={{ fontWeight: 700, fontSize: 13 }}>{info.date}{info.time ? `　${info.time}` : ''}</div>
             {info.location && <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>📍{info.location}</div>}
             {info.modelName && <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>モデル：{info.modelName}</div>}
+            {hasMultiDates && <div style={{ fontSize: 11, color: '#e65100', marginTop: 2 }}>候補日程：{multiDateLabel}</div>}
             <div style={{ marginTop: 3, fontSize: 11, color: '#aaa' }}>応募{r.counts?.total || 0}名 / 定員{r.capacity}名</div>
           </div>
           <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
@@ -121,6 +132,29 @@ function RecruitCard({ r, onApply, applying }) {
             ※応募確定後はキャンセル不可能です。<br />
             ※確定ラインにてスタッフ確定となります。
           </p>
+          {hasMultiDates && (
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#1565c0', display: 'block', marginBottom: 6 }}>
+                参加できる日程を選択してください（複数可）
+              </label>
+              {r.recruit_dates.map(d => {
+                const dt = new Date(d.date + 'T00:00:00')
+                const label = `${dt.getMonth() + 1}/${dt.getDate()} ${d.time_range}`
+                return (
+                  <label key={d.date} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 5, cursor: 'pointer' }}>
+                    <input type="checkbox" checked={availableDates.has(d.date)}
+                      onChange={() => setAvailableDates(prev => {
+                        const next = new Set(prev)
+                        if (next.has(d.date)) next.delete(d.date)
+                        else next.add(d.date)
+                        return next
+                      })} />
+                    {label}
+                  </label>
+                )
+              })}
+            </div>
+          )}
           {isRequest && (
             <div style={{ marginBottom: 10 }}>
               <label style={{ fontSize: 12, fontWeight: 700, color: '#c62828', display: 'block', marginBottom: 4 }}>
@@ -141,7 +175,8 @@ function RecruitCard({ r, onApply, applying }) {
             <button
               onClick={async () => {
                 if (isRequest && !transportFee) { alert('往復交通費を入力してください'); return }
-                await onApply(r.id, isRequest ? Number(transportFee) : null)
+                if (hasMultiDates && availableDates.size === 0) { alert('参加できる日程を選択してください'); return }
+                await onApply(r.id, isRequest ? Number(transportFee) : null, hasMultiDates ? [...availableDates] : null)
                 setExpanded(false)
               }}
               disabled={applying}
@@ -215,12 +250,12 @@ export default function StaffPortalPage() {
       .catch(() => {})
   }, [])
 
-  async function handleApply(recruitmentId, transportFee = null) {
+  async function handleApply(recruitmentId, transportFee = null, availableDates = null) {
     setApplying(true)
     const res = await fetch('/api/staff-portal/staff-recruit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ recruitment_id: recruitmentId, transport_fee: transportFee }),
+      body: JSON.stringify({ recruitment_id: recruitmentId, transport_fee: transportFee, available_dates: availableDates }),
     })
     setApplying(false)
     if (!res.ok) {
