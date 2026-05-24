@@ -146,9 +146,12 @@ function ConfirmCard({ item, staffUsers, selectedStaffMap, setSelectedStaffMap, 
                 {app.available_dates?.length > 0 && (
                   <span style={{ fontSize: 11, color: '#1565c0' }}>
                     参加可能日：{app.available_dates.map(d => {
-                      const dt = new Date(d + 'T00:00:00')
-                      return `${dt.getMonth() + 1}/${dt.getDate()}`
-                    }).join(', ')}
+                      const dateStr = d?.date || d
+                      const dt = new Date(dateStr + 'T00:00:00')
+                      const label = `${dt.getMonth() + 1}/${dt.getDate()}`
+                      const timeSpec = (d?.from || d?.until) ? ` ${d.from || ''}〜${d.until || ''}` : ''
+                      return label + timeSpec
+                    }).join('、')}
                   </span>
                 )}
                 {app.status === 'confirmed' && (

@@ -55,6 +55,7 @@ function RecruitCard({ r, onApply, applying }) {
   const [expanded, setExpanded] = useState(false)
   const [transportFee, setTransportFee] = useState('')
   const [availableDates, setAvailableDates] = useState(new Set())
+  const [dateTimeSpecs, setDateTimeSpecs] = useState({})
   const myApp = r.my_application
   const isClosed = r.status === 'closed'
   const hasApplied = !!myApp && myApp.status !== 'cancelled'
@@ -135,22 +136,42 @@ function RecruitCard({ r, onApply, applying }) {
           {hasMultiDates && (
             <div style={{ marginBottom: 10 }}>
               <label style={{ fontSize: 12, fontWeight: 700, color: '#1565c0', display: 'block', marginBottom: 6 }}>
-                参加できる日程を選択してください（複数可）
+                参加できる日程を選択してください（複数可・時間指定も可）
               </label>
               {r.recruit_dates.map(d => {
                 const dt = new Date(d.date + 'T00:00:00')
-                const label = `${dt.getMonth() + 1}/${dt.getDate()} ${d.time_range}`
+                const dateLabel = `${dt.getMonth() + 1}/${dt.getDate()} ${d.time_range}`
+                const isChecked = availableDates.has(d.date)
+                const spec = dateTimeSpecs[d.date] || {}
+                const [rangeFrom, rangeUntil] = (d.time_range || '').split('〜')
                 return (
-                  <label key={d.date} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 5, cursor: 'pointer' }}>
-                    <input type="checkbox" checked={availableDates.has(d.date)}
-                      onChange={() => setAvailableDates(prev => {
-                        const next = new Set(prev)
-                        if (next.has(d.date)) next.delete(d.date)
-                        else next.add(d.date)
-                        return next
-                      })} />
-                    {label}
-                  </label>
+                  <div key={d.date} style={{ marginBottom: 8 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={isChecked}
+                        onChange={() => setAvailableDates(prev => {
+                          const next = new Set(prev)
+                          if (next.has(d.date)) next.delete(d.date)
+                          else next.add(d.date)
+                          return next
+                        })} />
+                      {dateLabel}
+                    </label>
+                    {isChecked && (
+                      <div style={{ marginLeft: 26, marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 11, color: '#666' }}>時間指定：</span>
+                        <input type="time" value={spec.from || ''}
+                          min={rangeFrom} max={rangeUntil}
+                          onChange={e => setDateTimeSpecs(prev => ({ ...prev, [d.date]: { ...prev[d.date], from: e.target.value } }))}
+                          style={{ fontSize: 12, padding: '2px 4px', borderRadius: 4, border: '1px solid #ccc', width: 90 }} />
+                        <span style={{ fontSize: 11, color: '#666' }}>〜</span>
+                        <input type="time" value={spec.until || ''}
+                          min={rangeFrom} max={rangeUntil}
+                          onChange={e => setDateTimeSpecs(prev => ({ ...prev, [d.date]: { ...prev[d.date], until: e.target.value } }))}
+                          style={{ fontSize: 12, padding: '2px 4px', borderRadius: 4, border: '1px solid #ccc', width: 90 }} />
+                        <span style={{ fontSize: 10, color: '#aaa' }}>（空欄＝全時間OK）</span>
+                      </div>
+                    )}
+                  </div>
                 )
               })}
             </div>
@@ -176,7 +197,13 @@ function RecruitCard({ r, onApply, applying }) {
               onClick={async () => {
                 if (isRequest && !transportFee) { alert('往復交通費を入力してください'); return }
                 if (hasMultiDates && availableDates.size === 0) { alert('参加できる日程を選択してください'); return }
-                await onApply(r.id, isRequest ? Number(transportFee) : null, hasMultiDates ? [...availableDates] : null)
+                const availableDatesPayload = hasMultiDates
+                  ? [...availableDates].map(date => {
+                      const spec = dateTimeSpecs[date] || {}
+                      return (spec.from || spec.until) ? { date, from: spec.from || undefined, until: spec.until || undefined } : { date }
+                    })
+                  : null
+                await onApply(r.id, isRequest ? Number(transportFee) : null, availableDatesPayload)
                 setExpanded(false)
               }}
               disabled={applying}
