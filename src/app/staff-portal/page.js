@@ -179,7 +179,7 @@ function RecruitCard({ r, onApply, applying }) {
                             style={{ fontSize: 12, padding: '2px 4px', borderRadius: 4, border: '1px solid #ccc', width: 90 }} />
                         </div>
                         <div style={{ fontSize: 10, color: '#aaa', marginTop: 2 }}>
-                          空欄＝全時間OK　範囲内で指定：{rangeFrom}〜{rangeUntil}
+                          空欄＝全時間OK　範囲：{rangeFrom}〜{rangeUntil}（撮影{d.duration_hours}h以上の枠が必要）
                         </div>
                       </div>
                     )}
@@ -217,6 +217,14 @@ function RecruitCard({ r, onApply, applying }) {
                   if (spec.from && rangeFrom && spec.from < rangeFrom) { alert(`${d.date} の開始時間が募集時間（${d.time_range}）より前です`); return }
                   if (spec.until && rangeUntil && spec.until > rangeUntil) { alert(`${d.date} の終了時間が募集時間（${d.time_range}）より後です`); return }
                   if (spec.from && spec.until && spec.from >= spec.until) { alert(`${d.date} の開始〜終了時間が正しくありません`); return }
+                  if (spec.from && spec.until && d.duration_hours) {
+                    const [fh, fm] = spec.from.split(':').map(Number)
+                    const [uh, um] = spec.until.split(':').map(Number)
+                    const diffMin = (uh * 60 + um) - (fh * 60 + fm)
+                    if (diffMin < d.duration_hours * 60) {
+                      alert(`${d.date} の時間指定が短すぎます。撮影時間 ${d.duration_hours}h 以上の枠を確保してください`); return
+                    }
+                  }
                 }
                 const availableDatesPayload = hasMultiDates
                   ? [...availableDates].map(date => {
