@@ -55,7 +55,7 @@ export default function EligibilityChecker({ models }) {
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 8, fontWeight: 600 }}>Eligibility</p>
           <h2 style={{ fontFamily: 'var(--font-cormorant), Georgia, serif', fontSize: 'clamp(22px, 3.5vw, 36px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
-            👤 ご利用条件を満たしているか確認
+            👤 ご利用条件を確認
           </h2>
         </div>
 
