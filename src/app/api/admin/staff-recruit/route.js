@@ -259,6 +259,7 @@ export async function POST(req) {
       photographer_sns: entry.photographer_sns || null,
       payment_status: entry.payment_status || '未定',
       status: 'open',
+      request_application_id: entry.request_application_id || null,
       ...(entry.recruit_dates ? { recruit_dates: entry.recruit_dates } : {}),
     }).select().single()
     if (!error && data) inserted.push(data)

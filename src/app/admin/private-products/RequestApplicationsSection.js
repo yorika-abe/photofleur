@@ -40,6 +40,44 @@ function findOverlapDates(modelResponses, preferences) {
   })
 }
 
+function computeConstrainedRange(pref, modelResponses, staffAvailableDates) {
+  const [prefStart, prefEnd] = (pref.time_range || '').split('〜')
+  // モデル制約を計算
+  const responses = modelResponses.map(mr => mr.responses.find(r => r.preference_order === pref.preference_order)).filter(Boolean)
+  const canAll = responses.every(r => r.status === 'available' || r.status === 'time_specified')
+  if (!canAll) return { valid: false, time_range: pref.time_range, reason: '参加不可のモデルあり' }
+  const allAvailable = responses.every(r => r.status === 'available')
+  let modelFrom = prefStart, modelUntil = prefEnd
+  if (!allAvailable) {
+    const froms = responses.filter(r => r.available_from).map(r => r.available_from)
+    const untils = responses.filter(r => r.available_until).map(r => r.available_until)
+    const rawFrom = froms.length > 0 ? froms.sort().at(-1) : prefStart
+    const rawUntil = untils.length > 0 ? untils.sort()[0] : prefEnd
+    modelFrom = rawFrom > prefStart ? rawFrom : prefStart
+    modelUntil = rawUntil < prefEnd ? rawUntil : prefEnd
+  }
+  // スタッフ制約を計算
+  let intersectFrom = modelFrom, intersectUntil = modelUntil
+  let staffUnavailable = false
+  if (staffAvailableDates?.length > 0) {
+    const staffEntry = staffAvailableDates.find(d => (d?.date || d) === pref.preferred_date)
+    if (!staffEntry) { staffUnavailable = true }
+    else if (staffEntry.from || staffEntry.until) {
+      const sf = staffEntry.from || modelFrom
+      const su = staffEntry.until || modelUntil
+      intersectFrom = sf > modelFrom ? sf : modelFrom
+      intersectUntil = su < modelUntil ? su : modelUntil
+    }
+  }
+  if (staffUnavailable) return { valid: false, time_range: pref.time_range, reason: 'スタッフ不参加' }
+  // 時間幅チェック
+  const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+  const diffMin = toMin(intersectUntil) - toMin(intersectFrom)
+  if (diffMin < pref.duration_hours * 60) return { valid: false, time_range: `${intersectFrom}〜${intersectUntil}`, reason: '時間不足' }
+  const hasAdjusted = intersectFrom !== prefStart || intersectUntil !== prefEnd
+  return { valid: true, time_range: `${intersectFrom}〜${intersectUntil}`, hasAdjusted }
+}
+
 function initPriceComponents(app, pref) {
   const hours = Number(pref?.duration_hours || 0)
   return {
@@ -199,6 +237,7 @@ function ApplicationCard({ app, onUpdate }) {
             photographer_nickname: app.nickname,
             photographer_sns: app.sns_url,
             payment_status: '未定',
+            request_application_id: app.id,
           }],
         }),
       })
@@ -387,7 +426,28 @@ function ApplicationCard({ app, onUpdate }) {
               {staffRecruitResult && <p style={{ fontSize: 12, color: staffRecruitResult.includes('エラー') ? '#c62828' : '#2e7d32', marginTop: 6 }}>{staffRecruitResult}</p>}
             </div>
           ) : (
-            <div style={{ fontSize: 13, color: '#6a1b9a', fontWeight: 600 }}>✅ スタッフ募集中 — スタッフ募集日に追加済み</div>
+            <div>
+              <div style={{ fontSize: 13, color: '#6a1b9a', fontWeight: 600, marginBottom: 6 }}>✅ スタッフ募集中 — スタッフ募集日に追加済み</div>
+              {app.confirmed_staff ? (
+                <div style={{ fontSize: 12, background: '#f3e5f5', borderRadius: 6, padding: '8px 12px', color: '#4a148c' }}>
+                  <div style={{ fontWeight: 700, marginBottom: 4 }}>✅ スタッフ確定：{app.confirmed_staff.user_name}</div>
+                  {app.confirmed_staff.available_dates?.length > 0 && (
+                    <div>
+                      参加可能日：
+                      {app.confirmed_staff.available_dates.map(d => {
+                        const dateStr = d?.date || d
+                        const dt = new Date(dateStr + 'T00:00:00')
+                        const label = `${dt.getMonth() + 1}/${dt.getDate()}`
+                        const timeSpec = (d?.from || d?.until) ? ` ${d.from || ''}〜${d.until || ''}` : ''
+                        return <span key={dateStr} style={{ marginRight: 8 }}>{label}{timeSpec}</span>
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ fontSize: 12, color: '#aaa' }}>スタッフ未確定</div>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -400,14 +460,30 @@ function ApplicationCard({ app, onUpdate }) {
           {/* 日程選択 */}
           <div style={{ marginBottom: 12 }}>
             <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', margin: '0 0 6px' }}>確定する日程：</p>
-            {app.preferences.map(pref => (
-              <label key={pref.preference_order} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 6, cursor: 'pointer' }}>
-                <input type="radio" name={`confirm-pref-${app.id}`} value={pref.preference_order}
-                  checked={selectedPrefOrder === pref.preference_order}
-                  onChange={() => setSelectedPrefOrder(pref.preference_order)} />
-                第{pref.preference_order}希望 {pref.preferred_date} {pref.time_range}（{pref.duration_hours}h）
-              </label>
-            ))}
+            {app.preferences.map(pref => {
+              const staffAvail = app.confirmed_staff?.available_dates
+              const constraint = computeConstrainedRange(pref, app.model_responses, staffAvail)
+              return (
+                <div key={pref.preference_order} style={{ marginBottom: 6 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: constraint.valid ? 'pointer' : 'not-allowed', opacity: constraint.valid ? 1 : 0.5 }}>
+                    <input type="radio" name={`confirm-pref-${app.id}`} value={pref.preference_order}
+                      disabled={!constraint.valid}
+                      checked={selectedPrefOrder === pref.preference_order}
+                      onChange={() => {
+                        if (!constraint.valid) { alert(`この日程は選択できません: ${constraint.reason}`); return }
+                        setSelectedPrefOrder(pref.preference_order)
+                      }} />
+                    <span>
+                      第{pref.preference_order}希望 {pref.preferred_date}{' '}
+                      <span style={{ color: constraint.hasAdjusted ? '#e65100' : undefined }}>{constraint.time_range}</span>
+                      （{pref.duration_hours}h）
+                      {constraint.hasAdjusted && <span style={{ fontSize: 10, color: '#e65100', marginLeft: 4 }}>（時間調整済み）</span>}
+                      {!constraint.valid && <span style={{ fontSize: 10, color: '#c62828', marginLeft: 4 }}>【{constraint.reason}】</span>}
+                    </span>
+                  </label>
+                </div>
+              )
+            })}
           </div>
 
           {/* 実際の開始時刻 */}

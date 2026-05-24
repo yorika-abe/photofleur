@@ -50,11 +50,41 @@ export async function GET(req) {
     }
   })
 
+  // スタッフ募集の確定スタッフを取得
+  const { data: staffRecs } = await admin
+    .from('staff_recruitments')
+    .select('id, request_application_id')
+    .in('request_application_id', appIds)
+    .not('request_application_id', 'is', null)
+
+  const staffRecMap = {}
+  for (const sr of staffRecs || []) staffRecMap[sr.request_application_id] = sr.id
+
+  const staffRecIds = (staffRecs || []).map(sr => sr.id)
+  let confirmedStaffMap = {}
+  if (staffRecIds.length > 0) {
+    const { data: confirmedApps } = await admin
+      .from('staff_recruitment_applications')
+      .select('recruitment_id, user_name, available_dates')
+      .in('recruitment_id', staffRecIds)
+      .eq('status', 'confirmed')
+      .limit(1)
+    for (const ca of confirmedApps || []) {
+      const appId = Object.entries(staffRecMap).find(([, rid]) => rid === ca.recruitment_id)?.[0]
+      if (appId) confirmedStaffMap[appId] = { user_name: ca.user_name, available_dates: ca.available_dates }
+    }
+  }
+
+  const enrichedWithStaff = enriched.map(a => ({
+    ...a,
+    confirmed_staff: confirmedStaffMap[a.id] || null,
+  }))
+
   const filtered = statusFilter === 'responded'
-    ? enriched.filter(a => a.all_responded)
+    ? enrichedWithStaff.filter(a => a.all_responded)
     : statusFilter === 'pending'
-      ? enriched.filter(a => !a.all_responded && ['pending', 'notified'].includes(a.status))
-      : enriched
+      ? enrichedWithStaff.filter(a => !a.all_responded && ['pending', 'notified'].includes(a.status))
+      : enrichedWithStaff
 
   return Response.json({ applications: filtered })
 }
