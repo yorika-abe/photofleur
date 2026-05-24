@@ -458,7 +458,7 @@ function ApplicationCard({ app, onUpdate }) {
 }
 
 export default function RequestApplicationsSection() {
-  const [subTab, setSubTab] = useState('pending')
+  const [subTab, setSubTab] = useState('responded')
   const [apps, setApps] = useState([])
   const [loading, setLoading] = useState(true)
 
