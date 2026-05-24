@@ -99,10 +99,11 @@ export async function POST(req) {
   }
 
   let sent = 0, failed = 0
+  const errors = []
   for (const model of targets) {
     const result = await sendLineMessage(model.line_id, message)
     if (result.ok) sent++
-    else failed++
+    else { failed++; if (result.error || result.reason) errors.push(result.error || result.reason) }
     admin.from('line_notifications').insert({
       model_id: model.id,
       type: 'broadcast',
@@ -111,7 +112,7 @@ export async function POST(req) {
     })
   }
 
-  if (failed > 0 && sent === 0) return Response.json({ ok: false, error: `送信失敗 (${failed}件)`, sent, failed }, { status: 500 })
+  if (failed > 0 && sent === 0) return Response.json({ ok: false, error: `送信失敗 (${failed}件): ${errors[0] || 'LINE APIエラー'}`, sent, failed }, { status: 500 })
   return Response.json({ ok: true, sent, failed })
   } catch (e) {
     console.error('line-broadcast error:', e)
