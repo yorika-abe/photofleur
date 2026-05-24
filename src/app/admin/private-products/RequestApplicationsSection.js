@@ -247,6 +247,9 @@ function ApplicationCard({ app, onUpdate }) {
           </div>
           <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{app.email} / {app.phone}</div>
           <div style={{ fontSize: 12, color: '#1a3560', marginTop: 2 }}>🔗 {app.sns_url}</div>
+          <div style={{ fontSize: 12, color: '#1a3560', marginTop: 4 }}>
+            {app.model_responses.map(mr => `👤 ${mr.models?.name || ''}`).join('　')}
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {app.model_responses.map(mr => (
