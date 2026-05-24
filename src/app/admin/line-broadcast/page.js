@@ -270,6 +270,15 @@ const INDIVIDUAL_TEMPLATES = [
     ],
   },
   {
+    key: 'cancel_notify_model',
+    label: '❌ 予約キャンセル通知（モデル個人）',
+    trigger: '管理画面で予約キャンセルした時（自動）',
+    vars: [
+      { key: '{{booking_details}}', desc: '予約詳細（日時・時間枠・カメラマン等）' },
+      { key: '{{cancel_reason}}', desc: 'キャンセル理由' },
+    ],
+  },
+  {
     key: 'request_model_notify',
     label: '🔗 リク撮依頼通知（モデル個人）',
     trigger: 'リクエスト撮影申請が入った時（自動）',
@@ -1094,6 +1103,18 @@ const ADMIN_TEMPLATES = [
     trigger: 'スタッフ応募があった時（自動）',
     vars: [],
   },
+  {
+    key: 'admin_request_applied',
+    label: '🔗 リク撮申請',
+    trigger: 'リクエスト撮影申請が入った時（自動）',
+    vars: [],
+  },
+  {
+    key: 'admin_request_all_responded',
+    label: '🔗 リク撮モデル全回答済',
+    trigger: '全モデルがリク撮に回答した時（自動）',
+    vars: [],
+  },
 ]
 
 const STAFF_INDIVIDUAL_TEMPLATES = [
@@ -1102,7 +1123,12 @@ const STAFF_INDIVIDUAL_TEMPLATES = [
     label: 'スタッフ確定通知（個人）',
     trigger: 'スタッフ応募を確定した時（自動）',
     vars: [
-      { key: '{{details}}', desc: '募集日・場所・時間・撮影種別（自動生成）' },
+      { key: '{{date}}', desc: '開催日' },
+      { key: '{{location}}', desc: '集合場所' },
+      { key: '{{assembly_time}}', desc: '集合時間（撮影開始15分前）' },
+      { key: '{{shoot_time}}', desc: '撮影時間' },
+      { key: '{{model_names}}', desc: '撮影モデル名' },
+      { key: '{{photographer_info}}', desc: 'カメラマン情報（名前・SNS・支払い）' },
     ],
   },
   {
@@ -1114,11 +1140,33 @@ const STAFF_INDIVIDUAL_TEMPLATES = [
     ],
   },
   {
+    key: 'staff_event_cancel_notice',
+    label: '開催消去・スタッフ連絡通知（個人）',
+    trigger: 'スタッフ募集を「消去してスタッフに連絡」で削除した時（自動）',
+    vars: [
+      { key: '{{details}}', desc: '募集日・場所・時間・撮影種別（自動生成）' },
+    ],
+  },
+  {
+    key: 'cancel_notify_staff',
+    label: '予約キャンセル通知（スタッフ個人）',
+    trigger: '管理画面で予約キャンセルした時、確定スタッフがいる場合（自動）',
+    vars: [
+      { key: '{{booking_details}}', desc: '予約詳細（日時・モデル・カメラマン等）' },
+      { key: '{{cancel_reason}}', desc: 'キャンセル理由' },
+    ],
+  },
+  {
     key: 'staff_day_before',
     label: 'スタッフ前日リマインド（個人）',
     trigger: '撮影前日 21:00（自動cron）',
     vars: [
-      { key: '{{details}}', desc: '場所・時間・撮影種別（自動生成）' },
+      { key: '{{date}}', desc: '開催日' },
+      { key: '{{location}}', desc: '集合場所' },
+      { key: '{{assembly_time}}', desc: '集合時間（撮影開始15分前）' },
+      { key: '{{shoot_time}}', desc: '撮影時間' },
+      { key: '{{model_names}}', desc: '撮影モデル名' },
+      { key: '{{photographer_info}}', desc: 'カメラマン情報（名前・SNS・支払い）' },
     ],
   },
 ]
