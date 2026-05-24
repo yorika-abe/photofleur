@@ -17,11 +17,7 @@ const STATUS_LABELS = { available: '参加可能', time_specified: '時間指定
 const STATUS_COLORS = { available: '#2e7d32', time_specified: '#e65100', unavailable: '#c62828' }
 
 function getHourlyRate(studioPrice) {
-  const p = parseInt(studioPrice || 0)
-  if (p >= 12000) return 4000
-  if (p >= 9900) return 3500
-  if (p >= 8900) return 3000
-  return 0
+  return parseInt(studioPrice || 0)
 }
 
 function findOverlapDates(modelResponses, preferences) {
