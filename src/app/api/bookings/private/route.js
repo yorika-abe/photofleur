@@ -139,13 +139,16 @@ export async function POST(req) {
     }).catch(err => console.error('Operation failed:', err))
   }
 
-  // カメラマン個人LINE通知（LINE連携済みの場合）
+  // カメラマン個人LINE通知（LINE連携済みの場合）+ LINE IDを予約に保存
   try {
     const server = await createSupabaseServerClient()
     const { data: { user } } = await server.auth.getUser()
     if (user) {
       const { data: userProfile } = await admin.from('user_profiles').select('line_user_id').eq('id', user.id).single()
       if (userProfile?.line_user_id) {
+        // 前日LINE用にLINE IDを保存（private_bookingsにphotographer_line_idカラムが必要）
+        await admin.from('private_bookings').update({ photographer_line_id: userProfile.line_user_id }).eq('qr_token', qrToken).catch(() => {})
+
         const { data: tmplRow } = await admin.from('line_templates').select('body').eq('key', 'photographer_private').single()
         const template = tmplRow?.body ?? DEFAULTS.photographer_private
         const message = applyVars(template, {

@@ -235,8 +235,8 @@ export async function GET(req) {
   const { data: privateBookings } = await supabase
     .from('private_bookings')
     .select(`
-      id, nickname, sns_url, event_date_input, meeting_place, shooting_time,
-      private_products(model_id, models(id, name, line_id))
+      id, nickname, sns_url, event_date_input, meeting_place, shooting_time, photographer_line_id,
+      private_products(model_id, title, models(id, name, line_id))
     `)
     .is('cancelled_at', null)
     .eq('event_date_input', tomorrowStr)
@@ -283,6 +283,19 @@ export async function GET(req) {
     }).catch(() => {})
 
     if (result.ok) sentCount++
+
+    // カメラマンへの前日LINE
+    if (pb.photographer_line_id) {
+      const { data: pTmplRow } = await supabase.from('line_templates').select('body').eq('key', 'photographer_private_day_before').single()
+      const pTemplate = pTmplRow?.body ?? DEFAULTS.photographer_private_day_before
+      const pMessage = applyVars(pTemplate, {
+        product_title: pb.private_products?.title || '',
+        meeting_place: pb.meeting_place || '',
+        shooting_time: pb.shooting_time || '',
+      }).trim()
+      await sendLineMessage(pb.photographer_line_id, pMessage).catch(() => {})
+      sentCount++
+    }
   }
 
   return Response.json({ ok: true, sent: sentCount })
