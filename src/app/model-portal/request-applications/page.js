@@ -13,7 +13,7 @@ function PrefResponse({ pref, response, onChange }) {
         <div>
           <span style={{ fontSize: 12, fontWeight: 700, color: '#5bbfd6' }}>第{pref.preference_order}希望</span>
           <p style={{ fontSize: 13, color: '#1a3560', margin: '2px 0 0', fontWeight: 600 }}>
-            {pref.preferred_date} {pref.time_range}（{pref.duration_hours}時間）
+            {pref.preferred_date} {pref.time_range}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
@@ -85,16 +85,26 @@ function ApplicationCard({ app, onResponded }) {
   return (
     <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #d6ecf5', padding: '20px', marginBottom: 16 }}>
       <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid #eef4f8' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: '#1a3560' }}>📸 {app.nickname}</span>
           {app.deadline && (
             <span style={{ fontSize: 11, color: '#c62828', fontWeight: 700 }}>⚠️ 回答期日: {app.deadline}</span>
           )}
         </div>
-        <p style={{ fontSize: 12, color: '#888', margin: '0 0 4px' }}>🔗 {app.sns_url}</p>
-        <p style={{ fontSize: 12, color: '#888', margin: 0 }}>📍 {app.location}</p>
-        {app.notes && <p style={{ fontSize: 12, color: '#556070', margin: '6px 0 0' }}>備考: {app.notes}</p>}
+        <p style={{ fontSize: 12, color: '#888', margin: '0 0 6px' }}>🔗 {app.sns_url}</p>
+        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#1a3560', margin: '0 0 2px' }}>集合解散場所</p>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#1a3560', margin: 0 }}>📍 {app.location}</p>
+          </div>
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#1a3560', margin: '0 0 2px' }}>撮影時間</p>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#1a3560', margin: 0 }}>⏰ {app.preferences[0]?.duration_hours}時間</p>
+          </div>
+        </div>
+        {app.notes && <p style={{ fontSize: 12, color: '#556070', margin: '8px 0 0' }}>備考: {app.notes}</p>}
       </div>
+      <p style={{ fontSize: 14, fontWeight: 700, color: '#1a3560', margin: '0 0 4px' }}>候補日時</p>
 
       {done ? (
         <div style={{ background: '#e8f5e9', borderRadius: 8, padding: '12px 16px', fontSize: 13, color: '#2e7d32', fontWeight: 600 }}>
