@@ -108,7 +108,7 @@ export async function POST(req) {
       type: 'broadcast',
       message,
       status: result.ok ? 'sent' : 'failed',
-    }).catch(() => {})
+    })
   }
 
   if (failed > 0 && sent === 0) return Response.json({ ok: false, error: `送信失敗 (${failed}件)`, sent, failed }, { status: 500 })
