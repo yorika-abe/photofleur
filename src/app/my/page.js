@@ -202,6 +202,14 @@ function MyPageContent() {
     </div>
   )
 
+  useEffect(() => {
+    if (!loading && justApplied) {
+      setTimeout(() => {
+        document.getElementById('request-apps')?.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
+    }
+  }, [loading, justApplied])
+
   if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#aaa' }}>読み込み中...</div>
 
   return (
@@ -415,7 +423,7 @@ function MyPageContent() {
 
       {/* リクエスト撮影申請 */}
       {(justApplied || requestApps.length > 0) && (
-        <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #d6ecf5', padding: '20px' }}>
+        <div id="request-apps" style={{ background: '#fff', borderRadius: 14, border: '1px solid #d6ecf5', padding: '20px' }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', margin: '0 0 16px' }}>リクエスト撮影申請</h2>
           {justApplied && (
             <div style={{ background: '#e8f5e9', border: '1px solid #c8e6c9', borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#2e7d32', fontWeight: 600 }}>
