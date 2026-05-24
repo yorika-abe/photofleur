@@ -73,7 +73,7 @@ export default async function RequestPage() {
               <div style={{ ...serif, fontSize: 28, fontWeight: 700, color: '#5bbfd6', marginBottom: 10 }} className="req-cond-num">②</div>
               <div className="req-cond-label" style={{ fontSize: 12, fontWeight: 600, color: '#5bbfd6', letterSpacing: '0.1em', marginBottom: 8 }}>モデル指名のための条件</div>
               <p className="req-cond-text" style={{ fontSize: 13, lineHeight: 1.9, color: '#3a3050', margin: 0, textWrap: 'balance' }}>
-                お申し込み月に<strong>2枠以上の撮影に参加</strong>しており、かつ<strong>希望モデルを過去に1回以上撮影</strong>したことがある方。
+                お申し込み月の前3ヶ月以内に<strong>2枠以上の撮影に参加</strong>しており、かつ<strong>希望モデルを過去に3枠以上撮影</strong>したことがある方。
               </p>
             </div>
           </div>
