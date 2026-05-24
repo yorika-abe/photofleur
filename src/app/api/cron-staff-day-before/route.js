@@ -52,7 +52,14 @@ function buildDayBeforeVars(r, modelsMap = {}) {
     location = b.meeting_place || '未定'
     shoot_time = b.shooting_time || '未定'
     model_names = b.private_products?.models?.name || '未定'
-    photographer_info = '（情報なし）'
+    const parts = []
+    const name = [b.last_name, b.first_name].filter(Boolean).join(' ')
+    if (name) parts.push(name)
+    if (b.nickname) parts.push(`（${b.nickname}）`)
+    if (b.sns_url) parts.push(b.sns_url)
+    if (b.payment_method === 'card') parts.push('✅ カード決済済み')
+    else if (b.payment_method === 'cash') parts.push('❌ 当日現金払い')
+    photographer_info = parts.join('\n') || '未定'
   }
   return { date, location, assembly_time: calcAssemblyTime(shoot_time), shoot_time, model_names, photographer_info }
 }
@@ -96,7 +103,7 @@ export async function GET(req) {
   // 明日が event_date_input のリクエスト募集（確定済みスタッフあり）
   const { data: requestRecs } = await admin
     .from('staff_recruitments')
-    .select('*, private_bookings!inner(id, event_date_input, meeting_place, shooting_time, private_products(title, models(name)))')
+    .select('*, private_bookings!inner(id, event_date_input, meeting_place, shooting_time, last_name, first_name, nickname, sns_url, payment_method, private_products(title, models(name)))')
     .eq('type', 'request')
     .eq('private_bookings.event_date_input', tomorrow)
     .eq('status', 'closed')

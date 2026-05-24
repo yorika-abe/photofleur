@@ -31,7 +31,7 @@ export async function POST(req) {
 
   const { data: product } = await admin
     .from('private_products')
-    .select('id, stock, payment_method, is_active, title, price, model_id, require_event_details, models(id, name, line_id, image)')
+    .select('id, stock, payment_method, is_active, title, price, model_id, require_event_details, event_date, time_label, description, models(id, name, line_id, image)')
     .eq('token', token)
     .single()
 
@@ -63,6 +63,15 @@ export async function POST(req) {
   const qrToken = randomUUID()
   const customerName = `${last_name}${first_name ? ` ${first_name}` : ''}`
 
+  // productから日付・時間・場所を自動引き継ぎ（未入力の場合）
+  const resolvedEventDate = event_date_input || product.event_date || null
+  const resolvedShootingTime = shooting_time || product.time_label || null
+  const resolvedMeetingPlace = meeting_place || (() => {
+    if (!product.description) return null
+    const m = product.description.match(/場所[:：]\s*(.+)/)
+    return m ? m[1].trim() : null
+  })()
+
   const { error } = await admin.from('private_bookings').insert({
     product_id: product.id,
     last_name,
@@ -73,9 +82,9 @@ export async function POST(req) {
     sns_url: sns_url || null,
     payment_method,
     notes: notes || null,
-    event_date_input: event_date_input || null,
-    meeting_place: meeting_place || null,
-    shooting_time: shooting_time || null,
+    event_date_input: resolvedEventDate,
+    meeting_place: resolvedMeetingPlace,
+    shooting_time: resolvedShootingTime,
     qr_token: qrToken,
     square_payment_id: square_payment_id || null,
     is_cancelled: false,
