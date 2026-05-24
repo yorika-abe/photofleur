@@ -9,6 +9,25 @@ export async function GET(req) {
   const modelIds = searchParams.get('model_ids')?.split(',').filter(Boolean) || []
 
   const admin = await createSupabaseAdminClient()
+
+  // adminロールは条件チェックをバイパス
+  const { data: selfProfile } = await admin.from('user_profiles').select('role, roles').eq('id', user.id).maybeSingle()
+  const selfRoles = selfProfile?.roles?.length > 0 ? selfProfile.roles : (selfProfile?.role ? [selfProfile.role] : [])
+  if (selfRoles.includes('admin')) {
+    const modelIds = new URL(req.url).searchParams.get('model_ids')?.split(',').filter(Boolean) || []
+    return Response.json({
+      eligible: true,
+      hasLine: true,
+      totalCount: 999,
+      recentCount: 999,
+      modelCounts: modelIds.map(id => ({ model_id: id, count: 999 })),
+      meetsTotal: true,
+      meetsRecent: true,
+      meetsModels: true,
+      _adminBypass: true,
+    })
+  }
+
   const today = new Date().toISOString().split('T')[0]
   const threeMonthsAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
