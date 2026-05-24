@@ -1,5 +1,6 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
 import { sendLineMessage } from '@/lib/line'
+import { notifyAdmin } from '@/lib/notify-admin'
 
 export async function GET() {
   const server = await createSupabaseServerClient()
@@ -84,6 +85,8 @@ export async function POST(req) {
   for (const model of models || []) {
     await sendLineMessage(model.line_id, `【🔗リク撮依頼が入りました】\nHPから詳細を確認して参加可否を\n⚠️2日以内に回答してください。\n${siteUrl}/model-portal/request-applications`)
   }
+
+  await notifyAdmin(admin, 'admin_request_applied').catch(() => {})
 
   return Response.json({ ok: true, id: app.id })
 }

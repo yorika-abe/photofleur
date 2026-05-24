@@ -1,4 +1,5 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase-server'
+import { notifyAdmin } from '@/lib/notify-admin'
 
 export async function GET() {
   const server = await createSupabaseServerClient()
@@ -111,6 +112,7 @@ export async function POST(req) {
   const allResponded = allIds.every(id => respondedIds.has(id))
   if (allResponded) {
     await admin.from('request_applications').update({ status: 'model_responded' }).eq('id', appModel.application_id)
+    await notifyAdmin(admin, 'admin_request_all_responded').catch(() => {})
   }
 
   return Response.json({ ok: true })

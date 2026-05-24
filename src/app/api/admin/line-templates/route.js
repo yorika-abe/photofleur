@@ -46,6 +46,8 @@ export const DEFAULTS = {
   blog_post_approved: `【✍️ブログ記事】\n🟢申請が承認されました\nブログが公開されます`,
   blog_post_rejected: `【✍️ブログ記事】\n❌申請が却下されました。`,
   admin_new_booking: `【📋予約通知】\n新規予約が入りました\n👉 管理画面で確認してください`,
+  admin_request_applied: `【🔗リク撮申請】\nリク撮申請があります\n👉 管理画面で確認してください`,
+  admin_request_all_responded: `【🔗リク撮確定】\nリク撮モデル対応済のものがあります\n👉 管理画面で確認してください`,
   admin_profile_change: `【👤申請通知】\nモデルのプロフィール変更申請があります\n👉 管理画面で確認してください`,
   admin_shift_change: `【🗓️申請通知】\nシフトの変更申請があります\n👉 管理画面で確認してください`,
   admin_blog_pending: `【✍️申請通知】\nブログの承認待ち投稿があります\n👉 管理画面で確認してください`,
