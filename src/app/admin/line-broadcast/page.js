@@ -372,14 +372,19 @@ function TabAll() {
 
   async function handleSend() {
     setSending(true); setResult(null)
-    const res = await fetch('/api/admin/line-broadcast', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, channel: 'group' }),
-    })
-    const json = await res.json()
-    setSending(false); setConfirmed(false)
-    setResult(res.ok && json.ok ? { ok: true } : { error: json.error || '送信に失敗しました' })
+    try {
+      const res = await fetch('/api/admin/line-broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, channel: 'group' }),
+      })
+      const json = await res.json()
+      setResult(res.ok && json.ok ? { ok: true } : { error: json.error || '送信に失敗しました' })
+    } catch (e) {
+      setResult({ error: 'ネットワークエラー: ' + e.message })
+    } finally {
+      setSending(false); setConfirmed(false)
+    }
   }
 
   return (
@@ -437,14 +442,19 @@ function TabIndividual({ models }) {
 
   async function handleSend() {
     setSending(true); setResult(null)
-    const res = await fetch('/api/admin/line-broadcast', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, model_ids: [selectedId] }),
-    })
-    const json = await res.json()
-    setSending(false); setConfirmed(false)
-    setResult(res.ok ? { ok: true, sent: json.sent, failed: json.failed } : { error: json.error })
+    try {
+      const res = await fetch('/api/admin/line-broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, model_ids: [selectedId] }),
+      })
+      const json = await res.json()
+      setResult(res.ok ? { ok: true, sent: json.sent, failed: json.failed } : { error: json.error || '送信に失敗しました' })
+    } catch (e) {
+      setResult({ error: 'ネットワークエラー: ' + e.message })
+    } finally {
+      setSending(false); setConfirmed(false)
+    }
   }
 
   return (
@@ -724,14 +734,19 @@ function TabZatsudan() {
 
   async function handleSend() {
     setSending(true); setResult(null)
-    const res = await fetch('/api/admin/line-broadcast', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, channel: 'zatsudan' }),
-    })
-    const json = await res.json()
-    setSending(false); setConfirmed(false)
-    setResult(res.ok && json.ok ? { ok: true } : { error: json.error || '送信に失敗しました' })
+    try {
+      const res = await fetch('/api/admin/line-broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, channel: 'zatsudan' }),
+      })
+      const json = await res.json()
+      setResult(res.ok && json.ok ? { ok: true } : { error: json.error || '送信に失敗しました' })
+    } catch (e) {
+      setResult({ error: 'ネットワークエラー: ' + e.message })
+    } finally {
+      setSending(false); setConfirmed(false)
+    }
   }
 
   async function sendBirthday(model) {
@@ -838,14 +853,19 @@ function TabCamera() {
 
   async function handleSend() {
     setSending(true); setResult(null)
-    const res = await fetch('/api/admin/line-broadcast', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, channel: 'camera' }),
-    })
-    const json = await res.json()
-    setSending(false); setConfirmed(false)
-    setResult(res.ok && json.ok ? { ok: true } : { error: json.error || '送信に失敗しました' })
+    try {
+      const res = await fetch('/api/admin/line-broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, channel: 'camera' }),
+      })
+      const json = await res.json()
+      setResult(res.ok && json.ok ? { ok: true } : { error: json.error || '送信に失敗しました' })
+    } catch (e) {
+      setResult({ error: 'ネットワークエラー: ' + e.message })
+    } finally {
+      setSending(false); setConfirmed(false)
+    }
   }
 
   return (
