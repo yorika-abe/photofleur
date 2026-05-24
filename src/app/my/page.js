@@ -38,9 +38,39 @@ const typeColors = {
   private: { bg: '#f3e5f5', color: '#7b1fa2', label: 'リクエスト撮影' },
 }
 
+function CollapseCard({ title, subtitle, children, defaultOpen = false, badge }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #d6ecf5', marginBottom: 16, overflow: 'hidden' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+      >
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: '#1a3560' }}>{title}</span>
+            {badge && <span style={{ fontSize: 11, background: '#e3f2fd', color: '#1565c0', borderRadius: 10, padding: '2px 8px', fontWeight: 700 }}>{badge}</span>}
+          </div>
+          {subtitle && <p style={{ fontSize: 12, color: '#888', margin: '2px 0 0' }}>{subtitle}</p>}
+        </div>
+        <span style={{ fontSize: 18, color: '#aaa', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }}>▼</span>
+      </button>
+      {open && (
+        <div style={{ padding: '0 20px 20px', borderTop: '1px solid #f0f0f0' }}>
+          <div style={{ paddingTop: 16 }}>
+            {children}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function MyPageContent() {
   const searchParams = useSearchParams()
   const justLinkedLine = searchParams.get('line_linked') === '1'
+  const justApplied = searchParams.get('request_applied') === '1'
+
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState('')
   const [hasLine, setHasLine] = useState(false)
@@ -60,7 +90,6 @@ function MyPageContent() {
   const [feedbackSending, setFeedbackSending] = useState(false)
   const [feedbackDone, setFeedbackDone] = useState(false)
   const [requestApps, setRequestApps] = useState([])
-  const justApplied = searchParams.get('request_applied') === '1'
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -75,7 +104,7 @@ function MyPageContent() {
       const [profileRes, bookingsRes, modelsRes, requestAppsRes] = await Promise.all([
         fetch('/api/customer/profile'),
         fetch('/api/customer/bookings'),
-        fetch('/api/admin/models').then(r => r.json()).catch(() => ({ models: [] })),
+        fetch('/api/models').then(r => r.json()).catch(() => ({ models: [] })),
         fetch('/api/customer/request-applications').then(r => r.json()).catch(() => ({ applications: [] })),
       ])
       setRequestApps(requestAppsRes.applications || [])
@@ -178,12 +207,10 @@ function MyPageContent() {
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', padding: '40px 20px' }}>
       <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a3560', marginBottom: 4 }}>マイページ</h1>
-      <p style={{ color: '#888', fontSize: 13, marginBottom: 32 }}>{email}</p>
+      <p style={{ color: '#888', fontSize: 13, marginBottom: 24 }}>{email}</p>
 
       {/* 登録情報 */}
-      <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #d6ecf5', marginBottom: 24 }}>
-        <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 4 }}>登録情報</h2>
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>予約フォームに自動入力されます</p>
+      <CollapseCard title="登録情報" subtitle="予約フォームに自動入力されます">
         {saved && (
           <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#388e3c' }}>保存しました</div>
         )}
@@ -216,12 +243,10 @@ function MyPageContent() {
             {saving ? '保存中...' : '保存する'}
           </button>
         </form>
-      </section>
+      </CollapseCard>
 
       {/* LINE連携 */}
-      <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #d6ecf5', marginBottom: 24 }}>
-        <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 4 }}>LINE連携</h2>
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>連携するとLINEでもログインできるようになります</p>
+      <CollapseCard title="LINE連携" subtitle="連携するとLINEでもログインできるようになります" badge={hasLine ? '連携済み' : undefined}>
         {justLinkedLine && (
           <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#388e3c' }}>
             LINEアカウントを連携しました
@@ -241,11 +266,10 @@ function MyPageContent() {
             LINEと連携する
           </a>
         )}
-      </section>
+      </CollapseCard>
 
       {/* 意見箱 */}
-      <section style={{ background: '#f8fbff', borderRadius: 14, padding: '24px', border: '1px solid #d6ecf5', marginBottom: 24 }}>
-        <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 8 }}>📮 ご意見箱</h2>
+      <CollapseCard title="📮 お問い合わせ・ご意見箱" subtitle="ご意見をお聞かせください">
         <p style={{ fontSize: 13, color: '#555', lineHeight: 1.8, margin: '0 0 8px' }}>
           PhotoFleurでは日々改善・改良を重ね邁進しております。ご意見をお聞かせください。
         </p>
@@ -272,70 +296,67 @@ function MyPageContent() {
             </button>
           </form>
         </>)}
-      </section>
+      </CollapseCard>
 
       {/* 写真提供 */}
-      <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #d6ecf5', marginBottom: 24 }}>
-        <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 8 }}>📸 撮影データのご提供</h2>
+      <CollapseCard title="📸 撮影データのご提供" subtitle="所属モデルのとっておきの写真を集めています！">
         <p style={{ fontSize: 13, color: '#555', lineHeight: 1.9, marginBottom: 4 }}>
-          所属モデルのとっておきの写真を集めています！<br />
           ホームページや撮影会内で使用しても良いお写真のご提供にご協力いただけましたら幸いです。
         </p>
-        <p style={{ fontSize: 12, color: '#888', marginBottom: 20 }}>よろしくお願いいたします。</p>
+        <p style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>よろしくお願いいたします。</p>
 
         {!profileComplete ? profileIncompleteNotice : (<>
-        {uploadDone && (
-          <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#388e3c' }}>
-            ありがとうございます！写真を受け取りました。
-          </div>
-        )}
-
-        <form onSubmit={uploadPhotos}>
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: '#555' }}>写真を選択（複数可）</label>
-            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', background: '#e0f2fe', color: '#0369a1', border: '2px dashed #0369a1', borderRadius: 10, padding: '12px 20px', fontSize: 14, fontWeight: 600 }}>
-              📁 ファイルを追加する
-              <input type="file" accept="image/*" multiple onChange={e => setPhotoFiles(prev => [...prev, ...Array.from(e.target.files)])} style={{ display: 'none' }} />
-            </label>
-            {photoFiles.length > 0 ? (
-              <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <p style={{ fontSize: 13, color: '#0369a1', fontWeight: 600, margin: 0 }}>✅ {photoFiles.length}枚選択中</p>
-                <button type="button" onClick={() => setPhotoFiles([])} style={{ fontSize: 12, color: '#e53935', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>✕ クリア</button>
-              </div>
-            ) : (
-              <p style={{ fontSize: 12, color: '#aaa', marginTop: 6 }}>選択されていません（複数回タップして追加できます）</p>
-            )}
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#555' }}>写っているモデル（複数選択可）</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {models.filter(m => m.status === 'active').map(m => (
-                <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, background: photoModelIds.includes(m.id) ? '#e3f2fd' : '#f5f5f5', borderRadius: 20, padding: '6px 14px', border: photoModelIds.includes(m.id) ? '1px solid #1a3560' : '1px solid #e0e0e0' }}>
-                  <input type="checkbox" checked={photoModelIds.includes(m.id)} onChange={() => toggleModel(m.id)} style={{ display: 'none' }} />
-                  {m.image && <Image src={m.image} alt={m.name} width={22} height={22} style={{ borderRadius: '50%', objectFit: 'cover' }} />}
-                  <span style={{ color: photoModelIds.includes(m.id) ? '#1a3560' : '#555', fontWeight: photoModelIds.includes(m.id) ? 700 : 400 }}>{m.name}</span>
-                </label>
-              ))}
+          {uploadDone && (
+            <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#388e3c' }}>
+              ありがとうございます！写真を受け取りました。
             </div>
-          </div>
-
-          {form.sns_url && (
-            <p style={{ fontSize: 12, color: '#888', margin: '0 0 16px' }}>クレジット表記：登録済みSNS URL（{form.sns_url}）を使用します</p>
           )}
+          <form onSubmit={uploadPhotos}>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: '#555' }}>写真を選択（複数可）</label>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', background: '#e0f2fe', color: '#0369a1', border: '2px dashed #0369a1', borderRadius: 10, padding: '12px 20px', fontSize: 14, fontWeight: 600 }}>
+                📁 ファイルを追加する
+                <input type="file" accept="image/*" multiple onChange={e => setPhotoFiles(prev => [...prev, ...Array.from(e.target.files)])} style={{ display: 'none' }} />
+              </label>
+              {photoFiles.length > 0 ? (
+                <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <p style={{ fontSize: 13, color: '#0369a1', fontWeight: 600, margin: 0 }}>✅ {photoFiles.length}枚選択中</p>
+                  <button type="button" onClick={() => setPhotoFiles([])} style={{ fontSize: 12, color: '#e53935', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>✕ クリア</button>
+                </div>
+              ) : (
+                <p style={{ fontSize: 12, color: '#aaa', marginTop: 6 }}>選択されていません（複数回タップして追加できます）</p>
+              )}
+            </div>
 
-          <button type="submit" disabled={uploading || photoFiles.length === 0}
-            style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 28px', fontWeight: 700, fontSize: 14, cursor: photoFiles.length === 0 ? 'not-allowed' : 'pointer', opacity: (uploading || photoFiles.length === 0) ? 0.6 : 1 }}>
-            {uploading ? `アップロード中${uploadCount.total > 1 ? ` ${uploadCount.current} / ${uploadCount.total}` : ''}...` : '送信する'}
-          </button>
-        </form>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#555' }}>写っているモデル（複数選択可）</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {models.map(m => (
+                  <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, background: photoModelIds.includes(m.id) ? '#e3f2fd' : '#f5f5f5', borderRadius: 20, padding: '6px 14px', border: photoModelIds.includes(m.id) ? '1px solid #1a3560' : '1px solid #e0e0e0' }}>
+                    <input type="checkbox" checked={photoModelIds.includes(m.id)} onChange={() => toggleModel(m.id)} style={{ display: 'none' }} />
+                    {m.image && <Image src={m.image} alt={m.name} width={22} height={22} style={{ borderRadius: '50%', objectFit: 'cover' }} />}
+                    <span style={{ color: photoModelIds.includes(m.id) ? '#1a3560' : '#555', fontWeight: photoModelIds.includes(m.id) ? 700 : 400 }}>{m.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {form.sns_url && (
+              <p style={{ fontSize: 12, color: '#888', margin: '0 0 16px' }}>クレジット表記：登録済みSNS URL（{form.sns_url}）を使用します</p>
+            )}
+
+            <button type="submit" disabled={uploading || photoFiles.length === 0}
+              style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 28px', fontWeight: 700, fontSize: 14, cursor: photoFiles.length === 0 ? 'not-allowed' : 'pointer', opacity: (uploading || photoFiles.length === 0) ? 0.6 : 1 }}>
+              {uploading ? `アップロード中${uploadCount.total > 1 ? ` ${uploadCount.current} / ${uploadCount.total}` : ''}...` : '送信する'}
+            </button>
+          </form>
         </>)}
-      </section>
+      </CollapseCard>
 
       {/* 予約履歴（直近3件） */}
-      <section style={{ background: '#fff', borderRadius: 14, padding: '24px', border: '1px solid #d6ecf5' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a3560', margin: 0 }}>予約履歴</h2>
+      <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #d6ecf5', marginBottom: 16, padding: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', margin: 0 }}>予約履歴</h2>
           {bookings.length > 3 && (
             <Link href="/my/bookings" style={{ fontSize: 13, color: '#1a3560', fontWeight: 600, textDecoration: 'none' }}>
               すべて見る（{bookings.length}件） →
@@ -343,8 +364,8 @@ function MyPageContent() {
           )}
         </div>
         {bookings.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '32px 0', color: '#bbb' }}>
-            <p style={{ marginBottom: 16 }}>まだ予約履歴がありません。</p>
+          <div style={{ textAlign: 'center', padding: '24px 0', color: '#bbb' }}>
+            <p style={{ marginBottom: 12 }}>まだ予約履歴がありません。</p>
             <Link href="/schedule" style={{ color: '#1a3560', fontWeight: 600, fontSize: 14 }}>スケジュールを見る →</Link>
           </div>
         ) : (
@@ -390,12 +411,12 @@ function MyPageContent() {
             )}
           </>
         )}
-      </section>
+      </div>
 
       {/* リクエスト撮影申請 */}
       {(justApplied || requestApps.length > 0) && (
-        <section style={{ background: '#fff', borderRadius: 16, padding: '20px 24px', marginTop: 20 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a3560', margin: '0 0 16px' }}>リクエスト撮影申請</h2>
+        <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #d6ecf5', padding: '20px' }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', margin: '0 0 16px' }}>リクエスト撮影申請</h2>
           {justApplied && (
             <div style={{ background: '#e8f5e9', border: '1px solid #c8e6c9', borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#2e7d32', fontWeight: 600 }}>
               ✅ 申し込みを受け付けました
@@ -436,7 +457,7 @@ function MyPageContent() {
               </div>
             )
           })}
-        </section>
+        </div>
       )}
     </div>
   )
