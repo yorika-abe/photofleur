@@ -15,11 +15,11 @@ function ApplyForm() {
   const [profile, setProfile] = useState(null)
   const [form, setForm] = useState({
     last_name: '', first_name: '', nickname: '', email: '', phone: '', sns_url: '',
-    location: '', notes: '',
+    location: '', duration_hours: '', notes: '',
     preferences: [
-      { preferred_date: '', time_range: '', duration_hours: '' },
-      { preferred_date: '', time_range: '', duration_hours: '' },
-      { preferred_date: '', time_range: '', duration_hours: '' },
+      { preferred_date: '', time_range: '' },
+      { preferred_date: '', time_range: '' },
+      { preferred_date: '', time_range: '' },
     ],
   })
   const [error, setError] = useState('')
@@ -69,14 +69,12 @@ function ApplyForm() {
       setError('必須項目をすべて入力してください'); return
     }
 
-    const filledPrefs = form.preferences.filter(p => p.preferred_date && p.time_range && p.duration_hours)
-    if (filledPrefs.length === 0) { setError('希望日時を最低1つ入力してください'); return }
-
-    for (const pref of filledPrefs) {
-      if (Number(pref.duration_hours) < 2) {
-        setError('リクエスト撮影は2時間から受け付けています'); return
-      }
+    if (!form.duration_hours || Number(form.duration_hours) < 2) {
+      setError('撮影時間は2時間以上を入力してください'); return
     }
+
+    const filledPrefs = form.preferences.filter(p => p.preferred_date && p.time_range)
+    if (filledPrefs.length === 0) { setError('希望日時を最低1つ入力してください'); return }
 
     setSubmitting(true)
     try {
@@ -86,7 +84,7 @@ function ApplyForm() {
         body: JSON.stringify({
           ...form,
           model_ids: modelIds,
-          preferences: filledPrefs.map(p => ({ ...p, duration_hours: Number(p.duration_hours) })),
+          preferences: filledPrefs.map(p => ({ ...p, duration_hours: Number(form.duration_hours) })),
         }),
       })
       const json = await res.json()
@@ -145,8 +143,21 @@ function ApplyForm() {
           {/* 撮影場所 */}
           <div style={cardStyle}>
             <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a3560', marginTop: 0, marginBottom: 16 }}>撮影場所</h2>
-            <label style={lbl}>集合・解散場所 *（詳細な場所をご記入ください）</label>
-            <input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="例: 渋谷駅ハチ公前" required style={inp} />
+            <div style={{ marginBottom: 16 }}>
+              <label style={lbl}>集合・解散場所 *（詳細な場所をご記入ください）</label>
+              <input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="例: 渋谷駅ハチ公前" required style={inp} />
+            </div>
+            <div>
+              <label style={lbl}>撮影時間（時間）*</label>
+              <input type="number" min="2" step="0.5"
+                value={form.duration_hours}
+                onChange={e => setForm(f => ({ ...f, duration_hours: e.target.value }))}
+                placeholder="例: 3（2時間から受付）"
+                required style={{ ...inp, maxWidth: 200 }} />
+              {form.duration_hours && Number(form.duration_hours) < 2 && (
+                <p style={{ fontSize: 11, color: '#c62828', margin: '4px 0 0' }}>リクエスト撮影は2時間から受け付けています</p>
+              )}
+            </div>
           </div>
 
           {/* 希望日時 */}
@@ -180,17 +191,6 @@ function ApplyForm() {
                         required={i === 0} style={{ ...inp, flex: 1, padding: '10px 6px' }} />
                     </div>
                   </div>
-                  <div style={{ flex: '0 0 120px' }}>
-                    <label style={lbl}>撮影時間（時間）</label>
-                    <input type="number" min="2" step="0.5"
-                      value={form.preferences[i].duration_hours}
-                      onChange={e => setPref(i, 'duration_hours', e.target.value)}
-                      placeholder="例: 3"
-                      required={i === 0} style={inp} />
-                    {form.preferences[i].duration_hours && Number(form.preferences[i].duration_hours) < 2 && (
-                      <p style={{ fontSize: 11, color: '#c62828', margin: '4px 0 0' }}>リクエスト撮影は2時間から受け付けています</p>
-                    )}
-                  </div>
                 </div>
               </div>
             ))}
@@ -200,7 +200,7 @@ function ApplyForm() {
           <div style={cardStyle}>
             <label style={lbl}>備考・ご要望（任意）</label>
             <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-              placeholder="ご質問・ご要望などあればご記入ください"
+              placeholder="現金支払い希望の場合こちらにご記入ください"
               style={{ ...inp, minHeight: 100, resize: 'vertical' }} />
           </div>
 
