@@ -155,35 +155,59 @@ export default async function RequestPage() {
               ✉️ お申し込み方法
             </h2>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', border: '1px solid #d6ecf5' }}>
-              <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0 }}>
-                下の<strong>👤 ご利用条件を確認</strong>から予約条件を満たしているか確認してください。<br />
-                予約条件を満たしている場合、グレーアウトしている「リクエスト撮影に申し込む」が押せるようになります。
-              </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+
+            {/* ① 条件確認 */}
+            <div>
+              <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 6, fontWeight: 600 }}>Step 1</p>
+              <h3 style={{ ...serif, fontSize: 'clamp(18px, 2.5vw, 26px)', fontWeight: 400, margin: '0 0 12px', color: '#0d1f3a' }}>👤 ご利用条件の確認</h3>
+              <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', border: '1px solid #d6ecf5' }}>
+                <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0 }}>
+                  下の<strong>👤 ご利用条件を確認</strong>から予約条件を満たしているか確認してください。<br />
+                  予約条件を満たしている場合、グレーアウトしている「リクエスト撮影に申し込む」が押せるようになります。
+                </p>
+              </div>
             </div>
-            <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', border: '1px solid #d6ecf5' }}>
-              <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: '0 0 12px' }}>
-                リクエスト撮影に関するご連絡は公式LINEよりさせていただきますので、会員アカウントとの紐付けをお願いしております。
-              </p>
-              <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0 }}>
-                必要情報を入力の上、希望日時を3日程お送りください。<br />
-                該当モデルに参加可否を確認、スタッフの日程調整の上<strong>1週間以内にご連絡</strong>させていただきます。
-              </p>
+
+            {/* ② LINE紐付け */}
+            <div>
+              <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 6, fontWeight: 600 }}>Step 2</p>
+              <h3 style={{ ...serif, fontSize: 'clamp(18px, 2.5vw, 26px)', fontWeight: 400, margin: '0 0 12px', color: '#0d1f3a' }}>💬 LINE紐付けのお願い</h3>
+              <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', border: '1px solid #d6ecf5' }}>
+                <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: '0 0 12px' }}>
+                  ご連絡は公式LINEよりさせていただきますので、会員アカウントとの紐付けをお願いしております。
+                </p>
+                <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0 }}>
+                  必要情報を入力の上、希望日時を3日程お送りください。<br />
+                  該当モデルに参加可否を確認、スタッフの日程調整の上<strong>1週間以内にご連絡</strong>させていただきます。
+                </p>
+              </div>
             </div>
-            <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', border: '1px solid #d6ecf5' }}>
-              <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0 }}>
-                会員マイページよりリクエスト撮影の確認ステータスが表示されます。<br />
-                詳細とお支払いに関するご連絡をいたしますので、そちらからご予約いただきましたらリクエスト予約の確定となります。
-              </p>
+
+            {/* ③ マイページ */}
+            <div>
+              <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 6, fontWeight: 600 }}>Step 3</p>
+              <h3 style={{ ...serif, fontSize: 'clamp(18px, 2.5vw, 26px)', fontWeight: 400, margin: '0 0 12px', color: '#0d1f3a' }}>📋 マイページ</h3>
+              <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', border: '1px solid #d6ecf5' }}>
+                <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0 }}>
+                  会員マイページよりリクエスト撮影の確認ステータスが表示されます。<br />
+                  詳細とお支払いに関するご連絡をいたしますので、そちらからご予約いただきましたらリクエスト予約の確定となります。
+                </p>
+              </div>
             </div>
-            <div style={{ background: '#f0f7fb', borderRadius: 12, padding: '20px 24px', border: '1px solid #c8e8f5' }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: '#1a3560', margin: '0 0 8px' }}>💳 お支払い方法に関して</p>
-              <p style={{ fontSize: 13, lineHeight: 2, color: '#3a3050', margin: 0 }}>
-                原則クレジット払いをお願いしております。<br />
-                現金の場合はリクエスト撮影前の通常撮影会にお越しいただき前払い、もしくは特例で当日現金払いが可能になる場合もございますので、申し込み時に要望欄にてご相談ください。
-              </p>
+
+            {/* ④ お支払い */}
+            <div>
+              <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 6, fontWeight: 600 }}>Payment</p>
+              <h3 style={{ ...serif, fontSize: 'clamp(18px, 2.5vw, 26px)', fontWeight: 400, margin: '0 0 12px', color: '#0d1f3a' }}>💳 お支払い方法に関して</h3>
+              <div style={{ background: '#f0f7fb', borderRadius: 12, padding: '20px 24px', border: '1px solid #c8e8f5' }}>
+                <p style={{ fontSize: 14, lineHeight: 2, color: '#3a3050', margin: 0 }}>
+                  原則クレジット払いをお願いしております。<br />
+                  現金の場合はリクエスト撮影前の通常撮影会にお越しいただき前払い、もしくは特例で当日現金払いが可能になる場合もございますので、申し込み時に要望欄にてご相談ください。
+                </p>
+              </div>
             </div>
+
           </div>
         </div>
       </section>
