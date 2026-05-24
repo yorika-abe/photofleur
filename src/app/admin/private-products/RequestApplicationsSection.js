@@ -165,10 +165,13 @@ function ApplicationCard({ app, onUpdate }) {
         if (allAvailable) {
           time_range = pref.time_range
         } else {
+          const [prefStart, prefEnd] = pref.time_range.split('〜')
           const froms = responses.filter(r => r.available_from).map(r => r.available_from)
           const untils = responses.filter(r => r.available_until).map(r => r.available_until)
-          const maxFrom = froms.length > 0 ? froms.sort().at(-1) : pref.time_range.split('〜')[0]
-          const minUntil = untils.length > 0 ? untils.sort()[0] : pref.time_range.split('〜')[1]
+          const rawFrom = froms.length > 0 ? froms.sort().at(-1) : prefStart
+          const rawUntil = untils.length > 0 ? untils.sort()[0] : prefEnd
+          const maxFrom = rawFrom > prefStart ? rawFrom : prefStart
+          const minUntil = rawUntil < prefEnd ? rawUntil : prefEnd
           time_range = `${maxFrom}〜${minUntil}`
         }
         return { date: pref.preferred_date, time_range, duration_hours: pref.duration_hours }
@@ -347,11 +350,14 @@ function ApplicationCard({ app, onUpdate }) {
                   const hasTimeSpec = responses.some(r => r.status === 'time_specified')
                   let timeDisplay = pref.time_range
                   if (hasTimeSpec) {
+                    const [prefStart, prefEnd] = pref.time_range.split('〜')
                     const froms = responses.filter(r => r.available_from).map(r => r.available_from)
                     const untils = responses.filter(r => r.available_until).map(r => r.available_until)
-                    if (froms.length > 0 && untils.length > 0) {
-                      timeDisplay = `${froms.sort().at(-1)}〜${untils.sort()[0]}`
-                    }
+                    const rawFrom = froms.length > 0 ? froms.sort().at(-1) : prefStart
+                    const rawUntil = untils.length > 0 ? untils.sort()[0] : prefEnd
+                    const maxFrom = rawFrom > prefStart ? rawFrom : prefStart
+                    const minUntil = rawUntil < prefEnd ? rawUntil : prefEnd
+                    timeDisplay = `${maxFrom}〜${minUntil}`
                   }
                   return (
                     <label key={pref.preference_order} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, marginBottom: 4, cursor: canAll ? 'pointer' : 'default', opacity: canAll ? 1 : 0.4 }}>
