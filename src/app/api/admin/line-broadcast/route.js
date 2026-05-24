@@ -1,6 +1,8 @@
 import { sendLineMessage, broadcastCameraLine, broadcastCameraLineWithImage } from '@/lib/line'
 import { requireAdmin } from '@/lib/auth'
 
+export const maxDuration = 30
+
 export async function GET(req) {
   const admin = await requireAdmin()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
@@ -102,7 +104,7 @@ export async function POST(req) {
     const result = await sendLineMessage(model.line_id, message)
     if (result.ok) sent++
     else failed++
-    await admin.from('line_notifications').insert({
+    admin.from('line_notifications').insert({
       model_id: model.id,
       type: 'broadcast',
       message,
