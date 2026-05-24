@@ -281,11 +281,13 @@ function ApplicationCard({ app, onUpdate }) {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          {app.model_responses.map(mr => (
-            <span key={mr.model_id} style={{ fontSize: 11, background: '#e8f0fe', color: '#1a3560', borderRadius: 20, padding: '3px 10px', fontWeight: 700 }}>
-              {mr.models?.name}
-            </span>
-          ))}
+          {app.model_responses
+            .filter(mr => !isPending || !mr.responses?.length)
+            .map(mr => (
+              <span key={mr.model_id} style={{ fontSize: 11, background: '#e8f0fe', color: '#1a3560', borderRadius: 20, padding: '3px 10px', fontWeight: 700 }}>
+                {mr.models?.name}
+              </span>
+            ))}
           <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
             background: isConfirmed ? '#e8f5e9' : isDeclined ? '#fafafa' : isStaffRecruiting ? '#f3e5f5' : isResponded ? '#fff3e0' : '#e3f2fd',
             color: isConfirmed ? '#2e7d32' : isDeclined ? '#999' : isStaffRecruiting ? '#6a1b9a' : isResponded ? '#e65100' : '#1565c0' }}>
