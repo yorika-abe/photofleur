@@ -20,6 +20,14 @@ function getHourlyRate(studioPrice) {
   return parseInt(studioPrice || 0)
 }
 
+function getModelManagementRate(studioPrice) {
+  const p = parseInt(studioPrice || 0)
+  if (p >= 12000) return 4000
+  if (p >= 9900) return 3500
+  if (p >= 8900) return 3000
+  return 0  // 運営モデル
+}
+
 function addHours(timeStr, hours) {
   if (!timeStr) return ''
   const [h, m] = timeStr.split(':').map(Number)
@@ -86,6 +94,8 @@ function initPriceComponents(app, pref) {
       name: mr.models?.name || '',
       hourlyRate: getHourlyRate(mr.models?.studio_price),
       fee: getHourlyRate(mr.models?.studio_price) * hours,
+      managementRate: getModelManagementRate(mr.models?.studio_price),
+      managementFee: getModelManagementRate(mr.models?.studio_price) * hours,
     })),
     staffFeePerHour: 1000,
     staffFeeTotal: 1000 * hours,
@@ -161,7 +171,7 @@ function ApplicationCard({ app, onUpdate }) {
     : 0
 
   const managementCost = priceComp
-    ? priceComp.modelFees.reduce((s, m) => s + m.fee, 0)
+    ? priceComp.modelFees.reduce((s, m) => s + m.managementFee, 0)
       + (isStaffRecruiting ? 1200 : 0)
       + priceComp.modelTransport.reduce((s, m) => s + m.fee, 0)
       + priceComp.staffTransport
@@ -573,15 +583,18 @@ function ApplicationCard({ app, onUpdate }) {
                 <summary style={{ fontSize: 12, color: '#888', cursor: 'pointer' }}>販管費（参考）</summary>
                 <div style={{ background: '#fafafa', borderRadius: 6, padding: '8px 12px', marginTop: 6, fontSize: 12, color: '#556070', lineHeight: 2 }}>
                   {priceComp.modelFees.map(m => (
-                    <div key={m.model_id}>モデル報酬（{m.name}）: ¥{m.fee.toLocaleString()}（{m.hourlyRate.toLocaleString()}円/h × {priceComp.hours}h）</div>
+                    <div key={m.model_id}>
+                      モデル報酬（{m.name}）：¥{m.managementFee.toLocaleString()}
+                      {m.managementRate > 0 ? `（${m.managementRate.toLocaleString()}円/h × ${priceComp.hours}h）` : '（運営）'}
+                    </div>
                   ))}
                   {isStaffRecruiting && <div>スタッフ報酬: ¥1,200</div>}
                   {priceComp.modelTransport.filter(m => m.fee > 0).map(m => (
                     <div key={m.model_id}>{m.name} 交通費: ¥{m.fee.toLocaleString()}</div>
                   ))}
-                  {priceComp.staffTransport > 0 && <div>スタッフ交通費: ¥{priceComp.staffTransport.toLocaleString()}</div>}
+                  <div>スタッフ交通費: ¥{priceComp.staffTransport.toLocaleString()}</div>
                   <div style={{ fontWeight: 700, borderTop: '1px solid #eee', marginTop: 4, paddingTop: 4 }}>
-                    合計: ¥{managementCost.toLocaleString()}{isStaffRecruiting ? '（スタッフ報酬含む）' : ''}
+                    合計: ¥{managementCost.toLocaleString()}
                   </div>
                 </div>
               </details>
