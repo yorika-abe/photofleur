@@ -13,7 +13,7 @@ function fmtDate(d) {
 }
 
 function getRecruitDate(r) {
-  if (r.type === 'custom') return r.recruit_date || ''
+  if (r.type === 'custom') return r.my_application?.confirmed_date || r.recruit_date || ''
   if (r.type === 'event') return r.event?.event_date || ''
   if (r.type === 'request') return r.booking?.event_date_input || ''
   return ''
@@ -29,7 +29,17 @@ function getRecruitInfo(r) {
     return { date: fmtDate(b.event_date_input) || '未定', location: b.meeting_place || '未定', time: b.shooting_time || '', typeBadge: 'リクエスト撮影', typeBg: '#fce4ec', typeColor: '#c2185b', modelName: b.private_products?.models?.name || '' }
   }
   const isReq = r.shoot_type === 'request'
-  return { date: fmtDate(r.recruit_date), location: r.location || '未定', time: r.shoot_time || '未定', typeBadge: isReq ? 'リクエスト撮影' : '通常撮影会', typeBg: isReq ? '#fce4ec' : '#e3f2fd', typeColor: isReq ? '#c2185b' : '#1565c0', modelName: '' }
+  const typeBadge = isReq ? 'リクエスト撮影' : '通常撮影会'
+  const typeBg = isReq ? '#fce4ec' : '#e3f2fd'
+  const typeColor = isReq ? '#c2185b' : '#1565c0'
+  if (r.recruit_dates?.length > 0) {
+    const confirmedDate = r.my_application?.confirmed_date
+    const dateEntry = r.recruit_dates.find(d => d.date === confirmedDate) || r.recruit_dates[0]
+    const time = confirmedDate && dateEntry ? dateEntry.time_range : (dateEntry ? `【${dateEntry.duration_hours}h】` : '未定')
+    const date = confirmedDate ? fmtDate(confirmedDate) : ''
+    return { date, location: r.location || '未定', time, typeBadge, typeBg, typeColor, modelName: '' }
+  }
+  return { date: fmtDate(r.recruit_date), location: r.location || '未定', time: r.shoot_time || '未定', typeBadge, typeBg, typeColor, modelName: '' }
 }
 
 function RecruitLabel({ r }) {
@@ -157,18 +167,20 @@ function RecruitCard({ r, onApply, applying }) {
                       {dateLabel}
                     </label>
                     {isChecked && (
-                      <div style={{ marginLeft: 26, marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 11, color: '#666' }}>時間指定：</span>
-                        <input type="time" value={spec.from || ''}
-                          min={rangeFrom} max={rangeUntil}
-                          onChange={e => setDateTimeSpecs(prev => ({ ...prev, [d.date]: { ...prev[d.date], from: e.target.value } }))}
-                          style={{ fontSize: 12, padding: '2px 4px', borderRadius: 4, border: '1px solid #ccc', width: 90 }} />
-                        <span style={{ fontSize: 11, color: '#666' }}>〜</span>
-                        <input type="time" value={spec.until || ''}
-                          min={rangeFrom} max={rangeUntil}
-                          onChange={e => setDateTimeSpecs(prev => ({ ...prev, [d.date]: { ...prev[d.date], until: e.target.value } }))}
-                          style={{ fontSize: 12, padding: '2px 4px', borderRadius: 4, border: '1px solid #ccc', width: 90 }} />
-                        <span style={{ fontSize: 10, color: '#aaa' }}>（空欄＝全時間OK）</span>
+                      <div style={{ marginLeft: 26, marginTop: 4 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: 11, color: '#666' }}>時間指定：</span>
+                          <input type="time" value={spec.from || ''}
+                            onChange={e => setDateTimeSpecs(prev => ({ ...prev, [d.date]: { ...prev[d.date], from: e.target.value } }))}
+                            style={{ fontSize: 12, padding: '2px 4px', borderRadius: 4, border: '1px solid #ccc', width: 90 }} />
+                          <span style={{ fontSize: 11, color: '#666' }}>〜</span>
+                          <input type="time" value={spec.until || ''}
+                            onChange={e => setDateTimeSpecs(prev => ({ ...prev, [d.date]: { ...prev[d.date], until: e.target.value } }))}
+                            style={{ fontSize: 12, padding: '2px 4px', borderRadius: 4, border: '1px solid #ccc', width: 90 }} />
+                        </div>
+                        <div style={{ fontSize: 10, color: '#aaa', marginTop: 2 }}>
+                          空欄＝全時間OK　範囲内で指定：{rangeFrom}〜{rangeUntil}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -197,6 +209,15 @@ function RecruitCard({ r, onApply, applying }) {
               onClick={async () => {
                 if (isRequest && !transportFee) { alert('往復交通費を入力してください'); return }
                 if (hasMultiDates && availableDates.size === 0) { alert('参加できる日程を選択してください'); return }
+                // 時間指定が募集時間枠内かバリデーション
+                for (const d of (r.recruit_dates || [])) {
+                  if (!availableDates.has(d.date)) continue
+                  const spec = dateTimeSpecs[d.date] || {}
+                  const [rangeFrom, rangeUntil] = (d.time_range || '').split('〜')
+                  if (spec.from && rangeFrom && spec.from < rangeFrom) { alert(`${d.date} の開始時間が募集時間（${d.time_range}）より前です`); return }
+                  if (spec.until && rangeUntil && spec.until > rangeUntil) { alert(`${d.date} の終了時間が募集時間（${d.time_range}）より後です`); return }
+                  if (spec.from && spec.until && spec.from >= spec.until) { alert(`${d.date} の開始〜終了時間が正しくありません`); return }
+                }
                 const availableDatesPayload = hasMultiDates
                   ? [...availableDates].map(date => {
                       const spec = dateTimeSpecs[date] || {}
