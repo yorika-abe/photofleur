@@ -29,6 +29,12 @@ export default function EligibilityChecker({ models }) {
         if (d.notLoggedIn) { setLoggedIn(false); return }
         setLoggedIn(true)
         setResult(d)
+        // ログイン後リダイレクトでハッシュが付いている場合はスクロール
+        if (window.location.hash === '#eligibility') {
+          setTimeout(() => {
+            document.getElementById('eligibility')?.scrollIntoView({ behavior: 'smooth' })
+          }, 100)
+        }
       })
   }, [])
 
