@@ -127,6 +127,9 @@ function ApplicationCard({ app, onUpdate }) {
   const [sending, setSending] = useState(false)
   const [sendResult, setSendResult] = useState(null)
 
+  const [modelStatusOpen, setModelStatusOpen] = useState(false)
+  const [staffRecruitOpen, setStaffRecruitOpen] = useState(false)
+
   // 確定フロー
   const [selectedPrefOrder, setSelectedPrefOrder] = useState(null)
   const [actualStartTime, setActualStartTime] = useState('')
@@ -350,40 +353,46 @@ function ApplicationCard({ app, onUpdate }) {
       {/* 希望日時とモデル回答 */}
       {isResponded && (
         <div style={{ background: '#f8fbff', borderRadius: 8, padding: '12px 16px', marginBottom: 12 }}>
-          <p style={{ fontSize: 12, fontWeight: 700, color: '#1a3560', margin: '0 0 8px' }}>モデル回答状況</p>
-          {overlaps.map(({ pref, canAll }) => (
-            <div key={pref.preference_order} style={{ padding: '8px 0', borderBottom: '1px solid #eef4f8' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 12, color: '#556070' }}>
-                  第{pref.preference_order}希望 {pref.preferred_date} {pref.time_range}（{pref.duration_hours}h）
-                </span>
-                {canAll && <span style={{ fontSize: 11, background: '#e8f5e9', color: '#2e7d32', borderRadius: 10, padding: '2px 8px', fontWeight: 700 }}>全員OK</span>}
-              </div>
-              <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                {app.model_responses.map(mr => {
-                  const r = mr.responses.find(r => r.preference_order === pref.preference_order)
-                  return r ? (
-                    <span key={mr.model_id} style={{ fontSize: 11, color: STATUS_COLORS[r.status] || '#888', fontWeight: 600 }}>
-                      {mr.models?.name}: {STATUS_LABELS[r.status] || r.status}
-                      {r.status === 'time_specified' && r.available_from ? ` (${r.available_from}〜${r.available_until})` : ''}
+          <button onClick={() => setModelStatusOpen(o => !o)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 6, marginBottom: modelStatusOpen ? 8 : 0 }}>
+            <span style={{ fontSize: 12, transform: modelStatusOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block', color: '#1a3560' }}>▶</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#1a3560' }}>モデル回答状況</span>
+          </button>
+          {modelStatusOpen && (
+            <>
+              {overlaps.map(({ pref, canAll }) => (
+                <div key={pref.preference_order} style={{ padding: '8px 0', borderBottom: '1px solid #eef4f8' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 12, color: '#556070' }}>
+                      第{pref.preference_order}希望 {pref.preferred_date} {pref.time_range}（{pref.duration_hours}h）
                     </span>
-                  ) : null
-                })}
-              </div>
-            </div>
-          ))}
-          {/* 交通費 */}
-          {app.model_responses.some(mr => mr.responses.some(r => r.transport_fee)) && (
-            <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
-              {app.model_responses.map(mr => {
-                const fee = mr.responses.find(r => r.transport_fee)?.transport_fee
-                return fee ? (
-                  <span key={mr.model_id} style={{ fontSize: 12, color: '#556070' }}>
-                    {mr.models?.name} 交通費: ¥{fee.toLocaleString()}
-                  </span>
-                ) : null
-              })}
-            </div>
+                    {canAll && <span style={{ fontSize: 11, background: '#e8f5e9', color: '#2e7d32', borderRadius: 10, padding: '2px 8px', fontWeight: 700 }}>全員OK</span>}
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                    {app.model_responses.map(mr => {
+                      const r = mr.responses.find(r => r.preference_order === pref.preference_order)
+                      return r ? (
+                        <span key={mr.model_id} style={{ fontSize: 11, color: STATUS_COLORS[r.status] || '#888', fontWeight: 600 }}>
+                          {mr.models?.name}: {STATUS_LABELS[r.status] || r.status}
+                          {r.status === 'time_specified' && r.available_from ? ` (${r.available_from}〜${r.available_until})` : ''}
+                        </span>
+                      ) : null
+                    })}
+                  </div>
+                </div>
+              ))}
+              {app.model_responses.some(mr => mr.responses.some(r => r.transport_fee)) && (
+                <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
+                  {app.model_responses.map(mr => {
+                    const fee = mr.responses.find(r => r.transport_fee)?.transport_fee
+                    return fee ? (
+                      <span key={mr.model_id} style={{ fontSize: 12, color: '#556070' }}>
+                        {mr.models?.name} 交通費: ¥{fee.toLocaleString()}
+                      </span>
+                    ) : null
+                  })}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -393,46 +402,53 @@ function ApplicationCard({ app, onUpdate }) {
         <div style={{ marginBottom: 12 }}>
           {!isStaffRecruiting ? (
             <div style={{ background: '#f5f0ff', borderRadius: 8, padding: '12px 16px', border: '1px solid #e1d4f5' }}>
-              <p style={{ fontSize: 12, fontWeight: 700, color: '#6a1b9a', margin: '0 0 8px' }}>スタッフを募集する（複数日程同時募集）</p>
-              <div style={{ marginBottom: 8 }}>
-                {overlaps.map(({ pref, canAll }) => {
-                  const responses = app.model_responses.map(mr => mr.responses.find(r => r.preference_order === pref.preference_order)).filter(Boolean)
-                  const hasTimeSpec = responses.some(r => r.status === 'time_specified')
-                  let timeDisplay = pref.time_range
-                  if (hasTimeSpec) {
-                    const [prefStart, prefEnd] = pref.time_range.split('〜')
-                    const froms = responses.filter(r => r.available_from).map(r => r.available_from)
-                    const untils = responses.filter(r => r.available_until).map(r => r.available_until)
-                    const rawFrom = froms.length > 0 ? froms.sort().at(-1) : prefStart
-                    const rawUntil = untils.length > 0 ? untils.sort()[0] : prefEnd
-                    const maxFrom = rawFrom > prefStart ? rawFrom : prefStart
-                    const minUntil = rawUntil < prefEnd ? rawUntil : prefEnd
-                    timeDisplay = `${maxFrom}〜${minUntil}`
-                  }
-                  return (
-                    <label key={pref.preference_order} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, marginBottom: 4, cursor: canAll ? 'pointer' : 'default', opacity: canAll ? 1 : 0.4 }}>
-                      <input type="checkbox" disabled={!canAll}
-                        checked={staffRecruitCheckedOrders.has(pref.preference_order)}
-                        onChange={() => {
-                          setStaffRecruitCheckedOrders(prev => {
-                            const next = new Set(prev)
-                            if (next.has(pref.preference_order)) next.delete(pref.preference_order)
-                            else next.add(pref.preference_order)
-                            return next
-                          })
-                        }} />
-                      第{pref.preference_order}希望 {pref.preferred_date} {timeDisplay}
-                      {hasTimeSpec && <span style={{ fontSize: 10, color: '#e65100' }}>（時間調整済み）</span>}
-                      {!canAll && <span style={{ fontSize: 10, color: '#c62828' }}>（不可あり）</span>}
-                    </label>
-                  )
-                })}
-              </div>
-              <button onClick={addToStaffRecruit} disabled={addingStaff}
-                style={{ padding: '8px 18px', borderRadius: 8, border: '1.5px solid #6a1b9a', background: '#fff', color: '#6a1b9a', fontSize: 13, fontWeight: 700, cursor: addingStaff ? 'not-allowed' : 'pointer' }}>
-                {addingStaff ? '処理中...' : 'スタッフ募集日に追加'}
+              <button onClick={() => setStaffRecruitOpen(o => !o)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 6, marginBottom: staffRecruitOpen ? 8 : 0 }}>
+                <span style={{ fontSize: 12, transform: staffRecruitOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block', color: '#6a1b9a' }}>▶</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#6a1b9a' }}>スタッフを募集する（複数日程同時募集）</span>
               </button>
-              {staffRecruitResult && <p style={{ fontSize: 12, color: staffRecruitResult.includes('エラー') ? '#c62828' : '#2e7d32', marginTop: 6 }}>{staffRecruitResult}</p>}
+              {staffRecruitOpen && (
+                <>
+                  <div style={{ marginBottom: 8 }}>
+                    {overlaps.map(({ pref, canAll }) => {
+                      const responses = app.model_responses.map(mr => mr.responses.find(r => r.preference_order === pref.preference_order)).filter(Boolean)
+                      const hasTimeSpec = responses.some(r => r.status === 'time_specified')
+                      let timeDisplay = pref.time_range
+                      if (hasTimeSpec) {
+                        const [prefStart, prefEnd] = pref.time_range.split('〜')
+                        const froms = responses.filter(r => r.available_from).map(r => r.available_from)
+                        const untils = responses.filter(r => r.available_until).map(r => r.available_until)
+                        const rawFrom = froms.length > 0 ? froms.sort().at(-1) : prefStart
+                        const rawUntil = untils.length > 0 ? untils.sort()[0] : prefEnd
+                        const maxFrom = rawFrom > prefStart ? rawFrom : prefStart
+                        const minUntil = rawUntil < prefEnd ? rawUntil : prefEnd
+                        timeDisplay = `${maxFrom}〜${minUntil}`
+                      }
+                      return (
+                        <label key={pref.preference_order} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, marginBottom: 4, cursor: canAll ? 'pointer' : 'default', opacity: canAll ? 1 : 0.4 }}>
+                          <input type="checkbox" disabled={!canAll}
+                            checked={staffRecruitCheckedOrders.has(pref.preference_order)}
+                            onChange={() => {
+                              setStaffRecruitCheckedOrders(prev => {
+                                const next = new Set(prev)
+                                if (next.has(pref.preference_order)) next.delete(pref.preference_order)
+                                else next.add(pref.preference_order)
+                                return next
+                              })
+                            }} />
+                          第{pref.preference_order}希望 {pref.preferred_date} {timeDisplay}
+                          {hasTimeSpec && <span style={{ fontSize: 10, color: '#e65100' }}>（時間調整済み）</span>}
+                          {!canAll && <span style={{ fontSize: 10, color: '#c62828' }}>（不可あり）</span>}
+                        </label>
+                      )
+                    })}
+                  </div>
+                  <button onClick={addToStaffRecruit} disabled={addingStaff}
+                    style={{ padding: '8px 18px', borderRadius: 8, border: '1.5px solid #6a1b9a', background: '#fff', color: '#6a1b9a', fontSize: 13, fontWeight: 700, cursor: addingStaff ? 'not-allowed' : 'pointer' }}>
+                    {addingStaff ? '処理中...' : 'スタッフ募集日に追加'}
+                  </button>
+                  {staffRecruitResult && <p style={{ fontSize: 12, color: staffRecruitResult.includes('エラー') ? '#c62828' : '#2e7d32', marginTop: 6 }}>{staffRecruitResult}</p>}
+                </>
+              )}
             </div>
           ) : (
             <div>
