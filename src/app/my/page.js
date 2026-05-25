@@ -549,9 +549,11 @@ function MyPageContent() {
                     </p>
                   )}
                   {app.status === 'confirmed' && bookingUrl && (
-                    <a href={bookingUrl} style={{ display: 'inline-block', marginTop: 10, background: '#2e7d32', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700 }}>
-                      予約確定する →
-                    </a>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+                      <a href={bookingUrl} style={{ background: '#2e7d32', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700 }}>
+                        予約確定する →
+                      </a>
+                    </div>
                   )}
                 </div>
               )
