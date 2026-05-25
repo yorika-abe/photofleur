@@ -22,17 +22,24 @@ export async function GET() {
 
   const entryIds = (slots || []).map(s => s.event_entry_id).filter(Boolean)
   const { data: entries } = entryIds.length
-    ? await admin.from('event_entries').select('id, event_id, models(name)').in('id', entryIds)
+    ? await admin.from('event_entries').select('id, event_id, model_id').in('id', entryIds)
     : { data: [] }
 
   const eventIds = (entries || []).map(e => e.event_id).filter(Boolean)
-  const { data: events } = eventIds.length
-    ? await admin.from('events').select('id, event_date, event_type, location_name, title').in('id', eventIds)
-    : { data: [] }
+  const modelIds = [...new Set((entries || []).map(e => e.model_id).filter(Boolean))]
+  const [{ data: events }, { data: modelRows }] = await Promise.all([
+    eventIds.length
+      ? admin.from('events').select('id, event_date, event_type, location_name, title').in('id', eventIds)
+      : { data: [] },
+    modelIds.length
+      ? admin.from('models').select('id, name').in('id', modelIds)
+      : { data: [] },
+  ])
 
   const slotMap = Object.fromEntries((slots || []).map(s => [s.id, s]))
   const entryMap = Object.fromEntries((entries || []).map(e => [e.id, e]))
   const eventMap = Object.fromEntries((events || []).map(e => [e.id, e]))
+  const modelNameMap = Object.fromEntries((modelRows || []).map(m => [m.id, m.name]))
 
   const enriched = (bookings || []).map(b => {
     const slot = slotMap[b.slot_id]
@@ -44,7 +51,7 @@ export async function GET() {
       slot_label: slot?.slot_label || '',
       slot_order: slot?.slot_order ?? null,
       start_time: slot?.start_time || null,
-      model_name: entry?.models?.name || '',
+      model_name: entry ? (modelNameMap[entry.model_id] || '') : '',
       event_date: event?.event_date || '',
       event_type: event?.event_type || '',
       event_title: event?.title || '',
