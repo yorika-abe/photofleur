@@ -284,6 +284,7 @@ export default function StaffPortalPage() {
   const [applying, setApplying] = useState(false)
   const [profile, setProfile] = useState({ photo: '', name: '' })
   const [recruitOpen, setRecruitOpen] = useState(false)
+  const [closedOpen, setClosedOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
 
   async function load() {
@@ -400,10 +401,17 @@ export default function StaffPortalPage() {
                   </>
                 )}
                 {closed.length > 0 && (
-                  <>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', marginTop: 4, marginBottom: 2 }}>過去の募集</div>
-                    {closed.map(r => <RecruitCard key={r.id} r={r} onApply={handleApply} applying={applying} />)}
-                  </>
+                  <div style={{ marginTop: 4 }}>
+                    <button onClick={() => setClosedOpen(v => !v)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, color: '#aaa', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {closedOpen ? '▲' : '▼'} 過去の募集（{closed.length}件）
+                    </button>
+                    {closedOpen && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                        {closed.map(r => <RecruitCard key={r.id} r={r} onApply={handleApply} applying={applying} />)}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}
