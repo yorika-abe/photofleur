@@ -293,7 +293,7 @@ function ApplicationCard({ app, onUpdate }) {
       await fetch('/api/admin/request-applications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: app.id, status: 'confirmed' }),
+        body: JSON.stringify({ id: app.id, status: 'confirmed', private_product_token: product.token }),
       })
 
       const modelNames = app.model_responses.map(mr => mr.models?.name || '').join('・')

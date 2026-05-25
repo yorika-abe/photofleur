@@ -489,13 +489,20 @@ function MyPageContent() {
               pending: '#888', notified: '#1565c0', model_responded: '#e65100',
               staff_recruiting: '#6a1b9a', confirmed: '#2e7d32', declined: '#c62828',
             }[app.status] || '#888'
+            const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
+            const bookingUrl = app.private_product_token ? `${siteUrl}/p/${app.private_product_token}` : null
             return (
               <div key={app.id} style={{ border: '1px solid #eef4f8', borderRadius: 10, padding: '14px 16px', marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1a3560' }}>
-                    {app.models?.map(m => m.name).join('・') || '未定'}
-                  </span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: statusColor, background: `${statusColor}18`, borderRadius: 20, padding: '3px 10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                    {app.models?.length > 0
+                      ? app.models.map(m => (
+                          <span key={m.model_id} style={{ fontSize: 12, fontWeight: 700, color: '#1a3560', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</span>
+                        ))
+                      : <span style={{ fontSize: 12, fontWeight: 700, color: '#1a3560' }}>未定</span>
+                    }
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: statusColor, background: `${statusColor}18`, borderRadius: 20, padding: '3px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}>
                     {statusLabel}
                   </span>
                 </div>
@@ -507,6 +514,11 @@ function MyPageContent() {
                   <p style={{ fontSize: 12, color: '#1565c0', margin: '6px 0 0' }}>
                     モデル・スタッフのスケジュールを確認のうえ、公式ラインより折り返しご連絡させていただきます。少々お待ちください。
                   </p>
+                )}
+                {app.status === 'confirmed' && bookingUrl && (
+                  <a href={bookingUrl} style={{ display: 'inline-block', marginTop: 10, background: '#2e7d32', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700 }}>
+                    予約確定する →
+                  </a>
                 )}
               </div>
             )

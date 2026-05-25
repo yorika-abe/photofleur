@@ -10,11 +10,26 @@ export async function GET() {
   const admin = await createSupabaseAdminClient()
   const { data: apps } = await admin
     .from('request_applications')
-    .select('id, status, created_at, location, nickname, last_name, first_name')
+    .select('id, status, created_at, location, nickname, last_name, first_name, private_product_token')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
   if (!apps?.length) return Response.json({ applications: [] })
+
+  // 支払い済み（private_booking作成済み）のトークンを取得して除外
+  const tokens = apps.map(a => a.private_product_token).filter(Boolean)
+  const paidTokens = new Set()
+  if (tokens.length > 0) {
+    const { data: products } = await admin.from('private_products').select('id, token').in('token', tokens)
+    const productIds = (products || []).map(p => p.id)
+    if (productIds.length > 0) {
+      const { data: paidBookings } = await admin.from('private_bookings').select('product_id').in('product_id', productIds).is('cancelled_at', null).not('payment_method', 'is', null)
+      const paidProductIds = new Set((paidBookings || []).map(b => b.product_id))
+      for (const p of (products || [])) {
+        if (paidProductIds.has(p.id)) paidTokens.add(p.token)
+      }
+    }
+  }
 
   const appIds = apps.map(a => a.id)
   const [{ data: prefs }, { data: appModels }] = await Promise.all([
@@ -22,11 +37,13 @@ export async function GET() {
     admin.from('request_application_models').select('application_id, model_id, models(name)').in('application_id', appIds),
   ])
 
-  const enriched = apps.map(a => ({
-    ...a,
-    preferences: (prefs || []).filter(p => p.application_id === a.id),
-    models: (appModels || []).filter(m => m.application_id === a.id).map(m => ({ model_id: m.model_id, name: m.models?.name })),
-  }))
+  const enriched = apps
+    .filter(a => !a.private_product_token || !paidTokens.has(a.private_product_token))
+    .map(a => ({
+      ...a,
+      preferences: (prefs || []).filter(p => p.application_id === a.id),
+      models: (appModels || []).filter(m => m.application_id === a.id).map(m => ({ model_id: m.model_id, name: m.models?.name })),
+    }))
 
   return Response.json({ applications: enriched })
 }

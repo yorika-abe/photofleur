@@ -93,10 +93,13 @@ export async function PATCH(req) {
   const admin = await requireAdmin()
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { id, status } = await req.json()
+  const { id, status, private_product_token } = await req.json()
   if (!id || !status) return Response.json({ error: 'パラメータ不足' }, { status: 400 })
 
-  const { error } = await admin.from('request_applications').update({ status }).eq('id', id)
+  const updates = { status }
+  if (private_product_token !== undefined) updates.private_product_token = private_product_token
+
+  const { error } = await admin.from('request_applications').update(updates).eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 500 })
   return Response.json({ ok: true })
 }
