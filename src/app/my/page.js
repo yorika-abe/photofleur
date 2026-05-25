@@ -93,6 +93,7 @@ function MyPageContent() {
   const [dismissedAppIds, setDismissedAppIds] = useState(new Set())
   const [cancellingId, setCancellingId] = useState(null)
   const [cancelConfirmId, setCancelConfirmId] = useState(null)
+  const [cancelThanksIds, setCancelThanksIds] = useState(new Set())
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -498,7 +499,11 @@ function MyPageContent() {
               body: JSON.stringify({ id }),
             })
             if (res.ok) {
-              setRequestApps(prev => prev.map(a => a.id === id ? { ...a, status: 'customer_cancelled' } : a))
+              setCancelThanksIds(prev => new Set([...prev, id]))
+              setTimeout(() => {
+                setCancelThanksIds(prev => { const n = new Set(prev); n.delete(id); return n })
+                setRequestApps(prev => prev.map(a => a.id === id ? { ...a, status: 'customer_cancelled' } : a))
+              }, 4000)
             }
           } catch {}
           setCancellingId(null)
@@ -513,7 +518,8 @@ function MyPageContent() {
               </div>
             )}
             {visibleApps.map(app => {
-              const isDeclined = app.status === 'declined'
+              const isDeclined = app.status === 'declined' || app.status === 'customer_cancelled'
+              const isThanks = cancelThanksIds.has(app.id)
               const statusLabel = {
                 pending: '申請中',
                 notified: 'モデル回答待ち',
@@ -521,10 +527,12 @@ function MyPageContent() {
                 staff_recruiting: 'スタッフ募集中',
                 confirmed: '確定',
                 declined: '申請却下',
+                customer_cancelled: 'キャンセル',
               }[app.status] || app.status
               const statusColor = {
                 pending: '#888', notified: '#1565c0', model_responded: '#e65100',
                 staff_recruiting: '#6a1b9a', confirmed: '#2e7d32', declined: '#c62828',
+                customer_cancelled: '#888',
               }[app.status] || '#888'
               const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
               const bookingUrl = app.private_product_token ? `${siteUrl}/p/${app.private_product_token}` : null
@@ -543,7 +551,7 @@ function MyPageContent() {
                       <span style={{ fontSize: 11, fontWeight: 700, color: statusColor, background: `${statusColor}18`, borderRadius: 20, padding: '3px 10px', whiteSpace: 'nowrap' }}>
                         {statusLabel}
                       </span>
-                      {isDeclined && (
+                      {isDeclined && !isThanks && (
                         <button onClick={() => dismissApp(app.id)} title="非表示にする"
                           style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '2px 4px', color: '#ccc', lineHeight: 1 }}>
                           🗑️
@@ -560,10 +568,17 @@ function MyPageContent() {
                       モデル・スタッフのスケジュールを確認のうえ、公式ラインより折り返しご連絡させていただきます。少々お待ちください。
                     </p>
                   )}
-                  {isDeclined && (
+                  {app.status === 'declined' && (
                     <p style={{ fontSize: 12, color: '#c62828', margin: '6px 0 0' }}>
                       いただきました日程ではスケジュールの調整が難しく、今回はご希望に添うことができませんでした。
                     </p>
+                  )}
+                  {isThanks && (
+                    <div style={{ marginTop: 10, background: '#f8f0ff', border: '1px solid #e1d4f5', borderRadius: 8, padding: '12px 14px', fontSize: 13, color: '#4a148c', lineHeight: 1.8 }}>
+                      今回は残念ではありますが、<br />
+                      またリクエスト撮影をご検討いただけましたら嬉しいです🤍<br /><br />
+                      ぜひお気軽にご相談ください✨
+                    </div>
                   )}
                   {app.status === 'confirmed' && bookingUrl && (
                     <>
