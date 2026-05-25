@@ -69,6 +69,8 @@ export default function AdminModelsPage() {
   const [toast, setToast] = useState(null)
   const [saving, setSaving] = useState(false)
   const dragIdx = useRef(null)
+  const longPressTimer = useRef(null)
+  const isTouchDragging = useRef(false)
 
   useEffect(() => {
     fetch('/api/admin/models')
@@ -148,10 +150,20 @@ export default function AdminModelsPage() {
   }
   async function onDrop() { dragIdx.current = null; await saveOrder() }
 
-  // Touch drag handlers
-  function onTouchStart(e, i) { dragIdx.current = i }
-  function onTouchMove(e, i) {
-    if (dragIdx.current === null) return
+  // Touch drag handlers（ハンドルからの長押し起動）
+  function onHandleTouchStart(e, i) {
+    longPressTimer.current = setTimeout(() => {
+      isTouchDragging.current = true
+      dragIdx.current = i
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(30)
+    }, 400)
+  }
+  function onHandleTouchMove(e) {
+    if (!isTouchDragging.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+      return
+    }
     const touch = e.touches[0]
     const el = document.elementFromPoint(touch.clientX, touch.clientY)
     const card = el?.closest('[data-model-idx]')
@@ -171,7 +183,15 @@ export default function AdminModelsPage() {
     })
     dragIdx.current = targetIdx
   }
-  async function onTouchEnd() { dragIdx.current = null; await saveOrder() }
+  async function onHandleTouchEnd() {
+    clearTimeout(longPressTimer.current)
+    longPressTimer.current = null
+    if (isTouchDragging.current) {
+      isTouchDragging.current = false
+      dragIdx.current = null
+      await saveOrder()
+    }
+  }
 
   const pending = models.filter(m => m.status === 'pending' || (m.status === 'active' && m.pending_data))
   const active = models.filter(m => m.status === 'active' && !m.pending_data)
@@ -248,20 +268,13 @@ export default function AdminModelsPage() {
               return (
                 <div key={model.id}
                   data-model-idx={i}
-                  draggable={isDraggable}
-                  onDragStart={isDraggable ? () => onDragStart(i) : undefined}
                   onDragOver={isDraggable ? e => onDragOver(e, i) : undefined}
                   onDrop={isDraggable ? onDrop : undefined}
-                  onTouchStart={isDraggable ? e => onTouchStart(e, i) : undefined}
-                  onTouchMove={isDraggable ? e => onTouchMove(e, i) : undefined}
-                  onTouchEnd={isDraggable ? onTouchEnd : undefined}
                   style={{
                     background: '#fff', borderRadius: 12,
                     border: tab === 'pending' ? '2px solid #ef9a9a' : '1px solid #e5e5e5',
                     overflow: 'hidden',
-                    cursor: isDraggable ? 'grab' : 'default',
                     userSelect: 'none',
-                    touchAction: isDraggable ? 'none' : undefined,
                   }}
                 >
                   <div style={{ aspectRatio: '2/3', background: '#e0d8f0', overflow: 'hidden', position: 'relative' }}>
@@ -275,7 +288,13 @@ export default function AdminModelsPage() {
                       </div>
                     )}
                     {isDraggable && (
-                      <div style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.35)', color: '#fff', borderRadius: 4, padding: '2px 6px', fontSize: 12 }}>⠿</div>
+                      <div
+                        draggable
+                        onDragStart={() => onDragStart(i)}
+                        onTouchStart={e => onHandleTouchStart(e, i)}
+                        onTouchMove={onHandleTouchMove}
+                        onTouchEnd={onHandleTouchEnd}
+                        style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.35)', color: '#fff', borderRadius: 4, padding: '4px 8px', fontSize: 14, cursor: 'grab', touchAction: 'none', lineHeight: 1 }}>⠿</div>
                     )}
                   </div>
                   <div style={{ padding: '10px 10px' }}>
