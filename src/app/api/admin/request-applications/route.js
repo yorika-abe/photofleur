@@ -9,7 +9,7 @@ export async function GET(req) {
 
   const query = admin
     .from('request_applications')
-    .select('id, user_id, status, created_at, location, nickname, sns_url, last_name, first_name, notes, email, phone')
+    .select('id, user_id, status, created_at, location, nickname, sns_url, last_name, first_name, notes, email, phone, private_product_token')
     .order('created_at', { ascending: false })
 
   const { data: apps } = await query
@@ -80,11 +80,37 @@ export async function GET(req) {
     confirmed_staff: confirmedStaffMap[a.id] || null,
   }))
 
+  // 支払い済みの private_booking を取得
+  const confirmedTokens = enrichedWithStaff.filter(a => a.private_product_token).map(a => a.private_product_token)
+  let paidBookingMap = {}
+  if (confirmedTokens.length > 0) {
+    const { data: products } = await admin.from('private_products').select('id, token').in('token', confirmedTokens)
+    const productIdToToken = Object.fromEntries((products || []).map(p => [p.id, p.token]))
+    const productIds = (products || []).map(p => p.id)
+    if (productIds.length > 0) {
+      const { data: paidBookings } = await admin
+        .from('private_bookings')
+        .select('product_id, last_name, first_name, email, phone, sns_url, nickname, payment_method, event_date_input, meeting_place, shooting_time')
+        .in('product_id', productIds)
+        .is('cancelled_at', null)
+        .not('payment_method', 'is', null)
+      for (const pb of paidBookings || []) {
+        const token = productIdToToken[pb.product_id]
+        if (token) paidBookingMap[token] = pb
+      }
+    }
+  }
+
+  const enrichedFinal = enrichedWithStaff.map(a => ({
+    ...a,
+    paid_booking: a.private_product_token ? (paidBookingMap[a.private_product_token] || null) : null,
+  }))
+
   const filtered = statusFilter === 'responded'
-    ? enrichedWithStaff.filter(a => a.all_responded)
+    ? enrichedFinal.filter(a => a.all_responded)
     : statusFilter === 'pending'
-      ? enrichedWithStaff.filter(a => !a.all_responded && ['pending', 'notified'].includes(a.status))
-      : enrichedWithStaff
+      ? enrichedFinal.filter(a => !a.all_responded && ['pending', 'notified'].includes(a.status))
+      : enrichedFinal
 
   return Response.json({ applications: filtered })
 }

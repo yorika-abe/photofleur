@@ -631,10 +631,54 @@ function ApplicationCard({ app, onUpdate }) {
   )
 }
 
+function PaidApplicationCard({ app }) {
+  const pb = app.paid_booking
+  const today = new Date().toISOString().split('T')[0]
+  const eventDate = pb?.event_date_input || ''
+  const modelNames = (app.model_responses || []).map(mr => mr.models?.name).filter(Boolean)
+  const staffName = app.confirmed_staff?.user_name || null
+  const isPast = eventDate && eventDate < today
+
+  const formatDate = (d) => {
+    if (!d) return '日程未定'
+    const dt = new Date(d + 'T00:00:00')
+    const days = ['日', '月', '火', '水', '木', '金', '土']
+    return `${dt.getFullYear()}年${dt.getMonth() + 1}月${dt.getDate()}日（${days[dt.getDay()]}）`
+  }
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e5e5', padding: '16px 20px', opacity: isPast ? 0.7 : 1 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+        <div style={{ fontWeight: 700, fontSize: 15, color: '#1a3560' }}>{formatDate(eventDate)}</div>
+        <span style={{ fontSize: 11, background: isPast ? '#f5f5f5' : '#e8f5e9', color: isPast ? '#888' : '#2e7d32', borderRadius: 20, padding: '3px 10px', fontWeight: 700, whiteSpace: 'nowrap' }}>
+          {isPast ? '開催済み' : '開催予定'}
+        </span>
+      </div>
+      {pb?.shooting_time && <div style={{ fontSize: 13, color: '#555', marginBottom: 4 }}>⏰ {pb.shooting_time}</div>}
+      {pb?.meeting_place && <div style={{ fontSize: 13, color: '#555', marginBottom: 8 }}>📍 {pb.meeting_place}</div>}
+      <div style={{ fontSize: 13, color: '#333', lineHeight: 1.8 }}>
+        {modelNames.map(name => <div key={name}>モデル：{name}</div>)}
+        {staffName && <div>スタッフ：{staffName}</div>}
+      </div>
+      {pb && (
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #f0f0f0', fontSize: 12, color: '#888' }}>
+          <div>{pb.last_name}{pb.first_name}（{pb.nickname || '—'}）</div>
+          <div>{pb.email}　{pb.phone}</div>
+          {pb.sns_url && <div>{pb.sns_url}</div>}
+          <div style={{ marginTop: 4, color: pb.payment_method === 'card' ? '#0097a7' : '#1565c0', fontWeight: 600 }}>
+            {pb.payment_method === 'card' ? '💳 カード払い' : '💴 現金払い'}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function RequestApplicationsSection() {
   const [subTab, setSubTab] = useState('responded')
   const [apps, setApps] = useState([])
   const [loading, setLoading] = useState(true)
+  const [pastOpen, setPastOpen] = useState(false)
 
   function load() {
     setLoading(true)
@@ -645,15 +689,26 @@ export default function RequestApplicationsSection() {
 
   useEffect(() => { load() }, [])
 
-  const pendingApps = apps.filter(a => ['pending', 'notified'].includes(a.status))
-  const respondedApps = apps.filter(a => !['pending', 'notified'].includes(a.status))
+  const today = new Date().toISOString().split('T')[0]
+  const pendingApps = apps.filter(a => ['pending', 'notified'].includes(a.status) && !a.paid_booking)
+  const respondedApps = apps.filter(a => !['pending', 'notified'].includes(a.status) && !a.paid_booking)
+  const paidApps = apps.filter(a => !!a.paid_booking)
 
-  const displayed = subTab === 'pending' ? pendingApps : respondedApps
+  const paidUpcoming = paidApps.filter(a => (a.paid_booking?.event_date_input || '') >= today)
+    .sort((a, b) => (a.paid_booking?.event_date_input || '').localeCompare(b.paid_booking?.event_date_input || ''))
+  const paidPast = paidApps.filter(a => (a.paid_booking?.event_date_input || '') < today)
+    .sort((a, b) => (b.paid_booking?.event_date_input || '').localeCompare(a.paid_booking?.event_date_input || ''))
+
+  const tabs = [
+    ['pending', `リクエスト申請中（${pendingApps.length}）`],
+    ['responded', `モデル回答済（${respondedApps.length}）`],
+    ['paid', `支払い済み（${paidApps.length}）`],
+  ]
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '1px solid #eee' }}>
-        {[['pending', `リクエスト申請中（${pendingApps.length}）`], ['responded', `モデル回答済（${respondedApps.length}）`]].map(([key, label]) => (
+      <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '1px solid #eee', flexWrap: 'wrap' }}>
+        {tabs.map(([key, label]) => (
           <button key={key} onClick={() => setSubTab(key)}
             style={{ padding: '8px 16px', fontSize: 13, fontWeight: 700, border: 'none', background: 'none', cursor: 'pointer',
               color: subTab === key ? '#1a3560' : '#aaa',
@@ -666,13 +721,46 @@ export default function RequestApplicationsSection() {
 
       {loading ? (
         <p style={{ color: '#aaa', fontSize: 13 }}>読み込み中...</p>
-      ) : displayed.length === 0 ? (
-        <div style={{ background: '#fff', borderRadius: 12, padding: 32, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
-          該当する申請はありません
+      ) : subTab === 'paid' ? (
+        <div>
+          {paidUpcoming.length === 0 && paidPast.length === 0 && (
+            <div style={{ background: '#fff', borderRadius: 12, padding: 32, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
+              支払い済みの申請はありません
+            </div>
+          )}
+          {paidUpcoming.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#2e7d32', marginBottom: 10 }}>📅 開催予定</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {paidUpcoming.map(app => <PaidApplicationCard key={app.id} app={app} />)}
+              </div>
+            </div>
+          )}
+          {paidPast.length > 0 && (
+            <div>
+              <button onClick={() => setPastOpen(o => !o)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#888', marginBottom: 10, padding: 0 }}>
+                <span style={{ transform: pastOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block' }}>▶</span>
+                過去の開催（{paidPast.length}件）
+              </button>
+              {pastOpen && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {paidPast.map(app => <PaidApplicationCard key={app.id} app={app} />)}
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      ) : (
-        displayed.map(app => <ApplicationCard key={app.id} app={app} onUpdate={load} />)
-      )}
+      ) : (() => {
+        const displayed = subTab === 'pending' ? pendingApps : respondedApps
+        return displayed.length === 0 ? (
+          <div style={{ background: '#fff', borderRadius: 12, padding: 32, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
+            該当する申請はありません
+          </div>
+        ) : (
+          displayed.map(app => <ApplicationCard key={app.id} app={app} onUpdate={load} />)
+        )
+      })()}
     </div>
   )
 }
