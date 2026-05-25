@@ -228,6 +228,14 @@ export default function PrivateProductsPage() {
       <Link href="/admin" style={{ color: '#1a3560', fontSize: 13, textDecoration: 'none' }}>← 管理画面</Link>
       <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', margin: '12px 0 16px' }}>非公開商品管理</h1>
 
+      {/* 一時的：マイページ確認用 */}
+      <a href="/my" target="_blank" rel="noopener noreferrer"
+        style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff8e1', border: '1px dashed #f9a825', borderRadius: 10, padding: '12px 16px', marginBottom: 20, textDecoration: 'none', color: '#795548' }}>
+        <span style={{ fontSize: 18 }}>👤</span>
+        <span style={{ fontSize: 13, fontWeight: 700 }}>マイページを確認する（別タブで開く）</span>
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: '#aaa' }}>一時表示</span>
+      </a>
+
       {/* タブ */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid #e5e5e5' }}>
         {[['requests', '🔗 リクエスト撮影申請'], ['products', '🔒 非公開商品']].map(([key, label]) => (
