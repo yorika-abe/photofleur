@@ -805,13 +805,13 @@ export default function RequestApplicationsSection() {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '1px solid #eee', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '1px solid #eee', overflowX: 'auto', flexWrap: 'nowrap', WebkitOverflowScrolling: 'touch' }}>
         {tabs.map(([key, label, newCount]) => (
           <button key={key} onClick={() => setSubTab(key)}
             style={{ padding: '8px 16px', fontSize: 13, fontWeight: 700, border: 'none', background: 'none', cursor: 'pointer', position: 'relative',
               color: subTab === key ? '#1a3560' : '#aaa',
               borderBottom: `2px solid ${subTab === key ? '#1a3560' : 'transparent'}`,
-              marginBottom: -1 }}>
+              marginBottom: -1, whiteSpace: 'nowrap', flexShrink: 0 }}>
             {label}
             {newCount > 0 && <Badge count={newCount} />}
           </button>
