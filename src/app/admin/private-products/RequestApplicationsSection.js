@@ -718,7 +718,7 @@ export default function RequestApplicationsSection() {
   const tabs = [
     ['pending', `リクエスト申請中（${pendingApps.length}）`],
     ['responded', `モデル回答済（${respondedApps.length}）`],
-    ['paid', `支払い済み（${paidApps.length}）`],
+    ['paid', `対応済み（${paidApps.length}）`],
   ]
 
   return (
