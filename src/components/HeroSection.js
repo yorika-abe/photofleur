@@ -44,7 +44,6 @@ function hslToHex(h, s, l) {
 function extractAccentColor(src) {
   return new Promise(resolve => {
     const img = new Image()
-    img.crossOrigin = 'anonymous'
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas')
@@ -153,11 +152,13 @@ export default function HeroSection({ images, mobileImages }) {
     : { clipPath: 'polygon(100% 0%, 100% 100%, 0% 100%)', opacity: 1, transition: 'none' }
 
   return (
-    <section style={{ position: 'relative', height: '100svh', minHeight: 600, overflow: 'hidden', display: 'flex', alignItems: 'flex-end', background: '#000' }}>
+    <section
+      onContextMenu={e => e.preventDefault()}
+      style={{ position: 'relative', height: '100svh', minHeight: 600, overflow: 'hidden', display: 'flex', alignItems: 'flex-end', background: '#000', WebkitUserSelect: 'none', userSelect: 'none' }}>
       {/* Current image */}
       <span className="hero-desktop">
         {imgs.length > 0
-          ? <img key={current} src={imgs[current]} alt="" fetchPriority={current === 0 ? 'high' : 'auto'} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          ? <img key={current} src={imgs[current]} alt="" fetchPriority={current === 0 ? 'high' : 'auto'} draggable={false} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', WebkitTouchCallout: 'none', pointerEvents: 'none' }} />
           : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 45%, #0d2030 100%)' }} />
         }
       </span>
@@ -165,7 +166,7 @@ export default function HeroSection({ images, mobileImages }) {
         {mobileImgs.length > 0
           ? <>
               <img key={`mblur-${currentMobile}`} src={mobileImgs[currentMobile]} alt="" fetchPriority="high" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(8px) brightness(0.85)', transform: 'scale(1.12)', transformOrigin: 'center' }} />
-              <img key={`mb-${currentMobile}`} src={mobileImgs[currentMobile]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
+              <img key={`mb-${currentMobile}`} src={mobileImgs[currentMobile]} alt="" draggable={false} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', WebkitTouchCallout: 'none', pointerEvents: 'none' }} />
             </>
           : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 45%, #0d2030 100%)' }} />
         }
@@ -180,7 +181,7 @@ export default function HeroSection({ images, mobileImages }) {
             filter: 'drop-shadow(4px 4px 12px rgba(0,0,0,0.7))',
             ...tlStyle,
           }}>
-            <img src={leavingSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={leavingSrc} alt="" draggable={false} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', WebkitTouchCallout: 'none', pointerEvents: 'none' }} />
           </div>
           <div style={{
             position: 'absolute', inset: 0, display: 'block',
@@ -188,7 +189,7 @@ export default function HeroSection({ images, mobileImages }) {
             filter: 'drop-shadow(-4px -4px 12px rgba(0,0,0,0.7))',
             ...brStyle,
           }}>
-            <img src={leavingSrc} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={leavingSrc} alt="" draggable={false} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', WebkitTouchCallout: 'none', pointerEvents: 'none' }} />
           </div>
         </>
       )}
