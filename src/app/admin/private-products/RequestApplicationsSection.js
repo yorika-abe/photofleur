@@ -724,11 +724,50 @@ function DeclinedApplicationCard({ app }) {
   )
 }
 
+function Badge({ count }) {
+  if (!count) return null
+  return (
+    <span style={{ background: '#e53935', color: '#fff', borderRadius: 10, padding: '1px 6px', fontSize: 11, fontWeight: 700, marginLeft: 4 }}>
+      {count}
+    </span>
+  )
+}
+
+function CollapseSection({ label, count, newCount, children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <button onClick={() => setOpen(o => !o)}
+        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#888', marginBottom: open ? 10 : 0, padding: 0 }}>
+        <span style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block' }}>▶</span>
+        {label}（{count}件）
+        {newCount > 0 && <Badge count={newCount} />}
+      </button>
+      {open && children}
+    </div>
+  )
+}
+
 export default function RequestApplicationsSection() {
   const [subTab, setSubTab] = useState('responded')
   const [apps, setApps] = useState([])
   const [loading, setLoading] = useState(true)
-  const [pastOpen, setPastOpen] = useState(false)
+  const [seenIds, setSeenIds] = useState(new Set())
+
+  useEffect(() => {
+    try {
+      const ids = JSON.parse(localStorage.getItem('admin_seen_paid_app_ids') || '[]')
+      setSeenIds(new Set(ids))
+    } catch {}
+  }, [])
+
+  function markSeen(ids) {
+    setSeenIds(prev => {
+      const next = new Set([...prev, ...ids])
+      try { localStorage.setItem('admin_seen_paid_app_ids', JSON.stringify([...next])) } catch {}
+      return next
+    })
+  }
 
   function load() {
     setLoading(true)
@@ -745,29 +784,36 @@ export default function RequestApplicationsSection() {
   const respondedApps = apps.filter(a => !['pending', 'notified', ...CLOSED_STATUSES].includes(a.status) && !a.paid_booking)
   const paidApps = apps.filter(a => !!a.paid_booking || CLOSED_STATUSES.includes(a.status))
 
-  const declinedApps = paidApps.filter(a => CLOSED_STATUSES.includes(a.status) && !a.paid_booking)
+  const cancelledApps = paidApps.filter(a => a.status === 'customer_cancelled' && !a.paid_booking)
+  const rejectedApps = paidApps.filter(a => a.status === 'declined' && !a.paid_booking)
   const confirmedPaidApps = paidApps.filter(a => !!a.paid_booking)
   const paidUpcoming = confirmedPaidApps.filter(a => (a.paid_booking?.event_date_input || '') >= today)
     .sort((a, b) => (a.paid_booking?.event_date_input || '').localeCompare(b.paid_booking?.event_date_input || ''))
   const paidPast = confirmedPaidApps.filter(a => (a.paid_booking?.event_date_input || '') < today)
     .sort((a, b) => (b.paid_booking?.event_date_input || '').localeCompare(a.paid_booking?.event_date_input || ''))
 
+  const newPast = paidPast.filter(a => !seenIds.has(a.id)).length
+  const newCancelled = cancelledApps.filter(a => !seenIds.has(a.id)).length
+  const newRejected = rejectedApps.filter(a => !seenIds.has(a.id)).length
+  const totalNewPaid = paidUpcoming.filter(a => !seenIds.has(a.id)).length + newPast + newCancelled + newRejected
+
   const tabs = [
     ['pending', `リクエスト申請中（${pendingApps.length}）`],
     ['responded', `モデル回答済（${respondedApps.length}）`],
-    ['paid', `対応済み（${paidApps.length}）`],
+    ['paid', `対応済み（${paidApps.length}）`, totalNewPaid],
   ]
 
   return (
     <div>
       <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '1px solid #eee', flexWrap: 'wrap' }}>
-        {tabs.map(([key, label]) => (
+        {tabs.map(([key, label, newCount]) => (
           <button key={key} onClick={() => setSubTab(key)}
-            style={{ padding: '8px 16px', fontSize: 13, fontWeight: 700, border: 'none', background: 'none', cursor: 'pointer',
+            style={{ padding: '8px 16px', fontSize: 13, fontWeight: 700, border: 'none', background: 'none', cursor: 'pointer', position: 'relative',
               color: subTab === key ? '#1a3560' : '#aaa',
               borderBottom: `2px solid ${subTab === key ? '#1a3560' : 'transparent'}`,
               marginBottom: -1 }}>
             {label}
+            {newCount > 0 && <Badge count={newCount} />}
           </button>
         ))}
       </div>
@@ -776,7 +822,7 @@ export default function RequestApplicationsSection() {
         <p style={{ color: '#aaa', fontSize: 13 }}>読み込み中...</p>
       ) : subTab === 'paid' ? (
         <div>
-          {paidUpcoming.length === 0 && paidPast.length === 0 && declinedApps.length === 0 && (
+          {paidUpcoming.length === 0 && paidPast.length === 0 && cancelledApps.length === 0 && rejectedApps.length === 0 && (
             <div style={{ background: '#fff', borderRadius: 12, padding: 32, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
               対応済みの申請はありません
             </div>
@@ -785,31 +831,39 @@ export default function RequestApplicationsSection() {
             <div style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#2e7d32', marginBottom: 10 }}>📅 開催予定</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {paidUpcoming.map(app => <PaidApplicationCard key={app.id} app={app} />)}
+                {paidUpcoming.map(app => {
+                  if (!seenIds.has(app.id)) markSeen([app.id])
+                  return <PaidApplicationCard key={app.id} app={app} />
+                })}
               </div>
             </div>
           )}
           {paidPast.length > 0 && (
-            <div style={{ marginBottom: 24 }}>
-              <button onClick={() => setPastOpen(o => !o)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#888', marginBottom: 10, padding: 0 }}>
-                <span style={{ transform: pastOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block' }}>▶</span>
-                過去の開催（{paidPast.length}件）
-              </button>
-              {pastOpen && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {paidPast.map(app => <PaidApplicationCard key={app.id} app={app} />)}
-                </div>
-              )}
-            </div>
-          )}
-          {declinedApps.length > 0 && (
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#999', marginBottom: 10 }}>🚫 却下済み（{declinedApps.length}件）</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {declinedApps.map(app => <DeclinedApplicationCard key={app.id} app={app} />)}
+            <CollapseSection label="🕐 過去の開催" count={paidPast.length} newCount={newPast}
+              defaultOpen={false}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+                ref={el => { if (el && newPast > 0) markSeen(paidPast.map(a => a.id)) }}>
+                {paidPast.map(app => <PaidApplicationCard key={app.id} app={app} />)}
               </div>
-            </div>
+            </CollapseSection>
+          )}
+          {cancelledApps.length > 0 && (
+            <CollapseSection label="❌ キャンセル" count={cancelledApps.length} newCount={newCancelled}
+              defaultOpen={false}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+                ref={el => { if (el && newCancelled > 0) markSeen(cancelledApps.map(a => a.id)) }}>
+                {cancelledApps.map(app => <DeclinedApplicationCard key={app.id} app={app} />)}
+              </div>
+            </CollapseSection>
+          )}
+          {rejectedApps.length > 0 && (
+            <CollapseSection label="🚫 却下" count={rejectedApps.length} newCount={newRejected}
+              defaultOpen={false}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+                ref={el => { if (el && newRejected > 0) markSeen(rejectedApps.map(a => a.id)) }}>
+                {rejectedApps.map(app => <DeclinedApplicationCard key={app.id} app={app} />)}
+              </div>
+            </CollapseSection>
           )}
         </div>
       ) : (() => {
