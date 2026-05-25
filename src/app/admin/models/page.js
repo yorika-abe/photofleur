@@ -275,6 +275,7 @@ export default function AdminModelsPage() {
                     border: tab === 'pending' ? '2px solid #ef9a9a' : '1px solid #e5e5e5',
                     overflow: 'hidden',
                     userSelect: 'none',
+                    opacity: tab === 'inactive' ? 0.5 : 1,
                   }}
                 >
                   <div style={{ aspectRatio: '2/3', background: '#e0d8f0', overflow: 'hidden', position: 'relative' }}>

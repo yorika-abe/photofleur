@@ -30,7 +30,7 @@ export default async function ModelDetailPage({ params }) {
     .eq('id', id)
     .single()
 
-  if (!model) notFound()
+  if (!model || model.status !== 'active') notFound()
 
   const { data: upcomingEntries } = await supabase
     .from('event_entries')

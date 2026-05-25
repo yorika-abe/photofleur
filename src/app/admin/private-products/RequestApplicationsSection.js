@@ -20,11 +20,10 @@ function getHourlyRate(studioPrice) {
   return parseInt(studioPrice || 0)
 }
 
-function getModelManagementRate(studioPrice) {
-  const p = parseInt(studioPrice || 0)
-  if (p >= 12000) return 4000
-  if (p >= 9900) return 3500
-  if (p >= 8900) return 3000
+function getModelManagementRate(priceTier) {
+  if (priceTier === '12000') return 4000
+  if (priceTier === '9900') return 3500
+  if (priceTier === '8900') return 3000
   return 0  // 運営モデル
 }
 
@@ -94,8 +93,8 @@ function initPriceComponents(app, pref) {
       name: mr.models?.name || '',
       hourlyRate: getHourlyRate(mr.models?.studio_price),
       fee: getHourlyRate(mr.models?.studio_price) * hours,
-      managementRate: getModelManagementRate(mr.models?.studio_price),
-      managementFee: getModelManagementRate(mr.models?.studio_price) * hours,
+      managementRate: getModelManagementRate(mr.models?.price_tier),
+      managementFee: getModelManagementRate(mr.models?.price_tier) * hours,
     })),
     staffFeePerHour: 1000,
     staffFeeTotal: 1000 * hours,

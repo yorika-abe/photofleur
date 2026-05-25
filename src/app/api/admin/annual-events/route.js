@@ -5,7 +5,7 @@ export async function GET() {
   if (!admin) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const [{ data: events }, { data: models }] = await Promise.all([
     admin.from('annual_events').select('*').order('month').order('day'),
-    admin.from('models').select('id, name, birthday, pending_data').order('birthday'),
+    admin.from('models').select('id, name, birthday, pending_data').eq('status', 'active').order('birthday'),
   ])
   const normalizedModels = (models || [])
     .map(m => {

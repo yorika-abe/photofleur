@@ -21,7 +21,7 @@ export async function GET(req) {
   const [{ data: prefs }, { data: appModels }] = await Promise.all([
     admin.from('request_date_preferences').select('*').in('application_id', appIds).order('preference_order'),
     admin.from('request_application_models')
-      .select('id, application_id, model_id, notified_at, reminder_sent_at, models(id, name, line_id, studio_price, image)')
+      .select('id, application_id, model_id, notified_at, reminder_sent_at, models(id, name, line_id, studio_price, price_tier, image)')
       .in('application_id', appIds),
   ])
 

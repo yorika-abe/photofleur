@@ -49,5 +49,25 @@ export async function PATCH(req) {
   if (is_blocked !== undefined) updateData.is_blocked = is_blocked
   const { error } = await admin.from('user_profiles').update(updateData).eq('id', userId)
   if (error) return Response.json({ error: error.message }, { status: 500 })
+
+  // モデル権限の変更に連動してモデルページの公開ステータスを同期
+  if (roles !== undefined) {
+    const hasModelRole = roles.includes('model')
+    const { data: linkedModel } = await admin
+      .from('models')
+      .select('id, status')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (linkedModel) {
+      if (!hasModelRole) {
+        const update = { status: 'inactive' }
+        if (linkedModel.status === 'pending') update.pending_data = null
+        await admin.from('models').update(update).eq('id', linkedModel.id)
+      } else if (hasModelRole && linkedModel.status !== 'active') {
+        await admin.from('models').update({ status: 'active' }).eq('id', linkedModel.id)
+      }
+    }
+  }
+
   return Response.json({ ok: true })
 }

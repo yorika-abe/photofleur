@@ -36,7 +36,7 @@ export async function GET(req) {
 
   const [{ data: events }, { data: models }] = await Promise.all([
     supabase.from('annual_events').select('*').eq('month', month).order('day'),
-    supabase.from('models').select('name, birthday').not('birthday', 'is', null),
+    supabase.from('models').select('name, birthday').eq('status', 'active').not('birthday', 'is', null),
   ])
 
   // モデルの誕生日（当月）

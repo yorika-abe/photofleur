@@ -25,7 +25,7 @@ export async function PUT(req, { params }) {
   const { id } = await params
   const body = await req.json()
 
-  const { data: current } = await admin.from('models').select('image, portfolio_images').eq('id', id).single()
+  const { data: current } = await admin.from('models').select('image, portfolio_images, user_id').eq('id', id).single()
   if (current) {
     const toDelete = []
     if (current.image && current.image !== body.image) toDelete.push(current.image)
@@ -39,6 +39,13 @@ export async function PUT(req, { params }) {
 
   const { error } = await admin.from('models').update(body).eq('id', id)
   if (error) return Response.json({ error: error.message }, { status: 500 })
+
+  // ステータス変更時にユーザーロールを同期
+  if (body.status && current?.user_id) {
+    const newRole = body.status === 'active' ? 'model' : 'photographer'
+    await admin.from('user_profiles').update({ role: newRole }).eq('id', current.user_id)
+  }
+
   return Response.json({ ok: true })
 }
 
@@ -48,6 +55,24 @@ export async function POST(req, { params }) {
 
   const { id } = await params
   const { action, email } = await req.json()
+
+  if (action === 'deactivate') {
+    const { data: model } = await admin.from('models').select('user_id').eq('id', id).single()
+    await admin.from('models').update({ status: 'inactive' }).eq('id', id)
+    if (model?.user_id) {
+      await admin.from('user_profiles').update({ role: 'photographer' }).eq('id', model.user_id)
+    }
+    return Response.json({ ok: true })
+  }
+
+  if (action === 'activate') {
+    const { data: model } = await admin.from('models').select('user_id').eq('id', id).single()
+    await admin.from('models').update({ status: 'active', pending_data: null }).eq('id', id)
+    if (model?.user_id) {
+      await admin.from('user_profiles').update({ role: 'model' }).eq('id', model.user_id)
+    }
+    return Response.json({ ok: true })
+  }
 
   if (action === 'approve') {
     const { data: model } = await admin.from('models').select('*').eq('id', id).single()
@@ -67,6 +92,10 @@ export async function POST(req, { params }) {
     if (approveError) {
       console.error('approve error:', approveError, profileUpdates)
       return Response.json({ error: '承認に失敗しました: ' + approveError.message }, { status: 500 })
+    }
+
+    if (model?.user_id) {
+      await admin.from('user_profiles').update({ role: 'model' }).eq('id', model.user_id)
     }
 
     if (model?.pending_data) {
