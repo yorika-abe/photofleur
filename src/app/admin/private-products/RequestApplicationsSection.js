@@ -179,7 +179,7 @@ function ApplicationCard({ app, onUpdate }) {
       + priceComp.staffTransport
     : 0
 
-  async function sendLine() {
+  async function sendLine(shouldDecline = false) {
     if (!lineMsg.trim()) return
     setSending(true); setSendResult(null)
     try {
@@ -190,7 +190,7 @@ function ApplicationCard({ app, onUpdate }) {
       })
       const json = await res.json()
       setSendResult(json.ok ? '送信しました' : `エラー: ${json.error}`)
-      if (json.ok) {
+      if (json.ok && shouldDecline) {
         await fetch('/api/admin/request-applications', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -636,10 +636,16 @@ function ApplicationCard({ app, onUpdate }) {
           </summary>
           <textarea value={lineMsg} onChange={e => setLineMsg(e.target.value)}
             style={{ width: '100%', minHeight: 180, padding: '10px', borderRadius: 8, border: '1px solid #d0e4f0', fontSize: 13, lineHeight: 1.7, boxSizing: 'border-box', resize: 'vertical', marginTop: 8 }} />
-          <button onClick={sendLine} disabled={sending}
-            style={{ marginTop: 8, padding: '10px 24px', background: sending ? '#aaa' : '#1a3560', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: sending ? 'not-allowed' : 'pointer' }}>
-            {sending ? '送信中...' : '送信'}
-          </button>
+          <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+            <button onClick={() => sendLine(false)} disabled={sending}
+              style={{ padding: '10px 24px', background: sending ? '#aaa' : '#1a3560', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: sending ? 'not-allowed' : 'pointer' }}>
+              {sending ? '送信中...' : '送信'}
+            </button>
+            <button onClick={() => sendLine(true)} disabled={sending}
+              style={{ padding: '10px 24px', background: sending ? '#aaa' : '#c62828', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: sending ? 'not-allowed' : 'pointer' }}>
+              {sending ? '送信中...' : '送信して却下'}
+            </button>
+          </div>
           {sendResult && <p style={{ fontSize: 12, color: sendResult.includes('エラー') ? '#c62828' : '#2e7d32', marginTop: 6 }}>{sendResult}</p>}
         </details>
       )}
@@ -690,6 +696,32 @@ function PaidApplicationCard({ app }) {
   )
 }
 
+function DeclinedApplicationCard({ app }) {
+  const modelNames = (app.model_responses || []).map(mr => mr.models?.name).filter(Boolean)
+  return (
+    <div style={{ background: '#fafafa', borderRadius: 12, border: '1px solid #eee', padding: '16px 20px', opacity: 0.65 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#888' }}>
+            {app.last_name}{app.first_name}（{app.nickname}）
+          </div>
+          <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{app.email} / {app.phone}</div>
+          {modelNames.length > 0 && (
+            <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{modelNames.map(n => `👤 ${n}`).join('　')}</div>
+          )}
+          <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>📍 {app.location}</div>
+        </div>
+        <span style={{ fontSize: 11, background: '#fafafa', color: '#999', border: '1px solid #ddd', borderRadius: 20, padding: '3px 10px', fontWeight: 700, whiteSpace: 'nowrap' }}>
+          却下済み
+        </span>
+      </div>
+      <div style={{ fontSize: 11, color: '#ccc', marginTop: 8 }}>
+        申請日: {new Date(app.created_at).toLocaleDateString('ja-JP')}
+      </div>
+    </div>
+  )
+}
+
 export default function RequestApplicationsSection() {
   const [subTab, setSubTab] = useState('responded')
   const [apps, setApps] = useState([])
@@ -707,12 +739,14 @@ export default function RequestApplicationsSection() {
 
   const today = new Date().toISOString().split('T')[0]
   const pendingApps = apps.filter(a => ['pending', 'notified'].includes(a.status) && !a.paid_booking)
-  const respondedApps = apps.filter(a => !['pending', 'notified'].includes(a.status) && !a.paid_booking)
-  const paidApps = apps.filter(a => !!a.paid_booking)
+  const respondedApps = apps.filter(a => !['pending', 'notified', 'declined'].includes(a.status) && !a.paid_booking)
+  const paidApps = apps.filter(a => !!a.paid_booking || a.status === 'declined')
 
-  const paidUpcoming = paidApps.filter(a => (a.paid_booking?.event_date_input || '') >= today)
+  const declinedApps = paidApps.filter(a => a.status === 'declined' && !a.paid_booking)
+  const confirmedPaidApps = paidApps.filter(a => !!a.paid_booking)
+  const paidUpcoming = confirmedPaidApps.filter(a => (a.paid_booking?.event_date_input || '') >= today)
     .sort((a, b) => (a.paid_booking?.event_date_input || '').localeCompare(b.paid_booking?.event_date_input || ''))
-  const paidPast = paidApps.filter(a => (a.paid_booking?.event_date_input || '') < today)
+  const paidPast = confirmedPaidApps.filter(a => (a.paid_booking?.event_date_input || '') < today)
     .sort((a, b) => (b.paid_booking?.event_date_input || '').localeCompare(a.paid_booking?.event_date_input || ''))
 
   const tabs = [
@@ -739,9 +773,9 @@ export default function RequestApplicationsSection() {
         <p style={{ color: '#aaa', fontSize: 13 }}>読み込み中...</p>
       ) : subTab === 'paid' ? (
         <div>
-          {paidUpcoming.length === 0 && paidPast.length === 0 && (
+          {paidUpcoming.length === 0 && paidPast.length === 0 && declinedApps.length === 0 && (
             <div style={{ background: '#fff', borderRadius: 12, padding: 32, textAlign: 'center', color: '#aaa', fontSize: 14 }}>
-              支払い済みの申請はありません
+              対応済みの申請はありません
             </div>
           )}
           {paidUpcoming.length > 0 && (
@@ -753,7 +787,7 @@ export default function RequestApplicationsSection() {
             </div>
           )}
           {paidPast.length > 0 && (
-            <div>
+            <div style={{ marginBottom: 24 }}>
               <button onClick={() => setPastOpen(o => !o)}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#888', marginBottom: 10, padding: 0 }}>
                 <span style={{ transform: pastOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block' }}>▶</span>
@@ -764,6 +798,14 @@ export default function RequestApplicationsSection() {
                   {paidPast.map(app => <PaidApplicationCard key={app.id} app={app} />)}
                 </div>
               )}
+            </div>
+          )}
+          {declinedApps.length > 0 && (
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#999', marginBottom: 10 }}>🚫 却下済み（{declinedApps.length}件）</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {declinedApps.map(app => <DeclinedApplicationCard key={app.id} app={app} />)}
+              </div>
             </div>
           )}
         </div>
