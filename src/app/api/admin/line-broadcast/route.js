@@ -1,4 +1,4 @@
-import { sendLineMessage, broadcastCameraLine, broadcastCameraLineWithImage } from '@/lib/line'
+import { sendLineMessage, sendLineCameraUser, broadcastCameraLine, broadcastCameraLineWithImage } from '@/lib/line'
 import { requireAdmin } from '@/lib/auth'
 
 export async function GET(req) {
@@ -82,7 +82,7 @@ export async function POST(req) {
     if (!customer_user_id) return Response.json({ error: 'ユーザーIDが必要です' }, { status: 400 })
     const { data: profile } = await admin.from('user_profiles').select('line_user_id').eq('id', customer_user_id).maybeSingle()
     if (!profile?.line_user_id) return Response.json({ error: 'このユーザーのLINE IDが登録されていません' }, { status: 400 })
-    const result = await sendLineMessage(profile.line_user_id, message)
+    const result = await sendLineCameraUser(profile.line_user_id, message)
     return Response.json({ ok: result.ok, error: result.ok ? null : result.reason })
   }
 
