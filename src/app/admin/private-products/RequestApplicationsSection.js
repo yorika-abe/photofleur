@@ -329,8 +329,8 @@ function ApplicationCard({ app, onUpdate }) {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          {app.model_responses
-            .filter(mr => !isPending || !mr.responses?.length)
+          {isPending && app.model_responses
+            .filter(mr => !mr.responses?.length)
             .map(mr => (
               <span key={mr.model_id} style={{ fontSize: 11, background: '#e8f0fe', color: '#1a3560', borderRadius: 20, padding: '3px 10px', fontWeight: 700 }}>
                 {mr.models?.name}
