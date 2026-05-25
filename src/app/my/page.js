@@ -193,9 +193,19 @@ function MyPageContent() {
     setPhotoModelIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
 
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false)
+  const [showAllPast, setShowAllPast] = useState(false)
+
   const inp = { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }
-  const recentBookings = bookings.slice(0, 3)
   const profileComplete = !!(savedProfile.last_name && savedProfile.first_name && savedProfile.last_name_kana && savedProfile.first_name_kana && savedProfile.phone && savedProfile.sns_url)
+
+  const today = new Date().toISOString().split('T')[0]
+  const upcomingBookings = bookings
+    .filter(b => !b.cancelled_at && b.event_date >= today)
+    .sort((a, b) => a.event_date.localeCompare(b.event_date))
+  const pastBookings = bookings
+    .filter(b => !!b.cancelled_at || b.event_date < today)
+    .sort((a, b) => b.event_date.localeCompare(a.event_date))
   const profileIncompleteNotice = (
     <div style={{ background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: 10, padding: '14px 18px', fontSize: 13, color: '#1565c0' }}>
       ⚠️ マイページ上の登録情報を全てご記入ください。
@@ -277,7 +287,7 @@ function MyPageContent() {
       </CollapseCard>
 
       {/* 意見箱 */}
-      <CollapseCard title="📮 お問い合わせ・ご意見箱" subtitle="ご意見をお聞かせください">
+      <CollapseCard title="📮ご意見箱" subtitle="ご意見をお聞かせください">
         <p style={{ fontSize: 13, color: '#555', lineHeight: 1.8, margin: '0 0 8px' }}>
           PhotoFleurでは日々改善・改良を重ね邁進しております。ご意見をお聞かせください。
         </p>
@@ -361,65 +371,101 @@ function MyPageContent() {
         </>)}
       </CollapseCard>
 
-      {/* 予約履歴（直近3件） */}
-      <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #d6ecf5', marginBottom: 16, padding: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', margin: 0 }}>予約履歴</h2>
-          {bookings.length > 3 && (
-            <Link href="/my/bookings" style={{ fontSize: 13, color: '#1a3560', fontWeight: 600, textDecoration: 'none' }}>
-              すべて見る（{bookings.length}件） →
-            </Link>
-          )}
-        </div>
+      {/* 予約履歴 */}
+      <CollapseCard title="予約履歴" badge={bookings.length > 0 ? `${bookings.length}件` : undefined} subtitle="ご予約の履歴をご確認いただけます">
         {bookings.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '24px 0', color: '#bbb' }}>
+          <div style={{ textAlign: 'center', padding: '16px 0', color: '#bbb' }}>
             <p style={{ marginBottom: 12 }}>まだ予約履歴がありません。</p>
             <Link href="/schedule" style={{ color: '#1a3560', fontWeight: 600, fontSize: 14 }}>スケジュールを見る →</Link>
           </div>
         ) : (
           <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {recentBookings.map(b => {
-                const tc = typeColors[b.event_type] || { bg: '#f5f5f5', color: '#888', label: '' }
-                const isPaid = b.payment_method === 'card'
-                const isCancelled = !!b.cancelled_at
-                return (
-                  <div key={`${b.booking_type || 'r'}-${b.id}`} style={{ padding: '14px 16px', borderRadius: 10, border: `1px solid ${isCancelled ? '#e0e0e0' : '#e0ecf8'}`, background: isCancelled ? '#fafafa' : '#f8fbff', opacity: isCancelled ? 0.7 : 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                          {tc.label && <span style={{ fontSize: 11, background: tc.bg, color: tc.color, borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>{tc.label}</span>}
-                          {isCancelled && <span style={{ fontSize: 11, background: '#ffebee', color: '#c62828', borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>キャンセル済み</span>}
-                          <span style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>{formatDate(b.event_date)}</span>
-                        </div>
-                        {b.event_title && <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 2 }}>{b.event_title}</div>}
-                        {b.location_name && <div style={{ fontSize: 12, color: '#888', marginBottom: 2 }}>{b.location_name}</div>}
-                        {b.slot_label && <div style={{ fontSize: 13, color: '#555', marginBottom: 2 }}>{b.slot_label}</div>}
-                        {b.model_name && <div style={{ fontSize: 12, color: '#888' }}>モデル：{b.model_name}</div>}
-                      </div>
-                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{ fontWeight: 700, color: '#1a3560', fontSize: 15 }}>¥{(b.final_price || 0).toLocaleString()}</div>
-                        {!isCancelled && (
-                          <div style={{ fontSize: 12, color: isPaid ? '#0097a7' : '#1565c0', marginTop: 2 }}>
-                            {isPaid ? '💳 カード払い' : '💴 現金払い'}
+            {/* 開催予定 */}
+            {upcomingBookings.length > 0 && (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#1565c0', marginBottom: 10 }}>📅 開催予定の予約</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {(showAllUpcoming ? upcomingBookings : upcomingBookings.slice(0, 4)).map(b => {
+                    const tc = typeColors[b.event_type] || { bg: '#f5f5f5', color: '#888', label: '' }
+                    const isPaid = b.payment_method === 'card'
+                    return (
+                      <div key={`${b.booking_type || 'r'}-${b.id}`} style={{ padding: '14px 16px', borderRadius: 10, border: '1px solid #e0ecf8', background: '#f8fbff' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                              {tc.label && <span style={{ fontSize: 11, background: tc.bg, color: tc.color, borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>{tc.label}</span>}
+                              <span style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>{formatDate(b.event_date)}</span>
+                            </div>
+                            {b.event_title && <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 2 }}>{b.event_title}</div>}
+                            {b.location_name && <div style={{ fontSize: 12, color: '#888', marginBottom: 2 }}>{b.location_name}</div>}
+                            {b.slot_label && <div style={{ fontSize: 13, color: '#555', marginBottom: 2 }}>{b.slot_label}</div>}
+                            {b.model_name && <div style={{ fontSize: 12, color: '#888' }}>モデル：{b.model_name}</div>}
                           </div>
-                        )}
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <div style={{ fontWeight: 700, color: '#1a3560', fontSize: 15 }}>¥{(b.final_price || 0).toLocaleString()}</div>
+                            <div style={{ fontSize: 12, color: isPaid ? '#0097a7' : '#1565c0', marginTop: 2 }}>
+                              {isPaid ? '💳 カード払い' : '💴 現金払い'}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            {bookings.length > 3 && (
-              <div style={{ textAlign: 'center', marginTop: 16 }}>
-                <Link href="/my/bookings" style={{ fontSize: 13, color: '#1a3560', fontWeight: 600, textDecoration: 'none', borderBottom: '1px solid #1a3560', paddingBottom: 2 }}>
-                  すべての予約履歴を見る（{bookings.length}件） →
-                </Link>
+                    )
+                  })}
+                </div>
+                {upcomingBookings.length > 4 && !showAllUpcoming && (
+                  <button onClick={() => setShowAllUpcoming(true)} style={{ marginTop: 10, width: '100%', background: 'none', border: '1px solid #d6ecf5', borderRadius: 8, padding: '10px', fontSize: 13, color: '#1a3560', fontWeight: 600, cursor: 'pointer' }}>
+                    全て表示する（{upcomingBookings.length}件）
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* 過去の予約 */}
+            {pastBookings.length > 0 && (
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#888', marginBottom: 10 }}>🕐 過去の予約履歴</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {(showAllPast ? pastBookings : pastBookings.slice(0, 4)).map(b => {
+                    const tc = typeColors[b.event_type] || { bg: '#f5f5f5', color: '#888', label: '' }
+                    const isPaid = b.payment_method === 'card'
+                    const isCancelled = !!b.cancelled_at
+                    return (
+                      <div key={`${b.booking_type || 'r'}-${b.id}`} style={{ padding: '14px 16px', borderRadius: 10, border: '1px solid #e0e0e0', background: '#fafafa', opacity: isCancelled ? 0.7 : 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                              {tc.label && <span style={{ fontSize: 11, background: tc.bg, color: tc.color, borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>{tc.label}</span>}
+                              {isCancelled && <span style={{ fontSize: 11, background: '#ffebee', color: '#c62828', borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>キャンセル済み</span>}
+                              <span style={{ fontWeight: 700, fontSize: 14, color: '#555' }}>{formatDate(b.event_date)}</span>
+                            </div>
+                            {b.event_title && <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 2 }}>{b.event_title}</div>}
+                            {b.location_name && <div style={{ fontSize: 12, color: '#888', marginBottom: 2 }}>{b.location_name}</div>}
+                            {b.slot_label && <div style={{ fontSize: 13, color: '#555', marginBottom: 2 }}>{b.slot_label}</div>}
+                            {b.model_name && <div style={{ fontSize: 12, color: '#888' }}>モデル：{b.model_name}</div>}
+                          </div>
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <div style={{ fontWeight: 700, color: '#888', fontSize: 15 }}>¥{(b.final_price || 0).toLocaleString()}</div>
+                            {!isCancelled && (
+                              <div style={{ fontSize: 12, color: isPaid ? '#0097a7' : '#1565c0', marginTop: 2 }}>
+                                {isPaid ? '💳 カード払い' : '💴 現金払い'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                {pastBookings.length > 4 && !showAllPast && (
+                  <button onClick={() => setShowAllPast(true)} style={{ marginTop: 10, width: '100%', background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, padding: '10px', fontSize: 13, color: '#888', fontWeight: 600, cursor: 'pointer' }}>
+                    全て表示する（{pastBookings.length}件）
+                  </button>
+                )}
               </div>
             )}
           </>
         )}
-      </div>
+      </CollapseCard>
 
       {/* リクエスト撮影申請 */}
       {(justApplied || requestApps.length > 0) && (
