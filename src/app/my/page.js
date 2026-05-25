@@ -91,6 +91,8 @@ function MyPageContent() {
   const [feedbackDone, setFeedbackDone] = useState(false)
   const [requestApps, setRequestApps] = useState([])
   const [dismissedAppIds, setDismissedAppIds] = useState(new Set())
+  const [cancellingId, setCancellingId] = useState(null)
+  const [cancelConfirmId, setCancelConfirmId] = useState(null)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -487,6 +489,21 @@ function MyPageContent() {
             return next
           })
         }
+        async function cancelApp(id) {
+          setCancellingId(id)
+          try {
+            const res = await fetch('/api/customer/request-applications/cancel', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id }),
+            })
+            if (res.ok) {
+              setRequestApps(prev => prev.map(a => a.id === id ? { ...a, status: 'customer_cancelled' } : a))
+            }
+          } catch {}
+          setCancellingId(null)
+          setCancelConfirmId(null)
+        }
         return (
           <div id="request-apps" style={{ background: '#fff', borderRadius: 14, border: '1px solid #d6ecf5', padding: '20px' }}>
             <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', margin: '0 0 16px' }}>リクエスト撮影申請</h2>
@@ -549,11 +566,35 @@ function MyPageContent() {
                     </p>
                   )}
                   {app.status === 'confirmed' && bookingUrl && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
-                      <a href={bookingUrl} style={{ background: '#2e7d32', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700 }}>
-                        予約確定する →
-                      </a>
-                    </div>
+                    <>
+                      {cancelConfirmId === app.id ? (
+                        <div style={{ marginTop: 10, background: '#fff3e0', border: '1px solid #ffcc02', borderRadius: 8, padding: '12px 14px' }}>
+                          <p style={{ fontSize: 13, color: '#5d3c00', margin: '0 0 10px', fontWeight: 600 }}>
+                            キャンセルした場合元に戻せません。<br />リクエスト撮影の申し込みをキャンセルしますか？
+                          </p>
+                          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                            <button onClick={() => setCancelConfirmId(null)}
+                              style={{ padding: '7px 16px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', color: '#555', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                              いいえ
+                            </button>
+                            <button onClick={() => cancelApp(app.id)} disabled={cancellingId === app.id}
+                              style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: cancellingId === app.id ? '#aaa' : '#c62828', color: '#fff', fontSize: 13, fontWeight: 700, cursor: cancellingId === app.id ? 'not-allowed' : 'pointer' }}>
+                              {cancellingId === app.id ? '処理中...' : 'はい、キャンセルする'}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
+                          <button onClick={() => setCancelConfirmId(app.id)}
+                            style={{ background: 'none', border: '1px solid #ccc', borderRadius: 8, padding: '9px 14px', fontSize: 12, color: '#888', fontWeight: 600, cursor: 'pointer' }}>
+                            申し込みキャンセルする
+                          </button>
+                          <a href={bookingUrl} style={{ background: '#2e7d32', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700 }}>
+                            予約確定する →
+                          </a>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )

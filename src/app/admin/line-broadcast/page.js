@@ -220,6 +220,28 @@ const INDIVIDUAL_TEMPLATES = [
     ],
   },
   {
+    key: 'request_cancel_model',
+    label: '❌ リク撮キャンセル通知（モデル個人）',
+    trigger: 'カメラマンがマイページからリク撮申請をキャンセルした時（自動）',
+    vars: [
+      { key: '{{booking_details}}', desc: '日時・場所・モデル名・カメラマン名（自動生成）' },
+    ],
+  },
+  {
+    key: 'request_cancel_staff',
+    label: '❌ リク撮キャンセル通知（スタッフ個人）',
+    trigger: 'カメラマンがマイページからリク撮申請をキャンセルした時（スタッフ確定済みの場合・自動）',
+    vars: [
+      { key: '{{booking_details}}', desc: '日時・場所・モデル名・カメラマン名（自動生成）' },
+    ],
+  },
+  {
+    key: 'admin_request_cancelled',
+    label: '❌ リク撮キャンセル通知（運営グループ）',
+    trigger: 'カメラマンがマイページからリク撮申請をキャンセルした時（自動）',
+    vars: [],
+  },
+  {
     key: 'blog_post_approved',
     label: '✅ ブログ記事申請 — 承認通知（モデル個人）',
     trigger: 'ブログ記事・編集申請を承認した時（自動）',

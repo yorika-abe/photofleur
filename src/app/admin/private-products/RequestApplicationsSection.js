@@ -698,6 +698,8 @@ function PaidApplicationCard({ app }) {
 
 function DeclinedApplicationCard({ app }) {
   const modelNames = (app.model_responses || []).map(mr => mr.models?.name).filter(Boolean)
+  const isCancelledByCustomer = app.status === 'customer_cancelled'
+  const label = isCancelledByCustomer ? 'キャンセル（カメラマン）' : '却下済み'
   return (
     <div style={{ background: '#fafafa', borderRadius: 12, border: '1px solid #eee', padding: '16px 20px', opacity: 0.65 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -712,7 +714,7 @@ function DeclinedApplicationCard({ app }) {
           <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>📍 {app.location}</div>
         </div>
         <span style={{ fontSize: 11, background: '#fafafa', color: '#999', border: '1px solid #ddd', borderRadius: 20, padding: '3px 10px', fontWeight: 700, whiteSpace: 'nowrap' }}>
-          却下済み
+          {label}
         </span>
       </div>
       <div style={{ fontSize: 11, color: '#ccc', marginTop: 8 }}>
@@ -738,11 +740,12 @@ export default function RequestApplicationsSection() {
   useEffect(() => { load() }, [])
 
   const today = new Date().toISOString().split('T')[0]
+  const CLOSED_STATUSES = ['declined', 'customer_cancelled']
   const pendingApps = apps.filter(a => ['pending', 'notified'].includes(a.status) && !a.paid_booking)
-  const respondedApps = apps.filter(a => !['pending', 'notified', 'declined'].includes(a.status) && !a.paid_booking)
-  const paidApps = apps.filter(a => !!a.paid_booking || a.status === 'declined')
+  const respondedApps = apps.filter(a => !['pending', 'notified', ...CLOSED_STATUSES].includes(a.status) && !a.paid_booking)
+  const paidApps = apps.filter(a => !!a.paid_booking || CLOSED_STATUSES.includes(a.status))
 
-  const declinedApps = paidApps.filter(a => a.status === 'declined' && !a.paid_booking)
+  const declinedApps = paidApps.filter(a => CLOSED_STATUSES.includes(a.status) && !a.paid_booking)
   const confirmedPaidApps = paidApps.filter(a => !!a.paid_booking)
   const paidUpcoming = confirmedPaidApps.filter(a => (a.paid_booking?.event_date_input || '') >= today)
     .sort((a, b) => (a.paid_booking?.event_date_input || '').localeCompare(b.paid_booking?.event_date_input || ''))
