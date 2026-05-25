@@ -90,11 +90,19 @@ function MyPageContent() {
   const [feedbackSending, setFeedbackSending] = useState(false)
   const [feedbackDone, setFeedbackDone] = useState(false)
   const [requestApps, setRequestApps] = useState([])
+  const [dismissedAppIds, setDismissedAppIds] = useState(new Set())
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   )
+
+  useEffect(() => {
+    try {
+      const ids = JSON.parse(localStorage.getItem('dismissed_request_app_ids') || '[]')
+      if (ids.length > 0) setDismissedAppIds(new Set(ids))
+    } catch {}
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -468,63 +476,89 @@ function MyPageContent() {
       </CollapseCard>
 
       {/* リクエスト撮影申請 */}
-      {(justApplied || requestApps.length > 0) && (
-        <div id="request-apps" style={{ background: '#fff', borderRadius: 14, border: '1px solid #d6ecf5', padding: '20px' }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', margin: '0 0 16px' }}>リクエスト撮影申請</h2>
-          {justApplied && (
-            <div style={{ background: '#e8f5e9', border: '1px solid #c8e6c9', borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#2e7d32', fontWeight: 600 }}>
-              ✅ 申し込みを受け付けました
-            </div>
-          )}
-          {requestApps.map(app => {
-            const statusLabel = {
-              pending: '申請中',
-              notified: 'モデル回答待ち',
-              model_responded: 'モデル回答済み・確認中',
-              staff_recruiting: 'スタッフ募集中',
-              confirmed: '確定',
-              declined: '不可',
-            }[app.status] || app.status
-            const statusColor = {
-              pending: '#888', notified: '#1565c0', model_responded: '#e65100',
-              staff_recruiting: '#6a1b9a', confirmed: '#2e7d32', declined: '#c62828',
-            }[app.status] || '#888'
-            const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
-            const bookingUrl = app.private_product_token ? `${siteUrl}/p/${app.private_product_token}` : null
-            return (
-              <div key={app.id} style={{ border: '1px solid #eef4f8', borderRadius: 10, padding: '14px 16px', marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                    {app.models?.length > 0
-                      ? app.models.map(m => (
-                          <span key={m.model_id} style={{ fontSize: 12, fontWeight: 700, color: '#1a3560', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</span>
-                        ))
-                      : <span style={{ fontSize: 12, fontWeight: 700, color: '#1a3560' }}>未定</span>
-                    }
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: statusColor, background: `${statusColor}18`, borderRadius: 20, padding: '3px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                    {statusLabel}
-                  </span>
-                </div>
-                <p style={{ fontSize: 12, color: '#888', margin: 0 }}>
-                  申請日: {new Date(app.created_at).toLocaleDateString('ja-JP')}
-                  {app.preferences?.[0] && ` ／ 第一希望: ${app.preferences[0].preferred_date}`}
-                </p>
-                {app.status === 'notified' && (
-                  <p style={{ fontSize: 12, color: '#1565c0', margin: '6px 0 0' }}>
-                    モデル・スタッフのスケジュールを確認のうえ、公式ラインより折り返しご連絡させていただきます。少々お待ちください。
-                  </p>
-                )}
-                {app.status === 'confirmed' && bookingUrl && (
-                  <a href={bookingUrl} style={{ display: 'inline-block', marginTop: 10, background: '#2e7d32', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700 }}>
-                    予約確定する →
-                  </a>
-                )}
+      {(() => {
+        const visibleApps = requestApps.filter(a => !dismissedAppIds.has(a.id))
+        if (!justApplied && visibleApps.length === 0) return null
+        function dismissApp(id) {
+          setDismissedAppIds(prev => {
+            const next = new Set(prev)
+            next.add(id)
+            try { localStorage.setItem('dismissed_request_app_ids', JSON.stringify([...next])) } catch {}
+            return next
+          })
+        }
+        return (
+          <div id="request-apps" style={{ background: '#fff', borderRadius: 14, border: '1px solid #d6ecf5', padding: '20px' }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a3560', margin: '0 0 16px' }}>リクエスト撮影申請</h2>
+            {justApplied && (
+              <div style={{ background: '#e8f5e9', border: '1px solid #c8e6c9', borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#2e7d32', fontWeight: 600 }}>
+                ✅ 申し込みを受け付けました
               </div>
-            )
-          })}
-        </div>
-      )}
+            )}
+            {visibleApps.map(app => {
+              const isDeclined = app.status === 'declined'
+              const statusLabel = {
+                pending: '申請中',
+                notified: 'モデル回答待ち',
+                model_responded: 'モデル回答済み・確認中',
+                staff_recruiting: 'スタッフ募集中',
+                confirmed: '確定',
+                declined: '申請却下',
+              }[app.status] || app.status
+              const statusColor = {
+                pending: '#888', notified: '#1565c0', model_responded: '#e65100',
+                staff_recruiting: '#6a1b9a', confirmed: '#2e7d32', declined: '#c62828',
+              }[app.status] || '#888'
+              const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
+              const bookingUrl = app.private_product_token ? `${siteUrl}/p/${app.private_product_token}` : null
+              return (
+                <div key={app.id} style={{ border: `1px solid ${isDeclined ? '#eee' : '#eef4f8'}`, borderRadius: 10, padding: '14px 16px', marginBottom: 12, background: isDeclined ? '#fafafa' : '#fff', opacity: isDeclined ? 0.8 : 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                      {app.models?.length > 0
+                        ? app.models.map(m => (
+                            <span key={m.model_id} style={{ fontSize: 12, fontWeight: 700, color: isDeclined ? '#aaa' : '#1a3560', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</span>
+                          ))
+                        : <span style={{ fontSize: 12, fontWeight: 700, color: '#1a3560' }}>未定</span>
+                      }
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: statusColor, background: `${statusColor}18`, borderRadius: 20, padding: '3px 10px', whiteSpace: 'nowrap' }}>
+                        {statusLabel}
+                      </span>
+                      {isDeclined && (
+                        <button onClick={() => dismissApp(app.id)} title="非表示にする"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '2px 4px', color: '#ccc', lineHeight: 1 }}>
+                          🗑️
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <p style={{ fontSize: 12, color: '#888', margin: 0 }}>
+                    申請日: {new Date(app.created_at).toLocaleDateString('ja-JP')}
+                    {app.preferences?.[0] && ` ／ 第一希望: ${app.preferences[0].preferred_date}`}
+                  </p>
+                  {app.status === 'notified' && (
+                    <p style={{ fontSize: 12, color: '#1565c0', margin: '6px 0 0' }}>
+                      モデル・スタッフのスケジュールを確認のうえ、公式ラインより折り返しご連絡させていただきます。少々お待ちください。
+                    </p>
+                  )}
+                  {isDeclined && (
+                    <p style={{ fontSize: 12, color: '#c62828', margin: '6px 0 0' }}>
+                      いただきました日程ではスケジュールの調整が難しく、今回はご希望に添うことができませんでした。
+                    </p>
+                  )}
+                  {app.status === 'confirmed' && bookingUrl && (
+                    <a href={bookingUrl} style={{ display: 'inline-block', marginTop: 10, background: '#2e7d32', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700 }}>
+                      予約確定する →
+                    </a>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )
+      })()}
     </div>
   )
 }
