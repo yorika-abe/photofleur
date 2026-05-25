@@ -389,15 +389,15 @@ export default function ModelPortalHome() {
             { href: '/model-portal/photos', icon: '📸', label: 'ご提供写真', desc: '提供いただいた写真を確認', badge: newPhotoCount },
             { href: '/model-portal/guide', icon: '📖', label: 'モデル活動の手引き', desc: '活動マニュアル・注意事項' },
           ]).map(item => (
-            <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
-              <div style={{ background: '#fff', borderRadius: 12, padding: '20px', border: '1px solid #d6ecf5', transition: 'box-shadow 0.2s', position: 'relative' }}>
+            <Link key={item.href} href={item.href} style={{ textDecoration: 'none', display: 'flex' }}>
+              <div style={{ background: '#fff', borderRadius: 12, padding: '20px', border: '1px solid #d6ecf5', transition: 'box-shadow 0.2s', position: 'relative', width: '100%', boxSizing: 'border-box' }}>
                 {item.badge > 0 && (
                   <span style={{ position: 'absolute', top: 12, right: 12, background: '#e53935', color: '#fff', borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 700, minWidth: 22, textAlign: 'center' }}>
                     {item.badge}
                   </span>
                 )}
                 <div style={{ fontSize: 24, marginBottom: 8 }}>{item.icon}</div>
-                <div style={{ fontWeight: 700, fontSize: 15, color: '#0d1f3a', marginBottom: 4 }}>{item.label}</div>
+                <div style={{ fontWeight: 700, fontSize: 13, color: '#0d1f3a', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</div>
                 <div style={{ fontSize: 12, color: '#888' }}>{item.desc}</div>
               </div>
             </Link>
