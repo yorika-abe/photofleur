@@ -1483,7 +1483,7 @@ export default function EventEditPage() {
             <div style={{ marginBottom: 14 }}>
               <label style={label}>集合時間オフセット（撮影開始の何分前に集合？）</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input type="number" value={event.model_assembly_offset_minutes || 30} onChange={e => updateField('model_assembly_offset_minutes', e.target.value)} style={{ ...inp, width: 80 }} />
+                <input type="number" value={event.model_assembly_offset_minutes ?? ''} onChange={e => updateField('model_assembly_offset_minutes', e.target.value === '' ? '' : parseInt(e.target.value))} style={{ ...inp, width: 80 }} />
                 <span style={{ fontSize: 14, color: '#555' }}>分前（スタジオ: 30分、ストリート: 20分が目安）</span>
               </div>
             </div>
