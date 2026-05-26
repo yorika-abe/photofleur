@@ -31,11 +31,11 @@ async function CartTokenView({ cartToken, supabase }) {
 
   // スロット予約のDB情報取得
   const enrichedBookings = await Promise.all((bookings || []).map(async (b) => {
-    const { data: slot } = await supabase.from('booking_slots').select('slot_label, price, event_entry_id').eq('id', b.slot_id).single().catch(() => ({ data: null }))
-    const { data: entry } = slot ? await supabase.from('event_entries').select('model_id, event_id').eq('id', slot.event_entry_id).single().catch(() => ({ data: null })) : { data: null }
+    const { data: slot } = await supabase.from('booking_slots').select('slot_label, price, event_entry_id').eq('id', b.slot_id).single()
+    const { data: entry } = slot ? await supabase.from('event_entries').select('model_id, event_id').eq('id', slot.event_entry_id).single() : { data: null }
     const [{ data: model }, { data: event }] = await Promise.all([
-      entry ? supabase.from('models').select('name').eq('id', entry.model_id).single().catch(() => ({ data: null })) : { data: null },
-      entry ? supabase.from('events').select('event_date, location_name, event_type').eq('id', entry.event_id).single().catch(() => ({ data: null })) : { data: null },
+      entry ? supabase.from('models').select('name').eq('id', entry.model_id).single() : { data: null },
+      entry ? supabase.from('events').select('event_date, location_name, event_type').eq('id', entry.event_id).single() : { data: null },
     ])
     return { ...b, slot, model, event }
   }))
@@ -43,8 +43,8 @@ async function CartTokenView({ cartToken, supabase }) {
   // EP予約のDB情報取得
   const enrichedEpBookings = await Promise.all((epBookings || []).map(async (b) => {
     const [{ data: product }, { data: event }] = await Promise.all([
-      supabase.from('event_products').select('name, price').eq('id', b.product_id).single().catch(() => ({ data: null })),
-      supabase.from('events').select('event_date, location_name').eq('id', b.event_id).single().catch(() => ({ data: null })),
+      supabase.from('event_products').select('name, price').eq('id', b.product_id).single(),
+      supabase.from('events').select('event_date, location_name').eq('id', b.event_id).single(),
     ])
     return { ...b, product, event }
   }))
@@ -152,9 +152,7 @@ async function CartTokenView({ cartToken, supabase }) {
   )
 }
 
-// 個別トークンで表示（同日複数予約があれば合算表示）
 async function SingleTokenView({ token, supabase }) {
-  // まず bookings を確認
   const { data: booking } = await supabase
     .from('bookings')
     .select('id, last_name, first_name, last_name_kana, first_name_kana, email, phone, sns_url, is_outdoor, final_price, payment_method, created_at, slot_id')
@@ -225,7 +223,6 @@ async function SingleTokenView({ token, supabase }) {
     )
   }
 
-  // event_product_bookings（特別予約）を確認
   const { data: epb } = await supabase
     .from('event_product_bookings')
     .select('id, customer_name, customer_email, customer_phone, final_price, payment_method, selections, product_id, event_id')
@@ -234,8 +231,8 @@ async function SingleTokenView({ token, supabase }) {
 
   if (epb) {
     const [{ data: product }, { data: event }] = await Promise.all([
-      supabase.from('event_products').select('name, price').eq('id', epb.product_id).single().catch(() => ({ data: null })),
-      supabase.from('events').select('event_date, location_name').eq('id', epb.event_id).single().catch(() => ({ data: null })),
+      supabase.from('event_products').select('name, price').eq('id', epb.product_id).single(),
+      supabase.from('events').select('event_date, location_name').eq('id', epb.event_id).single(),
     ])
     const isCard = epb.payment_method === 'card'
     return (
@@ -284,7 +281,6 @@ async function SingleTokenView({ token, supabase }) {
     )
   }
 
-  // private_bookings を確認
   const { data: pb } = await supabase
     .from('private_bookings')
     .select('id, email, last_name, first_name, private_products(title, price, event_date, time_label, models(name))')
@@ -343,11 +339,11 @@ async function MultiTokenView({ tokens, supabase }) {
   if (!bookings?.length) notFound()
 
   const enriched = await Promise.all(bookings.map(async b => {
-    const { data: slot } = await supabase.from('booking_slots').select('slot_label, event_entry_id, start_time').eq('id', b.slot_id).single().catch(() => ({ data: null }))
-    const { data: entry } = slot ? await supabase.from('event_entries').select('model_id, event_id').eq('id', slot.event_entry_id).single().catch(() => ({ data: null })) : { data: null }
+    const { data: slot } = await supabase.from('booking_slots').select('slot_label, event_entry_id, start_time').eq('id', b.slot_id).single()
+    const { data: entry } = slot ? await supabase.from('event_entries').select('model_id, event_id').eq('id', slot.event_entry_id).single() : { data: null }
     const [{ data: model }, { data: event }] = await Promise.all([
-      entry ? supabase.from('models').select('name').eq('id', entry.model_id).single().catch(() => ({ data: null })) : { data: null },
-      entry ? supabase.from('events').select('event_date, location_name, event_type').eq('id', entry.event_id).single().catch(() => ({ data: null })) : { data: null },
+      entry ? supabase.from('models').select('name').eq('id', entry.model_id).single() : { data: null },
+      entry ? supabase.from('events').select('event_date, location_name, event_type').eq('id', entry.event_id).single() : { data: null },
     ])
     return { ...b, slot, model, event }
   }))
