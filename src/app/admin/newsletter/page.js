@@ -173,7 +173,8 @@ function getDefaultRows(templateId) {
         makeRow('text', { text: '{{customer_name}} 様\n\nこの度はPhoto Fleurにご予約いただき、誠にありがとうございます。\n以下の内容でご予約を受け付けました。', size: 15, lineHeight: 1.9 }),
         makeRow('text', { text: '{{items_block}}', size: 14 }),
         makeRow('divider', { color: '#e5e5e5' }),
-        makeRow('text', { text: 'ご不明点がございましたら、公式LINEよりご連絡ください。\nhttps://lin.ee/7XLB4St\n\nモデルの体調不良などにより、こちらからキャンセルさせていただく可能性がございます。ご了承ください。', size: 13, color: '#555', lineHeight: 2 }),
+        makeRow('text', { text: 'ご不明点がございましたら、HPのお問い合わせチャットよりご連絡ください。\n\nモデルの体調不良などにより、こちらからキャンセルさせていただく可能性がございます。ご了承ください。', size: 13, color: '#555', lineHeight: 2 }),
+        makeRow('button', { label: '💬 お問い合わせチャット', url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://photofleur.vercel.app'}/chat`, bgColor: '#1a3560', textColor: '#fff' }),
       ]
     case 'day-before-reminder':
       return [
@@ -181,7 +182,8 @@ function getDefaultRows(templateId) {
         makeRow('text', { text: '{{customer_name}} 様\n\n明日はご予約いただいている撮影日です。\n以下の内容をご確認のうえ、当日お気をつけてお越しください。', size: 15, lineHeight: 1.9 }),
         makeRow('text', { text: '{{items_block}}', size: 14 }),
         makeRow('divider', { color: '#e5e5e5' }),
-        makeRow('text', { text: 'ご不明点がございましたら、公式LINEよりご連絡ください。\nhttps://lin.ee/7XLB4St', size: 13, color: '#555', lineHeight: 2 }),
+        makeRow('text', { text: 'ご不明点がございましたら、HPのお問い合わせチャットよりご連絡ください。', size: 13, color: '#555', lineHeight: 2 }),
+        makeRow('button', { label: '💬 お問い合わせチャット', url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://photofleur.vercel.app'}/chat`, bgColor: '#1a3560', textColor: '#fff' }),
       ]
     case 'thanks-mail':
       return [
@@ -191,7 +193,8 @@ function getDefaultRows(templateId) {
         makeRow('text', { text: 'PhotoFleurでは日々改善・改良を重ね邁進しております。\n下記のようなご意見がございましたら、ぜひお聞かせください。\n\n・PhotoFleurで開催したいイベント\n・おすすめの撮影場所\n・撮影会のシステム的な問題・改善点\n・その他ご意見', size: 14, color: '#555', lineHeight: 2.2 }),
         makeRow('button', { label: '📮 ご意見箱はこちら', url: '{{feedback_url}}', bgColor: '#1a3560', textColor: '#fff' }),
         makeRow('divider', { color: '#f0f0f0' }),
-        makeRow('text', { text: '公式LINEより最新の情報やクーポンを発信しております。\n是非ご登録よろしくお願いいたします。\n\n公式LINE 🔗 https://lin.ee/VgTzmhe', size: 14, color: '#555', lineHeight: 2 }),
+        makeRow('text', { text: 'ご不明な点はお問い合わせチャットよりお気軽にご連絡ください。', size: 14, color: '#555', lineHeight: 2 }),
+        makeRow('button', { label: '💬 お問い合わせチャット', url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://photofleur.vercel.app'}/chat`, bgColor: '#1a3560', textColor: '#fff' }),
       ]
     case 'cancellation':
       return [
@@ -199,7 +202,8 @@ function getDefaultRows(templateId) {
         makeRow('text', { text: '{{customer_name}} 様\n\nこの度はphotofleur撮影会をご予約いただき誠にありがとうございました。\n本メールにてご予約はキャンセルとさせていただきます。', size: 15, lineHeight: 1.9 }),
         makeRow('text', { text: 'こちら都合でキャンセルとなり返金のある方はクレジットカード宛に返金させていただきますのでご確認ください。\n\nキャンセル料が発生する方に関しましては別途ご連絡させていただきます。', size: 14, color: '#444', lineHeight: 1.9 }),
         makeRow('divider', { color: '#e5e5e5' }),
-        makeRow('text', { text: '公式LINE🔗 https://lin.ee/VgTzmhe\n公式Instagram🔗 @photofleur.official\n公式X🔗 @photofleur_', size: 14, color: '#555', lineHeight: 2 }),
+        makeRow('text', { text: 'ご不明な点はお問い合わせチャットよりご連絡ください。\n\n公式Instagram🔗 @photofleur.official\n公式X🔗 @photofleur_', size: 14, color: '#555', lineHeight: 2 }),
+        makeRow('button', { label: '💬 お問い合わせチャット', url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://photofleur.vercel.app'}/chat`, bgColor: '#1a3560', textColor: '#fff' }),
       ]
     case 'private-booking-confirmation':
       return [
@@ -207,7 +211,8 @@ function getDefaultRows(templateId) {
         makeRow('text', { text: '{{customer_name}} 様\n\nこの度はPhotoFleurにお申し込みいただき、誠にありがとうございます。\n以下の内容でご予約を受け付けました。', size: 15, lineHeight: 1.9 }),
         makeRow('text', { text: '{{qr_block}}', size: 14 }),
         makeRow('divider', { color: '#e5e5e5' }),
-        makeRow('text', { text: 'ご不明点がございましたら、公式LINEよりご連絡ください。\nhttps://lin.ee/7XLB4St', size: 13, color: '#555', lineHeight: 2 }),
+        makeRow('text', { text: 'ご不明点がございましたら、HPのお問い合わせチャットよりご連絡ください。', size: 13, color: '#555', lineHeight: 2 }),
+        makeRow('button', { label: '💬 お問い合わせチャット', url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://photofleur.vercel.app'}/chat`, bgColor: '#1a3560', textColor: '#fff' }),
       ]
     case 'goods-order-confirmation':
       return [
@@ -215,7 +220,8 @@ function getDefaultRows(templateId) {
         makeRow('text', { text: '{{customer_name}} 様\n\nこの度はPhotoFleurにてグッズをご注文いただき、誠にありがとうございます。\n以下の内容でご注文を受け付けました。', size: 15, lineHeight: 1.9 }),
         makeRow('text', { text: '商品名：{{goods_title}}\n数量：{{quantity}}\n合計金額：{{total_price}}\nお支払方法：{{payment_method}}', size: 15, lineHeight: 2 }),
         makeRow('divider', { color: '#e5e5e5' }),
-        makeRow('text', { text: 'ご不明点がございましたら、公式LINEよりご連絡ください。\nhttps://lin.ee/7XLB4St', size: 13, color: '#555', lineHeight: 2 }),
+        makeRow('text', { text: 'ご不明点がございましたら、HPのお問い合わせチャットよりご連絡ください。', size: 13, color: '#555', lineHeight: 2 }),
+        makeRow('button', { label: '💬 お問い合わせチャット', url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://photofleur.vercel.app'}/chat`, bgColor: '#1a3560', textColor: '#fff' }),
       ]
     case 'chat-reply':
       return [

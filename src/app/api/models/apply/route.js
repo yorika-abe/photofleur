@@ -62,7 +62,7 @@ export async function POST(request) {
         <h2 style="color:#2f2244;">${name} 様</h2>
         <p>PhotoFleurへのモデルご応募、誠にありがとうございます。</p>
         <p>ご応募内容を確認後、3〜5営業日以内に結果をご連絡いたします。</p>
-        <p>ご不明な点はLINEまたはこのメールへの返信にてお問い合わせください。</p>
+        <p>ご不明な点は<a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://photofleur.vercel.app'}/chat">HPのお問い合わせチャット</a>よりご連絡ください。</p>
         <br>
         <p style="color:#999;font-size:13px;">PhotoFleur 運営チーム</p>
       </div>
