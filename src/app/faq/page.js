@@ -6,14 +6,6 @@ import Link from 'next/link'
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 const LINE_URL = 'https://lin.ee/VgTzmhe'
 
-function LineIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
-    </svg>
-  )
-}
-
 const faqs = [
   {
     category: '予約について',
@@ -42,7 +34,7 @@ const faqs = [
       },
       {
         q: '予約確認メールが届かない場合はどうすればよいですか？',
-        a: '迷惑メールフォルダをご確認ください。それでも届かない場合は公式LINEにてご連絡ください。',
+        a: '迷惑メールフォルダをご確認ください。それでも届かない場合はHPお問い合わせチャットにてご連絡ください。',
       },
       {
         q: '予約受付開始やイベントの公開はいつですか？',
@@ -137,7 +129,7 @@ const faqs = [
       },
       {
         q: '領収書の発行はできますか？',
-        a: 'ご希望の方は公式LINEまたは当日口頭にてお伝えください。PDFにて発行いたします。',
+        a: 'ご希望の方はお問い合わせチャットまたは当日口頭にてお伝えください。PDFにて発行いたします。',
       },
     ],
   },
@@ -150,7 +142,7 @@ const faqs = [
       },
       {
         q: '報酬はいくらですか？',
-        a: '撮影会の形式によって異なります。詳細は公式LINEにてお問い合わせください。',
+        a: '撮影会の形式によって異なります。詳細はLINE【採用アカウント】にてお問い合わせください。',
       },
     ],
   },
@@ -161,12 +153,11 @@ const faqs = [
         q: '撮影会運営への連絡はどこからすれば良いですか？',
         node: (
           <div style={{ color: '#556070', lineHeight: 1.9, fontSize: 14 }}>
-            <p style={{ margin: '0 0 14px' }}>X DM・メールへの返信は確認させていただくこともございますが、一律公式ラインまでご連絡よろしくお願いいたします。</p>
-            <a href={LINE_URL} target="_blank" rel="noopener noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#06C755', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 700 }}>
-              <LineIcon />
+            <p style={{ margin: '0 0 14px' }}>X DM・メールへの返信は確認させていただくこともございますが、一律HPお問い合わせチャットまでご連絡よろしくお願いいたします。</p>
+            <Link href="/chat"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 700 }}>
               📩 contactはこちら →
-            </a>
+            </Link>
           </div>
         ),
       },
@@ -205,7 +196,7 @@ export default function FAQPage() {
           <h1 style={{ ...serif, fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 400, margin: 0 }}>よくある質問</h1>
           <div style={{ width: 40, height: 1, background: 'rgba(168,226,244,0.4)', margin: '24px auto 20px' }} />
           <p className="faq-hero-sub" style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', margin: 0 }}>
-            ご不明な点がある場合はLINEにてお気軽にお問い合わせください。
+            ご不明な点がある場合はお問い合わせチャットにてお気軽にお問い合わせください。
           </p>
         </div>
       </section>
@@ -227,16 +218,13 @@ export default function FAQPage() {
 
           <div style={{ background: 'linear-gradient(135deg, #f0f7fb, #fafcff)', borderRadius: 16, padding: '36px 32px', textAlign: 'center', border: '1px solid #c8e8f5' }}>
             <h3 style={{ ...serif, fontSize: 22, fontWeight: 400, color: '#0d1f3a', marginBottom: 10, marginTop: 0 }}>解決しない場合は</h3>
-            <p style={{ color: '#556070', fontSize: 14, lineHeight: 1.8, marginBottom: 24 }}>上記以外のご質問はLINEからお気軽にどうぞ。</p>
-            <a
-              href={LINE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: '#06C755', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '14px 32px', fontWeight: 700, fontSize: 15 }}
+            <p style={{ color: '#556070', fontSize: 14, lineHeight: 1.8, marginBottom: 24 }}>上記以外のご質問はお問い合わせチャットからお気軽にどうぞ。</p>
+            <Link
+              href="/chat"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: '#1a3560', color: '#fff', textDecoration: 'none', borderRadius: 10, padding: '14px 32px', fontWeight: 700, fontSize: 15 }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
-              LINEで問い合わせる
-            </a>
+              💬 チャットで問い合わせる
+            </Link>
           </div>
         </div>
       </section>
