@@ -23,6 +23,10 @@ export default function AdminBookingsPage() {
   const [cancelling, setCancelling] = useState(null)
   const [toast, setToast] = useState(null)
   const [refundModal, setRefundModal] = useState(null)
+  const [checkedEmails, setCheckedEmails] = useState(new Set())
+  const [bulkMessage, setBulkMessage] = useState('')
+  const [bulkSending, setBulkSending] = useState(false)
+  const [bulkResult, setBulkResult] = useState(null)
 
   async function load() {
     setLoading(true)
@@ -38,6 +42,38 @@ export default function AdminBookingsPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
   }, [])
+
+  function toggleEmail(email) {
+    setCheckedEmails(prev => {
+      const next = new Set(prev)
+      if (next.has(email)) next.delete(email)
+      else next.add(email)
+      return next
+    })
+  }
+
+  async function sendBulkChat() {
+    if (!bulkMessage.trim() || checkedEmails.size === 0) return
+    setBulkSending(true)
+    setBulkResult(null)
+    let sent = 0, failed = 0
+    for (const email of checkedEmails) {
+      const res = await fetch('/api/admin/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_email: email, message: bulkMessage.trim() }),
+      })
+      if (res.ok) sent++
+      else failed++
+    }
+    setBulkSending(false)
+    setBulkResult({ sent, failed })
+    if (failed === 0) {
+      setCheckedEmails(new Set())
+      setBulkMessage('')
+      setTimeout(() => setBulkResult(null), 4000)
+    }
+  }
 
   function cancelBooking(b) {
     const price = b.final_price || b.slot?.price || 0
@@ -301,8 +337,14 @@ export default function AdminBookingsPage() {
             const isEP = b._type === 'event_product'
             const isGoods = b._type === 'goods'
             const borderColor = isCancelled ? '1px solid #ffcdd2' : isPrivate ? '1px solid #e8d5f5' : isEP ? '1px solid #d5e8f5' : isGoods ? '1px solid #ffd5b0' : '1px solid #e5e5e5'
+            const isChecked = checkedEmails.has(b.email)
             return (
-              <div key={b.id} style={{ background: isCancelled ? '#fafafa' : '#fff', borderRadius: 12, border: borderColor, overflow: 'hidden', opacity: isCancelled ? 0.7 : 1 }}>
+              <div key={b.id} style={{ background: isCancelled ? '#fafafa' : '#fff', borderRadius: 12, border: borderColor, overflow: 'hidden', opacity: isCancelled ? 0.7 : 1, display: 'flex' }}>
+                {/* Checkbox */}
+                <label onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', padding: '0 12px', cursor: 'pointer', borderRight: '1px solid #eee', background: isChecked ? '#eef4ff' : 'transparent', flexShrink: 0 }}>
+                  <input type="checkbox" checked={isChecked} onChange={() => toggleEmail(b.email)} style={{ width: 15, height: 15, cursor: 'pointer', accentColor: '#1a3560' }} />
+                </label>
+                <div style={{ flex: 1, overflow: 'hidden' }}>
                 {/* Main row */}
                 <div onClick={() => setExpanded(isExpanded ? null : b.id)} className="bk-card-main">
                   <div className="bk-name-col">
@@ -487,9 +529,40 @@ export default function AdminBookingsPage() {
                     </div>
                   </div>
                 )}
+                </div>{/* flex inner */}
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Bulk chat bar */}
+      {checkedEmails.size > 0 && (
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#1a3560', color: '#fff', padding: '12px 20px', zIndex: 100, boxShadow: '0 -4px 20px rgba(0,0,0,0.25)' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+            <div style={{ flexShrink: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>{checkedEmails.size}人選択中</div>
+              <button onClick={() => setCheckedEmails(new Set())} style={{ background: 'none', border: 'none', color: '#88aacc', cursor: 'pointer', fontSize: 11, padding: 0, marginTop: 2 }}>✕ 選択解除</button>
+            </div>
+            <textarea
+              value={bulkMessage}
+              onChange={e => setBulkMessage(e.target.value)}
+              placeholder="一斉送信するメッセージを入力..."
+              rows={2}
+              style={{ flex: 1, borderRadius: 8, border: 'none', padding: '8px 12px', fontSize: 13, resize: 'vertical', outline: 'none', color: '#333', minWidth: 0 }}
+            />
+            <button
+              onClick={sendBulkChat}
+              disabled={bulkSending || !bulkMessage.trim()}
+              style={{ background: bulkSending || !bulkMessage.trim() ? '#556' : '#5bbfd6', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: bulkSending || !bulkMessage.trim() ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              {bulkSending ? '送信中...' : '💬 一斉送信'}
+            </button>
+          </div>
+          {bulkResult && (
+            <div style={{ maxWidth: 1100, margin: '6px auto 0', fontSize: 12, color: bulkResult.failed > 0 ? '#ffaaaa' : '#aaffcc' }}>
+              {bulkResult.failed === 0 ? `✓ ${bulkResult.sent}人に送信しました` : `✓ ${bulkResult.sent}人成功 / ✕ ${bulkResult.failed}人失敗`}
+            </div>
+          )}
         </div>
       )}
     </div>
