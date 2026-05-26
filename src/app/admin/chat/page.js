@@ -55,7 +55,6 @@ export default function AdminChatPage() {
   const [sending, setSending] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
-  const bottomRef = useRef(null)
   const fileRef = useRef(null)
   const pollerRef = useRef(null)
 
@@ -87,8 +86,13 @@ export default function AdminChatPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, selectedEmail])
 
+  const scrollAreaRef = useRef(null)
+
   useEffect(() => {
-    if (view === 'room') bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (view === 'room') {
+      const el = scrollAreaRef.current
+      if (el) el.scrollTop = el.scrollHeight
+    }
   }, [messages, view])
 
   async function loadRooms() {
@@ -253,7 +257,7 @@ export default function AdminChatPage() {
       </div>
 
       {/* Messages */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 0' }}>
+      <div ref={scrollAreaRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 0' }}>
         {grouped.map((item, i) => {
           if (item.type === 'date') {
             return (
@@ -308,7 +312,7 @@ export default function AdminChatPage() {
             </div>
           )
         })}
-        <div ref={bottomRef} style={{ height: 8 }} />
+        <div style={{ height: 8 }} />
       </div>
 
       {/* Input */}

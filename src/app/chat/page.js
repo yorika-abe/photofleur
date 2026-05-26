@@ -44,6 +44,7 @@ export default function ChatPage() {
   const [imagePreview, setImagePreview] = useState(null) // { file, dataUrl }
   const [error, setError] = useState(null)
   const bottomRef = useRef(null)
+  const scrollAreaRef = useRef(null)
   const fileRef = useRef(null)
   const pollerRef = useRef(null)
 
@@ -70,7 +71,8 @@ export default function ChatPage() {
   }, [user])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = scrollAreaRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [messages])
 
   async function loadMessages() {
@@ -157,7 +159,7 @@ export default function ChatPage() {
       </div>
 
       {/* Messages area */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 0' }}>
+      <div ref={scrollAreaRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 0' }}>
         {isLoading && (
           <div style={{ textAlign: 'center', color: '#aaa', padding: 40, fontSize: 14 }}>読み込み中...</div>
         )}
@@ -216,7 +218,7 @@ export default function ChatPage() {
             </div>
           )
         })}
-        <div ref={bottomRef} style={{ height: 8 }} />
+        <div style={{ height: 8 }} />
       </div>
 
       {/* Input area */}
