@@ -54,6 +54,17 @@ export default async function AdminPage() {
     supabase.from('request_applications').select('*', { count: 'exact', head: true }).in('status', ['pending', 'notified', 'model_responded', 'staff_recruiting']),
   ])
 
+  // チャット未読数：このadminが未読のユーザーメッセージ数
+  let unreadChat = 0
+  if (currentUser) {
+    const [{ data: reads }, { data: userMsgs }] = await Promise.all([
+      supabase.from('chat_reads').select('user_email, last_read_at').eq('admin_id', currentUser.id),
+      supabase.from('chat_messages').select('user_email, created_at').eq('sender_type', 'user'),
+    ])
+    const readMap = Object.fromEntries((reads || []).map(r => [r.user_email, r.last_read_at]))
+    unreadChat = (userMsgs || []).filter(m => !readMap[m.user_email] || m.created_at > readMap[m.user_email]).length
+  }
+
   return (
     <div className="admin-wrap">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, gap: 8 }}>
@@ -99,6 +110,7 @@ export default async function AdminPage() {
           { href: '/admin/activity-reports', label: '外部活動報告', icon: '📣', badge: unreadActivityReports ?? 0 },
           { href: '/admin/staff-recruit', label: 'スタッフ募集', icon: '🐈‍⬛', badge: pendingStaffApps ?? 0 },
           { href: '/admin/fixed-costs', label: '固定費管理', icon: '💴' },
+          { href: '/admin/chat', label: 'チャットお問い合わせ', icon: '🙋', badge: unreadChat },
         ].map(link => (
           <Link key={link.href} href={link.href} style={{ textDecoration: 'none' }}>
             <div style={{ background: '#1a3560', color: '#fff', borderRadius: 12, padding: '16px 14px', display: 'flex', alignItems: 'center', gap: 8, position: 'relative', overflow: 'hidden' }}>

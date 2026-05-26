@@ -61,6 +61,7 @@ export default function Header() {
     { href: '/model-recruit', label: 'モデル募集' },
     { href: '/shop', label: 'ショップ' },
     { href: '/faq', label: 'FAQ' },
+    { href: '/chat', label: '💬 chat' },
   ]
 
   function isActive(href) {

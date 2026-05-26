@@ -63,6 +63,8 @@ export const DEFAULTS = {
   request_model_reminder: `【🔗リク撮依頼が入りました】\nHPから詳細を確認して参加可否を\n⚠️本日中に回答してください。\n{{site_url}}/model-portal/request-applications`,
   request_confirmed_customer: `【リクエスト撮影が確定しました】\n\nこの度はリクエスト撮影をご希望くださりありがとうございます。\n撮影日が確定しましたのでご確認ください。\n📍集合解散場所：{{location}}\n👤参加モデル：{{model_names}}\n⏰撮影時間：{{duration}}時間\n以下のリンクよりお支払いに関してご確認ください。\n🔗{{payment_url}}`,
   request_decline_customer: `この度はリクエスト撮影をご希望いただき、誠にありがとうございます🤍\n\n大変申し訳ございませんが、いただきました日程ではスケジュールの調整が難しく、\n今回はご希望に添うことができませんでした🙇🏻‍♀️\n\nせっかくご連絡いただいたにも関わらず申し訳ございません…！\n\nもしよろしければ、また別日程にて改めてご検討いただけますと幸いです🌸\n今後ともどうぞよろしくお願いいたします✨`,
+  admin_chat_notify: `【🙋チャット通知】\n未読のチャットがあります\n👉 管理画面で確認してください`,
+  photographer_chat_reply: `【チャットに返信があります】\nチャットでのお問い合わせありがとうございます！\n\nーーーーーーーーーー\n運営からの返信\nーーーーーーーーーー\n{{reply_message}}\n\nLINEは送信専用です。\nHP chatからご確認ください✨`,
 }
 
 export async function GET() {
