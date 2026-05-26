@@ -550,7 +550,7 @@ export default function AdminBookingsPage() {
               onChange={e => setBulkMessage(e.target.value)}
               placeholder="一斉送信するメッセージを入力..."
               rows={2}
-              style={{ flex: 1, borderRadius: 8, border: 'none', padding: '8px 12px', fontSize: 13, resize: 'vertical', outline: 'none', color: '#333', minWidth: 0 }}
+              style={{ flex: 1, borderRadius: 8, border: '2px solid #5bbfd6', padding: '8px 12px', fontSize: 13, resize: 'none', outline: 'none', color: '#333', background: '#fff', minWidth: 0 }}
             />
             <button
               onClick={sendBulkChat}
