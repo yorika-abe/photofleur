@@ -1,5 +1,5 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
@@ -168,30 +168,6 @@ async function SingleTokenView({ token, supabase }) {
       entry ? supabase.from('models').select('name').eq('id', entry.model_id).single() : { data: null },
       entry ? supabase.from('events').select('event_date, location_name, event_type').eq('id', entry.event_id).single() : { data: null },
     ])
-
-    // 同日・同メールの予約が複数あれば合算表示
-    if (booking.email && event?.event_date) {
-      try {
-        const { data: sameDayEvents } = await supabase.from('events').select('id').eq('event_date', event.event_date)
-        const sdEIds = (sameDayEvents || []).map(e => e.id)
-        if (sdEIds.length > 0) {
-          const { data: sdEntries } = await supabase.from('event_entries').select('id').in('event_id', sdEIds)
-          const sdEnIds = (sdEntries || []).map(e => e.id)
-          if (sdEnIds.length > 0) {
-            const { data: sdSlots } = await supabase.from('booking_slots').select('id').in('event_entry_id', sdEnIds)
-            const sdSlotIds = (sdSlots || []).map(s => s.id)
-            if (sdSlotIds.length > 0) {
-              const { data: sdBookings } = await supabase.from('bookings')
-                .select('qr_token').eq('email', booking.email).is('cancelled_at', null).in('slot_id', sdSlotIds)
-              const tokens = (sdBookings || []).map(b => b.qr_token).filter(Boolean)
-              if (tokens.length > 1) {
-                redirect(`/booking-verify?tokens=${tokens.join(',')}`)
-              }
-            }
-          }
-        }
-      } catch {}
-    }
 
     const isCard = booking.payment_method === 'card'
 
