@@ -382,10 +382,16 @@ async function MultiTokenView({ tokens, supabase }) {
         {locationName && <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>{locationName}</div>}
       </div>
 
-      <div style={{ background: '#0d1f3a', borderRadius: 14, padding: '18px 16px', marginBottom: 16 }}>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', marginBottom: 6 }}>お名前</div>
-        <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>{first.last_name} {first.first_name}</div>
-        {first.last_name_kana && <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>{first.last_name_kana} {first.first_name_kana}</div>}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, marginBottom: 16, alignItems: 'stretch' }}>
+        <div style={{ background: '#0d1f3a', borderRadius: 14, padding: '14px 16px', minWidth: 0 }}>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', marginBottom: 4 }}>お名前</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{first.last_name} {first.first_name}</div>
+          {first.last_name_kana && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2, whiteSpace: 'nowrap' }}>{first.last_name_kana} {first.first_name_kana}</div>}
+        </div>
+        <div style={{ background: '#f3e5f5', borderRadius: 14, padding: '14px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: 80 }}>
+          <div style={{ fontSize: 10, color: '#7b1fa2', fontWeight: 600, whiteSpace: 'nowrap', marginBottom: 4 }}>📸 予約回数</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#4a148c', whiteSpace: 'nowrap' }}>{totalBookings}回</div>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: cashTotal > 0 && cardTotal > 0 ? '1fr 1fr' : '1fr', gap: 12, marginBottom: 16 }}>
@@ -426,14 +432,6 @@ async function MultiTokenView({ tokens, supabase }) {
             </div>
           </div>
         ))}
-      </div>
-
-      <div style={{ background: '#f3e5f5', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span style={{ fontSize: 24 }}>📸</span>
-        <div>
-          <div style={{ fontSize: 11, color: '#7b1fa2', fontWeight: 600 }}>予約回数</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: '#4a148c' }}>{totalBookings}回</div>
-        </div>
       </div>
 
       <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 14, padding: '20px' }}>
