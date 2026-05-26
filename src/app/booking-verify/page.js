@@ -376,12 +376,11 @@ async function MultiTokenView({ tokens, supabase }) {
         <div style={{ fontSize: 20, fontWeight: 700, color: '#2e7d32' }}>予約確認済み</div>
       </div>
 
-      {locationName && (
-        <div style={{ background: '#5bbfd6', borderRadius: 14, padding: '14px 18px', marginBottom: 16, textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', letterSpacing: '0.1em', marginBottom: 4 }}>📍 撮影場所</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>{locationName}</div>
-        </div>
-      )}
+      <div style={{ background: '#5bbfd6', borderRadius: 14, padding: '14px 18px', marginBottom: 16, textAlign: 'center' }}>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', letterSpacing: '0.1em', marginBottom: 4 }}>📍 撮影場所</div>
+        <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>{shootingLocation(first.event?.event_type, first.is_outdoor)}</div>
+        {locationName && <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>{locationName}</div>}
+      </div>
 
       <div style={{ background: '#0d1f3a', borderRadius: 14, padding: '18px 16px', marginBottom: 16 }}>
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', marginBottom: 6 }}>お名前</div>
