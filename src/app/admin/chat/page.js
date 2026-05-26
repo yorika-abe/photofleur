@@ -55,6 +55,7 @@ export default function AdminChatPage() {
   const [sending, setSending] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const fileRef = useRef(null)
   const pollerRef = useRef(null)
 
@@ -190,9 +191,17 @@ export default function AdminChatPage() {
   // ---- LIST VIEW ----
   if (view === 'list') {
     const totalUnread = rooms.reduce((s, r) => s + (r.unread || 0), 0)
+    const q = searchQuery.trim().toLowerCase()
+    const filteredRooms = q
+      ? rooms.filter(r => {
+          const name = (r.profile?.name || '').toLowerCase()
+          const email = (r.user_email || '').toLowerCase()
+          return name.includes(q) || email.includes(q)
+        })
+      : rooms
     return (
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 16px', fontFamily: 'sans-serif' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <Link href="/admin" style={{ color: '#1a3560', textDecoration: 'none', fontSize: 13 }}>← 管理画面</Link>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#1a3560', flex: 1 }}>🙋 チャットお問い合わせ</h1>
           {totalUnread > 0 && (
@@ -200,14 +209,22 @@ export default function AdminChatPage() {
           )}
         </div>
 
-        {rooms.length === 0 ? (
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="名前・メールで検索..."
+          style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #ddd', borderRadius: 10, padding: '9px 14px', fontSize: 14, outline: 'none', marginBottom: 16, color: '#333' }}
+        />
+
+        {filteredRooms.length === 0 ? (
           <div style={{ textAlign: 'center', color: '#aaa', padding: 60, fontSize: 14 }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
-            まだお問い合わせはありません
+            {q ? '該当するユーザーが見つかりません' : 'まだお問い合わせはありません'}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#e0e0e0', borderRadius: 12, overflow: 'hidden' }}>
-            {rooms.map(room => {
+            {filteredRooms.map(room => {
               const last = room.last_message
               const preview = last.image_url && !last.message ? '📷 画像' : (last.message?.slice(0, 40) || '')
               const isFromUser = last.sender_type === 'user'
