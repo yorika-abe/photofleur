@@ -57,6 +57,10 @@ export default function AdminChatPage() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [userPanelOpen, setUserPanelOpen] = useState(false)
+  const [userPanelData, setUserPanelData] = useState(null) // { profile, bookings }
+  const [userPanelLoading, setUserPanelLoading] = useState(false)
+  const [bookingsOpen, setBookingsOpen] = useState(false)
   const fileRef = useRef(null)
 
   const supabase = createBrowserClient(
@@ -186,6 +190,20 @@ export default function AdminChatPage() {
     e.target.value = ''
   }
 
+  async function openUserPanel() {
+    if (!selectedEmail) return
+    setUserPanelOpen(true)
+    setBookingsOpen(false)
+    if (userPanelData?.profile?.email === selectedEmail) return
+    setUserPanelLoading(true)
+    setUserPanelData(null)
+    try {
+      const res = await fetch(`/api/admin/users/profile?email=${encodeURIComponent(selectedEmail)}`)
+      if (res.ok) setUserPanelData(await res.json())
+    } catch {}
+    setUserPanelLoading(false)
+  }
+
   // Group messages by date
   const grouped = []
   let lastDate = null
@@ -272,15 +290,17 @@ export default function AdminChatPage() {
 
   // ---- ROOM VIEW ----
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 52px)', background: '#f0f2f5', fontFamily: 'sans-serif' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 52px)', background: '#f0f2f5', fontFamily: 'sans-serif', position: 'relative' }}>
       {/* Header */}
       <div style={{ background: '#1a3560', color: '#fff', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         <button onClick={backToList} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer', fontSize: 22, lineHeight: 1, padding: 0 }}>←</button>
-        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>👤</div>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 14 }}>{roomName}</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{selectedEmail}</div>
-        </div>
+        <button onClick={openUserPanel} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 10, flex: 1, textAlign: 'left' }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>👤</div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#fff' }}>{roomName}</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{selectedEmail}</div>
+          </div>
+        </button>
       </div>
 
       {/* Messages */}
@@ -305,7 +325,7 @@ export default function AdminChatPage() {
           return (
             <div key={msg.id} style={{ display: 'flex', flexDirection: alignRight ? 'row-reverse' : 'row', alignItems: 'flex-end', gap: 8, marginBottom: 8 }}>
               {isFromUser && (
-                <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#90a4ae', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>👤</div>
+                <button onClick={openUserPanel} style={{ width: 34, height: 34, borderRadius: '50%', background: '#90a4ae', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, border: 'none', cursor: 'pointer', padding: 0 }}>👤</button>
               )}
               {isFromOtherAdmin && (
                 <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#2e7d32', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>🌸</div>
@@ -369,6 +389,78 @@ export default function AdminChatPage() {
           >{uploading ? '⏳' : '➤'}</button>
         </div>
       </div>
+
+      {/* User info panel */}
+      {userPanelOpen && (
+        <>
+          <div onClick={() => setUserPanelOpen(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 20 }} />
+          <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: 320, background: '#fff', zIndex: 21, overflowY: 'auto', boxShadow: '-4px 0 16px rgba(0,0,0,0.15)' }}>
+            <div style={{ background: '#1a3560', color: '#fff', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>会員情報</div>
+              <button onClick={() => setUserPanelOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>✕</button>
+            </div>
+
+            {userPanelLoading && <div style={{ padding: 40, textAlign: 'center', color: '#aaa', fontSize: 13 }}>読み込み中...</div>}
+
+            {!userPanelLoading && userPanelData && (
+              <div style={{ padding: 16 }}>
+                {/* プロフィール */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>会員登録情報</div>
+                  {[
+                    { label: '名前', value: userPanelData.profile?.name },
+                    { label: 'ニックネーム', value: userPanelData.profile?.nickname },
+                    { label: 'メール', value: userPanelData.profile?.email },
+                    { label: '電話', value: userPanelData.profile?.phone },
+                    { label: 'SNS', value: userPanelData.profile?.sns_url },
+                    { label: '登録日', value: userPanelData.profile?.created_at ? new Date(userPanelData.profile.created_at).toLocaleDateString('ja-JP') : null },
+                  ].map(({ label, value }) => value ? (
+                    <div key={label} style={{ display: 'flex', gap: 8, marginBottom: 8, fontSize: 13 }}>
+                      <div style={{ color: '#888', flexShrink: 0, width: 72 }}>{label}</div>
+                      <div style={{ color: '#333', wordBreak: 'break-all' }}>{value}</div>
+                    </div>
+                  ) : null)}
+                </div>
+
+                {/* 予約履歴 */}
+                <div style={{ borderTop: '1px solid #eee', paddingTop: 12 }}>
+                  <button
+                    onClick={() => setBookingsOpen(v => !v)}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', marginBottom: bookingsOpen ? 10 : 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      予約履歴（{userPanelData.bookings?.length || 0}件）
+                    </div>
+                    <span style={{ fontSize: 11, color: '#aaa' }}>{bookingsOpen ? '▲' : '▼'}</span>
+                  </button>
+                  {bookingsOpen && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {userPanelData.bookings?.length === 0 && (
+                        <div style={{ fontSize: 12, color: '#aaa', padding: '8px 0' }}>予約履歴がありません</div>
+                      )}
+                      {userPanelData.bookings?.map(b => (
+                        <div key={`${b.type}-${b.id}`} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #eee', background: b.cancelled_at ? '#fafafa' : '#f8fbff', opacity: b.cancelled_at ? 0.7 : 1 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              {b.event_date && <div style={{ fontSize: 11, fontWeight: 700, color: '#1a3560', marginBottom: 2 }}>{new Date(b.event_date).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' })}</div>}
+                              {b.event_title && <div style={{ fontSize: 12, color: '#333', marginBottom: 1 }}>{b.event_title}</div>}
+                              {b.slot_label && <div style={{ fontSize: 11, color: '#555' }}>{b.slot_label}</div>}
+                              {b.cancelled_at && <div style={{ fontSize: 10, color: '#c62828', marginTop: 2 }}>キャンセル済み</div>}
+                            </div>
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                              {b.final_price != null && <div style={{ fontSize: 12, fontWeight: 700, color: '#1a3560' }}>¥{b.final_price.toLocaleString()}</div>}
+                              <div style={{ fontSize: 10, color: '#aaa', marginTop: 2 }}>{b.payment_method === 'card' ? '💳' : '💴'}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }
