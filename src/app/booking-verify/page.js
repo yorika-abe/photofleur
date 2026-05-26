@@ -1,5 +1,5 @@
 import { createSupabaseAdminClient } from '@/lib/supabase-server'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
@@ -185,7 +185,7 @@ async function SingleTokenView({ token, supabase }) {
                 .select('qr_token').eq('email', booking.email).is('cancelled_at', null).in('slot_id', sdSlotIds)
               const tokens = (sdBookings || []).map(b => b.qr_token).filter(Boolean)
               if (tokens.length > 1) {
-                return <MultiTokenView tokens={tokens.join(',')} supabase={supabase} />
+                redirect(`/booking-verify?tokens=${tokens.join(',')}`)
               }
             }
           }
