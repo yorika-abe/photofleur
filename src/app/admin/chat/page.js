@@ -409,7 +409,7 @@ export default function AdminChatPage() {
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>会員登録情報</div>
                   {[
                     { label: '名前', value: userPanelData.profile?.name },
-                    { label: 'ニックネーム', value: userPanelData.profile?.nickname },
+                    { label: 'ニック名', value: userPanelData.profile?.nickname },
                     { label: 'メール', value: userPanelData.profile?.email },
                     { label: '電話', value: userPanelData.profile?.phone },
                     { label: 'SNS', value: userPanelData.profile?.sns_url, isLink: true },
