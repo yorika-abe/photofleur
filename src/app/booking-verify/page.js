@@ -385,8 +385,16 @@ async function MultiTokenView({ tokens, supabase }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, marginBottom: 16, alignItems: 'stretch' }}>
         <div style={{ background: '#0d1f3a', borderRadius: 14, padding: '14px 16px', minWidth: 0 }}>
           <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', marginBottom: 4 }}>お名前</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{first.last_name} {first.first_name}</div>
-          {first.last_name_kana && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2, whiteSpace: 'nowrap' }}>{first.last_name_kana} {first.first_name_kana}</div>}
+          {(() => {
+            const fullName = `${first.last_name || ''} ${first.first_name || ''}`.trim()
+            const fs = fullName.length > 10 ? 13 : fullName.length > 8 ? 15 : fullName.length > 6 ? 17 : 19
+            return <div style={{ fontSize: fs, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>{fullName}</div>
+          })()}
+          {first.last_name_kana && (() => {
+            const kana = `${first.last_name_kana} ${first.first_name_kana}`.trim()
+            const fs = kana.length > 12 ? 9 : 11
+            return <div style={{ fontSize: fs, color: 'rgba(255,255,255,0.5)', marginTop: 2, whiteSpace: 'nowrap' }}>{kana}</div>
+          })()}
         </div>
         <div style={{ background: '#f3e5f5', borderRadius: 14, padding: '14px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minWidth: 80 }}>
           <div style={{ fontSize: 10, color: '#7b1fa2', fontWeight: 600, whiteSpace: 'nowrap', marginBottom: 4 }}>📸 予約回数</div>
