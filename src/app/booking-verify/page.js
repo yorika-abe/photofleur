@@ -330,15 +330,146 @@ async function SingleTokenView({ token, supabase }) {
   notFound()
 }
 
+async function MultiTokenView({ tokens, supabase }) {
+  const tokenList = tokens.split(',').map(t => t.trim()).filter(Boolean)
+  if (!tokenList.length) notFound()
+
+  const { data: bookings } = await supabase
+    .from('bookings')
+    .select('id, last_name, first_name, last_name_kana, first_name_kana, email, phone, sns_url, final_price, payment_method, slot_id, cancelled_at, is_outdoor')
+    .in('qr_token', tokenList)
+
+  if (!bookings?.length) notFound()
+
+  const enriched = await Promise.all(bookings.map(async b => {
+    const { data: slot } = await supabase.from('booking_slots').select('slot_label, event_entry_id, start_time').eq('id', b.slot_id).single().catch(() => ({ data: null }))
+    const { data: entry } = slot ? await supabase.from('event_entries').select('model_id, event_id').eq('id', slot.event_entry_id).single().catch(() => ({ data: null })) : { data: null }
+    const [{ data: model }, { data: event }] = await Promise.all([
+      entry ? supabase.from('models').select('name').eq('id', entry.model_id).single().catch(() => ({ data: null })) : { data: null },
+      entry ? supabase.from('events').select('event_date, location_name, event_type').eq('id', entry.event_id).single().catch(() => ({ data: null })) : { data: null },
+    ])
+    return { ...b, slot, model, event }
+  }))
+
+  enriched.sort((a, b) => (a.slot?.start_time || '').localeCompare(b.slot?.start_time || ''))
+
+  const first = enriched[0]
+  const email = first.email
+  const eventDate = first.event?.event_date
+  const locationName = first.event?.location_name
+
+  const cashItems = enriched.filter(b => b.payment_method !== 'card' && !b.cancelled_at)
+  const cardItems = enriched.filter(b => b.payment_method === 'card' && !b.cancelled_at)
+  const cashTotal = cashItems.reduce((s, b) => s + Number(b.final_price || 0), 0)
+  const cardTotal = cardItems.reduce((s, b) => s + Number(b.final_price || 0), 0)
+
+  const [{ count: regularCount }, { count: privateCount }] = await Promise.all([
+    supabase.from('bookings').select('id', { count: 'exact', head: true }).eq('email', email).is('cancelled_at', null),
+    supabase.from('private_bookings').select('id', { count: 'exact', head: true }).eq('email', email).is('cancelled_at', null).neq('is_cancelled', true),
+  ])
+  const totalBookings = (regularCount || 0) + (privateCount || 0)
+
+  return (
+    <div style={{ maxWidth: 480, margin: '0 auto', padding: '32px 16px', fontFamily: 'sans-serif' }}>
+      <div style={{ background: '#e8f5e9', border: '2px solid #4caf50', borderRadius: 16, padding: '20px', marginBottom: 20, textAlign: 'center' }}>
+        <div style={{ fontSize: 32, marginBottom: 6 }}>✓</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: '#2e7d32' }}>予約確認済み</div>
+      </div>
+
+      {locationName && (
+        <div style={{ background: '#5bbfd6', borderRadius: 14, padding: '14px 18px', marginBottom: 16, textAlign: 'center' }}>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', letterSpacing: '0.1em', marginBottom: 4 }}>📍 撮影場所</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>{locationName}</div>
+        </div>
+      )}
+
+      <div style={{ background: '#0d1f3a', borderRadius: 14, padding: '18px 16px', marginBottom: 16 }}>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', marginBottom: 6 }}>お名前</div>
+        <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>{first.last_name} {first.first_name}</div>
+        {first.last_name_kana && <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>{first.last_name_kana} {first.first_name_kana}</div>}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: cashTotal > 0 && cardTotal > 0 ? '1fr 1fr' : '1fr', gap: 12, marginBottom: 16 }}>
+        {cashTotal > 0 && (
+          <div style={{ background: '#b71c1c', borderRadius: 14, padding: '16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 28 }}>💴</span>
+            <div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 3 }}>現金払い</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>¥{cashTotal.toLocaleString()}</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>当日受け取りください</div>
+            </div>
+          </div>
+        )}
+        {cardTotal > 0 && (
+          <div style={{ background: '#1b5e20', borderRadius: 14, padding: '16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 28 }}>💳</span>
+            <div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 3 }}>クレジット決済済み</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>¥{cardTotal.toLocaleString()}</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 14, padding: '16px 20px', marginBottom: 16 }}>
+        <div style={{ fontSize: 12, color: '#888', fontWeight: 600, marginBottom: 12 }}>予約枠</div>
+        {enriched.map((b, i) => (
+          <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: i < enriched.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#1a3560' }}>{b.slot?.slot_label || '—'}</div>
+              <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>モデル：{b.model?.name || '—'}</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>¥{Number(b.final_price || 0).toLocaleString()}</div>
+              <div style={{ fontSize: 11, color: b.payment_method === 'card' ? '#1b5e20' : '#b71c1c', marginTop: 2 }}>
+                {b.payment_method === 'card' ? '💳' : '💴'}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: '#f3e5f5', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span style={{ fontSize: 24 }}>📸</span>
+        <div>
+          <div style={{ fontSize: 11, color: '#7b1fa2', fontWeight: 600 }}>予約回数</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#4a148c' }}>{totalBookings}回</div>
+        </div>
+      </div>
+
+      <div style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 14, padding: '20px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+          <tbody>
+            {[
+              ['開催日', eventDate ? formatDate(eventDate) : '—'],
+              ['場所', locationName || '—'],
+              ['電話番号', first.phone || '—'],
+              ['SNS URL', first.sns_url || '—'],
+              ['メール', email || '—'],
+            ].map(([label, value]) => (
+              <tr key={label} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                <td style={{ padding: '10px 0', color: '#888', width: '35%', verticalAlign: 'top', fontSize: 13 }}>{label}</td>
+                <td style={{ padding: '10px 0', fontWeight: 600, color: '#333', wordBreak: 'break-all', fontSize: 13 }}>{value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 export default async function BookingVerifyPage({ searchParams }) {
-  const { token, cart_token } = await searchParams
-  if (!token && !cart_token) notFound()
+  const { token, cart_token, tokens } = await searchParams
+  if (!token && !cart_token && !tokens) notFound()
 
   const supabase = await createSupabaseAdminClient()
 
+  if (tokens) {
+    return <MultiTokenView tokens={tokens} supabase={supabase} />
+  }
   if (cart_token) {
     return <CartTokenView cartToken={cart_token} supabase={supabase} />
   }
-
   return <SingleTokenView token={token} supabase={supabase} />
 }
