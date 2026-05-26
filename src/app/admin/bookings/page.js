@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 
 function formatDate(d) {
   if (!d) return ''
@@ -12,10 +13,11 @@ function formatDate(d) {
 }
 
 export default function AdminBookingsPage() {
+  const searchParams = useSearchParams()
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => searchParams.get('search') || '')
   const [eventFilter, setEventFilter] = useState('')
   const [expanded, setExpanded] = useState(null)
   const [cancelling, setCancelling] = useState(null)

@@ -412,12 +412,15 @@ export default function AdminChatPage() {
                     { label: 'ニックネーム', value: userPanelData.profile?.nickname },
                     { label: 'メール', value: userPanelData.profile?.email },
                     { label: '電話', value: userPanelData.profile?.phone },
-                    { label: 'SNS', value: userPanelData.profile?.sns_url },
+                    { label: 'SNS', value: userPanelData.profile?.sns_url, isLink: true },
                     { label: '登録日', value: userPanelData.profile?.created_at ? new Date(userPanelData.profile.created_at).toLocaleDateString('ja-JP') : null },
-                  ].map(({ label, value }) => value ? (
-                    <div key={label} style={{ display: 'flex', gap: 8, marginBottom: 8, fontSize: 13 }}>
-                      <div style={{ color: '#888', flexShrink: 0, width: 72 }}>{label}</div>
-                      <div style={{ color: '#333', wordBreak: 'break-all' }}>{value}</div>
+                  ].map(({ label, value, isLink }) => value ? (
+                    <div key={label} style={{ display: 'flex', gap: 6, marginBottom: 6, fontSize: 12, alignItems: 'center' }}>
+                      <div style={{ color: '#888', flexShrink: 0, width: 60 }}>{label}</div>
+                      {isLink
+                        ? <a href={value.startsWith('http') ? value : `https://${value}`} target="_blank" rel="noopener noreferrer" style={{ color: '#1a7ac4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{value}</a>
+                        : <div style={{ color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{value}</div>
+                      }
                     </div>
                   ) : null)}
                 </div>
@@ -438,7 +441,7 @@ export default function AdminChatPage() {
                         <div style={{ fontSize: 12, color: '#aaa', padding: '8px 0' }}>予約履歴がありません</div>
                       )}
                       {userPanelData.bookings?.map(b => (
-                        <div key={`${b.type}-${b.id}`} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #eee', background: b.cancelled_at ? '#fafafa' : '#f8fbff', opacity: b.cancelled_at ? 0.7 : 1 }}>
+                        <a key={`${b.type}-${b.id}`} href={`/admin/bookings?search=${encodeURIComponent(selectedEmail)}`} target="_blank" rel="noopener noreferrer" style={{ display: 'block', padding: '10px 12px', borderRadius: 8, border: '1px solid #eee', background: b.cancelled_at ? '#fafafa' : '#f8fbff', opacity: b.cancelled_at ? 0.7 : 1, textDecoration: 'none', color: 'inherit' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               {b.event_date && <div style={{ fontSize: 11, fontWeight: 700, color: '#1a3560', marginBottom: 2 }}>{new Date(b.event_date).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' })}</div>}
@@ -453,7 +456,7 @@ export default function AdminChatPage() {
                               <div style={{ fontSize: 10, color: '#aaa', marginTop: 2 }}>{b.payment_method === 'card' ? '💳' : '💴'}</div>
                             </div>
                           </div>
-                        </div>
+                        </a>
                       ))}
                     </div>
                   )}
