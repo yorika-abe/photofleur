@@ -171,6 +171,9 @@ export default function EligibilityChecker({ models }) {
             )}
           </div>
         )}
+        <p style={{ fontSize: 12, color: '#aaa', marginTop: 16, textAlign: 'center', lineHeight: 1.8 }}>
+          ※サイト移行前の参加回数分に関しては<a href="/chat" style={{ color: '#aaa' }}>お問い合わせチャット</a>よりご連絡ください。
+        </p>
       </div>
     </section>
   )

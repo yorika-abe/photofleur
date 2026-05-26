@@ -206,6 +206,7 @@ function MyPageContent() {
 
   const [showAllUpcoming, setShowAllUpcoming] = useState(false)
   const [showAllPast, setShowAllPast] = useState(false)
+  const [showPastHistory, setShowPastHistory] = useState(false)
 
   const inp = { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }
   const profileComplete = !!(savedProfile.last_name && savedProfile.first_name && savedProfile.last_name_kana && savedProfile.first_name_kana && savedProfile.phone && savedProfile.sns_url)
@@ -400,21 +401,19 @@ function MyPageContent() {
                     const tc = typeColors[b.event_type] || { bg: '#f5f5f5', color: '#888', label: '' }
                     const isPaid = b.payment_method === 'card'
                     return (
-                      <div key={`${b.booking_type || 'r'}-${b.id}`} style={{ padding: '14px 16px', borderRadius: 10, border: '1px solid #e0ecf8', background: '#f8fbff' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                              {tc.label && <span style={{ fontSize: 11, background: tc.bg, color: tc.color, borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>{tc.label}</span>}
-                              <span style={{ fontWeight: 700, fontSize: 14, color: '#1a3560' }}>{formatDate(b.event_date)}</span>
-                            </div>
-                            {b.event_title && <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 2 }}>{b.event_title}</div>}
-                            {b.location_name && <div style={{ fontSize: 12, color: '#888', marginBottom: 2 }}>{b.location_name}</div>}
-                            {b.slot_label && <div style={{ fontSize: 13, color: '#555', marginBottom: 2 }}>{b.slot_label}</div>}
-                            {b.model_name && <div style={{ fontSize: 12, color: '#888' }}>モデル：{b.model_name}</div>}
+                      <div key={`${b.booking_type || 'r'}-${b.id}`} className="my-booking-card" style={{ padding: '12px 14px', borderRadius: 10, border: '1px solid #e0ecf8', background: '#f8fbff' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, fontSize: 13, color: '#1a3560', marginBottom: 2 }}>{formatDate(b.event_date)}</div>
+                            {b.event_title && <div style={{ fontSize: 12, fontWeight: 600, color: '#333', marginBottom: 1 }}>{b.event_title}</div>}
+                            {b.location_name && <div style={{ fontSize: 11, color: '#888', marginBottom: 1 }}>{b.location_name}</div>}
+                            {b.slot_label && <div style={{ fontSize: 12, color: '#555', marginBottom: 1 }}>{b.slot_label}</div>}
+                            {b.model_name && <div style={{ fontSize: 11, color: '#888' }}>モデル：{b.model_name}</div>}
                           </div>
                           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <div style={{ fontWeight: 700, color: '#1a3560', fontSize: 15 }}>¥{(b.final_price || 0).toLocaleString()}</div>
-                            <div style={{ fontSize: 12, color: isPaid ? '#0097a7' : '#1565c0', marginTop: 2 }}>
+                            {tc.label && <div style={{ marginBottom: 4 }}><span style={{ fontSize: 10, background: tc.bg, color: tc.color, borderRadius: 4, padding: '2px 6px', fontWeight: 600 }}>{tc.label}</span></div>}
+                            <div style={{ fontWeight: 700, color: '#1a3560', fontSize: 14 }}>¥{(b.final_price || 0).toLocaleString()}</div>
+                            <div style={{ fontSize: 11, color: isPaid ? '#0097a7' : '#1565c0', marginTop: 2 }}>
                               {isPaid ? '💳 カード払い' : '💴 現金払い'}
                             </div>
                           </div>
@@ -434,43 +433,52 @@ function MyPageContent() {
             {/* 過去の予約 */}
             {pastBookings.length > 0 && (
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#888', marginBottom: 10 }}>🕐 過去の予約履歴</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {(showAllPast ? pastBookings : pastBookings.slice(0, 4)).map(b => {
-                    const tc = typeColors[b.event_type] || { bg: '#f5f5f5', color: '#888', label: '' }
-                    const isPaid = b.payment_method === 'card'
-                    const isCancelled = !!b.cancelled_at
-                    return (
-                      <div key={`${b.booking_type || 'r'}-${b.id}`} style={{ padding: '14px 16px', borderRadius: 10, border: '1px solid #e0e0e0', background: '#fafafa', opacity: isCancelled ? 0.7 : 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                              {tc.label && <span style={{ fontSize: 11, background: tc.bg, color: tc.color, borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>{tc.label}</span>}
-                              {isCancelled && <span style={{ fontSize: 11, background: '#ffebee', color: '#c62828', borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>キャンセル済み</span>}
-                              <span style={{ fontWeight: 700, fontSize: 14, color: '#555' }}>{formatDate(b.event_date)}</span>
-                            </div>
-                            {b.event_title && <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 2 }}>{b.event_title}</div>}
-                            {b.location_name && <div style={{ fontSize: 12, color: '#888', marginBottom: 2 }}>{b.location_name}</div>}
-                            {b.slot_label && <div style={{ fontSize: 13, color: '#555', marginBottom: 2 }}>{b.slot_label}</div>}
-                            {b.model_name && <div style={{ fontSize: 12, color: '#888' }}>モデル：{b.model_name}</div>}
-                          </div>
-                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <div style={{ fontWeight: 700, color: '#888', fontSize: 15 }}>¥{(b.final_price || 0).toLocaleString()}</div>
-                            {!isCancelled && (
-                              <div style={{ fontSize: 12, color: isPaid ? '#0097a7' : '#1565c0', marginTop: 2 }}>
-                                {isPaid ? '💳 カード払い' : '💴 現金払い'}
+                <button
+                  onClick={() => setShowPastHistory(v => !v)}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', marginBottom: showPastHistory ? 10 : 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#888' }}>🕐 過去の予約履歴（{pastBookings.length}件）</div>
+                  <span style={{ fontSize: 11, color: '#aaa' }}>{showPastHistory ? '▲ 閉じる' : '▼ 開く'}</span>
+                </button>
+                {showPastHistory && (
+                  <>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {(showAllPast ? pastBookings : pastBookings.slice(0, 4)).map(b => {
+                        const tc = typeColors[b.event_type] || { bg: '#f5f5f5', color: '#888', label: '' }
+                        const isPaid = b.payment_method === 'card'
+                        const isCancelled = !!b.cancelled_at
+                        return (
+                          <div key={`${b.booking_type || 'r'}-${b.id}`} className="my-booking-card" style={{ padding: '12px 14px', borderRadius: 10, border: '1px solid #e0e0e0', background: '#fafafa', opacity: isCancelled ? 0.7 : 1 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontWeight: 700, fontSize: 13, color: '#555', marginBottom: 2 }}>{formatDate(b.event_date)}</div>
+                                {b.event_title && <div style={{ fontSize: 12, fontWeight: 600, color: '#333', marginBottom: 1 }}>{b.event_title}</div>}
+                                {b.location_name && <div style={{ fontSize: 11, color: '#888', marginBottom: 1 }}>{b.location_name}</div>}
+                                {b.slot_label && <div style={{ fontSize: 12, color: '#555', marginBottom: 1 }}>{b.slot_label}</div>}
+                                {b.model_name && <div style={{ fontSize: 11, color: '#888' }}>モデル：{b.model_name}</div>}
                               </div>
-                            )}
+                              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                <div style={{ marginBottom: 4, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                                  {tc.label && <span style={{ fontSize: 10, background: tc.bg, color: tc.color, borderRadius: 4, padding: '2px 6px', fontWeight: 600 }}>{tc.label}</span>}
+                                  {isCancelled && <span style={{ fontSize: 10, background: '#ffebee', color: '#c62828', borderRadius: 4, padding: '2px 6px', fontWeight: 600 }}>キャンセル</span>}
+                                </div>
+                                <div style={{ fontWeight: 700, color: '#888', fontSize: 14 }}>¥{(b.final_price || 0).toLocaleString()}</div>
+                                {!isCancelled && (
+                                  <div style={{ fontSize: 11, color: isPaid ? '#0097a7' : '#1565c0', marginTop: 2 }}>
+                                    {isPaid ? '💳 カード払い' : '💴 現金払い'}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-                {pastBookings.length > 4 && !showAllPast && (
-                  <button onClick={() => setShowAllPast(true)} style={{ marginTop: 10, width: '100%', background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, padding: '10px', fontSize: 13, color: '#888', fontWeight: 600, cursor: 'pointer' }}>
-                    全て表示する（{pastBookings.length}件）
-                  </button>
+                        )
+                      })}
+                    </div>
+                    {pastBookings.length > 4 && !showAllPast && (
+                      <button onClick={() => setShowAllPast(true)} style={{ marginTop: 10, width: '100%', background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, padding: '10px', fontSize: 13, color: '#888', fontWeight: 600, cursor: 'pointer' }}>
+                        全て表示する（{pastBookings.length}件）
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -617,6 +625,11 @@ function MyPageContent() {
           </div>
         )
       })()}
+      <style>{`
+        @media (max-width: 480px) {
+          .my-booking-card { padding: 10px 12px !important; }
+        }
+      `}</style>
     </div>
   )
 }
