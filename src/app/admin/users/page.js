@@ -190,6 +190,12 @@ export default function UsersPage() {
                     style={{ background: isBlocked ? '#e53935' : '#f5f5f5', color: isBlocked ? '#fff' : '#888', border: isBlocked ? 'none' : '1px solid #ddd', borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                     {isBlocked ? 'ブロック解除' : 'ブロック'}
                   </button>
+                  {user.email && (
+                    <a href={`/admin/chat?email=${encodeURIComponent(user.email)}`}
+                      style={{ background: '#1a3560', color: '#fff', borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                      💬 チャット
+                    </a>
+                  )}
                   {isNew && (
                     <button
                       onClick={() => markInviteSeen(user.id)}

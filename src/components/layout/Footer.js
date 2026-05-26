@@ -61,7 +61,7 @@ export default function Footer() {
             <div style={{ color: '#0d1f3a', fontWeight: 600, marginBottom: 12, fontSize: 14 }}>サポート</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <Link href="/faq" style={{ color: '#556070', textDecoration: 'none', fontSize: 13 }}>よくある質問</Link>
-              <a href="https://lin.ee/VgTzmhe" target="_blank" rel="noopener noreferrer" style={{ color: '#556070', textDecoration: 'none', fontSize: 13 }}>LINEで問い合わせ</a>
+              <Link href="/chat" style={{ color: '#556070', textDecoration: 'none', fontSize: 13 }}>チャットで問い合わせ</Link>
             </div>
           </div>
           <div>

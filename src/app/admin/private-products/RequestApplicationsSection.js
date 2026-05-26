@@ -649,6 +649,13 @@ function ApplicationCard({ app, onUpdate }) {
           {sendResult && <p style={{ fontSize: 12, color: sendResult.includes('エラー') ? '#c62828' : '#2e7d32', marginTop: 6 }}>{sendResult}</p>}
         </details>
       )}
+
+      {app.email && (
+        <a href={`/admin/chat?email=${encodeURIComponent(app.email)}`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10, padding: '8px 16px', background: '#1a3560', color: '#fff', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+          💬 チャット
+        </a>
+      )}
     </div>
   )
 }

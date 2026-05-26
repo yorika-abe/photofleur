@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 
@@ -45,6 +46,7 @@ function compressImage(file, maxW = 1200, quality = 0.82) {
 }
 
 export default function AdminChatPage() {
+  const searchParams = useSearchParams()
   const [currentUser, setCurrentUser] = useState(null)
   const [view, setView] = useState('list') // 'list' | 'room'
   const [selectedEmail, setSelectedEmail] = useState(null)
@@ -66,6 +68,8 @@ export default function AdminChatPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => setCurrentUser(user))
+    const emailParam = searchParams.get('email')
+    if (emailParam) openRoom(emailParam)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

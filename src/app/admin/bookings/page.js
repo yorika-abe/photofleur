@@ -471,6 +471,13 @@ export default function AdminBookingsPage() {
                               {cancelling === b.id ? '送信中...' : '予約キャンセル・メール送信'}
                             </button>
                           )}
+                          {b.email && (
+                            <a
+                              href={`/admin/chat?email=${encodeURIComponent(b.email)}`}
+                              style={{ background: '#1a3560', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 10px', fontWeight: 700, fontSize: 11, whiteSpace: 'nowrap', textDecoration: 'none', textAlign: 'center' }}>
+                              💬 チャット
+                            </a>
+                          )}
                         </div>
                       </div>
                       <div style={{ fontSize: 11, color: '#aaa', marginTop: 6 }}>予約日：{new Date(b.created_at).toLocaleDateString('ja-JP')}</div>
