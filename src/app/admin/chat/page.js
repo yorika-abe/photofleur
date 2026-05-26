@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 
-const POLL_MS = 3000
 
 function formatTime(ts) {
   const d = new Date(ts)
@@ -59,7 +58,6 @@ export default function AdminChatPage() {
   const [error, setError] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const fileRef = useRef(null)
-  const pollerRef = useRef(null)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -73,21 +71,31 @@ export default function AdminChatPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // List polling
+  // Room list: initial load + Realtime
   useEffect(() => {
     if (view !== 'list') return
     loadRooms()
-    pollerRef.current = setInterval(loadRooms, 6000)
-    return () => clearInterval(pollerRef.current)
+
+    const channel = supabase
+      .channel('chat:admin:rooms')
+      .on('broadcast', { event: 'room_updated' }, () => loadRooms())
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view])
 
-  // Room polling
+  // Message view: initial load + Realtime
   useEffect(() => {
     if (view !== 'room' || !selectedEmail) return
     loadMessages()
-    pollerRef.current = setInterval(loadMessages, POLL_MS)
-    return () => clearInterval(pollerRef.current)
+
+    const channel = supabase
+      .channel(`chat:admin:${selectedEmail}`)
+      .on('broadcast', { event: 'new_message' }, () => loadMessages())
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, selectedEmail])
 
@@ -117,14 +125,12 @@ export default function AdminChatPage() {
   }
 
   function openRoom(email) {
-    clearInterval(pollerRef.current)
     setSelectedEmail(email)
     setMessages([])
     setView('room')
   }
 
   function backToList() {
-    clearInterval(pollerRef.current)
     setView('list')
     setSelectedEmail(null)
     setText('')

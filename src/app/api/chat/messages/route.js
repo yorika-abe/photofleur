@@ -47,6 +47,24 @@ export async function POST(req) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
+  // Broadcast to admin chat channels (room list + message view)
+  try {
+    await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/realtime/v1/api/broadcast`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+      },
+      body: JSON.stringify({
+        messages: [
+          { topic: `chat:admin:${user.email}`, event: 'new_message', payload: {} },
+          { topic: 'chat:admin:rooms', event: 'room_updated', payload: { user_email: user.email } },
+        ],
+      }),
+    })
+  } catch {}
+
   try {
     const preview = message?.trim()
       ? message.trim().slice(0, 30) + (message.trim().length > 30 ? '…' : '')

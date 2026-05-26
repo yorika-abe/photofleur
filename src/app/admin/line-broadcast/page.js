@@ -1049,6 +1049,14 @@ const PHOTOGRAPHER_TEMPLATES = [
     trigger: '管理画面の「直接LINEを送信」から送信（手動）/ デフォルト文として使用',
     vars: [],
   },
+  {
+    key: 'photographer_chat_reply',
+    label: '💬 チャット返信通知（カメラマン個人）',
+    trigger: '管理画面からチャット返信した時（自動）',
+    vars: [
+      { key: '{{reply_message}}', desc: '運営からの返信内容' },
+    ],
+  },
 ]
 
 const STAFF_GROUP_TEMPLATES = [
@@ -1135,6 +1143,18 @@ const ADMIN_TEMPLATES = [
     key: 'admin_request_all_responded',
     label: '🔗 リク撮モデル全回答済',
     trigger: '全モデルがリク撮に回答した時（自動）',
+    vars: [],
+  },
+  {
+    key: 'admin_request_cancelled',
+    label: '🔗❌ リク撮キャンセル通知（運営グループ）',
+    trigger: 'カメラマンがマイページからリク撮申請をキャンセルした時（自動）',
+    vars: [],
+  },
+  {
+    key: 'admin_chat_notify',
+    label: '🙋 チャット通知（運営グループ）',
+    trigger: 'カメラマンがチャットを送った時（自動）',
     vars: [],
   },
 ]

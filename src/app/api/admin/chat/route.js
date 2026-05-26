@@ -114,6 +114,21 @@ export async function POST(req) {
 
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
+  // Notify user's header badge via Realtime broadcast
+  try {
+    await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/realtime/v1/api/broadcast`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+      },
+      body: JSON.stringify({
+        messages: [{ topic: `chat:${user_email}`, event: 'new_message', payload: {} }],
+      }),
+    })
+  } catch {}
+
   // Mark this room as read for this admin
   await admin.from('chat_reads').upsert(
     { user_email, admin_id: currentUser.id, last_read_at: new Date().toISOString() },

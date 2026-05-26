@@ -4,8 +4,6 @@ import { useState, useEffect, useRef } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 
-const POLL_MS = 3000
-
 function formatTime(ts) {
   const d = new Date(ts)
   return d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
@@ -43,10 +41,11 @@ export default function ChatPage() {
   const [uploading, setUploading] = useState(false)
   const [imagePreview, setImagePreview] = useState(null) // { file, dataUrl }
   const [error, setError] = useState(null)
+  const [adminProfiles, setAdminProfiles] = useState({}) // sender_id → { name, avatar_url }
   const bottomRef = useRef(null)
   const scrollAreaRef = useRef(null)
   const fileRef = useRef(null)
-  const pollerRef = useRef(null)
+  const fetchedIdsRef = useRef(new Set())
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -65,8 +64,17 @@ export default function ChatPage() {
   useEffect(() => {
     if (!user) return
     loadMessages()
-    pollerRef.current = setInterval(loadMessages, POLL_MS)
-    return () => clearInterval(pollerRef.current)
+
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    )
+    const channel = supabase
+      .channel(`chat:${user.email}`)
+      .on('broadcast', { event: 'new_message' }, () => loadMessages())
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
@@ -80,6 +88,23 @@ export default function ChatPage() {
     if (!res.ok) return
     const { messages } = await res.json()
     setMessages(messages || [])
+    localStorage.setItem('chat_last_read', new Date().toISOString())
+
+    // Fetch profiles for admin senders we haven't loaded yet
+    const newIds = (messages || [])
+      .filter(m => m.sender_type === 'admin' && m.sender_id && !fetchedIdsRef.current.has(m.sender_id))
+      .map(m => m.sender_id)
+      .filter((id, i, arr) => arr.indexOf(id) === i)
+    if (newIds.length) {
+      newIds.forEach(id => fetchedIdsRef.current.add(id))
+      try {
+        const pr = await fetch(`/api/chat/admin-profiles?ids=${newIds.join(',')}`)
+        if (pr.ok) {
+          const { profiles } = await pr.json()
+          setAdminProfiles(prev => ({ ...prev, ...profiles }))
+        }
+      } catch {}
+    }
   }
 
   async function handleSend() {
@@ -146,14 +171,22 @@ export default function ChatPage() {
   const isLoggedIn = user !== undefined && user !== null
   const isLoading = user === undefined
 
+  // Use the most recent admin sender's profile for the header
+  const lastAdminMsg = [...messages].reverse().find(m => m.sender_type === 'admin' && m.sender_id)
+  const headerProfile = lastAdminMsg ? adminProfiles[lastAdminMsg.sender_id] : null
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 52px)', background: '#f0f2f5', position: 'relative' }}>
       {/* Header */}
       <div style={{ background: '#1a3560', color: '#fff', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}>
         <Link href="/" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 20, lineHeight: 1 }}>←</Link>
-        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🌸</div>
+        {headerProfile?.avatar_url ? (
+          <img src={headerProfile.avatar_url} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+        ) : (
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🌸</div>
+        )}
         <div>
-          <div style={{ fontWeight: 700, fontSize: 15 }}>PhotoFleur 運営</div>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>{headerProfile?.name || 'PhotoFleur 運営'}</div>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>お問い合わせ・チャット</div>
         </div>
       </div>
@@ -184,9 +217,14 @@ export default function ChatPage() {
           const isUser = msg.sender_type === 'user'
           return (
             <div key={msg.id} style={{ display: 'flex', flexDirection: isUser ? 'row-reverse' : 'row', alignItems: 'flex-end', gap: 8, marginBottom: 8 }}>
-              {!isUser && (
-                <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#1a3560', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>🌸</div>
-              )}
+              {!isUser && (() => {
+                const p = msg.sender_id ? adminProfiles[msg.sender_id] : null
+                return p?.avatar_url ? (
+                  <img src={p.avatar_url} alt="" style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                ) : (
+                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#1a3560', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>🌸</div>
+                )
+              })()}
               <div style={{ maxWidth: '72%', display: 'flex', flexDirection: isUser ? 'row-reverse' : 'row', alignItems: 'flex-end', gap: 4 }}>
                 <div>
                   {!isUser && (

@@ -10,6 +10,7 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [user, setUser] = useState(null)
   const [roles, setRoles] = useState([])
+  const [chatUnread, setChatUnread] = useState(0)
   const pathname = usePathname()
   const { items, ready, openCart } = useCart()
 
@@ -31,6 +32,7 @@ export default function Header() {
         setRoles(r)
       } else {
         setRoles([])
+        setChatUnread(0)
       }
     }
 
@@ -42,6 +44,39 @@ export default function Header() {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  useEffect(() => {
+    if (!user) return
+
+    // Initial unread count fetch
+    const since = localStorage.getItem('chat_last_read') || ''
+    const params = since ? `?since=${encodeURIComponent(since)}` : ''
+    fetch(`/api/chat/unread${params}`)
+      .then(r => r.json())
+      .then(({ unread }) => setChatUnread(unread || 0))
+      .catch(() => {})
+
+    // Realtime broadcast subscription
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    )
+    const channel = supabase
+      .channel(`chat:${user.email}`)
+      .on('broadcast', { event: 'new_message' }, () => {
+        setChatUnread(prev => prev + 1)
+      })
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [user])
+
+  // Reset badge when user navigates to /chat
+  useEffect(() => {
+    if (pathname.startsWith('/chat')) {
+      setChatUnread(0)
+    }
+  }, [pathname])
 
   async function handleLogout() {
     const supabase = createBrowserClient(
@@ -92,9 +127,18 @@ export default function Header() {
                 whiteSpace: 'nowrap',
                 background: isActive(link.href) ? 'rgba(26,53,96,0.07)' : 'transparent',
                 borderBottom: isActive(link.href) ? '2px solid #1a3560' : '2px solid transparent',
+                position: 'relative',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
               }}
             >
               {link.label}
+              {link.href === '/chat' && chatUnread > 0 && (
+                <span style={{ background: '#e53935', color: '#fff', borderRadius: '50%', fontSize: 10, fontWeight: 700, minWidth: 16, height: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>
+                  {chatUnread > 9 ? '9+' : chatUnread}
+                </span>
+              )}
             </Link>
           ))}
           {ready && items.length > 0 && (
@@ -160,9 +204,17 @@ export default function Header() {
                 borderRadius: 8,
                 background: isActive(link.href) ? 'rgba(26,53,96,0.07)' : 'transparent',
                 fontWeight: isActive(link.href) ? 700 : 400,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
               }}
             >
               {isActive(link.href) ? '▶ ' : ''}{link.label}
+              {link.href === '/chat' && chatUnread > 0 && (
+                <span style={{ background: '#e53935', color: '#fff', borderRadius: '50%', fontSize: 10, fontWeight: 700, minWidth: 16, height: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>
+                  {chatUnread > 9 ? '9+' : chatUnread}
+                </span>
+              )}
             </Link>
           ))}
           {ready && items.length > 0 && (
