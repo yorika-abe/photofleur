@@ -549,14 +549,15 @@ export default function AdminBookingsPage() {
               value={bulkMessage}
               onChange={e => setBulkMessage(e.target.value)}
               placeholder="一斉送信するメッセージを入力..."
-              rows={2}
-              style={{ flex: 1, borderRadius: 8, border: '2px solid #5bbfd6', padding: '8px 12px', fontSize: 13, resize: 'none', outline: 'none', color: '#333', background: '#fff', minWidth: 0 }}
+              rows={1}
+              style={{ flex: 1, borderRadius: 8, border: '2px solid #5bbfd6', padding: '8px 12px', fontSize: 13, resize: 'none', outline: 'none', color: '#333', background: '#fff', minWidth: 0, lineHeight: '1.4', display: 'block' }}
             />
             <button
               onClick={sendBulkChat}
               disabled={bulkSending || !bulkMessage.trim()}
-              style={{ background: bulkSending || !bulkMessage.trim() ? '#556' : '#5bbfd6', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontWeight: 700, fontSize: 13, cursor: bulkSending || !bulkMessage.trim() ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
-              {bulkSending ? '送信中...' : '💬 一斉送信'}
+              style={{ background: bulkSending || !bulkMessage.trim() ? '#556' : '#5bbfd6', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 700, fontSize: 13, cursor: bulkSending || !bulkMessage.trim() ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              <span className="bulk-send-label">{bulkSending ? '送信中...' : '💬 一斉送信'}</span>
+              <span className="bulk-send-icon" style={{ display: 'none' }}>{bulkSending ? '⏳' : '➤'}</span>
             </button>
           </div>
           {bulkResult && (
