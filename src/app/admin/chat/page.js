@@ -443,7 +443,9 @@ export default function AdminChatPage() {
                             <div style={{ flex: 1, minWidth: 0 }}>
                               {b.event_date && <div style={{ fontSize: 11, fontWeight: 700, color: '#1a3560', marginBottom: 2 }}>{new Date(b.event_date).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' })}</div>}
                               {b.event_title && <div style={{ fontSize: 12, color: '#333', marginBottom: 1 }}>{b.event_title}</div>}
-                              {b.slot_label && <div style={{ fontSize: 11, color: '#555' }}>{b.slot_label}</div>}
+                              {b.location_name && <div style={{ fontSize: 11, color: '#666', marginBottom: 1 }}>📍 {b.location_name}</div>}
+                              {b.model_name && <div style={{ fontSize: 11, color: '#666', marginBottom: 1 }}>👤 {b.model_name}</div>}
+                              {b.slot_label && <div style={{ fontSize: 11, color: '#555' }}>🕐 {b.slot_label}</div>}
                               {b.cancelled_at && <div style={{ fontSize: 10, color: '#c62828', marginTop: 2 }}>キャンセル済み</div>}
                             </div>
                             <div style={{ textAlign: 'right', flexShrink: 0 }}>
