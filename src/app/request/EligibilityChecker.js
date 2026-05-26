@@ -60,9 +60,12 @@ export default function EligibilityChecker({ models }) {
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <p style={{ fontSize: 10, letterSpacing: '0.4em', color: '#5bbfd6', textTransform: 'uppercase', marginBottom: 8, fontWeight: 600 }}>Eligibility</p>
-          <h2 style={{ fontFamily: 'var(--font-cormorant), Georgia, serif', fontSize: 'clamp(22px, 3.5vw, 36px)', fontWeight: 400, margin: 0, color: '#0d1f3a' }}>
+          <h2 style={{ fontFamily: 'var(--font-cormorant), Georgia, serif', fontSize: 'clamp(22px, 3.5vw, 36px)', fontWeight: 400, margin: '0 0 10px', color: '#0d1f3a' }}>
             👤 ご利用条件を確認
           </h2>
+          <p style={{ fontSize: 12, color: '#aaa', margin: 0 }}>
+            ※サイト移行前の参加回数分に関しては<a href="/chat" style={{ color: '#aaa' }}>お問い合わせチャット</a>よりご連絡ください。
+          </p>
         </div>
 
         {!loggedIn ? (
@@ -171,9 +174,6 @@ export default function EligibilityChecker({ models }) {
             )}
           </div>
         )}
-        <p style={{ fontSize: 12, color: '#aaa', marginTop: 16, textAlign: 'center', lineHeight: 1.8 }}>
-          ※サイト移行前の参加回数分に関しては<a href="/chat" style={{ color: '#aaa' }}>お問い合わせチャット</a>よりご連絡ください。
-        </p>
       </div>
     </section>
   )
