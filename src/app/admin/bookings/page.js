@@ -23,7 +23,7 @@ export default function AdminBookingsPage() {
   const [cancelling, setCancelling] = useState(null)
   const [toast, setToast] = useState(null)
   const [refundModal, setRefundModal] = useState(null)
-  const [checkedEmails, setCheckedEmails] = useState(new Set())
+  const [checkedEmails, setCheckedEmails] = useState({}) // { email: true }
   const [bulkMessage, setBulkMessage] = useState('')
   const [bulkSending, setBulkSending] = useState(false)
   const [bulkResult, setBulkResult] = useState(null)
@@ -45,19 +45,20 @@ export default function AdminBookingsPage() {
 
   function toggleEmail(email) {
     setCheckedEmails(prev => {
-      const next = new Set(prev)
-      if (next.has(email)) next.delete(email)
-      else next.add(email)
+      const next = { ...prev }
+      if (next[email]) delete next[email]
+      else next[email] = true
       return next
     })
   }
 
   async function sendBulkChat() {
-    if (!bulkMessage.trim() || checkedEmails.size === 0) return
+    const emails = Object.keys(checkedEmails)
+    if (!bulkMessage.trim() || emails.length === 0) return
     setBulkSending(true)
     setBulkResult(null)
     let sent = 0, failed = 0
-    for (const email of checkedEmails) {
+    for (const email of emails) {
       const res = await fetch('/api/admin/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -69,7 +70,7 @@ export default function AdminBookingsPage() {
     setBulkSending(false)
     setBulkResult({ sent, failed })
     if (failed === 0) {
-      setCheckedEmails(new Set())
+      setCheckedEmails({})
       setBulkMessage('')
       setTimeout(() => setBulkResult(null), 4000)
     }
@@ -337,7 +338,7 @@ export default function AdminBookingsPage() {
             const isEP = b._type === 'event_product'
             const isGoods = b._type === 'goods'
             const borderColor = isCancelled ? '1px solid #ffcdd2' : isPrivate ? '1px solid #e8d5f5' : isEP ? '1px solid #d5e8f5' : isGoods ? '1px solid #ffd5b0' : '1px solid #e5e5e5'
-            const isChecked = checkedEmails.has(b.email)
+            const isChecked = !!checkedEmails[b.email]
             return (
               <div key={b.id} style={{ background: isCancelled ? '#fafafa' : '#fff', borderRadius: 12, border: borderColor, overflow: 'hidden', opacity: isCancelled ? 0.7 : 1, display: 'flex' }}>
                 {/* Checkbox */}
@@ -537,12 +538,12 @@ export default function AdminBookingsPage() {
       )}
 
       {/* Bulk chat bar */}
-      {checkedEmails.size > 0 && (
+      {Object.keys(checkedEmails).length > 0 && (
         <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#1a3560', color: '#fff', padding: '12px 20px', zIndex: 100, boxShadow: '0 -4px 20px rgba(0,0,0,0.25)' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 12, alignItems: 'flex-end' }}>
             <div style={{ flexShrink: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700 }}>{checkedEmails.size}人選択中</div>
-              <button onClick={() => setCheckedEmails(new Set())} style={{ background: 'none', border: 'none', color: '#88aacc', cursor: 'pointer', fontSize: 11, padding: 0, marginTop: 2 }}>✕ 選択解除</button>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>{Object.keys(checkedEmails).length}人選択中</div>
+              <button onClick={() => setCheckedEmails({})} style={{ background: 'none', border: 'none', color: '#88aacc', cursor: 'pointer', fontSize: 11, padding: 0, marginTop: 2 }}>✕ 選択解除</button>
             </div>
             <textarea
               value={bulkMessage}
