@@ -82,7 +82,32 @@ export async function POST(req) {
     const priceStr = `¥${Number(displayPrice).toLocaleString()}${is_outdoor ? '（屋外撮影・スタジオ料金割引適用済み）' : ''}`
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://photofleur.vercel.app'
-    const verifyUrl = qr_token ? `${baseUrl}/booking-verify?token=${qr_token}` : null
+
+    // 同日の全予約をまとめた combined QR を生成
+    let verifyUrl = qr_token ? `${baseUrl}/booking-verify?token=${qr_token}` : null
+    if (qr_token && event?.event_date && email) {
+      try {
+        const { data: sameDayEvents } = await supabase.from('events').select('id').eq('event_date', event.event_date)
+        const sameDayEventIds = (sameDayEvents || []).map(e => e.id)
+        if (sameDayEventIds.length > 0) {
+          const { data: sameDayEntries } = await supabase.from('event_entries').select('id').in('event_id', sameDayEventIds)
+          const entryIds = (sameDayEntries || []).map(e => e.id)
+          if (entryIds.length > 0) {
+            const { data: sameDaySlots } = await supabase.from('booking_slots').select('id').in('event_entry_id', entryIds)
+            const slotIds = (sameDaySlots || []).map(s => s.id)
+            if (slotIds.length > 0) {
+              const { data: sameDayBookings } = await supabase.from('bookings')
+                .select('qr_token').eq('email', email).is('cancelled_at', null).in('slot_id', slotIds)
+              const tokens = (sameDayBookings || []).map(b => b.qr_token).filter(Boolean)
+              if (tokens.length > 1) {
+                verifyUrl = `${baseUrl}/booking-verify?tokens=${tokens.join(',')}`
+              }
+            }
+          }
+        }
+      } catch {}
+    }
+
     const qrImageUrl = verifyUrl
       ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(verifyUrl)}`
       : null;

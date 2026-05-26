@@ -114,7 +114,6 @@ export async function GET(req) {
           : { data: [] }
         const modelMap = Object.fromEntries((models || []).map(m => [m.id, m]))
 
-
         const { data: slots } = await supabase
           .from('booking_slots').select('id, slot_label, price, event_entry_id').in('event_entry_id', entries.map(e => e.id))
 
@@ -126,19 +125,34 @@ export async function GET(req) {
             .in('slot_id', slots.map(s => s.id))
             .is('cancelled_at', null)
 
+          // 同一メールの全 qr_token を集約（同日の複数予約を1つのQRにまとめる）
+          const emailTokens = {}   // email -> [qr_token, ...]
+          const emailItems = {}    // email -> [item, ...]
+          const emailMeta = {}     // email -> { customerName, locationInfo }
+
           for (const booking of bookings || []) {
             const slot = slotMap[booking.slot_id]
             const entry = slot ? entryMap[slot.event_entry_id] : null
             const event = entry ? eventMap[entry.event_id] : null
             const model = entry ? modelMap[entry.model_id] : null
+            const em = booking.email
 
-            // cart_tokenがあればcart_tokenでQR、なければ個別qr_tokenでQR
-            const groupKey = booking.cart_token ? `cart_${booking.cart_token}` : `solo_${booking.qr_token}`
-            const verifyUrl = booking.cart_token
-              ? `${baseUrl}/booking-verify?cart_token=${booking.cart_token}`
-              : `${baseUrl}/booking-verify?token=${booking.qr_token}`
-
-            addToGroup(booking.email, booking.name || 'お客様', groupKey, verifyUrl, {
+            if (!emailTokens[em]) {
+              emailTokens[em] = []
+              emailItems[em] = []
+              emailMeta[em] = { customerName: booking.name || 'お客様', locationInfo: null }
+            }
+            if (booking.qr_token) emailTokens[em].push(booking.qr_token)
+            if (!emailMeta[em].locationInfo && event) {
+              emailMeta[em].locationInfo = {
+                event_type: event.event_type,
+                location_name: event.location_name,
+                meeting_place: event.meeting_place,
+                meeting_address: event.meeting_address,
+                meeting_map_url: event.meeting_map_url,
+              }
+            }
+            emailItems[em].push({
               modelName: model?.name || '',
               slotLabel: slot?.slot_label || '',
               price: booking.final_price ?? slot?.price ?? 0,
@@ -152,6 +166,16 @@ export async function GET(req) {
                 meeting_map_url: event.meeting_map_url,
               } : null,
             })
+          }
+
+          // まとめた QR URL で addToGroup
+          for (const [em, tokens] of Object.entries(emailTokens)) {
+            const verifyUrl = tokens.length > 1
+              ? `${baseUrl}/booking-verify?tokens=${tokens.join(',')}`
+              : `${baseUrl}/booking-verify?token=${tokens[0]}`
+            for (const item of emailItems[em]) {
+              addToGroup(em, emailMeta[em].customerName, 'regular_combined', verifyUrl, item)
+            }
           }
         }
       }
@@ -257,18 +281,27 @@ export async function GET(req) {
         if (tmplResult) {
           html = tmplResult.html
         } else {
-          // テンプレート未保存時のフォールバック
+          // テンプレート未保存時のフォールバック（撮影場所を上部に表示）
+          const locationInfo = Object.values(groups)[0]?.items?.find(i => i.locationInfo)?.locationInfo
+          const locationName = locationInfo
+            ? (locationInfo.event_type === 'street' ? locationInfo.meeting_place : locationInfo.location_name) || locationInfo.location_name
+            : null
           html = `
             <div style="margin:0; padding:0; background:#f5f5f7; font-family:Arial, sans-serif; color:#2f2244;">
               <div style="max-width:640px; margin:0 auto; padding:32px 16px;">
                 <div style="background:#ffffff; border-radius:24px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.08);">
                   <div style="padding:32px;">
-                    <h1 style="margin:0 0 24px; font-size:24px; line-height:1.4; color:#2f2244;">明日の撮影会のご案内</h1>
-                    <p style="margin:0 0 24px; font-size:16px; line-height:1.9; color:#333;">
+                    <h1 style="margin:0 0 20px; font-size:24px; line-height:1.4; color:#2f2244;">明日の撮影会のご案内</h1>
+                    <p style="margin:0 0 20px; font-size:16px; line-height:1.9; color:#333;">
                       ${customerName} 様<br><br>
-                      明日はご予約いただいている撮影日です。<br>
+                      明日（${formattedDate}）はご予約いただいている撮影日です。<br>
                       以下の内容をご確認のうえ、当日お気をつけてお越しください。
                     </p>
+                    ${locationName ? `
+                    <div style="background:#5bbfd6; border-radius:14px; padding:16px 20px; margin-bottom:20px; text-align:center;">
+                      <p style="margin:0 0 4px; font-size:12px; color:rgba(255,255,255,0.8); letter-spacing:0.1em;">📍 撮影場所</p>
+                      <p style="margin:0; font-size:22px; font-weight:700; color:#fff;">${locationName}</p>
+                    </div>` : ''}
                     ${bodyHtml}
                     <div style="font-size:14px; color:#555; line-height:2; border-top:1px solid #f0f0f0; padding-top:20px;">
                       <p style="margin:0;">ご不明点がございましたら、公式LINEよりご連絡ください。<br>
@@ -294,12 +327,22 @@ export async function GET(req) {
         // LINE通知（連携済みカメラマンへ）
         const allItems = Object.values(groups).flatMap(g => g.items)
         const staffNames = [...new Set(allItems.map(i => i.staffName).filter(Boolean))]
+        const bookingDetails = allItems
+          .filter(i => i.slotLabel || i.productTitle || i.timeLabel)
+          .map(i => {
+            const time = i.slotLabel || i.productTitle || i.timeLabel || ''
+            const model = i.modelName ? `（${i.modelName}）` : ''
+            return `${time}${model}`
+          })
+          .join('\n')
+        const location = allItems.map(i => i.locationInfo?.location_name || i.locationInfo?.meeting_place || i.meetingPlace || '').filter(Boolean)[0] || ''
         await sendPhotographerDayBeforeLine(supabase, email, {
           customer_name: customerName,
           event_date: formattedDate,
+          booking_details: bookingDetails,
           slot_label: allItems.map(i => i.slotLabel || i.productTitle || '').filter(Boolean).join(' / '),
           model_name: allItems.map(i => i.modelName || '').filter(Boolean).join(' / '),
-          location: allItems.map(i => i.locationInfo?.location_name || i.locationInfo?.meeting_place || i.meetingPlace || '').filter(Boolean).join(' '),
+          location,
           staff_info: staffNames.length ? `受付スタッフ：${staffNames.join('・')}\n` : '',
         }, 'photographer_day_before', 'photographer_day_before')
       } catch (e) {

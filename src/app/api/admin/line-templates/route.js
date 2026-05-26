@@ -26,7 +26,7 @@ export const DEFAULTS = {
   photographer_special: `【PhotoFleur】特別予約が完了しました📸\n\n商品：{{product_name}}\n撮影日：{{event_date}}\n{{selections}}\n\nご予約ありがとうございます🌸\nご不明点は公式LINEよりご連絡ください。`,
   photographer_private: `【PhotoFleur】非公開予約が完了しました📸\n\n商品：{{product_title}}\n担当モデル：{{model_name}}\n\n詳細は別途メールにてお送りしております🌸\nご不明点は公式LINEよりご連絡ください。`,
   photographer_goods: `【PhotoFleur】ご注文ありがとうございます🛍️\n\n商品：{{goods_title}}\n数量：{{quantity}}点\n\nご注文を受け付けました。\nご不明点は公式LINEよりご連絡ください。`,
-  photographer_day_before: `【PhotoFleur】明日の撮影のご案内📸\n\n明日（{{event_date}}）は撮影会です！\n時間枠：{{slot_label}}\n担当モデル：{{model_name}}\n場所：{{location}}\n{{staff_info}}\nQRコードは予約完了メールに記載されています。\nどうぞよろしくお願いいたします🌸`,
+  photographer_day_before: `【PhotoFleur】明日の撮影のご案内📸\n\n明日（{{event_date}}）は撮影会です！\n場所：{{location}}\n{{staff_info}}\n▼ ご予約内容\n{{booking_details}}\n\nQRコードは予約完了メールに記載されています。\nどうぞよろしくお願いいたします🌸`,
   photographer_private_day_before: `【PhotoFleur】明日の撮影のご案内📸\n\n明日は以下の撮影が予定されています。\n\n商品：{{product_title}}\n集合場所：{{meeting_place}}\n撮影時間：{{shooting_time}}\n\nよろしくお願いいたします🌸`,
   photo_featured: `【📢お知らせ】\n\nいつもPhoto Fleurをご利用いただきありがとうございます。\n\nご提供いただきました写真がホームページに掲載されました。\nぜひご確認ください📸\n\n{{site_url}}\n\nPhoto Fleur 運営`,
   staff_recruit_notice: `【🔵スタッフ募集のお知らせ】\n\n{{details}}\n\nスタッフ募集日から確認してください！\n※スタッフ決定は先着順です。\n※場所未定のリクエスト撮影に関してはスタッフ応募がない場合流れる可能性が高いです。\n※確定ラインにてスタッフ確定となります。\n※応募後はキャンセルできません。代役を立ててください。`,

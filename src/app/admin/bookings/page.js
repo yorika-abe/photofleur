@@ -81,6 +81,19 @@ export default function AdminBookingsPage() {
 
   const today = new Date().toISOString().split('T')[0]
 
+  // 同日・同メール予約のqr_tokenを集約（合算QR用）
+  const dateEmailTokensMap = {}
+  for (const b of bookings) {
+    if (!b.cancelled_at && b.qr_token && b.email) {
+      const eventDate = b.event?.event_date || b.event_date_input || ''
+      if (eventDate) {
+        const key = `${b.email}__${eventDate}`
+        if (!dateEmailTokensMap[key]) dateEmailTokensMap[key] = []
+        dateEmailTokensMap[key].push(b.qr_token)
+      }
+    }
+  }
+
   const uniqueEvents = Object.values(
     bookings.reduce((acc, b) => {
       const eid = b.event?.id || b.event?.event_date
@@ -430,15 +443,23 @@ export default function AdminBookingsPage() {
                     <div>
                       <div style={{ fontSize: 11, color: '#999', marginBottom: 8, fontWeight: 600 }}>QR / その他</div>
                       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                        {b.qr_token ? (
-                          <Image
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(`${process.env.NEXT_PUBLIC_BASE_URL}/booking-verify?token=${b.qr_token}`)}`}
-                            alt="QR"
-                            width={100}
-                            height={100}
-                            style={{ borderRadius: 6, border: '1px solid #e5e5e5', flexShrink: 0 }}
-                          />
-                        ) : <div style={{ fontSize: 12, color: '#ccc' }}>QRなし</div>}
+                        {b.qr_token ? (() => {
+                          const eventDate = b.event?.event_date || b.event_date_input || ''
+                          const key = b.email && eventDate ? `${b.email}__${eventDate}` : null
+                          const tokens = key ? (dateEmailTokensMap[key] || [b.qr_token]) : [b.qr_token]
+                          const verifyUrl = tokens.length > 1
+                            ? `${process.env.NEXT_PUBLIC_BASE_URL}/booking-verify?tokens=${tokens.join(',')}`
+                            : `${process.env.NEXT_PUBLIC_BASE_URL}/booking-verify?token=${tokens[0]}`
+                          return (
+                            <Image
+                              src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(verifyUrl)}`}
+                              alt="QR"
+                              width={100}
+                              height={100}
+                              style={{ borderRadius: 6, border: '1px solid #e5e5e5', flexShrink: 0 }}
+                            />
+                          )
+                        })() : <div style={{ fontSize: 12, color: '#ccc' }}>QRなし</div>}
                         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
                           {isCancelled ? (
                             <div style={{ fontSize: 13, color: '#c62828', fontWeight: 600 }}>✓ キャンセル済み（{new Date(b.cancelled_at).toLocaleDateString('ja-JP')}）</div>
