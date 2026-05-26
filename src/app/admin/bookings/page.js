@@ -26,7 +26,8 @@ export default function AdminBookingsPage() {
   const [checkedEmails, setCheckedEmails] = useState({}) // { email: true }
   const [bulkMessage, setBulkMessage] = useState('')
   const [bulkSending, setBulkSending] = useState(false)
-  const [bulkResult, setBulkResult] = useState(null)
+  const [bulkResult, setBulkResult] = useState(null) // { sent, failed } — kept visible after bar closes
+  const [bulkDone, setBulkDone] = useState(false) // keep bar visible briefly after send
 
   async function load() {
     setLoading(true)
@@ -69,11 +70,10 @@ export default function AdminBookingsPage() {
     }
     setBulkSending(false)
     setBulkResult({ sent, failed })
-    if (failed === 0) {
-      setCheckedEmails({})
-      setBulkMessage('')
-      setTimeout(() => setBulkResult(null), 4000)
-    }
+    setBulkDone(true)
+    setCheckedEmails({})
+    setBulkMessage('')
+    setTimeout(() => { setBulkResult(null); setBulkDone(false) }, 3000)
   }
 
   function cancelBooking(b) {
@@ -538,31 +538,34 @@ export default function AdminBookingsPage() {
       )}
 
       {/* Bulk chat bar */}
-      {Object.keys(checkedEmails).length > 0 && (
-        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#1a3560', color: '#fff', padding: '12px 20px', zIndex: 100, boxShadow: '0 -4px 20px rgba(0,0,0,0.25)' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-            <div style={{ flexShrink: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700 }}>{Object.keys(checkedEmails).length}人選択中</div>
-              <button onClick={() => setCheckedEmails({})} style={{ background: 'none', border: 'none', color: '#88aacc', cursor: 'pointer', fontSize: 11, padding: 0, marginTop: 2 }}>✕ 選択解除</button>
+      {(Object.keys(checkedEmails).length > 0 || bulkDone) && (
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: bulkDone && bulkResult?.failed === 0 ? '#1b5e20' : '#1a3560', color: '#fff', padding: '12px 20px', zIndex: 100, boxShadow: '0 -4px 20px rgba(0,0,0,0.25)', transition: 'background 0.3s' }}>
+          {bulkDone ? (
+            <div style={{ maxWidth: 1100, margin: '0 auto', fontSize: 14, fontWeight: 700, textAlign: 'center' }}>
+              {bulkResult?.failed === 0
+                ? `✅ ${bulkResult.sent}人に送信しました`
+                : `⚠️ ${bulkResult?.sent}人成功 / ${bulkResult?.failed}人失敗`}
             </div>
-            <textarea
-              value={bulkMessage}
-              onChange={e => setBulkMessage(e.target.value)}
-              placeholder="一斉送信するメッセージを入力..."
-              rows={1}
-              style={{ flex: 1, borderRadius: 8, border: '2px solid #5bbfd6', padding: '8px 12px', fontSize: 13, resize: 'none', outline: 'none', color: '#333', background: '#fff', minWidth: 0, lineHeight: '1.4', display: 'block' }}
-            />
-            <button
-              onClick={sendBulkChat}
-              disabled={bulkSending || !bulkMessage.trim()}
-              style={{ background: bulkSending || !bulkMessage.trim() ? '#556' : '#5bbfd6', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 700, fontSize: 13, cursor: bulkSending || !bulkMessage.trim() ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
-              <span className="bulk-send-label">{bulkSending ? '送信中...' : '💬 一斉送信'}</span>
-              <span className="bulk-send-icon" style={{ display: 'none' }}>{bulkSending ? '⏳' : '➤'}</span>
-            </button>
-          </div>
-          {bulkResult && (
-            <div style={{ maxWidth: 1100, margin: '6px auto 0', fontSize: 12, color: bulkResult.failed > 0 ? '#ffaaaa' : '#aaffcc' }}>
-              {bulkResult.failed === 0 ? `✓ ${bulkResult.sent}人に送信しました` : `✓ ${bulkResult.sent}人成功 / ✕ ${bulkResult.failed}人失敗`}
+          ) : (
+            <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div style={{ flexShrink: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>{Object.keys(checkedEmails).length}人選択中</div>
+                <button onClick={() => setCheckedEmails({})} style={{ background: 'none', border: 'none', color: '#88aacc', cursor: 'pointer', fontSize: 11, padding: 0, marginTop: 2 }}>✕ 選択解除</button>
+              </div>
+              <textarea
+                value={bulkMessage}
+                onChange={e => setBulkMessage(e.target.value)}
+                placeholder="一斉送信するメッセージを入力..."
+                rows={1}
+                style={{ flex: 1, borderRadius: 8, border: '2px solid #5bbfd6', padding: '8px 12px', fontSize: 13, resize: 'none', outline: 'none', color: '#333', background: '#fff', minWidth: 0, lineHeight: '1.4', display: 'block' }}
+              />
+              <button
+                onClick={sendBulkChat}
+                disabled={bulkSending || !bulkMessage.trim()}
+                style={{ background: bulkSending || !bulkMessage.trim() ? '#556' : '#5bbfd6', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontWeight: 700, fontSize: 13, cursor: bulkSending || !bulkMessage.trim() ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <span className="bulk-send-label">{bulkSending ? '送信中...' : '💬 一斉送信'}</span>
+                <span className="bulk-send-icon" style={{ display: 'none' }}>{bulkSending ? '⏳' : '➤'}</span>
+              </button>
             </div>
           )}
         </div>
