@@ -388,11 +388,14 @@ async function MultiTokenView({ tokens, supabase }) {
   const cashTotal = cashItems.reduce((s, b) => s + Number(b.final_price || 0), 0)
   const cardTotal = cardItems.reduce((s, b) => s + Number(b.final_price || 0), 0)
 
-  const [{ count: regularCount }, { count: privateCount }] = await Promise.all([
-    supabase.from('bookings').select('id', { count: 'exact', head: true }).eq('email', email).is('cancelled_at', null),
-    supabase.from('private_bookings').select('id', { count: 'exact', head: true }).eq('email', email).is('cancelled_at', null).neq('is_cancelled', true),
-  ])
-  const totalBookings = (regularCount || 0) + (privateCount || 0)
+  let totalBookings = 0
+  try {
+    const [r1, r2] = await Promise.all([
+      supabase.from('bookings').select('id', { count: 'exact', head: true }).eq('email', email).is('cancelled_at', null),
+      supabase.from('private_bookings').select('id', { count: 'exact', head: true }).eq('email', email).is('cancelled_at', null),
+    ])
+    totalBookings = (r1.count || 0) + (r2.count || 0)
+  } catch {}
 
   return (
     <div style={{ maxWidth: 480, margin: '0 auto', padding: '32px 16px', fontFamily: 'sans-serif' }}>
