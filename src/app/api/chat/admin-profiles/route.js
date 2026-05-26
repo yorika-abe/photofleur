@@ -9,14 +9,18 @@ export async function GET(req) {
   if (!ids.length) return Response.json({ profiles: {} })
 
   const admin = await createSupabaseAdminClient()
-  const { data } = await admin
-    .from('user_profiles')
-    .select('id, name, avatar_url')
-    .in('id', ids)
+
+  // Avatar is stored in site_settings, not user_profiles
+  const [{ data: profilesData }, { data: avatarSetting }] = await Promise.all([
+    admin.from('user_profiles').select('id, name').in('id', ids),
+    admin.from('site_settings').select('value').eq('key', 'admin_avatar_url').maybeSingle(),
+  ])
+
+  const avatarUrl = avatarSetting?.value || null
 
   const profiles = {}
-  for (const p of (data || [])) {
-    profiles[p.id] = { name: p.name, avatar_url: p.avatar_url }
+  for (const p of (profilesData || [])) {
+    profiles[p.id] = { name: p.name, avatar_url: avatarUrl }
   }
   return Response.json({ profiles })
 }
