@@ -2,6 +2,7 @@ import { requireAdmin } from '@/lib/auth'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { sendLineCameraUser } from '@/lib/line'
 import { Resend } from 'resend'
+import { renderEmailTemplate, generateHtml } from '@/lib/email-render'
 
 const SITE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'https://photofleur.vercel.app'
 
@@ -149,22 +150,25 @@ export async function POST(req) {
     // Email
     const resend = new Resend(process.env.RESEND_API_KEY)
     const customerName = userProfile?.name || user_email.split('@')[0]
+    const vars = { customer_name: customerName, reply_message: replyPreview }
+    const rendered = await renderEmailTemplate(admin, 'chat-reply', vars)
+    const emailHtml = rendered?.html ?? generateHtml(
+      [
+        { id: 1, cells: [{ id: 1, block: { id: 1, type: 'heading', data: { text: 'チャットに返信があります', size: 24, align: 'center', color: '#1a3560', font: 'Arial, sans-serif', bold: true, italic: false, letterSpacing: 0, paddingTop: 8, paddingBottom: 8, paddingLeft: 8, paddingRight: 8 } } }], colWidths: [100], bg: { color: '', imageUrl: '' } },
+        { id: 2, cells: [{ id: 2, block: { id: 2, type: 'text', data: { text: `${customerName} 様\n\nチャットでのお問い合わせありがとうございます！\n運営より返信が届いています。`, size: 15, align: 'left', color: '#333', font: 'Arial, sans-serif', bold: false, italic: false, letterSpacing: 0, lineHeight: 1.9, paddingTop: 8, paddingBottom: 8, paddingLeft: 8, paddingRight: 8 } } }], colWidths: [100], bg: { color: '', imageUrl: '' } },
+        { id: 3, cells: [{ id: 3, block: { id: 3, type: 'text', data: { text: `運営からの返信\n\n${replyPreview}`, size: 15, align: 'left', color: '#1a3560', font: 'Arial, sans-serif', bold: false, italic: false, letterSpacing: 0, lineHeight: 2, paddingTop: 8, paddingBottom: 8, paddingLeft: 8, paddingRight: 8 } } }], colWidths: [100], bg: { color: '#f5f5f5', imageUrl: '' } },
+        { id: 4, cells: [{ id: 4, block: { id: 4, type: 'text', data: { text: 'メールは送信専用です。\nHPのチャットよりご確認ください✨', size: 13, align: 'left', color: '#555', font: 'Arial, sans-serif', bold: false, italic: false, letterSpacing: 0, lineHeight: 2, paddingTop: 8, paddingBottom: 8, paddingLeft: 8, paddingRight: 8 } } }], colWidths: [100], bg: { color: '', imageUrl: '' } },
+        { id: 5, cells: [{ id: 5, block: { id: 5, type: 'button', data: { label: '💬 チャットを開く', url: `${SITE_URL}/chat`, bgColor: '#1a3560', textColor: '#fff', align: 'center', paddingTop: 8, paddingBottom: 8, paddingLeft: 8, paddingRight: 8 } } }], colWidths: [100], bg: { color: '', imageUrl: '' } },
+      ],
+      { bgColor: '#1a3560', text: 'PhotoFleur', textColor: '#ffffff', fontSize: 20 },
+      'PhotoFleur運営'
+    )
+    const emailSubject = rendered?.subject ?? '【チャットに返信があります】PhotoFleur'
     await resend.emails.send({
       from: 'PhotoFleur <noreply@photofleur.jp>',
       to: user_email,
-      subject: '【チャットに返信があります】PhotoFleur',
-      html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:32px 16px;color:#333">
-        <h2 style="color:#1a3560;font-size:20px;margin-bottom:16px">チャットに返信があります</h2>
-        <p>${customerName} 様</p>
-        <p>チャットでのお問い合わせありがとうございます！<br>運営より返信が届いています。</p>
-        <div style="background:#f5f5f5;border-left:4px solid #1a3560;padding:12px 16px;margin:20px 0;border-radius:0 8px 8px 0">
-          <div style="font-size:12px;color:#888;margin-bottom:6px">運営からの返信</div>
-          <div style="font-size:15px;white-space:pre-wrap">${replyPreview}</div>
-        </div>
-        <p style="font-size:13px;color:#666">メールは送信専用です。<br>HPのチャットよりご確認ください✨</p>
-        <a href="${SITE_URL}/chat" style="display:inline-block;background:#1a3560;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;margin-top:8px">💬 チャットを開く</a>
-        <p style="margin-top:32px;font-size:12px;color:#aaa">PhotoFleur運営</p>
-      </div>`,
+      subject: emailSubject,
+      html: emailHtml,
     })
   } catch {}
 

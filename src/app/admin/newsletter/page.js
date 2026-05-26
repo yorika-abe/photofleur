@@ -81,6 +81,12 @@ const TEMPLATE_DEFS = [
       { key: 'payment_method', desc: 'お支払方法' },
       { key: 'delivery_address', desc: 'お届け先（任意）' },
     ] },
+  { id: 'chat-reply', name: 'チャット返信', icon: '💬',
+    defaultSubject: '【チャットに返信があります】PhotoFleur',
+    vars: [
+      { key: 'customer_name', desc: 'お客様名' },
+      { key: 'reply_message', desc: '運営からの返信内容' },
+    ] },
 ]
 
 const GOOGLE_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Montserrat:wght@300;400;600;700&family=Dancing+Script:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Josefin+Sans:wght@300;400;600&family=EB+Garamond:ital,wght@0,400;1,400&family=Noto+Sans+JP:wght@300;400;700&family=Noto+Serif+JP:wght@300;400;700&family=M+PLUS+Rounded+1c:wght@300;400;700&family=Zen+Kaku+Gothic+New:wght@300;400;700&family=Shippori+Mincho:wght@400;700&display=swap'
@@ -210,6 +216,16 @@ function getDefaultRows(templateId) {
         makeRow('text', { text: '商品名：{{goods_title}}\n数量：{{quantity}}\n合計金額：{{total_price}}\nお支払方法：{{payment_method}}', size: 15, lineHeight: 2 }),
         makeRow('divider', { color: '#e5e5e5' }),
         makeRow('text', { text: 'ご不明点がございましたら、公式LINEよりご連絡ください。\nhttps://lin.ee/7XLB4St', size: 13, color: '#555', lineHeight: 2 }),
+      ]
+    case 'chat-reply':
+      return [
+        makeRow('heading', { text: 'チャットに返信があります', size: 24 }),
+        makeRow('text', { text: '{{customer_name}} 様\n\nチャットでのお問い合わせありがとうございます！\n運営より返信が届いています。', size: 15, lineHeight: 1.9 }),
+        makeRow('divider', { color: '#e5e5e5' }),
+        makeRow('text', { text: '運営からの返信\n\n{{reply_message}}', size: 15, lineHeight: 2, color: '#1a3560' }),
+        makeRow('divider', { color: '#e5e5e5' }),
+        makeRow('text', { text: 'メールは送信専用です。\nHPのチャットよりご確認ください✨', size: 13, color: '#555', lineHeight: 2 }),
+        makeRow('button', { label: '💬 チャットを開く', url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://photofleur.vercel.app'}/chat`, bgColor: '#1a3560', textColor: '#fff' }),
       ]
     default:
       return []
