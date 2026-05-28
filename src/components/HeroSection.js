@@ -7,64 +7,14 @@ const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 const DEFAULT_COLOR = '#a8e2f4'
 
 
-function rgbToHsl(r, g, b) {
-  r /= 255; g /= 255; b /= 255
-  const max = Math.max(r, g, b), min = Math.min(r, g, b)
-  let h = 0, s = 0
-  const l = (max + min) / 2
-  if (max !== min) {
-    const d = max - min
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-    switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-      case g: h = ((b - r) / d + 2) / 6; break
-      case b: h = ((r - g) / d + 4) / 6; break
-    }
-  }
-  return [h * 360, s, l]
-}
-
-function hslToHex(h, s, l) {
-  s /= 100; l /= 100
-  const a = s * Math.min(l, 1 - l)
-  const f = n => {
-    const k = (n + h / 30) % 12
-    const c = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)
-    return Math.round(255 * c).toString(16).padStart(2, '0')
-  }
-  return `#${f(0)}${f(8)}${f(4)}`
-}
 
 const colorCache = {}
-
-function analyzePixels(data) {
-  const buckets = new Float32Array(36)
-  for (let i = 0; i < data.length; i += 4) {
-    const [h, s, l] = rgbToHsl(data[i], data[i + 1], data[i + 2])
-    if (s < 0.2 || l < 0.12 || l > 0.88) continue
-    buckets[Math.floor(h / 10) % 36] += s
-  }
-  const max = Math.max(...buckets)
-  return max === 0 ? DEFAULT_COLOR : hslToHex(buckets.indexOf(max) * 10, 78, 72)
-}
 
 async function extractAccentColor(src) {
   if (colorCache[src]) return colorCache[src]
   try {
-    const color = await new Promise((resolve, reject) => {
-      const img = new Image()
-      img.crossOrigin = 'anonymous'
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas')
-          canvas.width = 16; canvas.height = 16
-          canvas.getContext('2d').drawImage(img, 0, 0, 16, 16)
-          resolve(analyzePixels(canvas.getContext('2d').getImageData(0, 0, 16, 16).data))
-        } catch (e) { reject(e) }
-      }
-      img.onerror = reject
-      img.src = src
-    })
+    const res = await fetch(`/api/image-color?url=${encodeURIComponent(src)}`)
+    const { color } = await res.json()
     colorCache[src] = color
     return color
   } catch {
