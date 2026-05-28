@@ -127,3 +127,11 @@ select:active {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+
+/* チャットページ: フッター非表示・bodyスクロール封じ */
+body:has([data-page="chat"]) footer {
+  display: none !important;
+}
+body:has([data-page="chat"]) {
+  overflow: hidden;
+}

@@ -42,7 +42,6 @@ export default function ChatPage() {
   const [imagePreview, setImagePreview] = useState(null) // { file, dataUrl }
   const [error, setError] = useState(null)
   const [adminProfiles, setAdminProfiles] = useState({}) // sender_id → { name, avatar_url }
-  const bottomRef = useRef(null)
   const scrollAreaRef = useRef(null)
   const fileRef = useRef(null)
   const fetchedIdsRef = useRef(new Set())
@@ -176,7 +175,7 @@ export default function ChatPage() {
   const headerProfile = lastAdminMsg ? adminProfiles[lastAdminMsg.sender_id] : null
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 52px)', background: '#f0f2f5', position: 'relative' }}>
+    <div data-page="chat" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100dvh - 52px)', background: '#f0f2f5', position: 'relative' }}>
       {/* Header */}
       <div style={{ background: '#1a3560', color: '#fff', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}>
         <Link href="/" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: 20, lineHeight: 1 }}>←</Link>
