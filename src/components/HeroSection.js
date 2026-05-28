@@ -63,6 +63,7 @@ function extractAccentColor(src) {
       } catch { resolve(DEFAULT_COLOR) }
     }
     img.onerror = () => resolve(DEFAULT_COLOR)
+    img.crossOrigin = 'anonymous'
     img.src = optimizeUrl(src, 128)
   })
 }
