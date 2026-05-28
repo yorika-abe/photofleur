@@ -53,56 +53,32 @@ function analyzePixels(data) {
   return max === 0 ? DEFAULT_COLOR : hslToHex(buckets.indexOf(max) * 10, 78, 72)
 }
 
-function extractAccentColor(src) {
-  if (colorCache[src]) return Promise.resolve(colorCache[src])
-
-  return new Promise(resolve => {
-    const done = color => { colorCache[src] = color; resolve(color) }
-
-    const tryCanvas = (imgSrc, useCors) => {
+async function extractAccentColor(src) {
+  if (colorCache[src]) return colorCache[src]
+  try {
+    // /_next/image is same-origin → no CORS, fetch always succeeds
+    const resp = await fetch(optimizeUrl(src, 64))
+    const blob = await resp.blob()
+    const blobUrl = URL.createObjectURL(blob)
+    const color = await new Promise((resolve, reject) => {
       const img = new Image()
-      if (useCors) img.crossOrigin = 'anonymous'
       img.onload = () => {
         try {
           const canvas = document.createElement('canvas')
-          canvas.width = 80; canvas.height = 80
-          canvas.getContext('2d').drawImage(img, 0, 0, 80, 80)
-          done(analyzePixels(canvas.getContext('2d').getImageData(0, 0, 80, 80).data))
-        } catch {
-          // canvas tainted — try fetch+blob fallback
-          if (!useCors) { tryBlob(imgSrc) } else { done(DEFAULT_COLOR) }
-        }
+          canvas.width = 16; canvas.height = 16
+          canvas.getContext('2d').drawImage(img, 0, 0, 16, 16)
+          URL.revokeObjectURL(blobUrl)
+          resolve(analyzePixels(canvas.getContext('2d').getImageData(0, 0, 16, 16).data))
+        } catch (e) { URL.revokeObjectURL(blobUrl); reject(e) }
       }
-      img.onerror = () => {
-        if (useCors) { tryCanvas(imgSrc, false) } else { done(DEFAULT_COLOR) }
-      }
-      img.src = imgSrc
-    }
-
-    const tryBlob = (imgSrc) => {
-      fetch(imgSrc)
-        .then(r => r.blob())
-        .then(blob => {
-          const url = URL.createObjectURL(blob)
-          const img = new Image()
-          img.onload = () => {
-            try {
-              const canvas = document.createElement('canvas')
-              canvas.width = 80; canvas.height = 80
-              canvas.getContext('2d').drawImage(img, 0, 0, 80, 80)
-              URL.revokeObjectURL(url)
-              done(analyzePixels(canvas.getContext('2d').getImageData(0, 0, 80, 80).data))
-            } catch { URL.revokeObjectURL(url); done(DEFAULT_COLOR) }
-          }
-          img.onerror = () => { URL.revokeObjectURL(url); done(DEFAULT_COLOR) }
-          img.src = url
-        })
-        .catch(() => done(DEFAULT_COLOR))
-    }
-
-    // Try direct URL with CORS first, fallback chain handles failures
-    tryCanvas(src, true)
-  })
+      img.onerror = () => { URL.revokeObjectURL(blobUrl); reject(new Error('load failed')) }
+      img.src = blobUrl
+    })
+    colorCache[src] = color
+    return color
+  } catch {
+    return DEFAULT_COLOR
+  }
 }
 
 export default function HeroSection({ images, mobileImages }) {
