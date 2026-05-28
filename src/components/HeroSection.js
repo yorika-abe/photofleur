@@ -40,41 +40,69 @@ function hslToHex(h, s, l) {
   return `#${f(0)}${f(8)}${f(4)}`
 }
 
-// Cache so the same image is never fetched+analyzed twice
 const colorCache = {}
+
+function analyzePixels(data) {
+  const buckets = new Float32Array(36)
+  for (let i = 0; i < data.length; i += 4) {
+    const [h, s, l] = rgbToHsl(data[i], data[i + 1], data[i + 2])
+    if (s < 0.2 || l < 0.12 || l > 0.88) continue
+    buckets[Math.floor(h / 10) % 36] += s
+  }
+  const max = Math.max(...buckets)
+  return max === 0 ? DEFAULT_COLOR : hslToHex(buckets.indexOf(max) * 10, 78, 72)
+}
 
 function extractAccentColor(src) {
   if (colorCache[src]) return Promise.resolve(colorCache[src])
-  const url = optimizeUrl(src, 128)
-  return fetch(url)
-    .then(r => r.blob())
-    .then(blob => new Promise(resolve => {
-      const objectUrl = URL.createObjectURL(blob)
+
+  return new Promise(resolve => {
+    const done = color => { colorCache[src] = color; resolve(color) }
+
+    const tryCanvas = (imgSrc, useCors) => {
       const img = new Image()
+      if (useCors) img.crossOrigin = 'anonymous'
       img.onload = () => {
         try {
           const canvas = document.createElement('canvas')
           canvas.width = 80; canvas.height = 80
-          const ctx = canvas.getContext('2d')
-          ctx.drawImage(img, 0, 0, 80, 80)
-          const { data } = ctx.getImageData(0, 0, 80, 80)
-          URL.revokeObjectURL(objectUrl)
-          const buckets = new Float32Array(36)
-          for (let i = 0; i < data.length; i += 4) {
-            const [h, s, l] = rgbToHsl(data[i], data[i + 1], data[i + 2])
-            if (s < 0.2 || l < 0.12 || l > 0.88) continue
-            buckets[Math.floor(h / 10) % 36] += s
-          }
-          const max = Math.max(...buckets)
-          const color = max === 0 ? DEFAULT_COLOR : hslToHex(buckets.indexOf(max) * 10, 78, 72)
-          colorCache[src] = color
-          resolve(color)
-        } catch { URL.revokeObjectURL(objectUrl); resolve(DEFAULT_COLOR) }
+          canvas.getContext('2d').drawImage(img, 0, 0, 80, 80)
+          done(analyzePixels(canvas.getContext('2d').getImageData(0, 0, 80, 80).data))
+        } catch {
+          // canvas tainted — try fetch+blob fallback
+          if (!useCors) { tryBlob(imgSrc) } else { done(DEFAULT_COLOR) }
+        }
       }
-      img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(DEFAULT_COLOR) }
-      img.src = objectUrl
-    }))
-    .catch(() => DEFAULT_COLOR)
+      img.onerror = () => {
+        if (useCors) { tryCanvas(imgSrc, false) } else { done(DEFAULT_COLOR) }
+      }
+      img.src = imgSrc
+    }
+
+    const tryBlob = (imgSrc) => {
+      fetch(imgSrc)
+        .then(r => r.blob())
+        .then(blob => {
+          const url = URL.createObjectURL(blob)
+          const img = new Image()
+          img.onload = () => {
+            try {
+              const canvas = document.createElement('canvas')
+              canvas.width = 80; canvas.height = 80
+              canvas.getContext('2d').drawImage(img, 0, 0, 80, 80)
+              URL.revokeObjectURL(url)
+              done(analyzePixels(canvas.getContext('2d').getImageData(0, 0, 80, 80).data))
+            } catch { URL.revokeObjectURL(url); done(DEFAULT_COLOR) }
+          }
+          img.onerror = () => { URL.revokeObjectURL(url); done(DEFAULT_COLOR) }
+          img.src = url
+        })
+        .catch(() => done(DEFAULT_COLOR))
+    }
+
+    // Try direct URL with CORS first, fallback chain handles failures
+    tryCanvas(src, true)
+  })
 }
 
 export default function HeroSection({ images, mobileImages }) {
@@ -172,7 +200,7 @@ export default function HeroSection({ images, mobileImages }) {
         {mobileImgs.length > 0
           ? <>
               <img key={`mblur-${currentMobile}`} src={mobileImgs[currentMobile]} alt="" fetchPriority="high"
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(3px) brightness(0.85)', transform: 'scale(1.06)', transformOrigin: 'center' }} />
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(1px) brightness(0.85)', transform: 'scale(1.02)', transformOrigin: 'center' }} />
               <img key={`mb-${currentMobile}`} src={mobileImgs[currentMobile]} alt="" draggable={false}
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', WebkitTouchCallout: 'none', pointerEvents: 'none' }} />
             </>
