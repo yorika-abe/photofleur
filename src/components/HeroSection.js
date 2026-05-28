@@ -6,11 +6,6 @@ import Link from 'next/link'
 const serif = { fontFamily: 'var(--font-cormorant), Georgia, serif' }
 const DEFAULT_COLOR = '#a8e2f4'
 
-function optimizeUrl(src, width = 1920) {
-  if (!src) return src
-  if (src.startsWith('/_next/') || src.startsWith('data:')) return src
-  return `/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=80`
-}
 
 function rgbToHsl(r, g, b) {
   r /= 255; g /= 255; b /= 255
@@ -56,23 +51,19 @@ function analyzePixels(data) {
 async function extractAccentColor(src) {
   if (colorCache[src]) return colorCache[src]
   try {
-    // /_next/image is same-origin → no CORS, fetch always succeeds
-    const resp = await fetch(optimizeUrl(src, 64))
-    const blob = await resp.blob()
-    const blobUrl = URL.createObjectURL(blob)
     const color = await new Promise((resolve, reject) => {
       const img = new Image()
+      img.crossOrigin = 'anonymous'
       img.onload = () => {
         try {
           const canvas = document.createElement('canvas')
           canvas.width = 16; canvas.height = 16
           canvas.getContext('2d').drawImage(img, 0, 0, 16, 16)
-          URL.revokeObjectURL(blobUrl)
           resolve(analyzePixels(canvas.getContext('2d').getImageData(0, 0, 16, 16).data))
-        } catch (e) { URL.revokeObjectURL(blobUrl); reject(e) }
+        } catch (e) { reject(e) }
       }
-      img.onerror = () => { URL.revokeObjectURL(blobUrl); reject(new Error('load failed')) }
-      img.src = blobUrl
+      img.onerror = reject
+      img.src = src
     })
     colorCache[src] = color
     return color
