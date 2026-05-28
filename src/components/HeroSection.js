@@ -42,30 +42,35 @@ function hslToHex(h, s, l) {
 }
 
 function extractAccentColor(src) {
-  return new Promise(resolve => {
-    const img = new Image()
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas')
-        canvas.width = 80; canvas.height = 80
-        const ctx = canvas.getContext('2d')
-        ctx.drawImage(img, 0, 0, 80, 80)
-        const { data } = ctx.getImageData(0, 0, 80, 80)
-        const buckets = new Float32Array(36)
-        for (let i = 0; i < data.length; i += 4) {
-          const [h, s, l] = rgbToHsl(data[i], data[i + 1], data[i + 2])
-          if (s < 0.2 || l < 0.12 || l > 0.88) continue
-          buckets[Math.floor(h / 10) % 36] += s
-        }
-        const max = Math.max(...buckets)
-        if (max === 0) { resolve(DEFAULT_COLOR); return }
-        resolve(hslToHex(buckets.indexOf(max) * 10, 78, 72))
-      } catch { resolve(DEFAULT_COLOR) }
-    }
-    img.onerror = () => resolve(DEFAULT_COLOR)
-    img.crossOrigin = 'anonymous'
-    img.src = optimizeUrl(src, 128)
-  })
+  const url = optimizeUrl(src, 128)
+  return fetch(url)
+    .then(r => r.blob())
+    .then(blob => new Promise(resolve => {
+      const objectUrl = URL.createObjectURL(blob)
+      const img = new Image()
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas')
+          canvas.width = 80; canvas.height = 80
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(img, 0, 0, 80, 80)
+          const { data } = ctx.getImageData(0, 0, 80, 80)
+          URL.revokeObjectURL(objectUrl)
+          const buckets = new Float32Array(36)
+          for (let i = 0; i < data.length; i += 4) {
+            const [h, s, l] = rgbToHsl(data[i], data[i + 1], data[i + 2])
+            if (s < 0.2 || l < 0.12 || l > 0.88) continue
+            buckets[Math.floor(h / 10) % 36] += s
+          }
+          const max = Math.max(...buckets)
+          if (max === 0) { resolve(DEFAULT_COLOR); return }
+          resolve(hslToHex(buckets.indexOf(max) * 10, 78, 72))
+        } catch { URL.revokeObjectURL(objectUrl); resolve(DEFAULT_COLOR) }
+      }
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(DEFAULT_COLOR) }
+      img.src = objectUrl
+    }))
+    .catch(() => DEFAULT_COLOR)
 }
 
 export default function HeroSection({ images, mobileImages }) {
