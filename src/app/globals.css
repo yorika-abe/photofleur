@@ -122,3 +122,8 @@ select:active {
   .bulk-send-label { display: none; }
   .bulk-send-icon { display: inline !important; }
 }
+
+@keyframes heroFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

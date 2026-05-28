@@ -8,7 +8,6 @@ const DEFAULT_COLOR = '#a8e2f4'
 
 function optimizeUrl(src, width = 1920) {
   if (!src) return src
-  // すでに最適化済みまたは外部URL以外はそのまま
   if (src.startsWith('/_next/') || src.startsWith('data:')) return src
   return `/_next/image?url=${encodeURIComponent(src)}&w=${width}&q=80`
 }
@@ -41,7 +40,10 @@ function hslToHex(h, s, l) {
   return `#${f(0)}${f(8)}${f(4)}`
 }
 
+const colorCache = {}
+
 function extractAccentColor(src) {
+  if (colorCache[src]) return Promise.resolve(colorCache[src])
   const url = optimizeUrl(src, 128)
   return fetch(url)
     .then(r => r.blob())
@@ -63,8 +65,9 @@ function extractAccentColor(src) {
             buckets[Math.floor(h / 10) % 36] += s
           }
           const max = Math.max(...buckets)
-          if (max === 0) { resolve(DEFAULT_COLOR); return }
-          resolve(hslToHex(buckets.indexOf(max) * 10, 78, 72))
+          const color = max === 0 ? DEFAULT_COLOR : hslToHex(buckets.indexOf(max) * 10, 78, 72)
+          colorCache[src] = color
+          resolve(color)
         } catch { URL.revokeObjectURL(objectUrl); resolve(DEFAULT_COLOR) }
       }
       img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(DEFAULT_COLOR) }
@@ -76,10 +79,9 @@ function extractAccentColor(src) {
 export default function HeroSection({ images, mobileImages }) {
   const [current, setCurrent] = useState(0)
   const [currentMobile, setCurrentMobile] = useState(0)
-  const [leavingSrc, setLeavingSrc] = useState(null)
-  const [animKey, setAnimKey] = useState(0)
-  const [animPhase, setAnimPhase] = useState('idle') // 'idle' | 'moving' | 'fading'
+  const [fadeKey, setFadeKey] = useState(0)
   const [accentColor, setAccentColor] = useState(DEFAULT_COLOR)
+  const [isMobile, setIsMobile] = useState(false)
   const currentRef = useRef(0)
   const currentMobileRef = useRef(0)
 
@@ -87,118 +89,76 @@ export default function HeroSection({ images, mobileImages }) {
   const hasMobileImages = (mobileImages?.length ?? 0) > 0
   const mobileImgs = hasMobileImages ? mobileImages : imgs
 
+  useEffect(() => {
+    setIsMobile(window.innerHeight > window.innerWidth)
+  }, [])
+
   // PC images interval
   useEffect(() => {
     if (imgs.length <= 1) return
     const t = setInterval(() => {
-      const prev = currentRef.current
-      const next = (prev + 1) % imgs.length
-      setLeavingSrc(imgs[prev])
-      setAnimKey(k => k + 1)
+      const next = (currentRef.current + 1) % imgs.length
       setCurrent(next)
+      setFadeKey(k => k + 1)
       currentRef.current = next
-    }, 5000)
+    }, 6000)
     return () => clearInterval(t)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imgs.length])
 
-  // Mobile images interval — only when separate mobile images exist
+  // Mobile images interval
   useEffect(() => {
-    if (!hasMobileImages) return
-    if (mobileImgs.length <= 1) return
+    if (!hasMobileImages || mobileImgs.length <= 1) return
     const t = setInterval(() => {
-      const prev = currentMobileRef.current
-      const next = (prev + 1) % mobileImgs.length
-      setLeavingSrc(mobileImgs[prev])
-      setAnimKey(k => k + 1)
+      const next = (currentMobileRef.current + 1) % mobileImgs.length
       setCurrentMobile(next)
+      setFadeKey(k => k + 1)
       currentMobileRef.current = next
-    }, 5000)
+    }, 6000)
     return () => clearInterval(t)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasMobileImages, mobileImgs.length])
 
-  // Drive animation via CSS transitions on clip-path (stays within overflow:hidden bounds)
+  // Accent color extraction — cached, skipped on mobile to save CPU
   useEffect(() => {
-    if (!leavingSrc) { setAnimPhase('idle'); return }
-
-    setAnimPhase('idle')
-
-    // After paint, shrink triangles toward corners quickly
-    const t0 = setTimeout(() => setAnimPhase('moving'), 30)
-    // After shrink + pause, fade out slowly
-    const t1 = setTimeout(() => setAnimPhase('fading'), 700)
-    // Clean up
-    const t2 = setTimeout(() => { setLeavingSrc(null); setAnimPhase('idle') }, 3100)
-
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2) }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [animKey])
-
-  useEffect(() => {
-    const isMobile = typeof window !== 'undefined' && window.innerHeight > window.innerWidth
-    const src = (isMobile && hasMobileImages) ? mobileImgs[currentMobile] : imgs[current]
+    if (isMobile) return
+    const src = imgs[current]
     if (!src) return
     extractAccentColor(src).then(setAccentColor)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, currentMobile])
+  }, [current, isMobile])
 
-  // TL triangle: polygon shrinks toward top-left corner
-  const tlStyle = animPhase === 'moving'
-    ? { clipPath: 'polygon(0% 0%, 45% 0%, 0% 45%)', opacity: 1, transition: 'clip-path 0.25s cubic-bezier(0,0,0.2,1)' }
-    : animPhase === 'fading'
-    ? { clipPath: 'polygon(0% 0%, 10% 0%, 0% 10%)', opacity: 0, transition: 'clip-path 2s ease, opacity 2s ease' }
-    : { clipPath: 'polygon(0% 0%, 100% 0%, 0% 100%)', opacity: 1, transition: 'none' }
-
-  // BR triangle: polygon shrinks toward bottom-right corner
-  const brStyle = animPhase === 'moving'
-    ? { clipPath: 'polygon(100% 55%, 100% 100%, 55% 100%)', opacity: 1, transition: 'clip-path 0.25s cubic-bezier(0,0,0.2,1)' }
-    : animPhase === 'fading'
-    ? { clipPath: 'polygon(100% 90%, 100% 100%, 90% 100%)', opacity: 0, transition: 'clip-path 2s ease, opacity 2s ease' }
-    : { clipPath: 'polygon(100% 0%, 100% 100%, 0% 100%)', opacity: 1, transition: 'none' }
+  // Extract color once on desktop mount
+  useEffect(() => {
+    if (isMobile || !imgs[0]) return
+    extractAccentColor(imgs[0]).then(setAccentColor)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile])
 
   return (
     <section
       onContextMenu={e => e.preventDefault()}
       style={{ position: 'relative', height: '100svh', minHeight: 600, overflow: 'hidden', display: 'flex', alignItems: 'flex-end', background: '#000', WebkitUserSelect: 'none', userSelect: 'none' }}>
-      {/* Current image */}
+
+      {/* Desktop image — simple crossfade via key */}
       <span className="hero-desktop">
         {imgs.length > 0
-          ? <img key={current} src={imgs[current]} alt="" fetchPriority={current === 0 ? 'high' : 'auto'} draggable={false} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', WebkitTouchCallout: 'none', pointerEvents: 'none' }} />
-          : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 45%, #0d2030 100%)' }} />
-        }
-      </span>
-      <span className="hero-mobile">
-        {mobileImgs.length > 0
-          ? <>
-              <img key={`mblur-${currentMobile}`} src={mobileImgs[currentMobile]} alt="" fetchPriority="high" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(8px) brightness(0.85)', transform: 'scale(1.12)', transformOrigin: 'center' }} />
-              <img key={`mb-${currentMobile}`} src={mobileImgs[currentMobile]} alt="" draggable={false} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', WebkitTouchCallout: 'none', pointerEvents: 'none' }} />
-            </>
+          ? <img key={`d-${current}`} src={imgs[current]} alt="" fetchPriority={current === 0 ? 'high' : 'auto'} draggable={false}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', animation: 'heroFadeIn 1s ease', pointerEvents: 'none' }} />
           : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 45%, #0d2030 100%)' }} />
         }
       </span>
 
-      {/* Leaving image — diagonal split transition */}
-      {leavingSrc && (
-        <>
-          <div style={{
-            position: 'absolute', inset: 0, display: 'block',
-            zIndex: 5,
-            filter: 'drop-shadow(4px 4px 12px rgba(0,0,0,0.7))',
-            ...tlStyle,
-          }}>
-            <img src={leavingSrc} alt="" draggable={false} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', WebkitTouchCallout: 'none', pointerEvents: 'none' }} />
-          </div>
-          <div style={{
-            position: 'absolute', inset: 0, display: 'block',
-            zIndex: 5,
-            filter: 'drop-shadow(-4px -4px 12px rgba(0,0,0,0.7))',
-            ...brStyle,
-          }}>
-            <img src={leavingSrc} alt="" draggable={false} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', WebkitTouchCallout: 'none', pointerEvents: 'none' }} />
-          </div>
-        </>
-      )}
+      {/* Mobile image — objectFit cover, no blur (blur causes heating) */}
+      <span className="hero-mobile">
+        {mobileImgs.length > 0
+          ? <img key={`m-${currentMobile}`} src={mobileImgs[currentMobile]} alt="" fetchPriority="high" draggable={false}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', animation: 'heroFadeIn 1s ease', pointerEvents: 'none' }} />
+          : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #0d1f3a 0%, #1a3a60 45%, #0d2030 100%)' }} />
+        }
+        {/* Dark gradient overlay instead of blur */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)' }} />
+      </span>
 
       {/* Top-right label */}
       <div style={{ position: 'absolute', top: 28, right: 28, textAlign: 'right', zIndex: 10 }}>
@@ -245,12 +205,7 @@ export default function HeroSection({ images, mobileImages }) {
       {imgs.length > 1 && (
         <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 6, zIndex: 10 }}>
           {imgs.map((_, i) => (
-            <button key={i} onClick={() => {
-              setLeavingSrc(imgs[current])
-              setAnimKey(k => k + 1)
-              setCurrent(i)
-              currentRef.current = i
-            }}
+            <button key={i} onClick={() => { setCurrent(i); setFadeKey(k => k + 1); currentRef.current = i }}
               style={{ width: i === current ? 20 : 6, height: 6, borderRadius: 3, border: 'none', cursor: 'pointer', padding: 0, background: i === current ? accentColor : 'rgba(255,255,255,0.35)', transition: 'all 0.4s ease' }} />
           ))}
         </div>
