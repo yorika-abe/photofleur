@@ -6,10 +6,10 @@ import Link from 'next/link'
 const MAX_CHARS = 500
 
 const TABS = [
-  { id: 'all', label: 'モデル全体', mobileLines: ['モデル', '全体'], icon: '👥', from: 'モデフル', desc: 'モデル全体グループLINEに送信' },
-  { id: 'individual', label: 'モデル個人', mobileLines: ['モデル', '個人'], icon: '👤', from: 'モデフル', desc: '1人のモデルを選んで個別グループLINEに送信' },
-  { id: 'zatsudan', label: '雑談', mobileLines: ['雑談'], icon: '💬', from: 'モデフル', desc: '雑談グループLINEに送信' },
-  { id: 'staff', label: '受付スタッフ', mobileLines: ['受付', 'スタッフ'], icon: '🐈‍⬛', from: 'モデフル', desc: 'スタッフグループ・個人LINEに送信' },
+  { id: 'all', label: 'モデル全体', mobileLines: ['モデル', '全体'], icon: '👥', from: 'photofleur公式', desc: 'モデル全体グループLINEに送信' },
+  { id: 'individual', label: 'モデル個人', mobileLines: ['モデル', '個人'], icon: '👤', from: 'photofleur公式', desc: '1人のモデルを選んで個別グループLINEに送信' },
+  { id: 'zatsudan', label: '雑談', mobileLines: ['雑談'], icon: '💬', from: 'photofleur公式', desc: '雑談グループLINEに送信' },
+  { id: 'staff', label: '受付スタッフ', mobileLines: ['受付', 'スタッフ'], icon: '🐈‍⬛', from: 'photofleur公式', desc: 'スタッフグループ・個人LINEに送信' },
   { id: 'camera', label: '公式LINE', mobileLines: ['公式LINE'], icon: '📣', from: 'photofleur公式', desc: '公式LINEの全フォロワーに一斉ブロードキャスト' },
   { id: 'photographer', label: 'カメラマン個人', mobileLines: ['カメラマン', '個人'], icon: '📸', from: 'photofleur公式（個人push）', desc: 'LINE連携済みカメラマンへ予約・購入時に個別通知' },
   { id: 'admin', label: '運営通知', mobileLines: ['運営', '通知'], icon: '🔔', from: 'モデフル', desc: '運営グループLINEへの自動通知設定' },
