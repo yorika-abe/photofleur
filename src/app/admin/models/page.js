@@ -69,7 +69,6 @@ export default function AdminModelsPage() {
   const [toast, setToast] = useState(null)
   const [saving, setSaving] = useState(false)
   const dragIdx = useRef(null)
-  const longPressTimer = useRef(null)
   const isTouchDragging = useRef(false)
 
   useEffect(() => {
@@ -150,20 +149,16 @@ export default function AdminModelsPage() {
   }
   async function onDrop() { dragIdx.current = null; await saveOrder() }
 
-  // Touch drag handlers（ハンドルからの長押し起動）
+  // Touch drag handlers（ハンドルタッチで即座に起動）
   function onHandleTouchStart(e, i) {
-    longPressTimer.current = setTimeout(() => {
-      isTouchDragging.current = true
-      dragIdx.current = i
-      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(30)
-    }, 400)
+    e.preventDefault()
+    isTouchDragging.current = true
+    dragIdx.current = i
+    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(20)
   }
   function onHandleTouchMove(e) {
-    if (!isTouchDragging.current) {
-      clearTimeout(longPressTimer.current)
-      longPressTimer.current = null
-      return
-    }
+    if (!isTouchDragging.current) return
+    e.preventDefault()
     const touch = e.touches[0]
     const el = document.elementFromPoint(touch.clientX, touch.clientY)
     const card = el?.closest('[data-model-idx]')
@@ -184,8 +179,6 @@ export default function AdminModelsPage() {
     dragIdx.current = targetIdx
   }
   async function onHandleTouchEnd() {
-    clearTimeout(longPressTimer.current)
-    longPressTimer.current = null
     if (isTouchDragging.current) {
       isTouchDragging.current = false
       dragIdx.current = null
