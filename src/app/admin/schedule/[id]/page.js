@@ -400,13 +400,21 @@ export default function EventEditPage() {
 
   async function addModelToEvent(modelId) {
     if (entries.find(e => e.model_id === modelId)) return
-    const res = await fetch(`/api/admin/events/${id}/entries`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'add_model', modelId, event, slotTemplates }),
-    })
-    const data = await res.json()
-    if (data.entry) setEntries(prev => [...prev, data.entry])
+    try {
+      const res = await fetch(`/api/admin/events/${id}/entries`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add_model', modelId, event, slotTemplates }),
+      })
+      const data = await res.json()
+      if (data.entry) {
+        setEntries(prev => [...prev, data.entry])
+      } else {
+        alert('追加に失敗しました: ' + (data.error || '不明なエラー'))
+      }
+    } catch (e) {
+      alert('追加に失敗しました: ' + e.message)
+    }
   }
 
   async function removeModelFromEvent(entryId) {
@@ -1102,7 +1110,7 @@ export default function EventEditPage() {
                     const hasShift = shifts.some(s => s.model_id === m.id)
                     return (
                       <button key={m.id} onClick={() => addModelToEvent(m.id)} className="model-add-btn"
-                        style={{ background: hasShift ? '#f1f8e9' : '#f8f5ff', border: `1px solid ${hasShift ? '#c5e1a5' : '#e0d5f5'}`, borderRadius: 20, padding: '6px 12px 6px 6px', cursor: 'pointer' }}>
+                        style={{ background: hasShift ? '#f1f8e9' : '#f8f5ff', border: `1px solid ${hasShift ? '#c5e1a5' : '#e0d5f5'}`, borderRadius: 20, padding: '6px 12px 6px 6px', cursor: 'pointer', userSelect: 'none', WebkitUserSelect: 'none' }}>
                         {m.image && <Image src={m.image} alt={m.name} width={24} height={24} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} onError={e => { e.target.style.display = 'none' }} />}
                         <span style={{ fontSize: 13, fontWeight: 600, color: '#2f2244', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>+ {m.name}</span>
                         {hasShift && <span style={{ fontSize: 10, color: '#388e3c', fontWeight: 700, flexShrink: 0 }}>提出済</span>}
