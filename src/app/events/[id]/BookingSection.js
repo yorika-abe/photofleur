@@ -143,7 +143,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
             .booking-modal-body { flex: 1; padding: 32px 28px; overflow-y: auto; display: flex; flex-direction: column; gap: 20; }
             @media (max-width: 600px) {
               .booking-modal-inner { flex-direction: column; }
-              .booking-modal-image { width: 100% !important; height: 220px; flex-shrink: 0; }
+              .booking-modal-image { width: 100% !important; aspect-ratio: 4/5; height: auto; flex-shrink: 0; }
               .booking-modal-body { padding: 20px 18px; }
             }
           `}</style>
@@ -159,10 +159,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
             {/* 情報 */}
             <div className="booking-modal-body">
               <div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: '#1a3560', marginBottom: 4 }}>{modal.models.name}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  {modal.models.name_en && <div style={{ fontSize: 13, color: '#aaa' }}>{modal.models.name_en}</div>}
-                </div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: '#1a3560' }}>{modal.models.name}</div>
               </div>
 
               <div style={{ fontSize: 22, fontWeight: 700, color: '#1a3560' }}>
@@ -181,7 +178,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
                     <select
                       value={selectedSlotId}
                       onChange={e => setSelectedSlotId(e.target.value)}
-                      style={{ width: '100%', padding: '10px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 14, background: '#fff', cursor: 'pointer' }}
+                      style={{ width: '100%', padding: '14px 12px', border: '1px solid #ccc', borderRadius: 8, fontSize: 15, background: '#fff', cursor: 'pointer' }}
                     >
                       <option value="">選択してください</option>
                       {modalSlots.map(slot => (
@@ -193,7 +190,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
                   </div>
 
                   {selectedSlotId ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
                       <button onClick={() => {
                         const confirmUrl = `/confirm?slot_id=${selectedSlotId}`
                         requireLogin(() => router.push(confirmUrl), confirmUrl)
@@ -215,7 +212,7 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
                       </button>
                     </div>
                   ) : (
-                    <div style={{ display: 'block', textAlign: 'center', background: '#ccc', color: '#fff', borderRadius: 10, padding: '13px 0', fontSize: 15, fontWeight: 700 }}>
+                    <div style={{ display: 'block', textAlign: 'center', background: '#ccc', color: '#fff', borderRadius: 10, padding: '13px 0', fontSize: 15, fontWeight: 700, marginTop: 8 }}>
                       予約する
                     </div>
                   )}
@@ -228,8 +225,8 @@ export default function BookingSection({ entries, slotsByEntry, indoorCountBySlo
 
               {modal.models.twitter_url && (
                 <a href={modal.models.twitter_url} target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#000', color: '#fff', textDecoration: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700 }}>
-                  𝕏 /Twitter
+                  style={{ textAlign: 'center', fontSize: 13, color: '#1a3560', textDecoration: 'none' }}>
+                  𝕏 /Twitter →
                 </a>
               )}
 
