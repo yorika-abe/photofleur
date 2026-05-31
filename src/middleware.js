@@ -2,6 +2,10 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 
 export async function middleware(request) {
+  if (request.nextUrl.pathname === '/favicon.ico') {
+    return NextResponse.redirect(new URL('/apple-touch-icon.png', request.url))
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -57,5 +61,5 @@ export async function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/model-portal/:path*', '/staff-portal/:path*'],
+  matcher: ['/favicon.ico', '/admin/:path*', '/model-portal/:path*', '/staff-portal/:path*'],
 }
