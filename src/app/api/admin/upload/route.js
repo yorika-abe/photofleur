@@ -35,6 +35,7 @@ export async function POST(req) {
     ContentType: file.type,
   }))
 
-  const publicUrl = `${process.env.R2_PUBLIC_URL}/${path}`
+  const baseUrl = (process.env.R2_PUBLIC_URL || '').replace(/\/$/, '')
+  const publicUrl = `${baseUrl}/${path}`
   return Response.json({ url: publicUrl })
 }
