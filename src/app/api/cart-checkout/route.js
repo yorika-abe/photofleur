@@ -14,7 +14,7 @@ export async function POST(req) {
   const server = await createSupabaseServerClient()
   const { data: { user } } = await server.auth.getUser()
   const { items, customer, paymentMethod: rawPaymentMethod, squarePaymentId, couponId } = await req.json()
-  const paymentMethod = rawPaymentMethod === 'card' ? 'credit_card' : (rawPaymentMethod || null)
+  const paymentMethod = rawPaymentMethod === 'card' ? 'square' : (rawPaymentMethod || null)
 
   if (!items?.length) return Response.json({ error: 'カートが空です' }, { status: 400 })
   if (!customer?.email || !customer?.last_name || !customer?.first_name || !customer?.nickname) {

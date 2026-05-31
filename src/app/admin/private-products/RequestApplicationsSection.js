@@ -694,8 +694,8 @@ function PaidApplicationCard({ app }) {
           <div>{pb.last_name}{pb.first_name}（{pb.nickname || '—'}）</div>
           <div>{pb.email}　{pb.phone}</div>
           {pb.sns_url && <div>{pb.sns_url}</div>}
-          <div style={{ marginTop: 4, color: pb.payment_method === 'card' ? '#0097a7' : '#1565c0', fontWeight: 600 }}>
-            {pb.payment_method === 'card' ? '💳 カード払い' : '💴 現金払い'}
+          <div style={{ marginTop: 4, color: pb.payment_method === 'square' ? '#0097a7' : '#1565c0', fontWeight: 600 }}>
+            {pb.payment_method === 'square' ? '💳 カード払い' : '💴 現金払い'}
           </div>
         </div>
       )}

@@ -453,7 +453,7 @@ export default function AdminChatPage() {
                             </div>
                             <div style={{ textAlign: 'right', flexShrink: 0 }}>
                               {b.final_price != null && <div style={{ fontSize: 12, fontWeight: 700, color: '#1a3560' }}>¥{b.final_price.toLocaleString()}</div>}
-                              <div style={{ fontSize: 10, color: '#aaa', marginTop: 2 }}>{b.payment_method === 'card' ? '💳' : '💴'}</div>
+                              <div style={{ fontSize: 10, color: '#aaa', marginTop: 2 }}>{b.payment_method === 'square' ? '💳' : '💴'}</div>
                             </div>
                           </div>
                         </a>

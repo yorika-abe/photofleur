@@ -229,7 +229,7 @@ function ConfirmForm() {
         final_price: finalPrice,
         coupon_id: coupon?.id || null,
         marketing_consent: form.marketing_consent,
-        payment_method: paymentMethod === 'card' ? 'credit_card' : paymentMethod,
+        payment_method: paymentMethod === 'card' ? 'square' : paymentMethod,
         square_payment_id: squarePaymentId,
       }),
     })

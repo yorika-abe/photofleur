@@ -78,7 +78,7 @@ export default function AdminBookingsPage() {
 
   function cancelBooking(b) {
     const price = b.final_price || b.slot?.price || 0
-    const hasCard = b.payment_method === 'card' && b.square_payment_id
+    const hasCard = b.payment_method === 'square' && b.square_payment_id
     setRefundModal({ booking: b, refundType: hasCard ? 'full' : 'none', customAmount: String(price), cancelReason: '', internalReason: '' })
   }
 
@@ -168,7 +168,7 @@ export default function AdminBookingsPage() {
       {refundModal && (() => {
         const b = refundModal.booking
         const price = b.final_price || b.slot?.price || 0
-        const hasCard = b.payment_method === 'card' && b.square_payment_id
+        const hasCard = b.payment_method === 'square' && b.square_payment_id
         const refundAmount = refundModal.refundType === 'full' ? price
           : refundModal.refundType === 'custom' ? Number(refundModal.customAmount) || 0
           : 0
@@ -415,7 +415,7 @@ export default function AdminBookingsPage() {
                     <div className="bk-m-badges">
                       {!isPrivate && !isEP && !isGoods && b.is_outdoor && <span style={{ background: '#e3f2fd', color: '#1565c0', borderRadius: 3, padding: '1px 4px', fontSize: 9, fontWeight: 600 }}>屋外</span>}
                       {!isPrivate && !isGoods && <span style={{ background: b.event?.event_type === 'street' ? '#e8f5e9' : '#e3f2fd', color: b.event?.event_type === 'street' ? '#388e3c' : '#1a3560', borderRadius: 3, padding: '1px 4px', fontSize: 9, fontWeight: 600 }}>{b.event?.event_type === 'street' ? 'スト' : 'スタ'}</span>}
-                      {b.payment_method && <span style={{ background: b.payment_method === 'card' ? '#e3f2fd' : '#f1f8e9', color: b.payment_method === 'card' ? '#1565c0' : '#33691e', borderRadius: 3, padding: '1px 4px', fontSize: 9, fontWeight: 600 }}>{b.payment_method === 'card' ? '💳カード' : '💴現金'}</span>}
+                      {b.payment_method && <span style={{ background: b.payment_method === 'square' ? '#e3f2fd' : '#f1f8e9', color: b.payment_method === 'square' ? '#1565c0' : '#33691e', borderRadius: 3, padding: '1px 4px', fontSize: 9, fontWeight: 600 }}>{b.payment_method === 'square' ? '💳カード' : '💴現金'}</span>}
                     </div>
                     <div className="bk-m-price">
                       ¥{price.toLocaleString()}
@@ -448,7 +448,7 @@ export default function AdminBookingsPage() {
                             {b.event_date_input && <div className="bk-detail-row"><span className="bk-detail-label">開催日</span>{b.event_date_input}</div>}
                             {b.meeting_place && <div className="bk-detail-row"><span className="bk-detail-label">集合場所</span>{b.meeting_place}</div>}
                             {b.shooting_time && <div className="bk-detail-row"><span className="bk-detail-label">撮影時間</span>{b.shooting_time}</div>}
-                            <div className="bk-detail-row"><span className="bk-detail-label">支払</span>{b.payment_method === 'card' ? 'カード' : '当日現金'}</div>
+                            <div className="bk-detail-row"><span className="bk-detail-label">支払</span>{b.payment_method === 'square' ? 'カード' : '当日現金'}</div>
                             <div className="bk-detail-row"><span className="bk-detail-label">金額</span>¥{price.toLocaleString()}</div>
                           </>
                         ) : isGoods ? (
@@ -459,7 +459,7 @@ export default function AdminBookingsPage() {
                             {b.delivery_address && <div className="bk-detail-row"><span className="bk-detail-label">配送先</span><span style={{ whiteSpace: 'pre-wrap' }}>{b.delivery_address}</span></div>}
                             {b.sns_url && <div className="bk-detail-row"><span className="bk-detail-label">SNS</span><a href={b.sns_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2f2244', wordBreak: 'break-all' }}>{b.sns_url.replace('https://', '')}</a></div>}
                             {b.notes && <div className="bk-detail-row"><span className="bk-detail-label">備考</span>{b.notes}</div>}
-                            <div className="bk-detail-row"><span className="bk-detail-label">支払</span>{b.payment_method === 'card' ? 'カード' : '当日現金'}</div>
+                            <div className="bk-detail-row"><span className="bk-detail-label">支払</span>{b.payment_method === 'square' ? 'カード' : '当日現金'}</div>
                             <div className="bk-detail-row"><span className="bk-detail-label">金額</span>¥{price.toLocaleString()}</div>
                           </>
                         ) : isEP ? (
@@ -470,7 +470,7 @@ export default function AdminBookingsPage() {
                               <div key={k} className="bk-detail-row"><span className="bk-detail-label">{k}</span>{Array.isArray(v) ? v.join(', ') : v}</div>
                             ))}
                             {b.selections?.delivery_address && <div className="bk-detail-row"><span className="bk-detail-label">配送先</span><span style={{ whiteSpace: 'pre-wrap' }}>{b.selections.delivery_address}</span></div>}
-                            <div className="bk-detail-row"><span className="bk-detail-label">支払</span>{b.payment_method === 'card' ? 'カード' : '当日現金'}</div>
+                            <div className="bk-detail-row"><span className="bk-detail-label">支払</span>{b.payment_method === 'square' ? 'カード' : '当日現金'}</div>
                             <div className="bk-detail-row"><span className="bk-detail-label">金額</span>¥{price.toLocaleString()}</div>
                           </>
                         ) : (
@@ -479,7 +479,7 @@ export default function AdminBookingsPage() {
                             <div className="bk-detail-row"><span className="bk-detail-label">モデル</span>{b.model?.name}</div>
                             <div className="bk-detail-row"><span className="bk-detail-label">時間枠</span>{b.slot?.slot_label}</div>
                             <div className="bk-detail-row"><span className="bk-detail-label">撮影場所</span>{b.is_outdoor ? '屋外' : '屋内'}</div>
-                            {b.payment_method && <div className="bk-detail-row"><span className="bk-detail-label">支払</span>{b.payment_method === 'card' ? '💳カード' : '💴現金'}</div>}
+                            {b.payment_method && <div className="bk-detail-row"><span className="bk-detail-label">支払</span>{b.payment_method === 'square' ? '💳カード' : '💴現金'}</div>}
                             <div className="bk-detail-row"><span className="bk-detail-label">金額</span>¥{price.toLocaleString()}</div>
                           </>
                         )}

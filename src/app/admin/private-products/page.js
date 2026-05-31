@@ -480,8 +480,8 @@ function BookingList({ productId, productPrice }) {
               {b.nickname && <span style={{ color: '#888' }}>({b.nickname})</span>}
               <span style={{ color: '#888' }}>{b.email}</span>
               {b.phone && <span style={{ color: '#888' }}>{b.phone}</span>}
-              <span style={{ fontSize: 11, background: b.payment_method === 'card' ? '#e8f5e9' : '#e3f2fd', color: b.payment_method === 'card' ? '#388e3c' : '#1565c0', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>
-                {b.payment_method === 'card' ? 'カード' : '現金'}
+              <span style={{ fontSize: 11, background: b.payment_method === 'square' ? '#e8f5e9' : '#e3f2fd', color: b.payment_method === 'square' ? '#388e3c' : '#1565c0', borderRadius: 4, padding: '1px 7px', fontWeight: 600 }}>
+                {b.payment_method === 'square' ? 'カード' : '現金'}
               </span>
               {b.cancelled_at && <span style={{ fontSize: 11, background: '#ffebee', color: '#c62828', borderRadius: 4, padding: '1px 7px', fontWeight: 700 }}>キャンセル済</span>}
               {!b.cancelled_at && (
