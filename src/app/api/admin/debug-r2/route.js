@@ -27,10 +27,22 @@ export async function GET() {
     files = [{ error: e.message }]
   }
 
+  // 最初のファイルへの公開アクセスを確認
+  let publicAccessTest = null
+  if (files.length > 0 && files[0].url) {
+    try {
+      const testRes = await fetch(files[0].url, { method: 'HEAD' })
+      publicAccessTest = { url: files[0].url, status: testRes.status, ok: testRes.ok }
+    } catch (e) {
+      publicAccessTest = { url: files[0].url, error: e.message }
+    }
+  }
+
   return Response.json({
     R2_PUBLIC_URL: publicUrl,
     R2_BUCKET_NAME: bucket,
     sample_files: files,
+    public_access_test: publicAccessTest,
     url_format_example: `${publicUrl}/events/eventId/main-123.jpg`,
   })
 }
