@@ -37,7 +37,9 @@ export async function generateMetadata() {
     },
     icons: {
       apple: '/apple-touch-icon.png',
-      icon: pwaIcon || '/apple-touch-icon.png',
+      icon: [
+        { url: '/icon.png', type: 'image/png' },
+      ],
     },
   }
 }
