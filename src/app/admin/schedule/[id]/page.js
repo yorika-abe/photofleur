@@ -283,6 +283,7 @@ export default function EventEditPage() {
         planning_note: event.planning_note || null,
         planning_note_model: event.planning_note_model || null,
         location_memo: event.location_memo || null,
+        slot_templates: slotTemplates ? JSON.stringify(slotTemplates) : null,
       }),
     })
     setSaving(false)
@@ -1024,7 +1025,7 @@ export default function EventEditPage() {
           {(() => {
             const today = new Date().toISOString().split('T')[0]
             const isBeforeDeadline = shiftDeadline ? shiftDeadline >= today : false
-            const notAdded = shifts.filter(s => !entryModelIds.includes(s.model_id))
+            const notAdded = shifts.filter(s => !entryModelIds.includes(s.model_id) && !s.available_slots?.[0]?.unavailable)
             const showAfterSection = !isBeforeDeadline && notAdded.length > 0
             return (
               <>

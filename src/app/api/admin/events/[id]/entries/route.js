@@ -20,7 +20,7 @@ export async function POST(req, { params }) {
       .eq('event_date', event.event_date)
     const { data: existing } = await admin.from('event_entries').select('model_id').eq('event_id', id)
     const existingIds = (existing || []).map(e => e.model_id)
-    const toAdd = (shiftData || []).filter(s => !existingIds.includes(s.model_id))
+    const toAdd = (shiftData || []).filter(s => !existingIds.includes(s.model_id) && !s.available_slots?.[0]?.unavailable)
     const { data: allModels } = await admin.from('models').select('id, studio_price, street_price')
 
     const defaultSlots = event.event_type === 'studio' ? DEFAULT_STUDIO_SLOTS : DEFAULT_STREET_SLOTS
