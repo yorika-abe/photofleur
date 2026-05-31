@@ -33,7 +33,8 @@ function CompleteContent() {
     const qr = params.get('qr')
 
     if (qr) {
-      QRCode.toDataURL(qr, { width: 200, margin: 1 }).then(setQrDataUrl).catch(() => {})
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+      QRCode.toDataURL(`${baseUrl}/booking-verify?token=${qr}`, { width: 200, margin: 1 }).then(setQrDataUrl).catch(() => {})
     }
 
     if (!bookingId && !slotId) { setLoading(false); return }
