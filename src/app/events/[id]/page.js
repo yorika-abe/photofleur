@@ -275,16 +275,16 @@ export default async function EventDetailPage({ params }) {
       {entries.filter(e => e.models).length > 0 && (
         <div style={{ marginBottom: 32 }}>
           <h2 style={{ fontSize: 17, fontWeight: 700, color: '#333', marginBottom: 20, marginTop: 0 }}>エントリーモデル</h2>
-          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px 8px' }}>
             {[...new Map(entries.filter(e => e.models).map(e => [e.model_id, e])).values()].map(e => (
               <Link key={e.model_id} href={`/models/${e.model_id}`} style={{ textDecoration: 'none', textAlign: 'center' }}>
-                <div style={{ width: 90, height: 110, borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%', overflow: 'hidden', margin: '0 auto 8px', border: '2px solid #e5e5e5' }}>
+                <div style={{ width: '100%', aspectRatio: '9/11', borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%', overflow: 'hidden', margin: '0 auto 4px', border: '2px solid #e5e5e5' }}>
                   {e.models.image
-                    ? <Image src={e.models.image} alt={e.models.name} width={90} height={110} style={{ objectFit: 'cover' }} />
+                    ? <Image src={e.models.image} alt={e.models.name} width={90} height={110} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
                     : <div style={{ width: '100%', height: '100%', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>👤</div>
                   }
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#444' }}>{e.models.name}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#444' }}>{e.models.name}</div>
               </Link>
             ))}
           </div>
