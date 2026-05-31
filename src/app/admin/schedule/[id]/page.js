@@ -69,7 +69,6 @@ export default function EventEditPage() {
   const [models, setModels] = useState([])
   const [entries, setEntries] = useState([])
   const [shifts, setShifts] = useState([])
-  const [shiftDeadline, setShiftDeadline] = useState(null)
   const [slotTemplates, setSlotTemplates] = useState(null) // カスタム予約枠テンプレート
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -116,7 +115,7 @@ export default function EventEditPage() {
     try {
       const res = await fetch(`/api/admin/events/${id}`)
       if (!res.ok) { setLoading(false); return }
-      const { event: ev, models: mods, entries: entriesWithSlots, shifts: shiftData, shiftDeadline: dl } = await res.json()
+      const { event: ev, models: mods, entries: entriesWithSlots, shifts: shiftData } = await res.json()
       let galleryImages = []
       try { galleryImages = JSON.parse(ev?.gallery_images || '[]') } catch {}
       let bookingOpenAtJST = ''
@@ -129,7 +128,6 @@ export default function EventEditPage() {
       setModels(mods || [])
       setEntries(entriesWithSlots || [])
       setShifts(shiftData || [])
-      setShiftDeadline(dl || null)
       const productsRes = await fetch(`/api/admin/events/${id}/products`)
       setProducts(productsRes.ok ? await productsRes.json() : [])
       // 保存済みテンプレートがあれば使用、なければイベント種別のデフォルトを使用
@@ -663,6 +661,9 @@ export default function EventEditPage() {
           .model-add-grid { display: grid !important; grid-template-columns: repeat(2, 1fr); gap: 6px; }
           .model-add-btn { width: 100%; border-radius: 10px !important; justify-content: flex-start; padding: 7px 10px !important; }
           .slot-row { padding: 5px 8px !important; gap: 5px !important; }
+          .slot-template-header { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+          .slot-template-header-title { width: 100%; }
+          .slot-template-header-buttons { width: 100%; justify-content: flex-end; }
         }
       `}</style>
 
@@ -985,14 +986,14 @@ export default function EventEditPage() {
 
           {/* 予約受付枠テンプレート管理 */}
           <div style={{ background: '#fff', borderRadius: 12, padding: 16, border: '1px solid #e5e5e5' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+            <div className="slot-template-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 8 }}>
+              <div className="slot-template-header-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <h3 style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', margin: 0, whiteSpace: 'nowrap' }}>予約受付枠の設定</h3>
                 <span style={{ fontSize: 11, background: event.event_type === 'studio' ? '#fce4ec' : event.event_type === 'street' ? '#e0f7fa' : '#e3f2fd', color: event.event_type === 'studio' ? '#c2185b' : event.event_type === 'street' ? '#0097a7' : '#1a3560', borderRadius: 4, padding: '2px 6px', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
                   {event.event_type === 'studio' ? 'スタジオ' : event.event_type === 'street' ? 'ストリート' : '不定期'}
                 </span>
               </div>
-              <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+              <div className="slot-template-header-buttons" style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
                 <button onClick={() => resetSlotTemplates(event.event_type)}
                   style={{ fontSize: 11, background: '#f5f5f5', color: '#888', border: '1px solid #ddd', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>
                   デフォルトに戻す
@@ -1023,15 +1024,13 @@ export default function EventEditPage() {
 
           {/* シフト自動反映設定 + 手動同期ボタン */}
           {(() => {
-            const today = new Date().toISOString().split('T')[0]
-            const isBeforeDeadline = shiftDeadline ? shiftDeadline >= today : false
             const notAdded = shifts.filter(s => !entryModelIds.includes(s.model_id))
             const notAddedAvail = notAdded.filter(s => !s.available_slots?.[0]?.unavailable)
-            const showAfterSection = !isBeforeDeadline && notAdded.length > 0
+            const showAfterSection = id !== 'new' && notAdded.length > 0
             return (
               <>
-                {/* シフト自動反映トグル（締め切り前のみ表示） */}
-                {(isBeforeDeadline || id === 'new') && (
+                {/* シフト自動反映トグル（常時表示） */}
+                {id !== 'new' && (
                   <div style={{ background: '#f3f8ff', borderRadius: 12, padding: '12px 16px', border: '1px solid #b3d4f5', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                     <span style={{ fontWeight: 700, fontSize: 13, color: '#1a3560' }}>シフト自動反映</span>
                     <button
@@ -1048,14 +1047,12 @@ export default function EventEditPage() {
                         ? 'ONのとき締め切り前にシフトを提出したモデルを自動でイベントに追加します'
                         : '手動でモデルを追加します'}
                     </span>
-                    {isBeforeDeadline && (
-                      <button
-                        onClick={syncShiftedModels}
-                        disabled={autoAdding}
-                        style={{ background: '#2e7d32', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: autoAdding ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13, opacity: autoAdding ? 0.6 : 1 }}>
-                        {autoAdding ? '処理中...' : `提出されたシフトを反映${shifts.length > 0 ? `（${shifts.length}名）` : ''}`}
-                      </button>
-                    )}
+                    <button
+                      onClick={syncShiftedModels}
+                      disabled={autoAdding}
+                      style={{ background: '#2e7d32', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: autoAdding ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13, opacity: autoAdding ? 0.6 : 1 }}>
+                      {autoAdding ? '処理中...' : `提出されたシフトを反映${shifts.length > 0 ? `（${shifts.length}名）` : ''}`}
+                    </button>
                   </div>
                 )}
 
