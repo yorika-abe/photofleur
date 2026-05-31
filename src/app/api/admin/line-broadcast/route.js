@@ -1,4 +1,4 @@
-import { sendLineMessage, sendLineCameraUser, broadcastCameraLine, broadcastCameraLineWithImage } from '@/lib/line'
+import { sendLineCameraUser, broadcastCameraLine, broadcastCameraLineWithImage, sendLineGroupMessageToIdOfficial, sendLineMessageOfficial } from '@/lib/line'
 import { requireAdmin } from '@/lib/auth'
 
 export async function GET(req) {
@@ -52,8 +52,7 @@ export async function POST(req) {
     const { data: groupRow } = await admin.from('site_settings').select('value').eq('key', 'line_group_id_all').maybeSingle()
     const groupId = groupRow?.value || process.env.LINE_GROUP_ID
     if (!groupId) return Response.json({ error: 'グループIDが設定されていません' }, { status: 400 })
-    const { sendLineGroupMessageToId } = await import('@/lib/line')
-    const result = await sendLineGroupMessageToId(groupId, message)
+    const result = await sendLineGroupMessageToIdOfficial(groupId, message)
     return Response.json({ ok: result.ok, error: result.ok ? null : result.reason })
   }
 
@@ -62,8 +61,7 @@ export async function POST(req) {
     const { data: rows } = await admin.from('site_settings').select('value').eq('key', 'line_group_id_zatsudan').maybeSingle()
     const groupId = rows?.value
     if (!groupId) return Response.json({ error: '雑談グループIDが設定されていません' }, { status: 400 })
-    const { sendLineGroupMessageToId } = await import('@/lib/line')
-    const result = await sendLineGroupMessageToId(groupId, message)
+    const result = await sendLineGroupMessageToIdOfficial(groupId, message)
     return Response.json({ ok: result.ok, error: result.ok ? null : result.reason })
   }
 
@@ -72,8 +70,7 @@ export async function POST(req) {
     const { data: groupRow } = await admin.from('site_settings').select('value').eq('key', 'line_group_id_staff').maybeSingle()
     const groupId = groupRow?.value
     if (!groupId) return Response.json({ error: 'スタッフグループIDが設定されていません' }, { status: 400 })
-    const { sendLineGroupMessageToId } = await import('@/lib/line')
-    const result = await sendLineGroupMessageToId(groupId, message)
+    const result = await sendLineGroupMessageToIdOfficial(groupId, message)
     return Response.json({ ok: result.ok, error: result.ok ? null : result.reason })
   }
 
@@ -93,7 +90,7 @@ export async function POST(req) {
     try { staffLineIds = JSON.parse(lineIdsRow?.value || '{}') } catch {}
     const lineId = staff_user_id ? staffLineIds[staff_user_id] : null
     if (!lineId) return Response.json({ error: 'このスタッフのLINE IDが設定されていません' }, { status: 400 })
-    const result = await sendLineMessage(lineId, message)
+    const result = await sendLineMessageOfficial(lineId, message)
     return Response.json({ ok: result.ok, error: result.ok ? null : result.reason })
   }
 
@@ -110,7 +107,7 @@ export async function POST(req) {
   let sent = 0, failed = 0
   const errors = []
   for (const model of targets) {
-    const result = await sendLineMessage(model.line_id, message)
+    const result = await sendLineMessageOfficial(model.line_id, message)
     if (result.ok) sent++
     else { failed++; if (result.error || result.reason) errors.push(result.error || result.reason) }
     admin.from('line_notifications').insert({

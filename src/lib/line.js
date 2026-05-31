@@ -52,6 +52,14 @@ export async function sendLineGroupMessageToId(groupId, message) {
   return pushMessage(LINE_CHANNEL_ACCESS_TOKEN, groupId, message)
 }
 
+export async function sendLineGroupMessageToIdOfficial(groupId, message) {
+  return pushMessage(LINE_CAMERA_CHANNEL_ACCESS_TOKEN, groupId, message)
+}
+
+export async function sendLineMessageOfficial(lineUserId, message) {
+  return pushMessage(LINE_CAMERA_CHANNEL_ACCESS_TOKEN, lineUserId, message)
+}
+
 export async function broadcastCameraLine(message) {
   return broadcastMessages(LINE_CAMERA_CHANNEL_ACCESS_TOKEN, [{ type: 'text', text: message }])
 }
