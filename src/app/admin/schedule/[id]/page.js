@@ -717,9 +717,9 @@ export default function EventEditPage() {
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: '#f5f5f5', borderRadius: 10, padding: 4 }}>
         {tabs.map(t => (
           <button key={t.key} onClick={() => setActiveTab(t.key)}
-            style={{ flex: 1, padding: '8px 4px', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600,
+            style={{ flex: 1, padding: '8px 2px', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 11, fontWeight: 600,
               background: activeTab === t.key ? '#2f2244' : 'transparent',
-              color: activeTab === t.key ? '#fff' : '#666' }}>
+              color: activeTab === t.key ? '#fff' : '#666', whiteSpace: 'nowrap' }}>
             {t.label}
           </button>
         ))}
@@ -985,20 +985,20 @@ export default function EventEditPage() {
 
           {/* 予約受付枠テンプレート管理 */}
           <div style={{ background: '#fff', borderRadius: 12, padding: 16, border: '1px solid #e5e5e5' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>予約受付枠の設定</h3>
-                <span style={{ fontSize: 11, background: event.event_type === 'studio' ? '#fce4ec' : event.event_type === 'street' ? '#e0f7fa' : '#e3f2fd', color: event.event_type === 'studio' ? '#c2185b' : event.event_type === 'street' ? '#0097a7' : '#1a3560', borderRadius: 4, padding: '2px 8px', fontWeight: 700 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                <h3 style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', margin: 0, whiteSpace: 'nowrap' }}>予約受付枠の設定</h3>
+                <span style={{ fontSize: 11, background: event.event_type === 'studio' ? '#fce4ec' : event.event_type === 'street' ? '#e0f7fa' : '#e3f2fd', color: event.event_type === 'studio' ? '#c2185b' : event.event_type === 'street' ? '#0097a7' : '#1a3560', borderRadius: 4, padding: '2px 6px', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
                   {event.event_type === 'studio' ? 'スタジオ' : event.event_type === 'street' ? 'ストリート' : '不定期'}
                 </span>
               </div>
-              <div style={{ display: 'flex', gap: 6 }}>
+              <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
                 <button onClick={() => resetSlotTemplates(event.event_type)}
-                  style={{ fontSize: 12, background: '#f5f5f5', color: '#888', border: '1px solid #ddd', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontWeight: 600 }}>
+                  style={{ fontSize: 11, background: '#f5f5f5', color: '#888', border: '1px solid #ddd', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>
                   デフォルトに戻す
                 </button>
                 <button onClick={addSlotTemplate}
-                  style={{ fontSize: 12, background: '#e0f7fa', color: '#0097a7', border: 'none', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontWeight: 700 }}>
+                  style={{ fontSize: 11, background: '#e0f7fa', color: '#0097a7', border: 'none', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>
                   + 枠を追加
                 </button>
               </div>
