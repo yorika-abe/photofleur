@@ -1025,7 +1025,8 @@ export default function EventEditPage() {
           {(() => {
             const today = new Date().toISOString().split('T')[0]
             const isBeforeDeadline = shiftDeadline ? shiftDeadline >= today : false
-            const notAdded = shifts.filter(s => !entryModelIds.includes(s.model_id) && !s.available_slots?.[0]?.unavailable)
+            const notAdded = shifts.filter(s => !entryModelIds.includes(s.model_id))
+            const notAddedAvail = notAdded.filter(s => !s.available_slots?.[0]?.unavailable)
             const showAfterSection = !isBeforeDeadline && notAdded.length > 0
             return (
               <>
@@ -1066,18 +1067,28 @@ export default function EventEditPage() {
                         <span style={{ fontWeight: 700, fontSize: 14, color: '#2e7d32' }}>シフト提出済み（未追加）</span>
                         <span style={{ fontSize: 12, color: '#388e3c', marginLeft: 8 }}>{notAdded.length}名</span>
                       </div>
-                      <button
-                        onClick={autoAddShiftedModels}
-                        disabled={autoAdding}
-                        style={{ background: '#2e7d32', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: autoAdding ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {autoAdding ? '処理中...' : '全員一括追加'}
-                      </button>
+                      {notAddedAvail.length > 0 && (
+                        <button
+                          onClick={autoAddShiftedModels}
+                          disabled={autoAdding}
+                          style={{ background: '#2e7d32', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: autoAdding ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13 }}>
+                          {autoAdding ? '処理中...' : '全員一括追加'}
+                        </button>
+                      )}
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                       {notAdded.map(s => {
                         const m = models.find(m => m.id === s.model_id)
                         if (!m) return null
-                        return (
+                        const isUnavail = s.available_slots?.[0]?.unavailable
+                        return isUnavail ? (
+                          <div key={m.id}
+                            style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#f5f5f5', border: '2px solid #ddd', borderRadius: 20, padding: '4px 10px 4px 5px', opacity: 0.6 }}>
+                            {m.image && <Image src={m.image} alt={m.name} width={22} height={22} style={{ borderRadius: '50%', objectFit: 'cover' }} />}
+                            <span style={{ fontSize: 12, fontWeight: 700, color: '#999' }}>{m.name}</span>
+                            <span style={{ fontSize: 10, color: '#e53935', fontWeight: 700 }}>不参加</span>
+                          </div>
+                        ) : (
                           <button key={m.id} onClick={() => addModelToEvent(m.id)}
                             style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff', border: '2px solid #a5d6a7', borderRadius: 20, padding: '4px 10px 4px 5px', cursor: 'pointer' }}>
                             {m.image && <Image src={m.image} alt={m.name} width={22} height={22} style={{ borderRadius: '50%', objectFit: 'cover' }} />}
