@@ -64,7 +64,7 @@ export default function FeedbackPage() {
             <li>その他ご意見</li>
           </ul>
           <p style={{ fontSize: 12, color: '#aaa', margin: '0 0 20px' }}>
-            ※送信専用ですので、返答が必要なものは公式LINEよりお願いいたします。
+            ※返答が必要なものはお問い合わせチャットよりお願いいたします。
           </p>
 
           {done ? (

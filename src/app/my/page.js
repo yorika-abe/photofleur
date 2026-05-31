@@ -309,7 +309,7 @@ function MyPageContent() {
           <li>撮影会のシステム的な問題・改善点</li>
           <li>その他ご意見</li>
         </ul>
-        <p style={{ fontSize: 11, color: '#bbb', margin: '0 0 14px' }}>※送信専用ですので、返答が必要なものは公式LINEよりお願いいたします。</p>
+        <p style={{ fontSize: 11, color: '#bbb', margin: '0 0 14px' }}>※返答が必要なものはお問い合わせチャットよりお願いいたします。</p>
         {!profileComplete ? profileIncompleteNotice : (<>
           {feedbackDone && (
             <div style={{ background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 8, padding: '10px 16px', marginBottom: 12, fontSize: 13, color: '#388e3c' }}>

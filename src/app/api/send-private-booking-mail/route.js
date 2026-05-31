@@ -70,7 +70,7 @@ export async function POST(req) {
               ${qrBlock}
               <div style="font-size:14px; color:#555; line-height:2; border-top:1px solid #f0f0f0; padding-top:20px;">
                 <p style="margin:0 0 12px;">
-                  ご不明点がございましたら、公式LINEよりご連絡ください。<br>
+                  ご不明点がございましたら、お問い合わせチャットよりご連絡ください。<br>
                   <a href="https://lin.ee/7XLB4St" style="color:#2563eb; text-decoration:underline;">https://lin.ee/7XLB4St</a>
                 </p>
               </div>

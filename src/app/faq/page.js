@@ -18,7 +18,7 @@ const faqs = [
         q: 'キャンセルはできますか？',
         node: (
           <div style={{ color: '#556070', lineHeight: 1.9, fontSize: 14 }}>
-            <p style={{ margin: '0 0 12px' }}>キャンセルは公式LINEにてご連絡ください。</p>
+            <p style={{ margin: '0 0 12px' }}>キャンセルはお問い合わせチャットにてご連絡ください。</p>
             <div style={{ background: '#f8fbff', borderRadius: 8, padding: '14px 18px', marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div>ご予約確定後：キャンセル料 <strong>30%</strong></div>
               <div>撮影７日前：キャンセル料 <strong>50%</strong></div>

@@ -122,13 +122,13 @@ function CompleteContent() {
         {qrDataUrl && (
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <div style={{ fontSize: 13, color: '#888', marginBottom: 4 }}>当日受付時にこのQRコードをご提示ください</div>
-            <div style={{ fontSize: 12, color: '#aaa', marginBottom: 10 }}>確定メール・前日告知メールにも添付してあります。</div>
+            <div style={{ fontSize: 12, color: '#aaa', marginBottom: 2 }}>マイページ予約履歴・確定メール・前日告知メールにも添付してあります。</div>
             <img src={qrDataUrl} alt="受付QRコード" style={{ width: 160, height: 160, border: '1px solid #e5e5e5', borderRadius: 8 }} />
           </div>
         )}
 
         <div style={{ fontSize: 13, color: '#666', lineHeight: 1.9, marginBottom: 28 }}>
-          <p>※ご不明点は公式LINEよりお問い合わせください。</p>
+          <p>※ご不明点はお問い合わせチャットよりお問い合わせください。</p>
         </div>
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>

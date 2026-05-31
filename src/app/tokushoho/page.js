@@ -38,7 +38,7 @@ export default function TokushohoPage() {
 
       <div style={{ marginTop: 32, padding: '20px 24px', background: '#f8f5ff', borderRadius: 12, border: '1px solid #e0d5f5' }}>
         <p style={{ color: '#555', fontSize: 14, lineHeight: 1.8, margin: 0 }}>
-          ご不明な点は公式LINEにてお問い合わせください。
+          ご不明な点はお問い合わせチャットにてお問い合わせください。
         </p>
       </div>
     </div>
